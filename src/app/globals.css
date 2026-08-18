@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf6ee;
+  --surface: #ffffff;
+  --foreground: #1f2a1f;
+  --muted: #6b6459;
+  --border: #e6ddc9;
+
+  --ripe-green: #1f4d3a;
+  --ripe-green-dark: #16362a;
+  --ripe-green-light: #e7f0e9;
+  --ripe-terracotta: #c96a3c;
+  --ripe-terracotta-dark: #a8552d;
+  --ripe-terracotta-light: #f6e3d6;
+  --ripe-cream: #faf6ee;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-muted: var(--muted);
+  --color-border: var(--border);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ripe-green: var(--ripe-green);
+  --color-ripe-green-dark: var(--ripe-green-dark);
+  --color-ripe-green-light: var(--ripe-green-light);
+  --color-ripe-terracotta: var(--ripe-terracotta);
+  --color-ripe-terracotta-dark: var(--ripe-terracotta-dark);
+  --color-ripe-terracotta-light: var(--ripe-terracotta-light);
+  --color-ripe-cream: var(--ripe-cream);
+
+  --font-sans: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-fraunces), Georgia, serif;
 }

@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DeliveryDay {
+  MONDAY
+  WEDNESDAY
+  FRIDAY
+}
+
+enum ProductCategory {
+  FRUIT
+  VEGETABLE
+  COMBO
+}
+
+enum OrderType {
+  STANDING
+  TOPUP
+}
+
+enum OrderStatus {
+  RECEIVED
+  SOURCED
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+model SubscriptionTier {
+  id         String  @id @default(cuid())
+  slug       String  @unique
+  name       String
+  monthlyFee Int
+  tagline    String
+  perks      String[]
+  sortOrder  Int
+  users      User[]
+}
+
+model Zone {
+  id    String @id @default(cuid())
+  slug  String @unique
+  name  String
+  area  String
+  users User[]
+}
+
+model User {
+  id                 String            @id @default(cuid())
+  name               String
+  email              String?           @unique
+  phone              String            @unique
+  address            String
+  zoneId             String
+  zone               Zone              @relation(fields: [zoneId], references: [id])
+  subscriptionTierId String
+  subscriptionTier   SubscriptionTier  @relation(fields: [subscriptionTierId], references: [id])
+  deliveryDay        DeliveryDay
+  createdAt          DateTime          @default(now())
+  baskets            Basket[]
+  orders             Order[]
+  skippedWeeks       SkippedWeek[]
+}
+
+model Product {
+  id            String            @id @default(cuid())
+  slug          String            @unique
+  name          String
+  category      ProductCategory
+  unit          String
+  memberPrice   Int
+  marketPrice   Int
+  inSeason      Boolean           @default(true)
+  source        String
+  description   String?
+  imageEmoji    String            @default("🥬")
+  featured      Boolean           @default(false)
+  basketItems   BasketItem[]
+  orderItems    OrderItem[]
+}
+
+model Basket {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  isStanding  Boolean      @default(true)
+  deliveryDay DeliveryDay
+  items       BasketItem[]
+  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now())
+}
+
+model BasketItem {
+  id        String  @id @default(cuid())
+  basketId  String
+  basket    Basket  @relation(fields: [basketId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  @@unique([basketId, productId])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  type         OrderType
+  status       OrderStatus @default(RECEIVED)
+  deliveryDate DateTime
+  total        Int
+  items        OrderItem[]
+  createdAt    DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Int
+}
+
+model SkippedWeek {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  weekStart DateTime
+
+  @@unique([userId, weekStart])
+}
