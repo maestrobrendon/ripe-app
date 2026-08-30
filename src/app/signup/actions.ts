@@ -1,61 +1,45 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { setCurrentUserId } from "@/lib/session";
-import type { DeliveryDay } from "@/generated/prisma/enums";
+import { hashPassword, normalizeContact } from "@/lib/auth";
+import { ZONE_COOKIE } from "@/lib/zone";
 
 export async function createAccount(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  const emailRaw = String(formData.get("email") ?? "").trim();
-  const address = String(formData.get("address") ?? "").trim();
-  const zoneSlug = String(formData.get("zone") ?? "");
-  const deliveryDay = String(formData.get("deliveryDay") ?? "MONDAY") as DeliveryDay;
-  const tierSlug = String(formData.get("tier") ?? "base");
+  const contact = String(formData.get("contact") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const next = String(formData.get("next") ?? "");
 
-  if (!name || !phone || !address || !zoneSlug) {
-    throw new Error("Please fill in name, phone, address and delivery zone.");
+  if (!name || !contact || password.length < 8) {
+    redirect(`/signup?error=missing${next ? `&next=${encodeURIComponent(next)}` : ""}`);
   }
 
-  const [zone, tier] = await Promise.all([
-    prisma.zone.findUniqueOrThrow({ where: { slug: zoneSlug } }),
-    prisma.subscriptionTier.findUniqueOrThrow({ where: { slug: tierSlug } }),
-  ]);
+  const { email, phone } = normalizeContact(contact);
 
-  if (emailRaw) {
-    const emailOwner = await prisma.user.findUnique({ where: { email: emailRaw } });
-    if (emailOwner && emailOwner.phone !== phone) {
-      redirect(`/signup?tier=${tierSlug}&error=email-taken`);
-    }
+  const existing = await prisma.user.findFirst({
+    where: { OR: [email ? { email } : {}, phone ? { phone } : {}].filter((c) => Object.keys(c).length) },
+  });
+  if (existing) {
+    redirect(`/signup?error=exists${next ? `&next=${encodeURIComponent(next)}` : ""}`);
   }
 
-  const user = await prisma.user.upsert({
-    where: { phone },
-    update: {
+  const store = await cookies();
+  const zoneSlug = store.get(ZONE_COOKIE)?.value;
+  const zone = zoneSlug ? await prisma.deliveryZone.findUnique({ where: { slug: zoneSlug } }) : null;
+
+  const user = await prisma.user.create({
+    data: {
       name,
-      email: emailRaw || null,
-      address,
-      zoneId: zone.id,
-      subscriptionTierId: tier.id,
-      deliveryDay,
-    },
-    create: {
-      name,
-      phone,
-      email: emailRaw || null,
-      address,
-      zoneId: zone.id,
-      subscriptionTierId: tier.id,
-      deliveryDay,
+      email: email ?? null,
+      phone: phone ?? null,
+      passwordHash: await hashPassword(password),
+      deliveryZoneId: zone?.id ?? null,
     },
   });
 
-  const existingBasket = await prisma.basket.findFirst({ where: { userId: user.id, isStanding: true } });
-  if (!existingBasket) {
-    await prisma.basket.create({ data: { userId: user.id, isStanding: true, deliveryDay } });
-  }
-
   await setCurrentUserId(user.id);
-  redirect("/shop");
+  redirect(`/onboarding${next ? `?next=${encodeURIComponent(next)}` : ""}`);
 }

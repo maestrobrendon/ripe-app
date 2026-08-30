@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/session";
-import { getStandingBasketView } from "@/lib/basket";
-import { BasketProvider } from "@/components/basket-provider";
+import { getActiveZone } from "@/lib/zone";
+import { readCart } from "@/lib/cart";
+import { CartProvider } from "@/components/cart-provider";
+import { ZoneProvider } from "@/components/zone-gate";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { BasketDrawer } from "@/components/basket-drawer";
+import { CartDrawer } from "@/components/cart-drawer";
+import { OrderMinimumBanner } from "@/components/order-minimum-banner";
+import { WhatsAppWidget } from "@/components/whatsapp-widget";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -20,41 +24,27 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ripe — Fruits and vegetables, curated for health",
+  title: "Ripe. Fruits and vegetables, delivered fresh across Lagos",
   description:
-    "A subscription-and-basket fruit and vegetable delivery service for Lagos, sourced farm-direct from Ogun, Oyo and Ondo state farms.",
+    "Shop fruits and vegetables sourced locally from trusted farmers, delivered across Lagos. Subscribe for member pricing and a standing weekly basket.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const user = await getCurrentUser();
-  const basketView = user ? await getStandingBasketView(user.id) : null;
-
-  const initialBasket = {
-    items:
-      basketView?.basket.items.map((i) => ({
-        productId: i.productId,
-        slug: i.product.slug,
-        name: i.product.name,
-        unit: i.product.unit,
-        imageEmoji: i.product.imageEmoji,
-        memberPrice: i.product.memberPrice,
-        marketPrice: i.product.marketPrice,
-        quantity: i.quantity,
-      })) ?? [],
-    memberSubtotal: basketView?.memberSubtotal ?? 0,
-    marketSubtotal: basketView?.marketSubtotal ?? 0,
-    deliveryDay: basketView?.basket.deliveryDay ?? null,
-  };
+  const [user, cart, zone] = await Promise.all([getCurrentUser(), readCart(), getActiveZone()]);
 
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <BasketProvider initial={initialBasket} isSignedIn={Boolean(user)}>
-          <SiteHeader userName={user?.name ?? null} />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-          <BasketDrawer />
-        </BasketProvider>
+        <ZoneProvider initialZoneName={zone?.name ?? null}>
+          <CartProvider initial={cart}>
+            <OrderMinimumBanner />
+            <SiteHeader isSignedIn={Boolean(user)} isSubscriber={Boolean(user?.subscriptionTierId)} />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+            <CartDrawer />
+            <WhatsAppWidget />
+          </CartProvider>
+        </ZoneProvider>
       </body>
     </html>
   );

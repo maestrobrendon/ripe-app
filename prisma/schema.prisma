@@ -19,12 +19,20 @@ enum DeliveryDay {
 enum ProductCategory {
   FRUIT
   VEGETABLE
-  COMBO
+  BOX_BUNDLE
+  SEASONAL
+}
+
+// How a product is sold. Drives the quantity stepper on the product card.
+enum OrderUnit {
+  PIECE
+  PAIR
+  WEIGHT
 }
 
 enum OrderType {
-  STANDING
-  TOPUP
+  ONE_OFF
+  SUBSCRIPTION
 }
 
 enum OrderStatus {
@@ -32,6 +40,13 @@ enum OrderStatus {
   SOURCED
   OUT_FOR_DELIVERY
   DELIVERED
+}
+
+enum WindowStatus {
+  OPEN
+  LOCKED
+  FULFILLED
+  SKIPPED
 }
 
 model SubscriptionTier {
@@ -45,55 +60,147 @@ model SubscriptionTier {
   users      User[]
 }
 
-model Zone {
-  id    String @id @default(cuid())
-  slug  String @unique
-  name  String
-  area  String
-  users User[]
+// A Lagos delivery zone. Boundaries start as a centre point plus a radius,
+// not a full GIS polygon (see the brief, Section 9).
+model DeliveryZone {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  name         String
+  area         String
+  isServed     Boolean       @default(true)
+  deliveryDays DeliveryDay[]
+  centerLat    Float?
+  centerLng    Float?
+  radiusKm     Float?
+  sortOrder    Int           @default(0)
+  users        User[]
+  orders       Order[]
 }
 
 model User {
-  id                 String            @id @default(cuid())
-  name               String
-  email              String?           @unique
-  phone              String            @unique
-  address            String
-  zoneId             String
-  zone               Zone              @relation(fields: [zoneId], references: [id])
-  subscriptionTierId String
-  subscriptionTier   SubscriptionTier  @relation(fields: [subscriptionTierId], references: [id])
-  deliveryDay        DeliveryDay
-  createdAt          DateTime          @default(now())
-  baskets            Basket[]
-  orders             Order[]
-  skippedWeeks       SkippedWeek[]
+  id                  String            @id @default(cuid())
+  name                String
+  email               String?           @unique
+  phone               String?           @unique
+  passwordHash        String?
+  address             String?
+  deliveryZoneId      String?
+  deliveryZone        DeliveryZone?     @relation(fields: [deliveryZoneId], references: [id])
+  // Subscription is an optional upgrade on top of an account. Null for non-members.
+  subscriptionTierId  String?
+  subscriptionTier    SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
+  deliveryDay         DeliveryDay?
+  onboardingCompleted Boolean           @default(false)
+  preferences         UserPreferences?
+  createdAt           DateTime          @default(now())
+  carts               Cart[]
+  baskets             Basket[]
+  orders              Order[]
+  windows             ShoppingWindow[]
+}
+
+// Onboarding survey answers. Feeds the trained assistant's suggestions.
+model UserPreferences {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryGoal      String?
+  householdSize    Int?
+  dietaryNotes     String?
+  favoriteProductIds String[]
+  shoppingStyle    String?
+  updatedAt        DateTime @updatedAt
 }
 
 model Product {
-  id            String            @id @default(cuid())
-  slug          String            @unique
+  id            String          @id @default(cuid())
+  slug          String          @unique
   name          String
   category      ProductCategory
+  // Human-readable pricing label, for example "per pineapple", "per kg", "per pair of 2".
   unit          String
+  orderUnit     OrderUnit       @default(PIECE)
+  minOrderQty   Int             @default(1)
+  stepQty       Int             @default(1)
   memberPrice   Int
-  marketPrice   Int
-  inSeason      Boolean           @default(true)
+  standardPrice Int
+  inSeason      Boolean         @default(true)
   source        String
+  // One-line factual summary shown under the buy box.
   description   String?
-  imageEmoji    String            @default("🥬")
-  featured      Boolean           @default(false)
+  // Short plain-voice paragraph shown under the factual summary.
+  blurb         String?
+  // One-line quality / sourcing close.
+  sourcingLine  String?
+  // Accordion copy. educationCopy powers the "Why you'll love them" section.
+  educationCopy   String?
+  benefitsCopy    String?
+  howToEnjoyCopy  String?
+  storageTips     String?
+  // Cross-sell for "Complete your basket". Falls back to same category when empty.
+  relatedProductIds String[]
+  ratingAvg     Float?
+  ratingCount   Int             @default(0)
+  tags          String[]
+  imageEmoji    String          @default("🥬")
+  featured      Boolean         @default(false)
+  cartItems     CartItem[]
   basketItems   BasketItem[]
   orderItems    OrderItem[]
 }
 
+model Recipe {
+  id                   String   @id @default(cuid())
+  slug                 String   @unique
+  title                String
+  summary              String
+  goalTags             String[]
+  ingredientProductIds String[]
+  instructions         String
+  isAssistantGenerated Boolean  @default(false)
+  createdAt            DateTime @default(now())
+}
+
+// Email capture for visitors whose zone is outside current coverage.
+model WaitlistSignup {
+  id            String   @id @default(cuid())
+  email         String
+  zoneRequested String?
+  createdAt     DateTime @default(now())
+}
+
+// One-off cart. No subscription or login required. Keyed by an anonymous cookie token.
+model Cart {
+  id        String     @id @default(cuid())
+  token     String     @unique
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id])
+  items     CartItem[]
+  updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now())
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  @@unique([cartId, productId])
+}
+
+// Subscriber standing basket, edited during a recurring shopping window.
 model Basket {
-  id          String       @id @default(cuid())
-  userId      String
-  user        User         @relation(fields: [userId], references: [id])
-  isStanding  Boolean      @default(true)
-  deliveryDay DeliveryDay
-  items       BasketItem[]
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  isStanding     Boolean      @default(true)
+  deliveryDay    DeliveryDay
+  // Delivery cadence chosen via Subscribe & save: 1 = weekly, 2 = every 2 weeks.
+  frequencyWeeks Int          @default(1)
+  items          BasketItem[]
   updatedAt   DateTime     @updatedAt
   createdAt   DateTime     @default(now())
 }
@@ -109,16 +216,41 @@ model BasketItem {
   @@unique([basketId, productId])
 }
 
+// Misfits-Market-style shopping window: opensAt to closesAt, editable until it locks.
+model ShoppingWindow {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  opensAt   DateTime
+  closesAt  DateTime
+  status    WindowStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+}
+
 model Order {
-  id           String      @id @default(cuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  type         OrderType
-  status       OrderStatus @default(RECEIVED)
-  deliveryDate DateTime
-  total        Int
-  items        OrderItem[]
-  createdAt    DateTime    @default(now())
+  id             String        @id @default(cuid())
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  deliveryZoneId String?
+  deliveryZone   DeliveryZone? @relation(fields: [deliveryZoneId], references: [id])
+  orderType      OrderType
+  status         OrderStatus   @default(RECEIVED)
+  // Contact and address snapshot so guest orders stand alone.
+  customerName   String
+  customerPhone  String
+  customerEmail  String?
+  address        String
+  zoneName       String
+  deliveryDate   DateTime
+  subtotal       Int
+  deliveryFee    Int           @default(0)
+  total          Int
+  paymentMethod  String
+  itemSnapshot   Json
+  items          OrderItem[]
+  createdAt      DateTime      @default(now())
 }
 
 model OrderItem {
@@ -129,13 +261,4 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   unitPrice Int
-}
-
-model SkippedWeek {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  weekStart DateTime
-
-  @@unique([userId, weekStart])
 }

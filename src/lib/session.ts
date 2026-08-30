@@ -29,9 +29,11 @@ export async function getCurrentUser() {
 
   return prisma.user.findUnique({
     where: { id: userId },
-    include: { subscriptionTier: true, zone: true },
+    include: { subscriptionTier: true, deliveryZone: true, preferences: true },
   });
 }
+
+export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 export async function requireUser() {
   const user = await getCurrentUser();

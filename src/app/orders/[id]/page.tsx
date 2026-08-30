@@ -1,6 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatNaira, ORDER_STATUS_LABEL, ORDER_STATUS_STEPS } from "@/lib/format";
 
@@ -9,16 +8,13 @@ export default async function OrderPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/subscribe");
-
   const { id } = await params;
   const order = await prisma.order.findUnique({
     where: { id },
     include: { items: { include: { product: true } } },
   });
 
-  if (!order || order.userId !== user.id) notFound();
+  if (!order) notFound();
 
   const currentIndex = ORDER_STATUS_STEPS.indexOf(order.status);
 
@@ -26,10 +22,11 @@ export default async function OrderPage({
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       <p className="text-sm text-muted">Order #{order.id.slice(-8)}</p>
       <h1 className="mt-1 text-3xl font-semibold">
-        {order.type === "STANDING" ? "Standing basket order" : "Top-up order"}
+        {order.orderType === "SUBSCRIPTION" ? "Standing basket order" : "Order confirmed"}
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Delivering {order.deliveryDate.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" })}
+        Delivering {order.deliveryDate.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" })} to{" "}
+        {order.address} ({order.zoneName})
       </p>
 
       <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
@@ -64,15 +61,30 @@ export default async function OrderPage({
             </li>
           ))}
         </ul>
-        <div className="mt-3 flex justify-between px-1 text-sm font-semibold">
-          <span>Total</span>
-          <span>{formatNaira(order.total)}</span>
+        <div className="mt-3 space-y-1 px-1 text-sm">
+          <div className="flex justify-between text-muted">
+            <span>Subtotal</span>
+            <span>{formatNaira(order.subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-muted">
+            <span>Delivery</span>
+            <span>{order.deliveryFee === 0 ? "Free" : formatNaira(order.deliveryFee)}</span>
+          </div>
+          <div className="flex justify-between font-semibold">
+            <span>Total</span>
+            <span>{formatNaira(order.total)}</span>
+          </div>
+          <div className="flex justify-between text-muted">
+            <span>Payment</span>
+            <span>{order.paymentMethod}</span>
+          </div>
         </div>
       </div>
 
-      <Link href="/account" className="mt-8 inline-block text-sm font-medium text-ripe-green underline">
-        Back to your account
-      </Link>
+      <div className="mt-8 flex gap-4">
+        <Link href="/shop" className="text-sm font-medium text-ripe-green underline">Keep shopping</Link>
+        <Link href="/account" className="text-sm font-medium text-ripe-green underline">Your account</Link>
+      </div>
     </div>
   );
 }

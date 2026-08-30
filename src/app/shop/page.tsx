@@ -1,55 +1,42 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ProductCard } from "@/components/product-card";
+import { ProductGrid } from "@/components/product-grid";
+import { CATEGORY_LABEL } from "@/lib/format";
 import type { Prisma, ProductCategory } from "@/generated/prisma/client";
 
-const CATEGORIES = [
+const CATEGORIES: { value: string; label: string }[] = [
   { value: "", label: "All" },
-  { value: "FRUIT", label: "Fruits" },
-  { value: "VEGETABLE", label: "Vegetables" },
-  { value: "COMBO", label: "Combos" },
+  { value: "FRUIT", label: CATEGORY_LABEL.FRUIT },
+  { value: "VEGETABLE", label: CATEGORY_LABEL.VEGETABLE },
+  { value: "BOX_BUNDLE", label: CATEGORY_LABEL.BOX_BUNDLE },
+  { value: "SEASONAL", label: CATEGORY_LABEL.SEASONAL },
 ];
 
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; season?: string; q?: string }>;
+  searchParams: Promise<{ category?: string; season?: string }>;
 }) {
-  const { category, season, q } = await searchParams;
+  const { category, season } = await searchParams;
 
   const where: Prisma.ProductWhereInput = {};
   if (category) where.category = category as ProductCategory;
   if (season === "in-season") where.inSeason = true;
-  if (q) where.name = { contains: q, mode: "insensitive" };
 
   const products = await prisma.product.findMany({ where, orderBy: { name: "asc" } });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold">Shop</h1>
-          <p className="mt-1 text-sm text-muted">Member pricing, farm-direct from Ogun, Oyo and Ondo states.</p>
-        </div>
+      <h1 className="text-3xl font-semibold">Shop all produce</h1>
+      <p className="mt-1 text-sm text-muted">
+        Sourced locally from trusted farmers. Anyone can shop, no subscription needed.
+      </p>
 
-        <form className="flex gap-2" action="/shop">
-          {category && <input type="hidden" name="category" value={category} />}
-          {season && <input type="hidden" name="season" value={season} />}
-          <input
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Search produce…"
-            className="w-56 rounded-full border border-border px-4 py-2 text-sm"
-          />
-        </form>
-      </div>
-
-      <div className="mb-8 flex flex-wrap items-center gap-2">
+      <div className="mb-8 mt-6 flex flex-wrap items-center gap-2">
         {CATEGORIES.map((c) => {
           const params = new URLSearchParams();
           if (c.value) params.set("category", c.value);
           if (season) params.set("season", season);
-          if (q) params.set("q", q);
           const href = `/shop${params.toString() ? `?${params}` : ""}`;
           const active = (category ?? "") === c.value;
           return (
@@ -64,14 +51,11 @@ export default async function ShopPage({
             </Link>
           );
         })}
-
         <span className="mx-1 h-5 w-px bg-border" />
-
         <Link
           href={(() => {
             const params = new URLSearchParams();
             if (category) params.set("category", category);
-            if (q) params.set("q", q);
             if (season !== "in-season") params.set("season", "in-season");
             return `/shop${params.toString() ? `?${params}` : ""}`;
           })()}
@@ -83,29 +67,7 @@ export default async function ShopPage({
         </Link>
       </div>
 
-      {products.length === 0 ? (
-        <p className="text-sm text-muted">No produce matches that filter right now.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={{
-                id: p.id,
-                slug: p.slug,
-                name: p.name,
-                unit: p.unit,
-                imageEmoji: p.imageEmoji,
-                memberPrice: p.memberPrice,
-                marketPrice: p.marketPrice,
-                inSeason: p.inSeason,
-                source: p.source,
-                description: p.description,
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <ProductGrid products={products} />
     </div>
   );
 }

@@ -1,3 +1,6 @@
+// The trained assistant's rule set. Pure functions so both server pages and the
+// client Recipes panel can use them. Never described as AI in customer copy.
+
 export type Goal = {
   slug: string;
   label: string;
@@ -11,9 +14,9 @@ export const GOALS: Goal[] = [
     description: "Produce that people usually reach for after training.",
   },
   {
-    slug: "family-breakfast",
-    label: "Family breakfast",
-    description: "Simple fruit that works for a table of different ages.",
+    slug: "family-household",
+    label: "Family and household eating",
+    description: "Produce that works for a table of different ages and tastes.",
   },
   {
     slug: "general-wellness",
@@ -23,19 +26,19 @@ export const GOALS: Goal[] = [
   {
     slug: "weight-management",
     label: "Weight management",
-    description: "Lower-calorie produce that's filling and easy to prep.",
+    description: "Lower-calorie produce that is filling and easy to prep.",
   },
 ];
 
-type Recipe = {
+type PlanRecipe = {
   title: string;
-  uses: string[]; // product slugs
+  uses: string[];
   note: string;
 };
 
 type GoalPlan = {
-  recipes: Recipe[];
-  addOns: string[]; // product slugs to suggest adding
+  recipes: PlanRecipe[];
+  addOns: string[];
 };
 
 const GOAL_PLANS: Record<string, GoalPlan> = {
@@ -43,15 +46,15 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
     recipes: [
       { title: "Banana and watermelon plate", uses: ["banana", "watermelon"], note: "People usually eat this cold, straight after training." },
       { title: "Sweet potato and spinach side", uses: ["sweet-potato", "spinach"], note: "Roasted sweet potato with wilted spinach, a common recovery plate." },
-      { title: "Recovery combo, as packed", uses: ["recovery-combo"], note: "Banana, watermelon, sweet potato and spinach in one pack." },
+      { title: "Recovery box, as packed", uses: ["recovery-box"], note: "Banana, watermelon, sweet potato and spinach in one pack." },
     ],
     addOns: ["banana", "watermelon", "sweet-potato"],
   },
-  "family-breakfast": {
+  "family-household": {
     recipes: [
       { title: "Fruit plate for the table", uses: ["pawpaw", "banana", "orange"], note: "A shared plate that covers different tastes." },
       { title: "Pineapple and avocado on the side", uses: ["pineapple", "avocado"], note: "Pairs well with eggs or bread." },
-      { title: "Breakfast combo, as packed", uses: ["breakfast-combo"], note: "Pawpaw, banana, orange and avocado, sized for a family." },
+      { title: "Breakfast box, as packed", uses: ["breakfast-box"], note: "Pawpaw, banana, oranges and avocado, sized for a family." },
     ],
     addOns: ["pawpaw", "banana", "avocado"],
   },
@@ -59,7 +62,7 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
     recipes: [
       { title: "Soup pot vegetables", uses: ["ugu", "spinach", "tomato", "bell-pepper", "onion"], note: "What people usually put in a pot of soup during the week." },
       { title: "Mixed fruit through the week", uses: ["apple", "orange", "banana"], note: "Spread across a few days rather than eaten in one sitting." },
-      { title: "Soup combo, as packed", uses: ["soup-combo"], note: "Ugu, spinach, tomato, pepper and onion in one pack." },
+      { title: "Soup box, as packed", uses: ["soup-box"], note: "Ugu, spinach, tomato, pepper and onion in one pack." },
     ],
     addOns: ["ugu", "spinach", "orange"],
   },
@@ -73,7 +76,7 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
   },
 };
 
-const CATEGORY_PAIRS: Record<string, string[]> = {
+const PAIRINGS: Record<string, string[]> = {
   ugu: ["tomato", "bell-pepper", "spinach"],
   spinach: ["tomato", "sweet-potato"],
   tomato: ["bell-pepper", "onion", "ugu"],
@@ -84,27 +87,59 @@ const CATEGORY_PAIRS: Record<string, string[]> = {
   avocado: ["tomato", "cucumber"],
 };
 
-export function getGoalSuggestions(goalSlug: string): GoalPlan | null {
-  return GOAL_PLANS[goalSlug] ?? null;
+export type AssistantContext = {
+  /** Slugs the customer has flagged as favorites in onboarding. */
+  favorites?: string[];
+  /** Free-text dietary notes, used to drop obvious mismatches from add-ons. */
+  dietaryNotes?: string;
+  householdSize?: number;
+};
+
+function filterByDiet(slugs: string[], dietaryNotes?: string): string[] {
+  if (!dietaryNotes) return slugs;
+  const notes = dietaryNotes.toLowerCase();
+  return slugs.filter((slug) => !notes.includes(slug.replace(/-/g, " ")));
 }
 
-export function getBasketSuggestions(basketProductSlugs: string[]): {
-  pairings: { forProduct: string; suggest: string[] }[];
-  addOns: string[];
-} {
-  const inBasket = new Set(basketProductSlugs);
+export function getGoalSuggestions(goalSlug: string, ctx: AssistantContext = {}): GoalPlan | null {
+  const plan = GOAL_PLANS[goalSlug];
+  if (!plan) return null;
+
+  const favouriteFirst = [
+    ...(ctx.favorites ?? []).filter((f) => !plan.addOns.includes(f)),
+    ...plan.addOns,
+  ];
+
+  return {
+    recipes: plan.recipes,
+    addOns: filterByDiet(favouriteFirst, ctx.dietaryNotes).slice(0, 5),
+  };
+}
+
+export function getBasketSuggestions(
+  cartSlugs: string[],
+  ctx: AssistantContext = {},
+): { pairings: { forProduct: string; suggest: string[] }[]; addOns: string[] } {
+  const inCart = new Set(cartSlugs);
   const pairings: { forProduct: string; suggest: string[] }[] = [];
   const addOns = new Set<string>();
 
-  for (const slug of basketProductSlugs) {
-    const pairs = CATEGORY_PAIRS[slug];
+  for (const slug of cartSlugs) {
+    const pairs = PAIRINGS[slug];
     if (!pairs) continue;
-    const missing = pairs.filter((p) => !inBasket.has(p));
+    const missing = pairs.filter((p) => !inCart.has(p));
     if (missing.length) {
       pairings.push({ forProduct: slug, suggest: missing });
       missing.forEach((m) => addOns.add(m));
     }
   }
 
-  return { pairings, addOns: Array.from(addOns).slice(0, 4) };
+  (ctx.favorites ?? []).forEach((f) => {
+    if (!inCart.has(f)) addOns.add(f);
+  });
+
+  return {
+    pairings,
+    addOns: filterByDiet(Array.from(addOns), ctx.dietaryNotes).slice(0, 5),
+  };
 }
