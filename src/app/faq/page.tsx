@@ -10,8 +10,8 @@ const FAQS = [
     a: "Member pricing across the catalog, free delivery on your set days, combo pricing on boxes, and a standing weekly basket you edit before you are charged.",
   },
   {
-    q: "How does the order minimum work?",
-    a: "There is a minimum cart value to check out, and a higher value above which delivery is free. Both are shown in the banner at the top of every page.",
+    q: "Is there a minimum order?",
+    a: "There is no minimum cart value. Each product is sold in a set pack size, for example greens by weight and oranges in pairs, so you add only what you need. Delivery is charged per order and is free once your cart passes a set value, shown at checkout.",
   },
   {
     q: "How is produce priced?",

@@ -4,6 +4,7 @@ import { formatNaira, CATEGORY_LABEL } from "@/lib/format";
 import { ProductCard } from "@/components/product-card";
 import { ProductGrid } from "@/components/product-grid";
 import { SearchBar } from "@/components/search-bar";
+import { FaqBand } from "@/components/faq-band";
 import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -32,9 +33,6 @@ export default async function LandingPage() {
   return (
     <div>
       <section className="mx-auto max-w-6xl px-4 pt-14 pb-12 sm:px-6 sm:pt-20">
-        <p className="mb-3 text-sm font-medium uppercase tracking-wide text-ripe-terracotta-dark">
-          Lagos · Locally sourced produce
-        </p>
         <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl">
           What are you shopping for today?
         </h1>
@@ -159,18 +157,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="rounded-3xl bg-ripe-terracotta-light p-8 text-center sm:p-12">
-          <h2 className="text-2xl font-semibold">Not trying to replace anyone</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-muted">
-            Ripe is not here to replace Chowdeck, the roadside seller, or the supermarket. It is for
-            people who already want to eat better, and want a service built to make that consistent.
-          </p>
-          <Link href="/about" className="mt-6 inline-block text-sm font-medium text-ripe-terracotta-dark underline">
-            Read the full story
-          </Link>
-        </div>
-      </section>
+      <FaqBand />
     </div>
   );
 }

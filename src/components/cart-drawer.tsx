@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { formatNaira } from "@/lib/format";
-import { ORDER_MINIMUM, quoteDelivery, checkMinimum } from "@/lib/pricing";
+import { quoteDelivery } from "@/lib/pricing";
 
 export function CartDrawer() {
   const cart = useCart();
 
   if (!cart.isOpen) return null;
 
-  const { shortfall, meetsMinimum } = checkMinimum(cart.subtotal);
   const delivery = quoteDelivery(cart.subtotal, cart.isSubscriber);
 
   return (
@@ -86,15 +85,11 @@ export function CartDrawer() {
             <span>{delivery.isFree ? "Free" : formatNaira(delivery.fee)}</span>
           </div>
 
-          {!meetsMinimum ? (
-            <p className="mb-3 rounded-lg bg-ripe-terracotta-light p-3 text-xs text-ripe-terracotta-dark">
-              Orders start at {formatNaira(ORDER_MINIMUM)}. Add {formatNaira(shortfall)} more to check out.
-            </p>
-          ) : !delivery.isFree ? (
+          {!delivery.isFree && (
             <p className="mb-3 text-xs text-muted">
               Add {formatNaira(delivery.toFreeDelivery)} more for free delivery.
             </p>
-          ) : null}
+          )}
 
           <div className="flex gap-2">
             <Link
@@ -107,12 +102,7 @@ export function CartDrawer() {
             <Link
               href="/checkout"
               onClick={cart.closeDrawer}
-              aria-disabled={!meetsMinimum}
-              className={`flex-1 rounded-full px-4 py-2.5 text-center text-sm font-medium text-white ${
-                meetsMinimum
-                  ? "bg-ripe-terracotta hover:bg-ripe-terracotta-dark"
-                  : "pointer-events-none bg-ripe-terracotta/40"
-              }`}
+              className="flex-1 rounded-full bg-ripe-terracotta px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-ripe-terracotta-dark"
             >
               Checkout
             </Link>

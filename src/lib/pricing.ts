@@ -1,8 +1,6 @@
-// Order-economics levers for solving the small-order delivery-cost problem.
-// These are founder-tunable placeholders. See the brief, Section 5.
-
-/** Minimum cart value (in Naira) required to check out at all. */
-export const ORDER_MINIMUM = 12000;
+// Delivery-fee levers. There is no cart-wide order minimum: each product carries
+// its own minimum order quantity and step size on the Product model.
+// These figures are founder-tunable placeholders. See the brief, Section 5.
 
 /** Cart value at or above which delivery is free for everyone. */
 export const FREE_DELIVERY_THRESHOLD = 25000;
@@ -29,17 +27,5 @@ export function quoteDelivery(subtotal: number, isSubscriber: boolean): Delivery
     fee: BASE_DELIVERY_FEE,
     isFree: false,
     toFreeDelivery: Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal),
-  };
-}
-
-export type MinimumCheck = {
-  meetsMinimum: boolean;
-  shortfall: number;
-};
-
-export function checkMinimum(subtotal: number): MinimumCheck {
-  return {
-    meetsMinimum: subtotal >= ORDER_MINIMUM,
-    shortfall: Math.max(0, ORDER_MINIMUM - subtotal),
   };
 }

@@ -3,13 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZone } from "@/lib/zone";
 import { readCart } from "@/lib/cart";
-import { checkMinimum } from "@/lib/pricing";
 import { CheckoutFlow } from "./checkout-flow";
 
 export default async function CheckoutPage() {
   const cart = await readCart();
   if (cart.items.length === 0) redirect("/cart");
-  if (!checkMinimum(cart.subtotal).meetsMinimum) redirect("/cart");
 
   const [zones, user, activeZone] = await Promise.all([
     prisma.deliveryZone.findMany({ where: { isServed: true }, orderBy: { sortOrder: "asc" } }),

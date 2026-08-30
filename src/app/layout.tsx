@@ -9,7 +9,7 @@ import { ZoneProvider } from "@/components/zone-gate";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CartDrawer } from "@/components/cart-drawer";
-import { OrderMinimumBanner } from "@/components/order-minimum-banner";
+import { AnnouncementBar } from "@/components/announcement-bar";
 import { WhatsAppWidget } from "@/components/whatsapp-widget";
 
 const fraunces = Fraunces({
@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <ZoneProvider initialZoneName={zone?.name ?? null}>
           <CartProvider initial={cart}>
-            <OrderMinimumBanner />
+            <AnnouncementBar />
             <SiteHeader isSignedIn={Boolean(user)} isSubscriber={Boolean(user?.subscriptionTierId)} />
             <main className="flex-1">{children}</main>
             <SiteFooter />

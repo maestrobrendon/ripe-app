@@ -4,14 +4,24 @@ import { currentWeekStart } from "@/lib/weeks";
 const WINDOW_LENGTH_DAYS = 4;
 
 /**
- * The subscriber's current shopping window. Windows recur weekly: they open at
- * the start of the week and lock WINDOW_LENGTH_DAYS later, before delivery.
- * Created lazily here. A real deployment would open these on a schedule.
+ * The subscriber's current editable shopping window. Windows recur weekly: they
+ * open at the start of the week and lock WINDOW_LENGTH_DAYS later, before
+ * delivery. Once this week's window has closed, the upcoming week's window is
+ * the one you edit. Created lazily here. A real deployment would open these on a
+ * schedule.
  */
 export async function getOrCreateCurrentWindow(userId: string) {
-  const opensAt = currentWeekStart();
-  const closesAt = new Date(opensAt);
+  const now = Date.now();
+  let opensAt = currentWeekStart();
+  let closesAt = new Date(opensAt);
   closesAt.setDate(closesAt.getDate() + WINDOW_LENGTH_DAYS);
+
+  if (closesAt.getTime() <= now) {
+    opensAt = new Date(opensAt);
+    opensAt.setDate(opensAt.getDate() + 7);
+    closesAt = new Date(opensAt);
+    closesAt.setDate(closesAt.getDate() + WINDOW_LENGTH_DAYS);
+  }
 
   const existing = await prisma.shoppingWindow.findFirst({
     where: { userId, opensAt },

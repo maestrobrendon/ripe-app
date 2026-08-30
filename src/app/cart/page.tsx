@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { formatNaira } from "@/lib/format";
-import { ORDER_MINIMUM, quoteDelivery, checkMinimum } from "@/lib/pricing";
+import { quoteDelivery } from "@/lib/pricing";
 
 export default function CartPage() {
   const cart = useCart();
-  const { meetsMinimum, shortfall } = checkMinimum(cart.subtotal);
   const delivery = quoteDelivery(cart.subtotal, cart.isSubscriber);
   const total = cart.subtotal + delivery.fee;
 
@@ -90,24 +89,15 @@ export default function CartPage() {
               </p>
             )}
 
-            {!meetsMinimum ? (
-              <p className="mt-4 rounded-lg bg-ripe-terracotta-light p-3 text-xs text-ripe-terracotta-dark">
-                Orders start at {formatNaira(ORDER_MINIMUM)}. Add {formatNaira(shortfall)} more to check out.
-              </p>
-            ) : !delivery.isFree ? (
+            {!delivery.isFree && (
               <p className="mt-4 text-xs text-muted">
                 Add {formatNaira(delivery.toFreeDelivery)} more for free delivery.
               </p>
-            ) : null}
+            )}
 
             <Link
               href="/checkout"
-              aria-disabled={!meetsMinimum}
-              className={`mt-4 block rounded-full px-6 py-3 text-center text-sm font-medium text-white ${
-                meetsMinimum
-                  ? "bg-ripe-terracotta hover:bg-ripe-terracotta-dark"
-                  : "pointer-events-none bg-ripe-terracotta/40"
-              }`}
+              className="mt-4 block rounded-full bg-ripe-terracotta px-6 py-3 text-center text-sm font-medium text-white hover:bg-ripe-terracotta-dark"
             >
               Continue to checkout
             </Link>

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
-import { checkMinimum, quoteDelivery } from "@/lib/pricing";
+import { quoteDelivery } from "@/lib/pricing";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const DOW: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
@@ -32,9 +32,6 @@ export async function placeOrder(input: CheckoutInput) {
   const [user, cart] = await Promise.all([getCurrentUser(), readCart()]);
 
   if (cart.items.length === 0) throw new Error("Your cart is empty.");
-  if (!checkMinimum(cart.subtotal).meetsMinimum) {
-    throw new Error("Your cart is below the order minimum.");
-  }
   if (!input.name || !input.phone || !input.address || !input.zoneSlug) {
     throw new Error("Please fill in your name, phone, address and zone.");
   }

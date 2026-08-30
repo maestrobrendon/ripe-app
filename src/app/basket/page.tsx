@@ -3,8 +3,15 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateStandingBasket, getStandingBasketView, prefillStandingBasket } from "@/lib/basket";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
+import {
+  recomputeStreak,
+  computeCumulativeSavings,
+  computeGoalFit,
+  getQuickAddItems,
+  getFlaggedSwaps,
+} from "@/lib/basket-hub";
 import { formatNaira } from "@/lib/format";
-import { BasketEditor } from "./basket-editor";
+import { BasketWorkspace } from "./basket-workspace";
 
 export default async function BasketPage() {
   const user = await getCurrentUser();
@@ -16,74 +23,135 @@ export default async function BasketPage() {
   const window = await getOrCreateCurrentWindow(user.id);
   await prefillStandingBasket(user.id, basket.id);
 
-  const [view, recommended] = await Promise.all([
+  const [view, tier, allProducts, streak, cumulativeSavings, lastOrder] = await Promise.all([
     getStandingBasketView(user.id),
-    prisma.product.findMany({ where: { inSeason: true }, orderBy: { name: "asc" }, take: 12 }),
+    prisma.subscriptionTier.findUniqueOrThrow({ where: { id: user.subscriptionTierId } }),
+    prisma.product.findMany(),
+    recomputeStreak(user.id),
+    computeCumulativeSavings(user.id),
+    prisma.order.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    }),
   ]);
 
   const state = windowState(window);
+  const basketItems = view?.basket.items ?? [];
+  const basketProductIds = basketItems.map((i) => i.productId);
 
-  const items =
-    view?.basket.items.map((i) => ({
-      productId: i.productId,
-      slug: i.product.slug,
-      name: i.product.name,
-      unit: i.product.unit,
-      stepQty: i.product.stepQty,
-      imageEmoji: i.product.imageEmoji,
-      memberPrice: i.product.memberPrice,
-      standardPrice: i.product.standardPrice,
-      quantity: i.quantity,
-    })) ?? [];
+  const flagged = getFlaggedSwaps(
+    basketItems.map((i) => ({ productId: i.productId, product: i.product })),
+    allProducts,
+  );
+
+  const quickAdd = await getQuickAddItems(
+    user.id,
+    user.preferences?.favoriteProductIds ?? [],
+    basketProductIds,
+  );
+
+  const goalFit = computeGoalFit(
+    basketItems.map((i) => i.product.category),
+    user.preferences?.primaryGoal,
+  );
+
+  const signature = basketItems
+    .map((i) => `${i.productId}:${i.quantity}`)
+    .sort()
+    .join(",");
+
+  const lines = basketItems.map((i) => ({
+    productId: i.productId,
+    name: i.product.name,
+    unit: i.product.unit,
+    inSeason: i.product.inSeason,
+    stepQty: i.product.stepQty,
+    imageEmoji: i.product.imageEmoji,
+    memberPrice: i.product.memberPrice,
+    standardPrice: i.product.standardPrice,
+    quantity: i.quantity,
+  }));
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <h1 className="text-3xl font-semibold">Your standing basket</h1>
       <p className="mt-1 text-sm text-muted">
-        We pre-fill this each week. Add, remove or swap anything you like. You&rsquo;re only charged for
-        what&rsquo;s in it when the window closes.
+        We pre-fill this each week. Edit it however you like. You are only charged for what is in it when
+        the window closes.
       </p>
 
+      {/* Window countdown (existing edit-before-charge logic) */}
       <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-sm">
         {state.skipped ? (
-          <span className="font-medium text-ripe-terracotta-dark">You&rsquo;ve skipped this week.</span>
+          <span className="font-medium text-ripe-terracotta-dark">You have skipped this week.</span>
         ) : state.locked ? (
           <span className="font-medium text-ripe-terracotta-dark">This week&rsquo;s window is closed.</span>
         ) : (
-          <span className="font-medium text-ripe-green">
-            Window closes in {state.hoursLeft} hours
-          </span>
+          <span className="font-medium text-ripe-green">Window closes in {state.hoursLeft} hours</span>
         )}
         <span className="text-muted">
-          Closes {window.closesAt.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "short" })}
+          Closes{" "}
+          {window.closesAt.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "short" })}
         </span>
-        <span className="ml-auto">
-          <span className="text-muted">Running value </span>
-          <span className="font-semibold">{formatNaira(view?.memberSubtotal ?? 0)}</span>
-          {view && view.savings > 0 && (
-            <span className="ml-2 text-xs text-ripe-terracotta-dark">
-              saving {formatNaira(view.savings)} vs non-member
-            </span>
-          )}
+        {basket.frequencyWeeks === 2 && (
+          <span className="text-muted">Delivering every 2 weeks</span>
+        )}
+      </div>
+
+      {/* Perks strip */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className="rounded-full bg-ripe-green px-3 py-1 text-xs font-medium text-white">
+          {tier.name} member
         </span>
+        {tier.perks.map((perk) => (
+          <span
+            key={perk}
+            className="rounded-full border border-ripe-green/40 bg-ripe-green-light/50 px-3 py-1 text-xs text-ripe-green"
+          >
+            ✓ {perk}
+          </span>
+        ))}
+      </div>
+
+      {/* Streak + savings */}
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-surface p-4">
+          <p className="text-xs text-muted">Weekly streak</p>
+          <p className="text-2xl font-semibold">
+            {streak.currentStreak} {streak.currentStreak === 1 ? "week" : "weeks"}
+          </p>
+          <p className="text-xs text-muted">
+            {streak.currentStreak === 0
+              ? "Keep a week unskipped to start a streak"
+              : `Longest run: ${streak.longestStreak} weeks`}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-surface p-4">
+          <p className="text-xs text-muted">Saved with membership so far</p>
+          <p className="text-2xl font-semibold">{formatNaira(cumulativeSavings)}</p>
+          <p className="text-xs text-muted">Across every order vs standard pricing</p>
+        </div>
       </div>
 
       <div className="mt-8">
-        <BasketEditor
-          items={items}
-          deliveryDay={deliveryDay}
-          locked={state.locked || state.skipped}
+        <BasketWorkspace
+          items={lines}
+          locked={state.locked}
           skipped={state.skipped}
-          recommended={recommended.map((p) => ({
+          deliveryDay={deliveryDay}
+          memberSubtotal={view?.memberSubtotal ?? 0}
+          savings={view?.savings ?? 0}
+          goalFit={goalFit}
+          quickAdd={quickAdd.map((p) => ({
             id: p.id,
-            slug: p.slug,
             name: p.name,
-            unit: p.unit,
-            minOrderQty: p.minOrderQty,
             imageEmoji: p.imageEmoji,
-            memberPrice: p.memberPrice,
-            standardPrice: p.standardPrice,
+            minOrderQty: p.minOrderQty,
           }))}
+          flagged={flagged}
+          canRestore={Boolean(lastOrder)}
+          signature={signature}
         />
       </div>
 

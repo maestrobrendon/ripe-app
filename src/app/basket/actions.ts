@@ -94,3 +94,68 @@ export async function setWindowSkipped(skipped: boolean) {
   });
   revalidatePath("/basket");
 }
+
+async function addProductAtMin(basketId: string, productId: string) {
+  const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
+  const existing = await prisma.basketItem.findUnique({
+    where: { basketId_productId: { basketId, productId } },
+  });
+  if (existing) return;
+  await prisma.basketItem.create({
+    data: { basketId, productId, quantity: product.minOrderQty },
+  });
+}
+
+/** Tap a swap chip on a flagged item: remove one product, add another. */
+export async function swapBasketItem(fromProductId: string, toProductId: string) {
+  const user = await requireUser();
+  await assertWindowOpen(user.id);
+  const basket = await getOrCreateStandingBasket(user.id, user.deliveryDay ?? "WEDNESDAY");
+
+  await prisma.basketItem.deleteMany({ where: { basketId: basket.id, productId: fromProductId } });
+  await addProductAtMin(basket.id, toProductId);
+  revalidatePath("/basket");
+}
+
+/** Add the ingredients a suggested recipe needs that are not already in the basket. */
+export async function addRecipeIngredients(recipeSlug: string) {
+  const user = await requireUser();
+  await assertWindowOpen(user.id);
+  const basket = await getOrCreateStandingBasket(user.id, user.deliveryDay ?? "WEDNESDAY");
+
+  const recipe = await prisma.recipe.findUnique({ where: { slug: recipeSlug } });
+  if (!recipe) return;
+
+  const existing = new Set(
+    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
+  );
+  for (const productId of recipe.ingredientProductIds) {
+    if (!existing.has(productId)) await addProductAtMin(basket.id, productId);
+  }
+  revalidatePath("/basket");
+}
+
+/** Restore the items from the member's most recent finalized order into this window. */
+export async function restoreLastWeek() {
+  const user = await requireUser();
+  await assertWindowOpen(user.id);
+  const basket = await getOrCreateStandingBasket(user.id, user.deliveryDay ?? "WEDNESDAY");
+
+  const lastOrder = await prisma.order.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    include: { items: true },
+  });
+  if (!lastOrder || lastOrder.items.length === 0) return;
+
+  await prisma.basketItem.deleteMany({ where: { basketId: basket.id } });
+  await prisma.basketItem.createMany({
+    data: lastOrder.items.map((i) => ({
+      basketId: basket.id,
+      productId: i.productId,
+      quantity: i.quantity,
+    })),
+    skipDuplicates: true,
+  });
+  revalidatePath("/basket");
+}

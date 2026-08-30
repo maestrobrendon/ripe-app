@@ -92,11 +92,23 @@ model User {
   deliveryDay         DeliveryDay?
   onboardingCompleted Boolean           @default(false)
   preferences         UserPreferences?
+  streak              UserStreak?
   createdAt           DateTime          @default(now())
   carts               Cart[]
   baskets             Basket[]
   orders              Order[]
   windows             ShoppingWindow[]
+}
+
+// Consecutive weeks the subscriber did not skip. Recomputed on basket load.
+model UserStreak {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak     Int       @default(0)
+  longestStreak     Int       @default(0)
+  lastCompletedWeek DateTime?
+  updatedAt         DateTime  @updatedAt
 }
 
 // Onboarding survey answers. Feeds the trained assistant's suggestions.

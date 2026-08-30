@@ -4,6 +4,7 @@ config({ path: ".env.local" });
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, ProductCategory, OrderUnit, DeliveryDay } from "../src/generated/prisma/client";
 import { dbConnectionString } from "../src/lib/db-url";
+import { hashPassword } from "../src/lib/auth";
 
 const adapter = new PrismaPg({ connectionString: dbConnectionString() });
 const prisma = new PrismaClient({ adapter });
@@ -656,9 +657,59 @@ async function main() {
     await prisma.recipe.upsert({ where: { slug: recipe.slug }, update: data, create: data });
   }
 
+  await seedSignInUser();
+
   console.log(
     `Seeded ${tiers.length} tiers, ${zones.length} zones, ${products.length} products, ${recipes.length} recipes.`,
   );
+}
+
+// A ready-to-use account for testing sign-in and the subscriber flows.
+async function seedSignInUser() {
+  const email = "maestrobrendon@gmail.com";
+  const [midTier, zone] = await Promise.all([
+    prisma.subscriptionTier.findUnique({ where: { slug: "mid" } }),
+    prisma.deliveryZone.findUnique({ where: { slug: "lekki-phase-1" } }),
+  ]);
+
+  const passwordHash = await hashPassword("AdminRipe26");
+  const base = {
+    name: "Brendon",
+    passwordHash,
+    address: "Waterway 2, Lekki",
+    deliveryZoneId: zone?.id ?? null,
+    subscriptionTierId: midTier?.id ?? null,
+    deliveryDay: "WEDNESDAY" as DeliveryDay,
+    onboardingCompleted: true,
+  };
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: base,
+    create: { email, ...base },
+  });
+
+  await prisma.userPreferences.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: {
+      userId: user.id,
+      primaryGoal: "general-wellness",
+      householdSize: 2,
+      dietaryNotes: "No restrictions",
+      favoriteProductIds: [],
+      shoppingStyle: "subscription",
+    },
+  });
+
+  const basket = await prisma.basket.findFirst({ where: { userId: user.id, isStanding: true } });
+  if (!basket) {
+    await prisma.basket.create({
+      data: { userId: user.id, isStanding: true, deliveryDay: "WEDNESDAY" },
+    });
+  }
+
+  console.log(`Seeded sign-in user: ${email}`);
 }
 
 main()
