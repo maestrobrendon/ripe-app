@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { planFromText, planSurprise } from "@/lib/meal-planner";
+import {
+  planFromText,
+  planFromGoal,
+  planThisWeek,
+  planFromCartSlugs,
+} from "@/lib/produce-planner";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -12,10 +17,9 @@ export async function POST(request: Request) {
   let body: {
     mode?: unknown;
     text?: unknown;
-    preferenceId?: unknown;
-    budgetBandId?: unknown;
+    goalId?: unknown;
     servings?: unknown;
-    excludeSlug?: unknown;
+    cartSlugs?: unknown;
   };
   try {
     body = await request.json();
@@ -27,22 +31,23 @@ export async function POST(request: Request) {
   const servings =
     typeof body.servings === "number" && body.servings >= 1 && body.servings <= 20
       ? Math.trunc(body.servings)
-      : undefined;
+      : 3;
 
-  let plan = null;
+  if (body.mode === "week") {
+    return NextResponse.json({ plan: planThisWeek(servings, products) });
+  }
+  if (body.mode === "cart") {
+    const slugs = Array.isArray(body.cartSlugs)
+      ? body.cartSlugs.filter((s): s is string => typeof s === "string").slice(0, 50)
+      : [];
+    return NextResponse.json({ plan: planFromCartSlugs(slugs, servings, products) });
+  }
+  if (body.mode === "goal" && typeof body.goalId === "string") {
+    return NextResponse.json({ plan: planFromGoal(body.goalId, servings, products) });
+  }
   if (body.mode === "text" && typeof body.text === "string") {
-    plan = planFromText(body.text.slice(0, 200), products);
-  } else if (body.mode === "surprise") {
-    plan = planSurprise(
-      {
-        preferenceId: typeof body.preferenceId === "string" ? body.preferenceId : undefined,
-        budgetBandId: typeof body.budgetBandId === "string" ? body.budgetBandId : undefined,
-        excludeSlug: typeof body.excludeSlug === "string" ? body.excludeSlug : undefined,
-        servings,
-      },
-      products,
-    );
+    return NextResponse.json(planFromText(body.text.slice(0, 200), products));
   }
 
-  return NextResponse.json({ plan });
+  return NextResponse.json({ plan: null });
 }

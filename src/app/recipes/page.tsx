@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { GOALS } from "@/lib/assistant";
 import { GOAL_LABEL } from "@/lib/format";
-import { MealPlanner } from "./meal-planner";
+import { ProducePlanner } from "./produce-planner";
 
 const SERVINGS_BY_HOUSEHOLD: Record<string, number> = {
   myself: 1,
@@ -43,15 +43,12 @@ export default async function RecipesPage({
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <h1 className="text-3xl font-semibold">Recipes</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        Tell us a dish, or let the Meal Planner suggest one. It builds an ingredient list against what we
-        actually stock. It gives food ideas, not medical advice.
+        Use the Produce Planner to turn a goal or an ingredient into fruit-and-vegetable ideas for the
+        week, or browse the library below. Food ideas, not medical advice.
       </p>
 
       <div className="mt-8">
-        <MealPlanner
-          defaultBudgetBand={prefs?.weeklyBudgetBand ?? null}
-          defaultServings={defaultServings}
-        />
+        <ProducePlanner defaultServings={defaultServings} />
       </div>
 
       <div className="mt-12">
