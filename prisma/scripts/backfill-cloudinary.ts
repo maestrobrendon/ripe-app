@@ -2,9 +2,11 @@
  * One-off: match Cloudinary assets in the Fruits_Veggie folder to products and
  * set Product.cloudinaryPublicId. Run locally only, never in the app runtime.
  *
- *   CLOUDINARY_API_KEY=... CLOUDINARY_API_SECRET=... npx tsx prisma/scripts/backfill-cloudinary.ts
+ *   npx tsx prisma/scripts/backfill-cloudinary.ts          # match + write
+ *   npx tsx prisma/scripts/backfill-cloudinary.ts --list   # just print the folder
  *
- * The API secret stays in your shell / .env.local and never ships to the client.
+ * Needs CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET in .env.local (git-ignored).
+ * The secret is read only here and never ships to the client.
  */
 import { config } from "dotenv";
 config({ path: ".env.local" });
@@ -17,6 +19,7 @@ const CLOUD = process.env.CLOUDINARY_CLOUD_NAME || "dusynu0kv";
 const KEY = process.env.CLOUDINARY_API_KEY;
 const SECRET = process.env.CLOUDINARY_API_SECRET;
 const FOLDER = process.env.CLOUDINARY_FOLDER || "Fruits_Veggie";
+const LIST_ONLY = process.argv.includes("--list");
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: dbConnectionString() }) });
 
@@ -29,8 +32,10 @@ function score(a: Set<string>, b: Set<string>): number {
   return hits / Math.max(1, Math.min(a.size, b.size));
 }
 
-async function listFolder(): Promise<string[]> {
-  const ids: string[] = [];
+type Asset = { public_id: string; label: string; format: string };
+
+async function listFolder(): Promise<Asset[]> {
+  const out: Asset[] = [];
   let cursor: string | undefined;
   do {
     const url = new URL(`https://api.cloudinary.com/v1_1/${CLOUD}/resources/by_asset_folder`);
@@ -41,44 +46,64 @@ async function listFolder(): Promise<string[]> {
       headers: { Authorization: "Basic " + Buffer.from(`${KEY}:${SECRET}`).toString("base64") },
     });
     if (!res.ok) throw new Error(`Cloudinary ${res.status}: ${await res.text()}`);
-    const data = (await res.json()) as { resources: { public_id: string }[]; next_cursor?: string };
-    ids.push(...data.resources.map((r) => r.public_id));
+    const data = (await res.json()) as {
+      resources: { public_id: string; display_name?: string; filename?: string; format: string }[];
+      next_cursor?: string;
+    };
+    for (const r of data.resources) {
+      out.push({
+        public_id: r.public_id,
+        label: r.display_name || r.filename || (r.public_id.split("/").pop() ?? r.public_id),
+        format: r.format,
+      });
+    }
     cursor = data.next_cursor;
   } while (cursor);
-  return ids;
+  return out;
 }
 
 async function main() {
   if (!KEY || !SECRET) {
-    console.error("Set CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET (in .env.local or the shell).");
+    console.error("Set CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET in .env.local first.");
     process.exit(1);
   }
 
-  const [publicIds, products] = await Promise.all([listFolder(), prisma.product.findMany()]);
-  if (publicIds.length === 0) {
-    console.log(`No assets found in folder "${FOLDER}".`);
-    return;
-  }
-  console.log(`Found ${publicIds.length} assets, ${products.length} products.`);
+  const assets = await listFolder();
+  console.log(`\n${assets.length} assets in "${FOLDER}":`);
+  for (const a of assets) console.log(`  ${a.label.padEnd(28)} ${a.public_id}`);
 
+  if (LIST_ONLY) return;
+
+  const products = await prisma.product.findMany();
+  const usedIds = new Set<string>();
   let matched = 0;
+
   for (const product of products) {
     const target = tokens(`${product.slug} ${product.name}`);
-    let best: { id: string; s: number } | null = null;
-    for (const id of publicIds) {
-      const fileTokens = tokens(id.split("/").pop() ?? id);
-      const s = score(target, fileTokens);
-      if (!best || s > best.s) best = { id, s };
+    let best: { a: Asset; s: number } | null = null;
+    for (const a of assets) {
+      const s = Math.max(score(target, tokens(a.label)), score(target, tokens(a.public_id)));
+      if (!best || s > best.s) best = { a, s };
     }
-    if (best && best.s >= 0.5) {
-      await prisma.product.update({ where: { id: product.id }, data: { cloudinaryPublicId: best.id } });
-      console.log(`  ${product.slug}  ->  ${best.id}  (${best.s.toFixed(2)})`);
+    if (best && best.s >= 0.45) {
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { cloudinaryPublicId: best.a.public_id },
+      });
+      usedIds.add(best.a.public_id);
+      console.log(`  MATCH  ${product.slug.padEnd(22)} -> ${best.a.label} (${best.s.toFixed(2)})`);
       matched += 1;
     } else {
-      console.log(`  ${product.slug}  ->  no confident match`);
+      console.log(`  ----   ${product.slug.padEnd(22)} -> no confident match`);
     }
   }
-  console.log(`Set ${matched} / ${products.length} product images.`);
+
+  const unused = assets.filter((a) => !usedIds.has(a.public_id));
+  console.log(`\nSet ${matched}/${products.length} product images.`);
+  if (unused.length) {
+    console.log(`\n${unused.length} Cloudinary assets not matched to any product (candidates for new products):`);
+    for (const a of unused) console.log(`  ${a.label.padEnd(28)} ${a.public_id}`);
+  }
 }
 
 main()
