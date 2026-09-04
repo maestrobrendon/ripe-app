@@ -94,6 +94,7 @@ model User {
   preferences         UserPreferences?
   streak              StreakStatus?
   sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
   createdAt           DateTime          @default(now())
   carts               Cart[]
   baskets             Basket[]
@@ -109,6 +110,21 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Single-use password reset link. tokenHash is sha256(raw token); only the raw
+// token goes in the emailed URL, never stored. usedAt makes it single-use.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])
