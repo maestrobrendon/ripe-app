@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { HubSuggestion } from "@/lib/basket-assistant";
 import type { StreakView } from "@/lib/streak-config";
 import { StreakBadge } from "@/components/streak-badge";
+import { ProductImage } from "@/components/product-image";
 import { addRecipeIngredients, setBasketItemQuantity } from "./actions";
 
 export function AssistantRail({
@@ -84,10 +85,19 @@ export function AssistantRail({
             className={chipCls}
           >
             <span className="text-xs font-medium uppercase tracking-wide text-ripe-green">Add</span>
-            <p className="font-medium">
-              {data.add.imageEmoji} {data.add.name}
-            </p>
-            <p className="text-xs text-muted">{data.add.reason}</p>
+            <div className="mt-1 flex items-center gap-2">
+              <ProductImage
+                publicId={data.add.cloudinaryPublicId}
+                alt={data.add.name}
+                emoji={data.add.imageEmoji}
+                className="h-8 w-8 shrink-0"
+                rounded="rounded-lg"
+                emojiClassName="text-lg"
+                sizes="32px"
+              />
+              <p className="font-medium">{data.add.name}</p>
+            </div>
+            <p className="mt-1 text-xs text-muted">{data.add.reason}</p>
           </button>
         )}
 
@@ -102,9 +112,18 @@ export function AssistantRail({
             </span>
             <p className="font-medium">{data.gap.message}</p>
             {data.gap.fixName && (
-              <p className="text-xs text-muted">
-                {data.gap.fixEmoji} Add {data.gap.fixName}
-              </p>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted">
+                <ProductImage
+                  publicId={data.gap.fixCloudinaryPublicId}
+                  alt={data.gap.fixName}
+                  emoji={data.gap.fixEmoji ?? "🥬"}
+                  className="h-6 w-6 shrink-0"
+                  rounded="rounded-lg"
+                  emojiClassName="text-sm"
+                  sizes="24px"
+                />
+                Add {data.gap.fixName}
+              </div>
             )}
           </button>
         )}

@@ -69,6 +69,7 @@ export default async function BasketPage() {
     inSeason: i.product.inSeason,
     stepQty: i.product.stepQty,
     imageEmoji: i.product.imageEmoji,
+    cloudinaryPublicId: i.product.cloudinaryPublicId,
     memberPrice: i.product.memberPrice,
     standardPrice: i.product.standardPrice,
     quantity: i.quantity,
@@ -139,6 +140,7 @@ export default async function BasketPage() {
             id: p.id,
             name: p.name,
             imageEmoji: p.imageEmoji,
+            cloudinaryPublicId: p.cloudinaryPublicId,
             minOrderQty: p.minOrderQty,
           }))}
           flagged={flagged}

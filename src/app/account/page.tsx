@@ -16,6 +16,7 @@ import {
 import { bandById } from "@/lib/budget";
 import { recomputeStreak } from "@/lib/streak";
 import { StreakCard } from "@/components/streak-badge";
+import { ProductImage } from "@/components/product-image";
 import { updateProfile, signOut } from "./actions";
 
 export default async function AccountPage() {
@@ -136,11 +137,20 @@ export default async function AccountPage() {
             <p className="text-sm font-medium">Standing basket</p>
             <Link href="/basket" className="text-sm text-ripe-green underline">Edit</Link>
           </div>
-          <ul className="mt-3 space-y-1 text-sm">
+          <ul className="mt-3 space-y-2 text-sm">
             {view.basket.items.map((i) => (
-              <li key={i.id} className="flex justify-between">
-                <span>{i.product.imageEmoji} {i.product.name} × {i.quantity}</span>
-                <span>{formatNaira(i.product.memberPrice * i.quantity)}</span>
+              <li key={i.id} className="flex items-center gap-2">
+                <ProductImage
+                  publicId={i.product.cloudinaryPublicId}
+                  alt={i.product.name}
+                  emoji={i.product.imageEmoji}
+                  className="h-7 w-7 shrink-0"
+                  rounded="rounded-md"
+                  emojiClassName="text-sm"
+                  sizes="28px"
+                />
+                <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
+                <span className="shrink-0">{formatNaira(i.product.memberPrice * i.quantity)}</span>
               </li>
             ))}
           </ul>

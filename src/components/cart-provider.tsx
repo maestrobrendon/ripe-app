@@ -11,6 +11,7 @@ export type CartLine = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId: string | null;
   memberPrice: number;
   standardPrice: number;
   quantity: number;
@@ -99,6 +100,7 @@ export function CartProvider({
                 minOrderQty: product.minOrderQty,
                 stepQty: product.stepQty,
                 imageEmoji: product.imageEmoji,
+                cloudinaryPublicId: product.cloudinaryPublicId ?? null,
                 memberPrice: product.memberPrice,
                 standardPrice: product.standardPrice,
                 quantity,
