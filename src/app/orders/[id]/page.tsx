@@ -3,6 +3,7 @@ import Link from "next/link";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira, ORDER_STATUS_LABEL, ORDER_STATUS_STEPS } from "@/lib/format";
 
 function tokenMatches(a: string, b: string): boolean {
@@ -71,9 +72,18 @@ export default async function OrderPage({
         <h2 className="mb-3 text-lg font-medium">Items</h2>
         <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
           {order.items.map((i) => (
-            <li key={i.id} className="flex items-center justify-between p-4 text-sm">
-              <span>{i.product.imageEmoji} {i.product.name} × {i.quantity}</span>
-              <span>{formatNaira(i.unitPrice * i.quantity)}</span>
+            <li key={i.id} className="flex items-center gap-3 p-4 text-sm">
+              <ProductImage
+                publicId={i.product.cloudinaryPublicId}
+                alt={i.product.name}
+                emoji={i.product.imageEmoji}
+                className="h-10 w-10 shrink-0"
+                rounded="rounded-lg"
+                emojiClassName="text-lg"
+                sizes="40px"
+              />
+              <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
+              <span className="shrink-0">{formatNaira(i.unitPrice * i.quantity)}</span>
             </li>
           ))}
         </ul>

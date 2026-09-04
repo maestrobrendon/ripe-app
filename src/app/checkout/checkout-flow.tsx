@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useCart } from "@/components/cart-provider";
 import { StepIndicator } from "@/components/step-indicator";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { placeOrder, type CheckoutInput } from "./actions";
@@ -156,9 +157,18 @@ export function CheckoutFlow({
               {cart.items.map((i) => {
                 const price = cart.isSubscriber ? i.memberPrice : i.standardPrice;
                 return (
-                  <li key={i.productId} className="flex justify-between py-2 text-sm">
-                    <span>{i.imageEmoji} {i.name} × {i.quantity}</span>
-                    <span>{formatNaira(price * i.quantity)}</span>
+                  <li key={i.productId} className="flex items-center gap-3 py-2 text-sm">
+                    <ProductImage
+                      publicId={i.cloudinaryPublicId}
+                      alt={i.name}
+                      emoji={i.imageEmoji}
+                      className="h-9 w-9 shrink-0"
+                      rounded="rounded-lg"
+                      emojiClassName="text-base"
+                      sizes="36px"
+                    />
+                    <span className="min-w-0 flex-1 truncate">{i.name} × {i.quantity}</span>
+                    <span className="shrink-0">{formatNaira(price * i.quantity)}</span>
                   </li>
                 );
               })}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 
 export type CrossSellProduct = AddableProduct & {
@@ -26,12 +27,16 @@ function Card({ product }: { product: CrossSellProduct }) {
   const price = cart.isSubscriber ? product.memberPrice : product.standardPrice;
 
   return (
-    <div className="flex w-56 shrink-0 flex-col rounded-2xl border border-border bg-surface p-4">
-      <Link
-        href={`/products/${product.slug}`}
-        className="mb-3 flex h-28 items-center justify-center rounded-xl bg-ripe-green-light text-5xl"
-      >
-        {product.imageEmoji}
+    <div className="flex w-40 shrink-0 flex-col rounded-2xl border border-border bg-surface p-3 sm:w-56 sm:p-4">
+      <Link href={`/products/${product.slug}`} className="mb-2 block sm:mb-3">
+        <ProductImage
+          publicId={product.cloudinaryPublicId}
+          alt={product.name}
+          emoji={product.imageEmoji}
+          className="h-24 w-full sm:h-28"
+          emojiClassName="text-4xl sm:text-5xl"
+          sizes="(min-width: 640px) 224px, 160px"
+        />
       </Link>
       <Link href={`/products/${product.slug}`} className="text-sm font-medium leading-snug hover:underline">
         {product.name}
@@ -73,8 +78,8 @@ export function CompleteYourBasket({ products }: { products: CrossSellProduct[] 
   if (products.length === 0) return null;
   return (
     <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-      <h2 className="text-xl font-semibold">Complete your basket</h2>
-      <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
+      <h2 className="text-lg font-semibold sm:text-xl">Complete your basket</h2>
+      <div className="snap-row mt-4 flex gap-3 overflow-x-auto pb-2 sm:gap-4">
         {products.map((p) => (
           <Card key={p.id} product={p} />
         ))}

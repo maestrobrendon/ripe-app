@@ -9,17 +9,25 @@ import {
   ORDER_STATUS_LABEL,
   GOAL_LABEL,
   SHOPPING_STYLE_LABEL,
+  HOUSEHOLD_TYPE_LABEL,
+  COOK_TIME_LABEL,
+  MEAL_FORMAT_LABEL,
 } from "@/lib/format";
+import { bandById } from "@/lib/budget";
+import { recomputeStreak } from "@/lib/streak";
+import { StreakCard } from "@/components/streak-badge";
+import { ProductImage } from "@/components/product-image";
 import { updateProfile, signOut } from "./actions";
 
 export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [zones, view, orders] = await Promise.all([
+  const [zones, view, orders, streak] = await Promise.all([
     prisma.deliveryZone.findMany({ where: { isServed: true }, orderBy: { sortOrder: "asc" } }),
     user.subscriptionTierId ? getStandingBasketView(user.id) : Promise.resolve(null),
     prisma.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
+    recomputeStreak(user.id),
   ]);
 
   const prefs = user.preferences;
@@ -90,6 +98,12 @@ export default async function AccountPage() {
         </div>
       </div>
 
+      {user.subscriptionTierId && (
+        <div className="mt-8">
+          <StreakCard view={streak} />
+        </div>
+      )}
+
       <div className="mt-8 rounded-2xl border border-border bg-surface p-5">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Preferences</p>
@@ -98,9 +112,17 @@ export default async function AccountPage() {
         {prefs ? (
           <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
             <div><dt className="text-xs text-muted">Goal</dt><dd>{prefs.primaryGoal ? GOAL_LABEL[prefs.primaryGoal] ?? prefs.primaryGoal : "Not set"}</dd></div>
-            <div><dt className="text-xs text-muted">Household size</dt><dd>{prefs.householdSize ?? "Not set"}</dd></div>
+            <div><dt className="text-xs text-muted">Household</dt><dd>{prefs.householdType ? HOUSEHOLD_TYPE_LABEL[prefs.householdType] ?? prefs.householdType : "Not set"}</dd></div>
+            <div><dt className="text-xs text-muted">Weekly budget</dt><dd>{bandById(prefs.weeklyBudgetBand)?.label ?? "Not set"}</dd></div>
+            <div><dt className="text-xs text-muted">Time to cook</dt><dd>{prefs.cookTimeAvailable ? COOK_TIME_LABEL[prefs.cookTimeAvailable] ?? prefs.cookTimeAvailable : "Not set"}</dd></div>
             <div><dt className="text-xs text-muted">Dietary notes</dt><dd>{prefs.dietaryNotes || "None"}</dd></div>
             <div><dt className="text-xs text-muted">Shopping style</dt><dd>{prefs.shoppingStyle ? SHOPPING_STYLE_LABEL[prefs.shoppingStyle] ?? prefs.shoppingStyle : "Not set"}</dd></div>
+            {prefs.mealFormatPreference.length > 0 && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs text-muted">Meal formats</dt>
+                <dd>{prefs.mealFormatPreference.map((m) => MEAL_FORMAT_LABEL[m] ?? m).join(", ")}</dd>
+              </div>
+            )}
           </dl>
         ) : (
           <p className="mt-2 text-sm text-muted">
@@ -115,11 +137,20 @@ export default async function AccountPage() {
             <p className="text-sm font-medium">Standing basket</p>
             <Link href="/basket" className="text-sm text-ripe-green underline">Edit</Link>
           </div>
-          <ul className="mt-3 space-y-1 text-sm">
+          <ul className="mt-3 space-y-2 text-sm">
             {view.basket.items.map((i) => (
-              <li key={i.id} className="flex justify-between">
-                <span>{i.product.imageEmoji} {i.product.name} × {i.quantity}</span>
-                <span>{formatNaira(i.product.memberPrice * i.quantity)}</span>
+              <li key={i.id} className="flex items-center gap-2">
+                <ProductImage
+                  publicId={i.product.cloudinaryPublicId}
+                  alt={i.product.name}
+                  emoji={i.product.imageEmoji}
+                  className="h-7 w-7 shrink-0"
+                  rounded="rounded-md"
+                  emojiClassName="text-sm"
+                  sizes="28px"
+                />
+                <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
+                <span className="shrink-0">{formatNaira(i.product.memberPrice * i.quantity)}</span>
               </li>
             ))}
           </ul>

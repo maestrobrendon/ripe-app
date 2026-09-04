@@ -92,8 +92,9 @@ model User {
   deliveryDay         DeliveryDay?
   onboardingCompleted Boolean           @default(false)
   preferences         UserPreferences?
-  streak              UserStreak?
+  streak              StreakStatus?
   sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
   createdAt           DateTime          @default(now())
   carts               Cart[]
   baskets             Basket[]
@@ -114,28 +115,48 @@ model Session {
   @@index([expiresAt])
 }
 
-// Consecutive weeks the subscriber did not skip. Recomputed on basket load.
-model UserStreak {
-  id                String    @id @default(cuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  currentStreak     Int       @default(0)
-  longestStreak     Int       @default(0)
-  lastCompletedWeek DateTime?
-  updatedAt         DateTime  @updatedAt
+// Single-use password reset link. tokenHash is sha256(raw token); only the raw
+// token goes in the emailed URL, never stored. usedAt makes it single-use.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
-// Onboarding survey answers. Feeds the trained assistant's suggestions.
+// Consecutive weeks with a completed order (skip/pause weeks bridge, not break).
+// Recomputed on basket and account load.
+model StreakStatus {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreakWeeks      Int       @default(0)
+  longestStreakWeeks      Int       @default(0)
+  lastQualifyingOrderDate DateTime?
+  nextMilestoneWeeks      Int?
+  updatedAt               DateTime  @updatedAt
+}
+
+// Onboarding survey answers. Feeds the trained assistant and the Meal Planner.
 model UserPreferences {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  primaryGoal      String?
-  householdSize    Int?
-  dietaryNotes     String?
-  favoriteProductIds String[]
-  shoppingStyle    String?
-  updatedAt        DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryGoal           String?
+  householdType         String?
+  weeklyBudgetBand      String?
+  cookTimeAvailable     String?
+  dietaryNotes          String?
+  favoriteProductIds    String[]
+  mealFormatPreference  String[]
+  shoppingStyle         String?
+  updatedAt             DateTime @updatedAt
 }
 
 model Product {
@@ -169,6 +190,8 @@ model Product {
   ratingCount   Int             @default(0)
   tags          String[]
   imageEmoji    String          @default("🥬")
+  // Cloudinary public id (e.g. "Fruits_Veggie/pineapple"). Null falls back to the emoji tile.
+  cloudinaryPublicId String?
   featured      Boolean         @default(false)
   cartItems     CartItem[]
   basketItems   BasketItem[]

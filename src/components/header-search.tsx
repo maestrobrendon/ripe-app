@@ -5,10 +5,13 @@ import { SearchBar } from "@/components/search-bar";
 
 export function HeaderSearch() {
   const [open, setOpen] = useState(false);
+  const [top, setTop] = useState(64);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    if (wrapRef.current) setTop(wrapRef.current.getBoundingClientRect().bottom + 8);
+
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     const onClick = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
@@ -27,7 +30,7 @@ export function HeaderSearch() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Search produce"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-ripe-green-light"
+        className="tap-target flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-ripe-green-light"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <circle cx="11" cy="11" r="7" />
@@ -35,8 +38,13 @@ export function HeaderSearch() {
         </svg>
       </button>
 
+      {/* Fixed to the viewport, not the button, so it can never overflow off-screen
+          on a narrow phone regardless of where the icon sits in the header. */}
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 sm:w-80">
+        <div
+          style={{ top }}
+          className="fixed inset-x-4 z-50 sm:inset-x-auto sm:right-6 sm:w-80"
+        >
           <SearchBar compact autoFocus onNavigate={() => setOpen(false)} />
         </div>
       )}

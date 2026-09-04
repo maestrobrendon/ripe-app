@@ -44,3 +44,25 @@ body {
 h1, h2, h3, h4 {
   font-family: var(--font-fraunces), Georgia, serif;
 }
+
+/* Mobile carousels: native swipe with snap points, scrollbar hidden. */
+.snap-row {
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 1rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
+.snap-row > * {
+  scroll-snap-align: start;
+}
+
+/* Comfortable minimum touch target on phones, without changing visual size. */
+@media (max-width: 640px) {
+  .tap-target {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}

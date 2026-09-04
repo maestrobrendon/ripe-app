@@ -56,9 +56,9 @@ export default async function LandingPage() {
             <h2 className="text-2xl font-semibold">Favorites</h2>
             <Link href="/shop" className="text-sm text-ripe-green underline">View all</Link>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          <div className="snap-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0">
             {featured.map((p) => (
-              <div key={p.id} className="w-[220px] shrink-0">
+              <div key={p.id} className="w-[44vw] max-w-[190px] shrink-0 sm:w-[220px] sm:max-w-none">
                 <ProductCard product={toCardData(p)} />
               </div>
             ))}
@@ -123,9 +123,9 @@ export default async function LandingPage() {
       <section className="border-y border-border bg-ripe-green-light/50">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <h2 className="text-2xl font-semibold">What customers say</h2>
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
+          <div className="snap-row -mx-4 mt-6 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
             {TESTIMONIALS.map((t) => (
-              <figure key={t.name} className="w-[300px] shrink-0 rounded-2xl bg-surface p-6">
+              <figure key={t.name} className="w-[80vw] max-w-[300px] shrink-0 rounded-2xl bg-surface p-6 sm:w-[300px]">
                 <blockquote className="text-sm">&ldquo;{t.quote}&rdquo;</blockquote>
                 <figcaption className="mt-3 text-xs font-medium text-muted">{t.name}</figcaption>
               </figure>

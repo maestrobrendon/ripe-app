@@ -98,6 +98,55 @@ const P = (
   ...p,
 });
 
+// Real produce photography. Cloudinary public ids from the Baskquet/Fruits_Veggie
+// folder (cloud "dusynu0kv"), matched to products by eye. Assets have no
+// filenames, so this map is the source of truth. Regenerate with
+// prisma/scripts/backfill-cloudinary.ts if the folder changes.
+const CLOUDINARY: Record<string, string> = {
+  pineapple: "ovo1r6e90kexytqai4qv",
+  watermelon: "e1ut8pnojrevssx8lmot",
+  banana: "j7hmwiixaxdo8ykdqnxm",
+  orange: "ecznvk7drywnzaigblci",
+  apple: "pbpup5x1xxksgl9cfqka",
+  mango: "dgtaj5iufjimlhenu1qs",
+  avocado: "wtoqiuojiovlm4q4ocik",
+  ginger: "e3uhpntqcxq0nmtbeaya",
+  tomato: "hetejotjpwyz9dniqrat",
+  "bell-pepper": "sae4oa4rvuxx4higtedl",
+  carrot: "tu09xakydnlbn7bnkhnm",
+  cucumber: "y9gekh00irjdw8vza0rz",
+  cabbage: "v0uii3dpaskkm44ryotu",
+  spinach: "lfuje5iqkwrujxmngcpq",
+  coconut: "feztjcw2zxrwi4moyasb",
+  "young-coconut": "mrojxpngmmp4pxkacfns",
+  beetroot: "jzrxrtb84xmgzivcyybr",
+  "salad-mix": "ffxfhastee0rwcnuwjsw",
+  "iceberg-lettuce": "gsylr6tnwcbxnkbakmto",
+  "romaine-lettuce": "zkue09ugtbaib1magslf",
+  thyme: "v1d0ht1csmcautam6djj",
+  rosemary: "hpxwhbmtahnmcodte3bg",
+  parsley: "sme0dxk8rvet7hwb6vdh",
+  mint: "cbtx3wcf4ujejmojjgft",
+  mushrooms: "yy6rt0l2slusrhkeriwq",
+  "beef-tomato": "offw4mc0lalwp39quj6x",
+  raspberries: "wcbe1vhsdbyjtdu9ouai",
+  blueberries: "t41lb1vlezi4xqrvdci9",
+  blackberries: "wkfht0ltoleks35gqo13",
+  "red-grapes": "jn3rxjrvjeccprj3shuo",
+  "green-grapes": "d6zlaqw9yxjeigh0losu",
+  "black-grapes": "trixbvilfptrgaj7izju",
+  pear: "hmoggt3mfrmnx244ucrh",
+  dates: "rncr4gvitprcbjiko3gl",
+  peaches: "fw8p2cbzosrp48tlgl9y",
+  nectarines: "hsg7l89kcryffkvxxnu2",
+  "passion-fruit": "bsjinzhkrg495cke2jvf",
+  tangerine: "yqb2kwrmokvscmz9nxia",
+  "green-apple": "qklyqcclojphqjmvksr9",
+  "green-mango": "enidahrq6amkm0nh121b",
+  guava: "ciu4y0nn0uyvvvxqsgup",
+  "mixed-apple-bundle": "l3gwqzfsfvsgjgfw1eay",
+};
+
 // Per-product extras for the detail page. Anything omitted is generated from the
 // fields above so every product still reads well.
 type Extra = {
@@ -242,7 +291,7 @@ const products: SeedProduct[] = [
     storageTips: "Keep out of the fridge until ripe. Separating the hand slows ripening. Freeze peeled overripe ones for smoothies.",
   }),
   P({
-    slug: "orange", name: "Orange", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 4, stepQty: 2,
+    slug: "orange", name: "Orange", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 380, standardPrice: 500, source: "Trusted local farmers", imageEmoji: "🍊",
     description: "Juicy oranges, hand-picked. Sold in pairs.",
     educationCopy: "These are local sweet-orange varieties, green-skinned even when ripe, which is normal for the tropics.",
@@ -250,7 +299,7 @@ const products: SeedProduct[] = [
     storageTips: "Keep at room temperature for up to a week, or refrigerate for two weeks.",
   }),
   P({
-    slug: "apple", name: "Apple", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 2, stepQty: 2,
+    slug: "apple", name: "Apple", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 1100, standardPrice: 1450, source: "Specialty import partner", imageEmoji: "🍎", inSeason: false,
     description: "Crisp apples, held cold from farm to door.",
     educationCopy: "Apples are not grown at scale in Nigeria, so these are imported and kept in cold storage. We only list them when the quality holds up.",
@@ -274,7 +323,7 @@ const products: SeedProduct[] = [
     storageTips: "Ripen on the counter. Once soft, refrigerate for two days. Lemon or lime juice slows browning on cut halves.",
   }),
   P({
-    slug: "lime", name: "Lime", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 4, stepQty: 2,
+    slug: "lime", name: "Lime", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 200, standardPrice: 280, source: "Trusted local farmers", imageEmoji: "🍋",
     description: "Sharp, juicy limes.",
     educationCopy: "Small green limes, thin-skinned and heavy for their size, which means more juice.",
@@ -282,7 +331,7 @@ const products: SeedProduct[] = [
     storageTips: "Room temperature for a week, or refrigerate for up to a month. Roll before juicing.",
   }),
   P({
-    slug: "spinach", name: "Green Spinach (Efo Tete)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "spinach", name: "Green Spinach (Efo Tete)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 450, standardPrice: 650, source: "Trusted local farmers", imageEmoji: "🥬",
     description: "Fresh leafy greens, cut to order.",
     educationCopy: "Efo tete, the soft green amaranth used across Yoruba kitchens. Cut the morning it is delivered because it wilts fast.",
@@ -290,7 +339,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate unwashed in a loose bag and use within two days. Wash just before cooking.",
   }),
   P({
-    slug: "ugu", name: "Ugu (Fluted Pumpkin Leaf)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "ugu", name: "Ugu (Fluted Pumpkin Leaf)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 500, standardPrice: 750, source: "Trusted local farmers", imageEmoji: "🥬", featured: true,
     description: "A Lagos kitchen staple, freshly cut.",
     educationCopy: "Fluted pumpkin leaf, the backbone of Nigerian soups like egusi and edikaikong. Ours is cut young so the stalks are tender.",
@@ -298,7 +347,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate wrapped in paper inside a bag for up to three days. Slice and wash right before use.",
   }),
   P({
-    slug: "scent-leaf", name: "Scent Leaf (Efirin)", category: "VEGETABLE", unit: "per 100g", orderUnit: "WEIGHT", minOrderQty: 100, stepQty: 100,
+    slug: "scent-leaf", name: "Scent Leaf (Efirin)", category: "VEGETABLE", unit: "per 100g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 300, standardPrice: 450, source: "Trusted local farmers", imageEmoji: "🌿",
     description: "Aromatic scent leaf, cut fresh.",
     educationCopy: "African basil, known as efirin or nchanwu. A little goes a long way. Used to finish pepper soup, yam and sauces.",
@@ -306,7 +355,7 @@ const products: SeedProduct[] = [
     storageTips: "Stand stems in a little water like cut flowers, loosely covered, in the fridge. Use within three days.",
   }),
   P({
-    slug: "chilli", name: "Chilli Pepper (Ata Rodo)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "chilli", name: "Chilli Pepper (Ata Rodo)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 700, standardPrice: 950, source: "Trusted local farmers", imageEmoji: "🌶️",
     description: "Hot scotch bonnet peppers.",
     educationCopy: "Ata rodo, the scotch bonnet that gives Nigerian stews their heat and fruity aroma.",
@@ -314,7 +363,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in a paper bag for up to a week, or blend and freeze in portions.",
   }),
   P({
-    slug: "ginger", name: "Ginger", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "ginger", name: "Ginger", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 450, standardPrice: 650, source: "Trusted local farmers", imageEmoji: "🫚",
     description: "Fresh root ginger.",
     educationCopy: "Firm, plump rhizomes. Younger ginger has thinner skin and less fibre.",
@@ -322,7 +371,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate unpeeled in a bag for three weeks, or freeze whole and grate from frozen.",
   }),
   P({
-    slug: "tomato", name: "Tomato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "tomato", name: "Tomato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 1200, standardPrice: 1700, source: "Trusted local farmers", imageEmoji: "🍅", featured: true,
     description: "Ripe, firm tomatoes.",
     educationCopy: "Field tomatoes, picked at the turning stage so they arrive firm and finish ripening in a day or two.",
@@ -330,7 +379,7 @@ const products: SeedProduct[] = [
     storageTips: "Keep on the counter, not the fridge, which dulls the flavour. Refrigerate only very ripe ones and use within two days.",
   }),
   P({
-    slug: "bell-pepper", name: "Bell Pepper (Tatashe)", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "bell-pepper", name: "Bell Pepper (Tatashe)", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 1500, standardPrice: 2000, source: "Trusted local farmers", imageEmoji: "🫑",
     description: "Red bell peppers, sold by the kilo.",
     educationCopy: "Tatashe, the mild red pepper blended with ata rodo and onion to make the classic stew base.",
@@ -338,7 +387,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in the crisper for up to a week. Blended pepper base freezes well for a month.",
   }),
   P({
-    slug: "carrot", name: "Carrot", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 500,
+    slug: "carrot", name: "Carrot", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 900, standardPrice: 1300, source: "Trusted local farmers", imageEmoji: "🥕",
     description: "Sweet, crunchy carrots.",
     educationCopy: "Grown in cooler upland areas and packed by our local partners. Delivered with tops removed so they keep longer.",
@@ -346,7 +395,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in a bag in the crisper for two to three weeks. Keep away from apples, which make them bitter.",
   }),
   P({
-    slug: "onion", name: "Onion", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "onion", name: "Onion", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 900, standardPrice: 1300, source: "Trusted local farmers", imageEmoji: "🧅",
     description: "Firm, dry onions.",
     educationCopy: "Red onions, cured and dry-skinned, supplied through our pack house. Dry skin is the sign they will store well.",
@@ -370,7 +419,7 @@ const products: SeedProduct[] = [
     storageTips: "Ripen at room temperature. Slow it down in the fridge once it reaches the ripeness you want.",
   }),
   P({
-    slug: "sweet-potato", name: "Sweet Potato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "sweet-potato", name: "Sweet Potato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 800, standardPrice: 1100, source: "Trusted local farmers", imageEmoji: "🍠",
     description: "Orange-fleshed sweet potatoes.",
     educationCopy: "The orange-fleshed type, which is sweeter and higher in vitamin A than the pale kind.",
@@ -430,7 +479,7 @@ const products: SeedProduct[] = [
 
   // Seasonal
   P({
-    slug: "corn", name: "Fresh Corn", category: "SEASONAL", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 2, stepQty: 2,
+    slug: "corn", name: "Fresh Corn", category: "SEASONAL", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 500, standardPrice: 700, source: "Trusted local farmers", imageEmoji: "🌽",
     description: "Sweet corn on the cob, in season now.",
     educationCopy: "Picked young while the kernels are still milky. Corn starts turning its sugar to starch the moment it is picked, so we move it fast.",
@@ -438,7 +487,7 @@ const products: SeedProduct[] = [
     storageTips: "Cook the day it arrives if you can. Otherwise refrigerate in the husk and use within two days.",
   }),
   P({
-    slug: "garden-egg", name: "Garden Egg", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    slug: "garden-egg", name: "Garden Egg", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 600, standardPrice: 850, source: "Trusted local farmers", imageEmoji: "🍆",
     description: "Crisp garden eggs, seasonal.",
     educationCopy: "Small white and green African aubergines. Slightly bitter, which is the point. Served with groundnut paste.",
@@ -446,7 +495,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in a bag for up to a week. The green ones keep a little longer than the white.",
   }),
   P({
-    slug: "agbalumo", name: "African Star Apple (Agbalumo)", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    slug: "agbalumo", name: "African Star Apple (Agbalumo)", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 900, standardPrice: 1200, source: "Trusted local farmers", imageEmoji: "⭐",
     description: "Agbalumo, only around for a few weeks.",
     educationCopy: "Also called udara. A short season around the turn of the year. Sweet-and-sour, sticky, and eaten straight from the skin.",
@@ -454,7 +503,7 @@ const products: SeedProduct[] = [
     storageTips: "Ripen at room temperature until it softens and the skin darkens. Eat within a couple of days.",
   }),
   P({
-    slug: "velvet-tamarind", name: "Velvet Tamarind (Awin)", category: "SEASONAL", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "velvet-tamarind", name: "Velvet Tamarind (Awin)", category: "SEASONAL", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 700, standardPrice: 950, source: "Trusted local farmers", imageEmoji: "🟤",
     description: "Awin, a tangy seasonal snack.",
     educationCopy: "Small hard-shelled pods with a tart, powdery pulp around the seed. A childhood snack across the south west.",
@@ -502,6 +551,232 @@ const products: SeedProduct[] = [
     educationCopy: "The vegetables for a stir-fry or fried rice, sliced and portioned so a weeknight meal comes together in minutes.",
     benefitsCopy: "A mix of vitamins A, C and K with fibre. Cook hot and fast to keep the crunch.",
     storageTips: "Refrigerate and use within three days. Add to a very hot pan straight from the fridge.",
+  }),
+
+  // --- added from the Cloudinary photo set ---
+  P({
+    slug: "green-apple", name: "Green Apple", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 2, stepQty: 2,
+    memberPrice: 1150, standardPrice: 1500, source: "Specialty import partner", imageEmoji: "🍏", inSeason: false, featured: true,
+    description: "Tart, crisp green apples, held cold from arrival to your door.",
+    educationCopy: "Granny Smith. Sharper and firmer than a red apple, which is why they hold their shape in a slaw or a bake.",
+    benefitsCopy: "Fibre and vitamin C, most of it in the skin. A sharp, low-sugar snack.",
+    storageTips: "Refrigerate in the crisper drawer. They keep for weeks.",
+  }),
+  P({
+    slug: "pear", name: "Pear", category: "FRUIT", unit: "per piece", orderUnit: "PIECE", minOrderQty: 3, stepQty: 1,
+    memberPrice: 1300, standardPrice: 1650, source: "Specialty import partner", imageEmoji: "🍐", inSeason: false,
+    description: "Sweet, juicy pears, delivered firm so you can ripen them at home.",
+    educationCopy: "A European dessert pear, not the local ube. Ripe when it gives slightly at the neck.",
+    benefitsCopy: "Fibre, vitamin C and a soft, sweet flesh once ripe. Good raw, poached or in a salad.",
+    storageTips: "Ripen on the counter, then refrigerate and eat within two days.",
+  }),
+  P({
+    slug: "tangerine", name: "Tangerine", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 4, stepQty: 2,
+    memberPrice: 320, standardPrice: 450, source: "Trusted local farmers", imageEmoji: "🍊",
+    description: "Easy-peel tangerines, sweet and loose-skinned.",
+    educationCopy: "Smaller and sweeter than an orange, and the skin comes away in one piece. A lunchbox fruit.",
+    benefitsCopy: "Vitamin C and fibre, with no knife needed.",
+    storageTips: "Room temperature for a few days, or refrigerate for up to two weeks.",
+  }),
+  P({
+    slug: "guava", name: "Guava", category: "FRUIT", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    memberPrice: 1200, standardPrice: 1600, source: "Trusted local farmers", imageEmoji: "🫒",
+    description: "Fragrant white guava, soft and sweet when ripe.",
+    educationCopy: "Grown across the south. Eat the whole thing, skin and seeds, or scoop the flesh for a drink.",
+    benefitsCopy: "One of the highest vitamin C fruits there is, plus fibre.",
+    storageTips: "Ripen at room temperature until it softens and smells sweet, then refrigerate for two days.",
+  }),
+  P({
+    slug: "passion-fruit", name: "Passion Fruit", category: "FRUIT", unit: "per 6", orderUnit: "PIECE", minOrderQty: 6, stepQty: 3,
+    memberPrice: 2400, standardPrice: 3000, source: "Trusted local farmers", imageEmoji: "🟣",
+    description: "Wrinkled purple passion fruit, tart and aromatic.",
+    educationCopy: "Ready when the skin dimples. Halve it and spoon out the pulp and seeds.",
+    benefitsCopy: "Vitamin C, vitamin A and fibre from the seeds. A little goes a long way over yoghurt or in a drink.",
+    storageTips: "Leave on the counter to wrinkle, then refrigerate for up to a week.",
+  }),
+  P({
+    slug: "coconut", name: "Coconut", category: "FRUIT", unit: "per coconut", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 750, standardPrice: 1000, source: "Trusted local farmers", imageEmoji: "🥥",
+    description: "A mature brown coconut, for the water and the firm white flesh.",
+    educationCopy: "Shake it and you should hear water. The firm white meat is grated, chipped or blended for milk.",
+    benefitsCopy: "The flesh brings fibre and healthy fat, the water is a light natural drink.",
+    storageTips: "Keeps for a couple of weeks whole. Once opened, refrigerate the flesh and use within three days.",
+  }),
+  P({
+    slug: "young-coconut", name: "Young Coconut", category: "FRUIT", unit: "per coconut", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 1000, standardPrice: 1300, source: "Trusted local farmers", imageEmoji: "🥥",
+    description: "A tender young coconut, trimmed for easy opening, mostly water.",
+    educationCopy: "Green inside the trimmed husk. Open the top for the water, then scrape the soft jelly flesh.",
+    benefitsCopy: "Hydrating coconut water with potassium, plus a soft spoonable flesh.",
+    storageTips: "Refrigerate and open within three to four days of delivery.",
+  }),
+  P({
+    slug: "dates", name: "Fresh Dates", category: "FRUIT", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    memberPrice: 1900, standardPrice: 2400, source: "Trusted local farmers", imageEmoji: "🌰",
+    description: "Fresh yellow dates, crisp and lightly sweet.",
+    educationCopy: "Barhi dates at the crunchy stage, before they go soft and dark. Eaten as they are.",
+    benefitsCopy: "Natural sugars for quick energy, plus fibre and potassium.",
+    storageTips: "Refrigerate. Crisp dates keep about a week, and they only get sweeter as they soften.",
+  }),
+  P({
+    slug: "green-mango", name: "Green Mango", category: "SEASONAL", unit: "per piece", orderUnit: "PIECE", minOrderQty: 3, stepQty: 1,
+    memberPrice: 350, standardPrice: 500, source: "Trusted local farmers", imageEmoji: "🥭",
+    description: "Firm unripe mango, sharp and crunchy.",
+    educationCopy: "Picked green on purpose. Sliced with salt and pepper as a snack, or shredded into a sharp salad.",
+    benefitsCopy: "Very high in vitamin C while green, low in sugar, and satisfying to crunch.",
+    storageTips: "Refrigerate to keep it firm. Leave it out and it will ripen and soften within days.",
+  }),
+  P({
+    slug: "raspberries", name: "Raspberries", category: "FRUIT", unit: "per 125g punnet", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 8200, standardPrice: 9800, source: "Specialty import partner", imageEmoji: "🫐", inSeason: false,
+    description: "A punnet of soft red raspberries, cold-chain the whole way.",
+    educationCopy: "Delicate and quick to spoil, so we only list them when a batch arrives in good condition.",
+    benefitsCopy: "Fibre and vitamin C for very little sugar. A treat rather than a staple.",
+    storageTips: "Keep refrigerated, do not wash until you eat them, and use within two days.",
+  }),
+  P({
+    slug: "blueberries", name: "Blueberries", category: "FRUIT", unit: "per 125g punnet", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 7200, standardPrice: 8600, source: "Specialty import partner", imageEmoji: "🫐", inSeason: false, featured: true,
+    description: "Firm, sweet blueberries by the punnet.",
+    educationCopy: "Imported and kept cold. The dusty pale coating is natural and a sign they have not been over-handled.",
+    benefitsCopy: "Fibre, vitamin C and the antioxidants that give them their colour.",
+    storageTips: "Refrigerate unwashed and use within four to five days.",
+  }),
+  P({
+    slug: "blackberries", name: "Blackberries", category: "FRUIT", unit: "per 125g punnet", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 7800, standardPrice: 9200, source: "Specialty import partner", imageEmoji: "🫐", inSeason: false,
+    description: "Plump, glossy blackberries, tart and sweet.",
+    educationCopy: "Best eaten soon after they arrive. A red berry in the punnet just means it was picked a touch early.",
+    benefitsCopy: "High in fibre and vitamin C, with very little sugar.",
+    storageTips: "Refrigerate and use within two days. Freeze any you cannot get through.",
+  }),
+  P({
+    slug: "red-grapes", name: "Red Grapes", category: "FRUIT", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    memberPrice: 5200, standardPrice: 6400, source: "Specialty import partner", imageEmoji: "🍇", inSeason: false,
+    description: "Seedless red grapes, crisp and sweet, on the stem.",
+    educationCopy: "Imported and cold-stored. Firm grapes still attached to a green stem are the fresh ones.",
+    benefitsCopy: "A sweet snack with fibre and water. Freeze them for a hot day.",
+    storageTips: "Refrigerate unwashed in the bag and rinse just before eating.",
+  }),
+  P({
+    slug: "green-grapes", name: "Green Grapes", category: "FRUIT", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    memberPrice: 5200, standardPrice: 6400, source: "Specialty import partner", imageEmoji: "🍇", inSeason: false,
+    description: "Seedless green grapes, firm and slightly tart.",
+    educationCopy: "The same as the red, a little sharper. A pale bloom on the skin is normal.",
+    benefitsCopy: "Hydrating, sweet and easy to share.",
+    storageTips: "Refrigerate in the bag and rinse a bunch at a time.",
+  }),
+  P({
+    slug: "black-grapes", name: "Black Grapes", category: "FRUIT", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    memberPrice: 5600, standardPrice: 6800, source: "Specialty import partner", imageEmoji: "🍇", inSeason: false,
+    description: "Deep purple-black grapes, the sweetest of the three.",
+    educationCopy: "Sometimes seeded, sometimes not, depending on the batch. Very sweet and juicy.",
+    benefitsCopy: "Sweet, hydrating, and full of the dark-skin antioxidants.",
+    storageTips: "Refrigerate unwashed and use within a week.",
+  }),
+  P({
+    slug: "peaches", name: "Flat Peaches", category: "FRUIT", unit: "per piece", orderUnit: "PIECE", minOrderQty: 3, stepQty: 1,
+    memberPrice: 1400, standardPrice: 1800, source: "Specialty import partner", imageEmoji: "🍑", inSeason: false,
+    description: "Sweet, low-acid flat peaches, easy to eat over a bowl.",
+    educationCopy: "The doughnut-shaped kind. Softer and sweeter than a round peach, with a small stone.",
+    benefitsCopy: "Vitamin C and fibre, and gentle on the stomach.",
+    storageTips: "Ripen at room temperature until fragrant, then refrigerate and eat within two days.",
+  }),
+  P({
+    slug: "nectarines", name: "Nectarines", category: "FRUIT", unit: "per piece", orderUnit: "PIECE", minOrderQty: 3, stepQty: 1,
+    memberPrice: 1300, standardPrice: 1700, source: "Specialty import partner", imageEmoji: "🍑", inSeason: false,
+    description: "Smooth-skinned nectarines, firm and juicy.",
+    educationCopy: "A peach without the fuzz. Delivered firm, ready in a day or two on the counter.",
+    benefitsCopy: "Vitamin C, vitamin A and fibre.",
+    storageTips: "Ripen on the counter, then refrigerate for up to three days.",
+  }),
+  P({
+    slug: "beetroot", name: "Beetroot", category: "VEGETABLE", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    memberPrice: 1400, standardPrice: 1800, source: "Trusted local farmers", imageEmoji: "🫜",
+    description: "Firm, deep-red beetroot, tops trimmed.",
+    educationCopy: "Roasted, boiled or grated raw into a salad. It will stain a board, so use a plate you do not mind.",
+    benefitsCopy: "Fibre, folate and the nitrates that make it a favourite before exercise.",
+    storageTips: "Refrigerate in a bag for two to three weeks. Cook it whole to keep the colour in.",
+  }),
+  P({
+    slug: "mushrooms", name: "Button Mushrooms", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    memberPrice: 2900, standardPrice: 3600, source: "Trusted local farmers", imageEmoji: "🍄",
+    description: "Fresh white button mushrooms, firm and closed-cap.",
+    educationCopy: "Closed caps are the fresh ones. Wipe them clean rather than washing, and cook them hot so they colour.",
+    benefitsCopy: "Low in calories, with B vitamins and a savoury depth that adds body to a dish.",
+    storageTips: "Refrigerate in paper, not plastic, and use within four days.",
+  }),
+  P({
+    slug: "beef-tomato", name: "Beefsteak Tomato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    memberPrice: 1700, standardPrice: 2200, source: "Trusted local farmers", imageEmoji: "🍅",
+    description: "Large, meaty beefsteak tomatoes, more flesh and less seed.",
+    educationCopy: "The big ridged tomato. Thick slices for a sandwich or a salad, where a plum tomato would be too watery.",
+    benefitsCopy: "Vitamin C, potassium and lycopene, which cooking makes easier to absorb.",
+    storageTips: "Keep on the counter for flavour. Refrigerate only very ripe ones.",
+  }),
+  P({
+    slug: "iceberg-lettuce", name: "Iceberg Lettuce", category: "VEGETABLE", unit: "per head", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 1100, standardPrice: 1450, source: "Trusted local farmers", imageEmoji: "🥬",
+    description: "A tight, crisp head of iceberg lettuce.",
+    educationCopy: "Mild and very crunchy. Shredded for tacos and burgers, or torn into a wedge salad.",
+    benefitsCopy: "Mostly water, so hydrating and light, with a little folate.",
+    storageTips: "Refrigerate whole in a bag for up to a week. Tear rather than cut to slow browning.",
+  }),
+  P({
+    slug: "romaine-lettuce", name: "Romaine Lettuce", category: "VEGETABLE", unit: "per head", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 1250, standardPrice: 1600, source: "Trusted local farmers", imageEmoji: "🥬", featured: true,
+    description: "An upright head of romaine, sweet ribs and crisp leaves.",
+    educationCopy: "The lettuce for a Caesar salad. Sturdy enough to hold a dressing without wilting straight away.",
+    benefitsCopy: "More vitamins A and K than iceberg, with the same crunch.",
+    storageTips: "Refrigerate in a bag. Wash and dry the leaves just before you use them.",
+  }),
+  P({
+    slug: "salad-mix", name: "Mixed Salad Leaves", category: "VEGETABLE", unit: "per 200g", orderUnit: "WEIGHT", minOrderQty: 200, stepQty: 100,
+    memberPrice: 2100, standardPrice: 2600, source: "Trusted local farmers", imageEmoji: "🥗",
+    description: "A washed mix of young salad leaves, ready to dress.",
+    educationCopy: "Baby lettuces and a few red leaves. Already washed, so a salad is a matter of adding oil and lime.",
+    benefitsCopy: "A light spread of vitamins A, C and K from several leaves at once.",
+    storageTips: "Refrigerate and use within two days. Dress only what you are about to eat.",
+  }),
+  P({
+    slug: "thyme", name: "Thyme", category: "VEGETABLE", unit: "per bunch", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 650, standardPrice: 900, source: "Trusted local farmers", imageEmoji: "🌿",
+    description: "A tied bunch of fresh thyme.",
+    educationCopy: "Strip the tiny leaves from the woody stems, or drop whole sprigs into a pot and fish them out later.",
+    benefitsCopy: "An aromatic that adds depth to stews, rice and roast vegetables without salt.",
+    storageTips: "Wrap in a damp paper towel in the fridge, or hang it to dry.",
+  }),
+  P({
+    slug: "rosemary", name: "Rosemary", category: "VEGETABLE", unit: "per bunch", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 750, standardPrice: 1000, source: "Trusted local farmers", imageEmoji: "🌿",
+    description: "Fragrant rosemary sprigs, tied in a bunch.",
+    educationCopy: "Strong, so a little is plenty. Best with roast potatoes, chicken and bread.",
+    benefitsCopy: "A pungent herb that seasons without salt and holds up to long cooking.",
+    storageTips: "Refrigerate wrapped loosely, or leave it to dry, which it does well.",
+  }),
+  P({
+    slug: "parsley", name: "Parsley", category: "VEGETABLE", unit: "per bunch", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 500, standardPrice: 700, source: "Trusted local farmers", imageEmoji: "🌿",
+    description: "A generous bunch of flat-leaf parsley.",
+    educationCopy: "Flat-leaf, which has more flavour than the curly kind. Chopped in at the end, or the base of a tabbouleh.",
+    benefitsCopy: "Vitamin C and vitamin K in a herb you can use by the handful.",
+    storageTips: "Stand the stems in a glass of water in the fridge and it lasts over a week.",
+  }),
+  P({
+    slug: "mint", name: "Mint", category: "VEGETABLE", unit: "per bunch", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 500, standardPrice: 700, source: "Trusted local farmers", imageEmoji: "🌿",
+    description: "A bunch of fresh mint, bright and cool.",
+    educationCopy: "For tea, for a lime and watermelon drink, torn over fruit, or in a yoghurt sauce.",
+    benefitsCopy: "A fresh finish that lets you cut back on sugar in drinks.",
+    storageTips: "Stand the stems in water, loosely covered, in the fridge. Use within a week.",
+  }),
+  P({
+    slug: "mixed-apple-bundle", name: "Mixed Apple Bundle (3kg)", category: "BOX_BUNDLE", unit: "per 3kg box", orderUnit: "PIECE", minOrderQty: 1, stepQty: 1,
+    memberPrice: 3600, standardPrice: 4300, source: "Specialty import partner", imageEmoji: "🍎", inSeason: false, featured: true,
+    description: "Roughly 1kg each of red, green and yellow apples in one box.",
+    educationCopy: "A simple everyday classic. Red for sweet, green for sharp, yellow for somewhere in between, so there is one for everyone.",
+    benefitsCopy: "Fibre and vitamin C across three kilos. Good for daily snacking, school lunches and office bowls.",
+    storageTips: "Refrigerate the whole box in the crisper. Apples keep for weeks.",
   }),
 ];
 
@@ -609,26 +884,20 @@ async function main() {
 
   for (const product of products) {
     const extra = EXTRAS[product.slug] ?? {};
+    const common = {
+      ...product,
+      cloudinaryPublicId: CLOUDINARY[product.slug] ?? null,
+      blurb: extra.blurb ?? `${product.description} ${product.educationCopy}`,
+      sourcingLine: extra.sourcingLine ?? "Freshly selected and quality checked before it leaves us.",
+      howToEnjoyCopy:
+        extra.howToEnjoy ?? "Best eaten fresh. See the recipes it appears in for more ideas.",
+      ratingAvg: extra.rating?.[0] ?? null,
+      ratingCount: extra.rating?.[1] ?? 0,
+    };
     await prisma.product.upsert({
       where: { slug: product.slug },
-      update: {
-        ...product,
-        blurb: extra.blurb ?? `${product.description} ${product.educationCopy}`,
-        sourcingLine: extra.sourcingLine ?? "Freshly selected and quality checked before it leaves us.",
-        howToEnjoyCopy:
-          extra.howToEnjoy ?? "Best eaten fresh. See the recipes it appears in for more ideas.",
-        ratingAvg: extra.rating?.[0] ?? null,
-        ratingCount: extra.rating?.[1] ?? 0,
-      },
-      create: {
-        ...product,
-        blurb: extra.blurb ?? `${product.description} ${product.educationCopy}`,
-        sourcingLine: extra.sourcingLine ?? "Freshly selected and quality checked before it leaves us.",
-        howToEnjoyCopy:
-          extra.howToEnjoy ?? "Best eaten fresh. See the recipes it appears in for more ideas.",
-        ratingAvg: extra.rating?.[0] ?? null,
-        ratingCount: extra.rating?.[1] ?? 0,
-      },
+      update: common,
+      create: common,
     });
   }
 
@@ -703,9 +972,12 @@ async function seedDevUser() {
     create: {
       userId: user.id,
       primaryGoal: "general-wellness",
-      householdSize: 2,
+      householdType: "partner",
+      weeklyBudgetBand: "12k-20k",
+      cookTimeAvailable: "under-30",
       dietaryNotes: "No restrictions",
       favoriteProductIds: [],
+      mealFormatPreference: [],
       shoppingStyle: "subscription",
     },
   });

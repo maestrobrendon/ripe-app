@@ -3,8 +3,20 @@ import type { Product, Recipe, ProductCategory } from "@/generated/prisma/client
 
 export type HubSuggestion = {
   recipe: { slug: string; title: string; addNames: string[] } | null;
-  add: { id: string; name: string; imageEmoji: string; reason: string } | null;
-  gap: { message: string; fixId: string | null; fixName: string | null; fixEmoji: string | null } | null;
+  add: {
+    id: string;
+    name: string;
+    imageEmoji: string;
+    cloudinaryPublicId: string | null;
+    reason: string;
+  } | null;
+  gap: {
+    message: string;
+    fixId: string | null;
+    fixName: string | null;
+    fixEmoji: string | null;
+    fixCloudinaryPublicId: string | null;
+  } | null;
 };
 
 type BasketItem = { slug: string; category: ProductCategory; inSeason: boolean; name: string };
@@ -81,6 +93,7 @@ export function buildHubSuggestion({
         id: p.id,
         name: p.name,
         imageEmoji: p.imageEmoji,
+        cloudinaryPublicId: p.cloudinaryPublicId,
         reason: pairing
           ? "pairs with your basket"
           : goalAdd
@@ -101,6 +114,7 @@ export function buildHubSuggestion({
       fixId: p?.id ?? null,
       fixName: p?.name ?? null,
       fixEmoji: p?.imageEmoji ?? null,
+      fixCloudinaryPublicId: p?.cloudinaryPublicId ?? null,
     });
     const inSeasonFix = (cat: ProductCategory) =>
       products.find((p) => p.category === cat && p.inSeason && !basketSlugs.has(p.slug));

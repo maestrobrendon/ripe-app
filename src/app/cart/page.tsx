@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 
@@ -11,8 +12,8 @@ export default function CartPage() {
   const total = cart.subtotal + delivery.fee;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold">Your cart</h1>
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10 sm:px-6">
+      <h1 className="text-2xl font-semibold sm:text-3xl">Your cart</h1>
 
       {cart.items.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
@@ -20,7 +21,7 @@ export default function CartPage() {
           <Link href="/shop" className="text-ripe-green underline">Start shopping</Link>.
         </p>
       ) : (
-        <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_320px]">
           <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
             {cart.items.map((item) => {
               const price = cart.isSubscriber ? item.memberPrice : item.standardPrice;
@@ -33,34 +34,43 @@ export default function CartPage() {
                 minOrderQty: item.minOrderQty,
                 stepQty: item.stepQty,
                 imageEmoji: item.imageEmoji,
+                cloudinaryPublicId: item.cloudinaryPublicId,
                 memberPrice: item.memberPrice,
                 standardPrice: item.standardPrice,
               };
               return (
-                <li key={item.productId} className="flex items-center gap-4 p-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-ripe-green-light text-3xl">
-                    {item.imageEmoji}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
+                <li key={item.productId} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:gap-4 sm:p-4">
+                  <ProductImage
+                    publicId={item.cloudinaryPublicId}
+                    alt={item.name}
+                    emoji={item.imageEmoji}
+                    className="h-14 w-14 shrink-0"
+                    rounded="rounded-xl"
+                    emojiClassName="text-2xl"
+                    sizes="56px"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{item.name}</p>
                     <p className="text-sm text-muted">{item.unit} · {formatNaira(price)}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button
-                      className="h-8 w-8 rounded-full border border-border"
+                      className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border"
                       onClick={() => cart.setQuantity(addable, item.quantity - item.stepQty)}
+                      aria-label={`Reduce ${item.name}`}
                     >
                       −
                     </button>
                     <span className="w-6 text-center text-sm">{item.quantity}</span>
                     <button
-                      className="h-8 w-8 rounded-full border border-border"
+                      className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border"
                       onClick={() => cart.setQuantity(addable, item.quantity + item.stepQty)}
+                      aria-label={`Add ${item.name}`}
                     >
                       +
                     </button>
                   </div>
-                  <p className="w-20 shrink-0 text-right text-sm font-medium">
+                  <p className="ml-auto w-20 shrink-0 text-right text-sm font-medium sm:ml-0">
                     {formatNaira(price * item.quantity)}
                   </p>
                 </li>

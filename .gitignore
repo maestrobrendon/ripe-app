@@ -48,3 +48,7 @@ next-env.d.ts
 /.claude
 /.windsurf
 skills-lock.json
+
+# stray build/dev logs
+.next-build.log
+.next-dev.log
