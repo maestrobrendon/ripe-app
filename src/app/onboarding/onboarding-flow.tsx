@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { GOALS } from "@/lib/assistant";
 import { SHOPPING_STYLE_LABEL } from "@/lib/format";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { saveOnboarding, type OnboardingInput } from "./actions";
 
 type Product = { id: string; name: string; imageEmoji: string };
@@ -22,7 +23,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
   const finish = (payload: OnboardingInput | null) =>
     startTransition(async () => {
       await saveOnboarding(payload);
-      router.push(next);
+      router.push(safeNextPath(next, "/"));
     });
 
   const toggleFav = (id: string) =>

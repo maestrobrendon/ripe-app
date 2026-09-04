@@ -1,10 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
 import { quoteDelivery } from "@/lib/pricing";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const DOW: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
@@ -29,10 +31,18 @@ export type CheckoutInput = {
 };
 
 export async function placeOrder(input: CheckoutInput) {
+  const ip = await clientIp();
+  if (!rateLimit(`checkout:ip:${ip}`, 10, 10 * 60 * 1000).ok) {
+    throw new Error("Too many checkout attempts. Please try again in a few minutes.");
+  }
+
   const [user, cart] = await Promise.all([getCurrentUser(), readCart()]);
 
   if (cart.items.length === 0) throw new Error("Your cart is empty.");
-  if (!input.name || !input.phone || !input.address || !input.zoneSlug) {
+  const name = input.name.trim().slice(0, 120);
+  const phone = input.phone.trim().slice(0, 32);
+  const address = input.address.trim().slice(0, 400);
+  if (!name || !phone || !address || !input.zoneSlug) {
     throw new Error("Please fill in your name, phone, address and zone.");
   }
 
@@ -51,16 +61,19 @@ export async function placeOrder(input: CheckoutInput) {
     unitPrice: isSubscriber ? i.memberPrice : i.standardPrice,
   }));
 
+  const accessToken = randomBytes(24).toString("base64url");
+
   const order = await prisma.order.create({
     data: {
+      accessToken,
       userId: user?.id ?? null,
       deliveryZoneId: zone?.id ?? null,
       orderType: "ONE_OFF",
       status: "RECEIVED",
-      customerName: input.name,
-      customerPhone: input.phone,
-      customerEmail: input.email || null,
-      address: input.address,
+      customerName: name,
+      customerPhone: phone,
+      customerEmail: (input.email || "").trim().slice(0, 254) || null,
+      address,
       zoneName: zone?.name ?? input.zoneSlug,
       deliveryDate: nextDeliveryDate(input.deliveryDay),
       subtotal,
@@ -81,5 +94,6 @@ export async function placeOrder(input: CheckoutInput) {
   const activeCart = await getOrCreateCart();
   await clearCart(activeCart.id);
 
-  redirect(`/orders/${order.id}`);
+  // The token lets the buyer (guest or signed-in) view this one order.
+  redirect(`/orders/${order.id}?t=${accessToken}`);
 }

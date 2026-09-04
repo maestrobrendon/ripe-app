@@ -657,26 +657,34 @@ async function main() {
     await prisma.recipe.upsert({ where: { slug: recipe.slug }, update: data, create: data });
   }
 
-  await seedSignInUser();
+  await seedDevUser();
 
   console.log(
     `Seeded ${tiers.length} tiers, ${zones.length} zones, ${products.length} products, ${recipes.length} recipes.`,
   );
 }
 
-// A ready-to-use account for testing sign-in and the subscriber flows.
-async function seedSignInUser() {
-  const email = "maestrobrendon@gmail.com";
+/**
+ * Optional local-only test account. Never runs in production, and never contains
+ * a hardcoded credential: set SEED_USER_EMAIL and SEED_USER_PASSWORD in
+ * .env.local (which is git-ignored) to enable it.
+ */
+async function seedDevUser() {
+  const email = process.env.SEED_USER_EMAIL?.trim().toLowerCase();
+  const password = process.env.SEED_USER_PASSWORD;
+
+  if (process.env.NODE_ENV === "production" || !email || !password) {
+    return;
+  }
+
   const [midTier, zone] = await Promise.all([
     prisma.subscriptionTier.findUnique({ where: { slug: "mid" } }),
     prisma.deliveryZone.findUnique({ where: { slug: "lekki-phase-1" } }),
   ]);
 
-  const passwordHash = await hashPassword("AdminRipe26");
   const base = {
-    name: "Brendon",
-    passwordHash,
-    address: "Waterway 2, Lekki",
+    name: process.env.SEED_USER_NAME?.trim() || "Test Member",
+    passwordHash: await hashPassword(password),
     deliveryZoneId: zone?.id ?? null,
     subscriptionTierId: midTier?.id ?? null,
     deliveryDay: "WEDNESDAY" as DeliveryDay,
@@ -709,7 +717,7 @@ async function seedSignInUser() {
     });
   }
 
-  console.log(`Seeded sign-in user: ${email}`);
+  console.log(`Seeded local dev user: ${email}`);
 }
 
 main()

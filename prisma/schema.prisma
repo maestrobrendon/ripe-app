@@ -93,11 +93,25 @@ model User {
   onboardingCompleted Boolean           @default(false)
   preferences         UserPreferences?
   streak              UserStreak?
+  sessions            Session[]
   createdAt           DateTime          @default(now())
   carts               Cart[]
   baskets             Basket[]
   orders              Order[]
   windows             ShoppingWindow[]
+}
+
+// Server-side session. The cookie holds only the opaque random token.
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // Consecutive weeks the subscriber did not skip. Recomputed on basket load.
@@ -243,6 +257,9 @@ model ShoppingWindow {
 
 model Order {
   id             String        @id @default(cuid())
+  // High-entropy token so a guest can view their own order without an account.
+  // Set explicitly in code on every new order; DB default only backfills old rows.
+  accessToken    String        @unique @default(dbgenerated("gen_random_uuid()"))
   userId         String?
   user           User?         @relation(fields: [userId], references: [id])
   deliveryZoneId String?
