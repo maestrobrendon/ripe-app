@@ -4,13 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { getOrCreateStandingBasket, getStandingBasketView, prefillStandingBasket } from "@/lib/basket";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
 import {
-  recomputeStreak,
   computeCumulativeSavings,
   computeGoalFit,
   getQuickAddItems,
   getFlaggedSwaps,
 } from "@/lib/basket-hub";
+import { recomputeStreak } from "@/lib/streak";
 import { formatNaira } from "@/lib/format";
+import { StreakCard } from "@/components/streak-badge";
 import { BasketWorkspace } from "./basket-workspace";
 
 export default async function BasketPage() {
@@ -116,17 +117,7 @@ export default async function BasketPage() {
 
       {/* Streak + savings */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="text-xs text-muted">Weekly streak</p>
-          <p className="text-2xl font-semibold">
-            {streak.currentStreak} {streak.currentStreak === 1 ? "week" : "weeks"}
-          </p>
-          <p className="text-xs text-muted">
-            {streak.currentStreak === 0
-              ? "Keep a week unskipped to start a streak"
-              : `Longest run: ${streak.longestStreak} weeks`}
-          </p>
-        </div>
+        <StreakCard view={streak} />
         <div className="rounded-2xl border border-border bg-surface p-4">
           <p className="text-xs text-muted">Saved with membership so far</p>
           <p className="text-2xl font-semibold">{formatNaira(cumulativeSavings)}</p>
@@ -140,6 +131,7 @@ export default async function BasketPage() {
           locked={state.locked}
           skipped={state.skipped}
           deliveryDay={deliveryDay}
+          streak={streak}
           memberSubtotal={view?.memberSubtotal ?? 0}
           savings={view?.savings ?? 0}
           goalFit={goalFit}

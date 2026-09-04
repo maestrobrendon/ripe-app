@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DeliveryDaySelect } from "@/components/delivery-day-select";
 import { formatNaira } from "@/lib/format";
+import type { StreakView } from "@/lib/streak-config";
 import { AssistantRail } from "./assistant-rail";
 import {
   setBasketItemQuantity,
@@ -41,6 +42,7 @@ export function BasketWorkspace({
   locked,
   skipped,
   deliveryDay,
+  streak,
   memberSubtotal,
   savings,
   goalFit,
@@ -53,6 +55,7 @@ export function BasketWorkspace({
   locked: boolean;
   skipped: boolean;
   deliveryDay: DeliveryDay;
+  streak: StreakView;
   memberSubtotal: number;
   savings: number;
   goalFit: string | null;
@@ -215,7 +218,7 @@ export function BasketWorkspace({
         </div>
       </div>
 
-      <AssistantRail signature={signature} locked={!editable} />
+      <AssistantRail signature={signature} locked={!editable} streak={streak} />
     </div>
   );
 }

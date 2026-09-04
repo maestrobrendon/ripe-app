@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 
 export type ProductCardData = AddableProduct & {
@@ -21,8 +22,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-surface p-4 transition hover:shadow-sm">
-      <Link href={href} className="mb-3 flex h-32 items-center justify-center rounded-xl bg-ripe-green-light text-6xl">
-        {product.imageEmoji}
+      <Link href={href} className="mb-3 block">
+        <ProductImage
+          publicId={product.cloudinaryPublicId}
+          alt={product.name}
+          emoji={product.imageEmoji}
+          className="h-32 w-full"
+        />
       </Link>
 
       <div className="mb-1 flex items-start justify-between gap-2">

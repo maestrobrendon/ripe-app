@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 
 export type CrossSellProduct = AddableProduct & {
@@ -27,11 +28,15 @@ function Card({ product }: { product: CrossSellProduct }) {
 
   return (
     <div className="flex w-56 shrink-0 flex-col rounded-2xl border border-border bg-surface p-4">
-      <Link
-        href={`/products/${product.slug}`}
-        className="mb-3 flex h-28 items-center justify-center rounded-xl bg-ripe-green-light text-5xl"
-      >
-        {product.imageEmoji}
+      <Link href={`/products/${product.slug}`} className="mb-3 block">
+        <ProductImage
+          publicId={product.cloudinaryPublicId}
+          alt={product.name}
+          emoji={product.imageEmoji}
+          className="h-28 w-full"
+          emojiClassName="text-5xl"
+          sizes="224px"
+        />
       </Link>
       <Link href={`/products/${product.slug}`} className="text-sm font-medium leading-snug hover:underline">
         {product.name}

@@ -3,14 +3,18 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { HubSuggestion } from "@/lib/basket-assistant";
+import type { StreakView } from "@/lib/streak-config";
+import { StreakBadge } from "@/components/streak-badge";
 import { addRecipeIngredients, setBasketItemQuantity } from "./actions";
 
 export function AssistantRail({
   signature,
   locked,
+  streak,
 }: {
   signature: string;
   locked: boolean;
+  streak: StreakView;
 }) {
   const [data, setData] = useState<HubSuggestion | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +57,10 @@ export function AssistantRail({
       <p className="mt-1 text-xs text-muted">
         Reads your basket and goal. Tap a chip to apply it, no navigation.
       </p>
+
+      <div className="mt-3 border-t border-border pt-3">
+        <StreakBadge view={streak} />
+      </div>
 
       <div className="mt-4 space-y-3">
         {data?.recipe && (

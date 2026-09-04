@@ -35,7 +35,8 @@ export async function GET() {
     context: {
       favorites: favoriteSlugs,
       dietaryNotes: user.preferences?.dietaryNotes ?? undefined,
-      householdSize: user.preferences?.householdSize ?? undefined,
+      householdType: user.preferences?.householdType ?? undefined,
+      cookTimeAvailable: user.preferences?.cookTimeAvailable ?? undefined,
     },
     products,
     recipes,

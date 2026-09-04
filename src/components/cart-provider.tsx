@@ -35,6 +35,7 @@ export type AddableProduct = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId?: string | null;
   memberPrice: number;
   standardPrice: number;
 };

@@ -242,7 +242,7 @@ const products: SeedProduct[] = [
     storageTips: "Keep out of the fridge until ripe. Separating the hand slows ripening. Freeze peeled overripe ones for smoothies.",
   }),
   P({
-    slug: "orange", name: "Orange", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 4, stepQty: 2,
+    slug: "orange", name: "Orange", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 380, standardPrice: 500, source: "Trusted local farmers", imageEmoji: "🍊",
     description: "Juicy oranges, hand-picked. Sold in pairs.",
     educationCopy: "These are local sweet-orange varieties, green-skinned even when ripe, which is normal for the tropics.",
@@ -250,7 +250,7 @@ const products: SeedProduct[] = [
     storageTips: "Keep at room temperature for up to a week, or refrigerate for two weeks.",
   }),
   P({
-    slug: "apple", name: "Apple", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 2, stepQty: 2,
+    slug: "apple", name: "Apple", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 1100, standardPrice: 1450, source: "Specialty import partner", imageEmoji: "🍎", inSeason: false,
     description: "Crisp apples, held cold from farm to door.",
     educationCopy: "Apples are not grown at scale in Nigeria, so these are imported and kept in cold storage. We only list them when the quality holds up.",
@@ -274,7 +274,7 @@ const products: SeedProduct[] = [
     storageTips: "Ripen on the counter. Once soft, refrigerate for two days. Lemon or lime juice slows browning on cut halves.",
   }),
   P({
-    slug: "lime", name: "Lime", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 4, stepQty: 2,
+    slug: "lime", name: "Lime", category: "FRUIT", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 200, standardPrice: 280, source: "Trusted local farmers", imageEmoji: "🍋",
     description: "Sharp, juicy limes.",
     educationCopy: "Small green limes, thin-skinned and heavy for their size, which means more juice.",
@@ -282,7 +282,7 @@ const products: SeedProduct[] = [
     storageTips: "Room temperature for a week, or refrigerate for up to a month. Roll before juicing.",
   }),
   P({
-    slug: "spinach", name: "Green Spinach (Efo Tete)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "spinach", name: "Green Spinach (Efo Tete)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 450, standardPrice: 650, source: "Trusted local farmers", imageEmoji: "🥬",
     description: "Fresh leafy greens, cut to order.",
     educationCopy: "Efo tete, the soft green amaranth used across Yoruba kitchens. Cut the morning it is delivered because it wilts fast.",
@@ -290,7 +290,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate unwashed in a loose bag and use within two days. Wash just before cooking.",
   }),
   P({
-    slug: "ugu", name: "Ugu (Fluted Pumpkin Leaf)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "ugu", name: "Ugu (Fluted Pumpkin Leaf)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 500, standardPrice: 750, source: "Trusted local farmers", imageEmoji: "🥬", featured: true,
     description: "A Lagos kitchen staple, freshly cut.",
     educationCopy: "Fluted pumpkin leaf, the backbone of Nigerian soups like egusi and edikaikong. Ours is cut young so the stalks are tender.",
@@ -298,7 +298,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate wrapped in paper inside a bag for up to three days. Slice and wash right before use.",
   }),
   P({
-    slug: "scent-leaf", name: "Scent Leaf (Efirin)", category: "VEGETABLE", unit: "per 100g", orderUnit: "WEIGHT", minOrderQty: 100, stepQty: 100,
+    slug: "scent-leaf", name: "Scent Leaf (Efirin)", category: "VEGETABLE", unit: "per 100g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 300, standardPrice: 450, source: "Trusted local farmers", imageEmoji: "🌿",
     description: "Aromatic scent leaf, cut fresh.",
     educationCopy: "African basil, known as efirin or nchanwu. A little goes a long way. Used to finish pepper soup, yam and sauces.",
@@ -306,7 +306,7 @@ const products: SeedProduct[] = [
     storageTips: "Stand stems in a little water like cut flowers, loosely covered, in the fridge. Use within three days.",
   }),
   P({
-    slug: "chilli", name: "Chilli Pepper (Ata Rodo)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "chilli", name: "Chilli Pepper (Ata Rodo)", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 700, standardPrice: 950, source: "Trusted local farmers", imageEmoji: "🌶️",
     description: "Hot scotch bonnet peppers.",
     educationCopy: "Ata rodo, the scotch bonnet that gives Nigerian stews their heat and fruity aroma.",
@@ -314,7 +314,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in a paper bag for up to a week, or blend and freeze in portions.",
   }),
   P({
-    slug: "ginger", name: "Ginger", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "ginger", name: "Ginger", category: "VEGETABLE", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 450, standardPrice: 650, source: "Trusted local farmers", imageEmoji: "🫚",
     description: "Fresh root ginger.",
     educationCopy: "Firm, plump rhizomes. Younger ginger has thinner skin and less fibre.",
@@ -322,7 +322,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate unpeeled in a bag for three weeks, or freeze whole and grate from frozen.",
   }),
   P({
-    slug: "tomato", name: "Tomato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "tomato", name: "Tomato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 1200, standardPrice: 1700, source: "Trusted local farmers", imageEmoji: "🍅", featured: true,
     description: "Ripe, firm tomatoes.",
     educationCopy: "Field tomatoes, picked at the turning stage so they arrive firm and finish ripening in a day or two.",
@@ -330,7 +330,7 @@ const products: SeedProduct[] = [
     storageTips: "Keep on the counter, not the fridge, which dulls the flavour. Refrigerate only very ripe ones and use within two days.",
   }),
   P({
-    slug: "bell-pepper", name: "Bell Pepper (Tatashe)", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "bell-pepper", name: "Bell Pepper (Tatashe)", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 1500, standardPrice: 2000, source: "Trusted local farmers", imageEmoji: "🫑",
     description: "Red bell peppers, sold by the kilo.",
     educationCopy: "Tatashe, the mild red pepper blended with ata rodo and onion to make the classic stew base.",
@@ -338,7 +338,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in the crisper for up to a week. Blended pepper base freezes well for a month.",
   }),
   P({
-    slug: "carrot", name: "Carrot", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 500,
+    slug: "carrot", name: "Carrot", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 900, standardPrice: 1300, source: "Trusted local farmers", imageEmoji: "🥕",
     description: "Sweet, crunchy carrots.",
     educationCopy: "Grown in cooler upland areas and packed by our local partners. Delivered with tops removed so they keep longer.",
@@ -346,7 +346,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in a bag in the crisper for two to three weeks. Keep away from apples, which make them bitter.",
   }),
   P({
-    slug: "onion", name: "Onion", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "onion", name: "Onion", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 900, standardPrice: 1300, source: "Trusted local farmers", imageEmoji: "🧅",
     description: "Firm, dry onions.",
     educationCopy: "Red onions, cured and dry-skinned, supplied through our pack house. Dry skin is the sign they will store well.",
@@ -370,7 +370,7 @@ const products: SeedProduct[] = [
     storageTips: "Ripen at room temperature. Slow it down in the fridge once it reaches the ripeness you want.",
   }),
   P({
-    slug: "sweet-potato", name: "Sweet Potato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1000, stepQty: 500,
+    slug: "sweet-potato", name: "Sweet Potato", category: "VEGETABLE", unit: "per kg", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 800, standardPrice: 1100, source: "Trusted local farmers", imageEmoji: "🍠",
     description: "Orange-fleshed sweet potatoes.",
     educationCopy: "The orange-fleshed type, which is sweeter and higher in vitamin A than the pale kind.",
@@ -430,7 +430,7 @@ const products: SeedProduct[] = [
 
   // Seasonal
   P({
-    slug: "corn", name: "Fresh Corn", category: "SEASONAL", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 2, stepQty: 2,
+    slug: "corn", name: "Fresh Corn", category: "SEASONAL", unit: "per pair of 2", orderUnit: "PAIR", minOrderQty: 1, stepQty: 1,
     memberPrice: 500, standardPrice: 700, source: "Trusted local farmers", imageEmoji: "🌽",
     description: "Sweet corn on the cob, in season now.",
     educationCopy: "Picked young while the kernels are still milky. Corn starts turning its sugar to starch the moment it is picked, so we move it fast.",
@@ -438,7 +438,7 @@ const products: SeedProduct[] = [
     storageTips: "Cook the day it arrives if you can. Otherwise refrigerate in the husk and use within two days.",
   }),
   P({
-    slug: "garden-egg", name: "Garden Egg", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    slug: "garden-egg", name: "Garden Egg", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 600, standardPrice: 850, source: "Trusted local farmers", imageEmoji: "🍆",
     description: "Crisp garden eggs, seasonal.",
     educationCopy: "Small white and green African aubergines. Slightly bitter, which is the point. Served with groundnut paste.",
@@ -446,7 +446,7 @@ const products: SeedProduct[] = [
     storageTips: "Refrigerate in a bag for up to a week. The green ones keep a little longer than the white.",
   }),
   P({
-    slug: "agbalumo", name: "African Star Apple (Agbalumo)", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 500, stepQty: 250,
+    slug: "agbalumo", name: "African Star Apple (Agbalumo)", category: "SEASONAL", unit: "per 500g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 900, standardPrice: 1200, source: "Trusted local farmers", imageEmoji: "⭐",
     description: "Agbalumo, only around for a few weeks.",
     educationCopy: "Also called udara. A short season around the turn of the year. Sweet-and-sour, sticky, and eaten straight from the skin.",
@@ -454,7 +454,7 @@ const products: SeedProduct[] = [
     storageTips: "Ripen at room temperature until it softens and the skin darkens. Eat within a couple of days.",
   }),
   P({
-    slug: "velvet-tamarind", name: "Velvet Tamarind (Awin)", category: "SEASONAL", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 250, stepQty: 250,
+    slug: "velvet-tamarind", name: "Velvet Tamarind (Awin)", category: "SEASONAL", unit: "per 250g", orderUnit: "WEIGHT", minOrderQty: 1, stepQty: 1,
     memberPrice: 700, standardPrice: 950, source: "Trusted local farmers", imageEmoji: "🟤",
     description: "Awin, a tangy seasonal snack.",
     educationCopy: "Small hard-shelled pods with a tart, powdery pulp around the seed. A childhood snack across the south west.",
@@ -703,9 +703,12 @@ async function seedDevUser() {
     create: {
       userId: user.id,
       primaryGoal: "general-wellness",
-      householdSize: 2,
+      householdType: "partner",
+      weeklyBudgetBand: "12k-20k",
+      cookTimeAvailable: "under-30",
       dietaryNotes: "No restrictions",
       favoriteProductIds: [],
+      mealFormatPreference: [],
       shoppingStyle: "subscription",
     },
   });

@@ -3,8 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { GOALS } from "@/lib/assistant";
 import { GOAL_LABEL } from "@/lib/format";
-import { toAddable } from "@/lib/product";
-import { AssistantPanel } from "./assistant-panel";
+import { MealPlanner } from "./meal-planner";
+
+const SERVINGS_BY_HOUSEHOLD: Record<string, number> = {
+  myself: 1,
+  partner: 2,
+  "family-kids": 4,
+  housemates: 3,
+  mixed: 3,
+};
 
 export default async function RecipesPage({
   searchParams,
@@ -27,31 +34,29 @@ export default async function RecipesPage({
     orderBy: { title: "asc" },
   });
 
+  const prefs = user?.preferences;
+  const defaultServings = prefs?.householdType
+    ? SERVINGS_BY_HOUSEHOLD[prefs.householdType] ?? 3
+    : 3;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <h1 className="text-3xl font-semibold">Recipes</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        Browse the library, or ask the trained assistant what to make with what is in your cart. It gives
-        food ideas, not medical advice.
+        Tell us a dish, or let the Meal Planner suggest one. It builds an ingredient list against what we
+        actually stock. It gives food ideas, not medical advice.
       </p>
 
-      <div className="mt-8 rounded-3xl border border-border bg-surface p-5 sm:p-6">
-        <h2 className="text-lg font-semibold">Ask the assistant</h2>
-        <AssistantPanel
-          products={allProducts.map(toAddable)}
-          context={{
-            favorites: (user?.preferences?.favoriteProductIds ?? [])
-              .map((id) => byId.get(id)?.slug)
-              .filter((s): s is string => Boolean(s)),
-            dietaryNotes: user?.preferences?.dietaryNotes ?? undefined,
-            householdSize: user?.preferences?.householdSize ?? undefined,
-          }}
-          signedIn={Boolean(user)}
+      <div className="mt-8">
+        <MealPlanner
+          defaultBudgetBand={prefs?.weeklyBudgetBand ?? null}
+          defaultServings={defaultServings}
         />
       </div>
 
-      <div className="mt-10">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-12">
+        <h2 className="text-lg font-semibold">Recipe library</h2>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Link
             href="/recipes"
             className={`rounded-full px-4 py-1.5 text-sm ${!goal && !ingredient ? "bg-ripe-green text-white" : "border border-border"}`}
