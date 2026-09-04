@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { createAccount } from "./actions";
 
 export default async function SignupPage({
@@ -6,7 +7,8 @@ export default async function SignupPage({
 }: {
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error, next } = await searchParams;
+  const { error, next: nextRaw } = await searchParams;
+  const next = safeNextPath(nextRaw, "");
 
   return (
     <div className="mx-auto max-w-md px-4 py-14 sm:px-6">
@@ -16,14 +18,20 @@ export default async function SignupPage({
         suggest things you will actually eat. It is free and separate from any subscription.
       </p>
 
-      {error === "exists" && (
+      {error === "failed" && (
         <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
-          An account already uses that email or phone. <Link href="/login" className="underline">Sign in</Link> instead.
+          We could not create an account with those details. If you already have one,{" "}
+          <Link href="/login" className="underline">sign in</Link> instead.
         </p>
       )}
       {error === "missing" && (
         <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
           Enter your name, an email or phone, and a password of at least 8 characters.
+        </p>
+      )}
+      {error === "throttled" && (
+        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+          Too many attempts from this network. Please wait a while and try again.
         </p>
       )}
 

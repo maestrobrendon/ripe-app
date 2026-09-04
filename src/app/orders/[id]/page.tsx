@@ -1,20 +1,36 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
 import { formatNaira, ORDER_STATUS_LABEL, ORDER_STATUS_STEPS } from "@/lib/format";
+
+function tokenMatches(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
 
 export default async function OrderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ t?: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, { t }, user] = await Promise.all([params, searchParams, getCurrentUser()]);
+
   const order = await prisma.order.findUnique({
     where: { id },
     include: { items: { include: { product: true } } },
   });
 
   if (!order) notFound();
+
+  const ownsIt = Boolean(user && order.userId && order.userId === user.id);
+  const hasValidToken = Boolean(t) && tokenMatches(t!, order.accessToken);
+  // Same response as "not found" so the endpoint does not confirm the order exists.
+  if (!ownsIt && !hasValidToken) notFound();
 
   const currentIndex = ORDER_STATUS_STEPS.indexOf(order.status);
 

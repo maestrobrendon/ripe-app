@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { signIn } from "./actions";
 
 export default async function LoginPage({
@@ -6,17 +7,22 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error, next } = await searchParams;
+  const { error, next: nextRaw } = await searchParams;
+  const next = safeNextPath(nextRaw, "");
 
   return (
     <div className="mx-auto max-w-md px-4 py-14 sm:px-6">
       <h1 className="text-3xl font-semibold">Sign in</h1>
 
-      {error && (
+      {error === "throttled" ? (
+        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+          Too many sign-in attempts. Please wait a few minutes and try again.
+        </p>
+      ) : error ? (
         <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
           That email or phone and password did not match.
         </p>
-      )}
+      ) : null}
 
       <form action={signIn} className="mt-8 space-y-4">
         {next && <input type="hidden" name="next" value={next} />}

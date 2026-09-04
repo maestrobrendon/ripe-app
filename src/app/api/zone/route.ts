@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/session";
 import { setZoneCookie, resolveZoneByCoords } from "@/lib/zone";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   const zones = await prisma.deliveryZone.findMany({
@@ -13,17 +14,28 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
-    slug?: string;
-    lat?: number;
-    lng?: number;
-  };
+  const ip = await clientIp();
+  if (!rateLimit(`zone:ip:${ip}`, 30, 60 * 1000).ok) {
+    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+  }
+
+  let body: { slug?: unknown; lat?: unknown; lng?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+  }
 
   let zone = null;
 
-  if (body.slug) {
-    zone = await prisma.deliveryZone.findUnique({ where: { slug: body.slug } });
-  } else if (typeof body.lat === "number" && typeof body.lng === "number") {
+  if (typeof body.slug === "string" && body.slug) {
+    zone = await prisma.deliveryZone.findUnique({ where: { slug: body.slug.slice(0, 100) } });
+  } else if (
+    typeof body.lat === "number" &&
+    typeof body.lng === "number" &&
+    Number.isFinite(body.lat) &&
+    Number.isFinite(body.lng)
+  ) {
     zone = await resolveZoneByCoords(body.lat, body.lng);
   }
 

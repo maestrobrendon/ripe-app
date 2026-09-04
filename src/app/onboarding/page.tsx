@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { OnboardingFlow } from "./onboarding-flow";
 
 export default async function OnboardingPage({
@@ -11,6 +12,8 @@ export default async function OnboardingPage({
   const { next } = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const safeNext = safeNextPath(next, "/");
 
   const products = await prisma.product.findMany({
     where: { category: { in: ["FRUIT", "VEGETABLE"] } },
@@ -25,7 +28,7 @@ export default async function OnboardingPage({
         So the trained assistant can suggest things you will actually eat. You can skip this and fill it
         in later from your account.
       </p>
-      <OnboardingFlow products={products} next={next ?? "/"} />
+      <OnboardingFlow products={products} next={safeNext} />
     </div>
   );
 }
