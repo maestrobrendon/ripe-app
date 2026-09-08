@@ -12,12 +12,15 @@ import {
   HOUSEHOLD_TYPE_LABEL,
   COOK_TIME_LABEL,
   MEAL_FORMAT_LABEL,
+  PRODUCE_PREFERENCE_LABEL,
+  PRODUCE_PREFERENCE_OPTIONS,
 } from "@/lib/format";
 import { bandById } from "@/lib/budget";
+import { SHOPPING_WINDOW_DAYS, SHOPPING_WINDOW_DAY_LABEL } from "@/lib/shopping-window";
 import { recomputeStreak } from "@/lib/streak";
 import { StreakCard } from "@/components/streak-badge";
 import { ProductImage } from "@/components/product-image";
-import { updateProfile, signOut } from "./actions";
+import { updateProfile, updateBasketPreferences, signOut } from "./actions";
 
 export default async function AccountPage() {
   const user = await getCurrentUser();
@@ -25,7 +28,7 @@ export default async function AccountPage() {
 
   const [zones, view, orders, streak] = await Promise.all([
     prisma.deliveryZone.findMany({ where: { isServed: true }, orderBy: { sortOrder: "asc" } }),
-    user.subscriptionTierId ? getStandingBasketView(user.id) : Promise.resolve(null),
+    getStandingBasketView(user.id),
     prisma.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
     recomputeStreak(user.id),
   ]);
@@ -131,32 +134,102 @@ export default async function AccountPage() {
         )}
       </div>
 
+      <div className="mt-8 rounded-2xl border border-border bg-surface p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">Basket preferences</p>
+        </div>
+        <form action={updateBasketPreferences} className="mt-3 space-y-4 text-sm">
+          <div className="flex flex-wrap gap-4">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted">Adults</span>
+              <input
+                name="adults"
+                type="number"
+                min={1}
+                max={12}
+                defaultValue={user.householdAdults}
+                className="w-20 rounded-lg border border-border px-3 py-2"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted">Kids</span>
+              <input
+                name="kids"
+                type="number"
+                min={0}
+                max={12}
+                defaultValue={user.householdKids}
+                className="w-20 rounded-lg border border-border px-3 py-2"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted">Basket ships</span>
+              <select
+                name="windowDay"
+                defaultValue={user.shoppingWindowDay ?? ""}
+                className="rounded-lg border border-border px-3 py-2"
+              >
+                <option value="">Not set</option>
+                {SHOPPING_WINDOW_DAYS.map((d) => (
+                  <option key={d.day} value={d.day}>{d.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div>
+            <span className="mb-1 block text-xs font-medium text-muted">Usually reach for</span>
+            <div className="flex flex-wrap gap-2">
+              {PRODUCE_PREFERENCE_OPTIONS.map((slug) => (
+                <label
+                  key={slug}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1 has-[:checked]:border-ripe-green has-[:checked]:bg-ripe-green-light"
+                >
+                  <input
+                    type="checkbox"
+                    name="produce"
+                    value={slug}
+                    defaultChecked={prefs?.producePreferences.includes(slug)}
+                  />
+                  {PRODUCE_PREFERENCE_LABEL[slug]}
+                </label>
+              ))}
+            </div>
+          </div>
+          <button className="rounded-full bg-ripe-green px-4 py-2 text-xs font-medium text-white">Save</button>
+        </form>
+      </div>
+
       {view && view.basket.items.length > 0 && (
         <div className="mt-8 rounded-2xl border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Standing basket</p>
+            <p className="text-sm font-medium">Your basket</p>
             <Link href="/basket" className="text-sm text-ripe-green underline">Edit</Link>
           </div>
           <ul className="mt-3 space-y-2 text-sm">
-            {view.basket.items.map((i) => (
-              <li key={i.id} className="flex items-center gap-2">
-                <ProductImage
-                  publicId={i.product.cloudinaryPublicId}
-                  alt={i.product.name}
-                  emoji={i.product.imageEmoji}
-                  className="h-7 w-7 shrink-0"
-                  rounded="rounded-md"
-                  emojiClassName="text-sm"
-                  sizes="28px"
-                />
-                <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
-                <span className="shrink-0">{formatNaira(i.product.memberPrice * i.quantity)}</span>
-              </li>
-            ))}
+            {view.basket.items.map((i) => {
+              const price = user.subscriptionTierId ? i.product.memberPrice : i.product.standardPrice;
+              return (
+                <li key={i.id} className="flex items-center gap-2">
+                  <ProductImage
+                    publicId={i.product.cloudinaryPublicId}
+                    alt={i.product.name}
+                    emoji={i.product.imageEmoji}
+                    className="h-7 w-7 shrink-0"
+                    rounded="rounded-md"
+                    emojiClassName="text-sm"
+                    sizes="28px"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
+                  <span className="shrink-0">{formatNaira(price * i.quantity)}</span>
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-3 flex justify-between border-t border-border pt-3 text-sm font-semibold">
             <span>Weekly value</span>
-            <span>{formatNaira(view.memberSubtotal)}</span>
+            <span>
+              {formatNaira(user.subscriptionTierId ? view.memberSubtotal : view.standardSubtotal)}
+            </span>
           </div>
         </div>
       )}

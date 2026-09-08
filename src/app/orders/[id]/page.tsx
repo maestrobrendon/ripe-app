@@ -39,7 +39,9 @@ export default async function OrderPage({
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       <p className="text-sm text-muted">Order #{order.id.slice(-8)}</p>
       <h1 className="mt-1 text-3xl font-semibold">
-        {order.orderType === "SUBSCRIPTION" ? "Standing basket order" : "Order confirmed"}
+        {order.orderType === "SUBSCRIPTION" || order.orderType === "BASKET"
+          ? "Basket order confirmed"
+          : "Order confirmed"}
       </h1>
       <p className="mt-2 text-sm text-muted">
         Delivering {order.deliveryDate.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" })} to{" "}

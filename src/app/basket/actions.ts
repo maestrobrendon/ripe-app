@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, getCurrentUser } from "@/lib/session";
 import { getOrCreateStandingBasket } from "@/lib/basket";
+import { getOrCreateCart, clearCart } from "@/lib/cart";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
-import type { DeliveryDay } from "@/generated/prisma/enums";
+import type { DeliveryDay, ShoppingWindowDay } from "@/generated/prisma/enums";
 
 function snapQty(quantity: number, minOrderQty: number, stepQty: number) {
   const above = Math.max(0, quantity - minOrderQty);
@@ -23,7 +24,8 @@ export async function addToStandingBasket(
   frequencyWeeks: number,
 ) {
   const user = await getCurrentUser();
-  if (!user) redirect(`/signup?next=${encodeURIComponent("/subscribe")}`);
+  // "Subscribe & save" is a subscription funnel: it needs an account and a plan.
+  if (!user) redirect("/start");
   if (!user.subscriptionTierId) redirect("/subscribe");
 
   const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
@@ -48,10 +50,40 @@ export async function addToStandingBasket(
 }
 
 async function assertWindowOpen(userId: string) {
+  // The window lock is a subscriber-only mechanic. A non-subscriber's saved
+  // basket is theirs to edit at any time.
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { subscriptionTierId: true } });
+  if (!user?.subscriptionTierId) return;
+
   const window = await getOrCreateCurrentWindow(userId);
   if (windowState(window).locked) {
     throw new Error("This week's shopping window is closed.");
   }
+}
+
+export async function setShoppingWindowDay(day: ShoppingWindowDay) {
+  const user = await requireUser();
+  await prisma.user.update({ where: { id: user.id }, data: { shoppingWindowDay: day } });
+  revalidatePath("/basket");
+}
+
+/** Move the standing basket into the cart and send the customer to checkout. */
+export async function checkoutStandingBasket() {
+  const user = await requireUser();
+  const basket = await prisma.basket.findFirst({
+    where: { userId: user.id, isStanding: true },
+    include: { items: true },
+  });
+  if (!basket || basket.items.length === 0) redirect("/basket");
+
+  const cart = await getOrCreateCart();
+  await clearCart(cart.id);
+  await prisma.cartItem.createMany({
+    data: basket.items.map((i) => ({ cartId: cart.id, productId: i.productId, quantity: i.quantity })),
+    skipDuplicates: true,
+  });
+
+  redirect("/checkout?source=basket");
 }
 
 export async function setBasketItemQuantity(productId: string, quantity: number) {

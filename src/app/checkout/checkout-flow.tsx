@@ -15,6 +15,8 @@ const DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
 export function CheckoutFlow({
   zones,
   defaults,
+  source,
+  shoppingWindowLabel,
 }: {
   zones: { slug: string; name: string; area: string }[];
   defaults: {
@@ -25,8 +27,11 @@ export function CheckoutFlow({
     zoneSlug: string;
     deliveryDay: DeliveryDay;
   };
+  source?: "basket";
+  shoppingWindowLabel?: string | null;
 }) {
   const cart = useCart();
+  const isBasket = source === "basket";
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<CheckoutInput>({
     name: defaults.name,
@@ -36,6 +41,7 @@ export function CheckoutFlow({
     zoneSlug: defaults.zoneSlug || zones[0]?.slug || "",
     deliveryDay: defaults.deliveryDay,
     paymentMethod: "card",
+    source,
   });
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -102,21 +108,31 @@ export function CheckoutFlow({
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Choose a delivery window</h2>
-            <p className="text-sm text-muted">We deliver on these days in your zone. Pick the one that works.</p>
-            <div className="space-y-2">
-              {DAYS.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => set("deliveryDay", d)}
-                  className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                    form.deliveryDay === d ? "border-ripe-green bg-ripe-green-light" : "border-border"
-                  }`}
-                >
-                  {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
-                </button>
-              ))}
-            </div>
+            <h2 className="text-lg font-medium">Delivery window</h2>
+            {isBasket ? (
+              <p className="rounded-lg border border-border p-3 text-sm">
+                This basket is scheduled to ship on{" "}
+                <span className="font-medium">{shoppingWindowLabel ?? "your chosen day"}</span>. Change it
+                on the basket page.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted">We deliver on these days in your zone. Pick the one that works.</p>
+                <div className="space-y-2">
+                  {DAYS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => set("deliveryDay", d)}
+                      className={`block w-full rounded-lg border p-3 text-left text-sm ${
+                        form.deliveryDay === d ? "border-ripe-green bg-ripe-green-light" : "border-border"
+                      }`}
+                    >
+                      {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className={backBtn}>Back</button>
               <button onClick={() => setStep(3)} className={nextBtn(true)}>Continue</button>
@@ -180,7 +196,14 @@ export function CheckoutFlow({
                 <span>Total</span>
                 <span>{formatNaira(total)}</span>
               </div>
-              <Row label="Delivers" value={`${DELIVERY_DAY_LABEL[form.deliveryDay]}, 9am to 5pm`} />
+              <Row
+                label="Delivers"
+                value={
+                  isBasket
+                    ? `${shoppingWindowLabel ?? "Your chosen day"}, 9am to 5pm`
+                    : `${DELIVERY_DAY_LABEL[form.deliveryDay]}, 9am to 5pm`
+                }
+              />
               <Row label="To" value={`${form.address} (${zones.find((z) => z.slug === form.zoneSlug)?.name ?? ""})`} />
               <Row label="Payment" value={form.paymentMethod === "card" ? "Card (test mode)" : "Bank transfer (test mode)"} />
             </div>

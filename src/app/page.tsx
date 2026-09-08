@@ -43,9 +43,18 @@ export default async function LandingPage() {
         <div className="mt-6 max-w-md">
           <SearchBar />
         </div>
-        <div className="mt-4 flex flex-wrap gap-3 text-sm">
-          <Link href="/shop" className="font-medium text-ripe-green underline">Browse everything</Link>
-          <span className="text-muted">·</span>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Link
+            href="/start"
+            className="rounded-full bg-ripe-green px-5 py-2.5 text-sm font-medium text-white hover:bg-ripe-green-dark"
+          >
+            Create your account
+          </Link>
+          <Link href="/shop" className="text-sm font-medium text-ripe-green underline">
+            Browse everything
+          </Link>
+        </div>
+        <div className="mt-3 text-sm">
           <Link href="/subscribe" className="font-medium text-ripe-green underline">See subscription perks</Link>
         </div>
       </section>

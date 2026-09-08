@@ -2,19 +2,20 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { DeliveryDaySelect } from "@/components/delivery-day-select";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
+import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import type { StreakView } from "@/lib/streak-config";
 import { AssistantRail } from "./assistant-rail";
 import {
   setBasketItemQuantity,
-  setBasketDeliveryDay,
+  setShoppingWindowDay,
   setWindowSkipped,
   swapBasketItem,
   restoreLastWeek,
+  checkoutStandingBasket,
 } from "./actions";
-import type { DeliveryDay } from "@/generated/prisma/enums";
+import type { ShoppingWindowDay } from "@/generated/prisma/enums";
 
 export type BasketLine = {
   productId: string;
@@ -47,11 +48,13 @@ export type Flagged = {
 
 export function BasketWorkspace({
   items,
+  isSubscriber,
+  shoppingWindowDay,
   locked,
   skipped,
-  deliveryDay,
   streak,
   memberSubtotal,
+  standardSubtotal,
   savings,
   goalFit,
   quickAdd,
@@ -60,11 +63,13 @@ export function BasketWorkspace({
   signature,
 }: {
   items: BasketLine[];
+  isSubscriber: boolean;
+  shoppingWindowDay: ShoppingWindowDay | null;
   locked: boolean;
   skipped: boolean;
-  deliveryDay: DeliveryDay;
   streak: StreakView;
   memberSubtotal: number;
+  standardSubtotal: number;
   savings: number;
   goalFit: string | null;
   quickAdd: QuickAddItem[];
@@ -76,6 +81,8 @@ export function BasketWorkspace({
   const router = useRouter();
   const editable = !locked && !skipped;
   const flaggedMap = new Map(flagged.map((f) => [f.productId, f]));
+  const priceOf = (l: BasketLine) => (isSubscriber ? l.memberPrice : l.standardPrice);
+  const runningValue = isSubscriber ? memberSubtotal : standardSubtotal;
 
   const run = (fn: () => Promise<unknown>) =>
     startTransition(async () => {
@@ -86,26 +93,40 @@ export function BasketWorkspace({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        {/* Delivery day + skip */}
+        {/* Shipping day + (subscriber) skip */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">Delivery day</span>
-            <DeliveryDaySelect
-              value={deliveryDay}
-              onChange={(d) => setBasketDeliveryDay(d).then(() => router.refresh())}
-            />
+            <span className="text-sm font-medium">Ships</span>
+            <select
+              defaultValue={shoppingWindowDay ?? ""}
+              disabled={isPending}
+              onChange={(e) =>
+                e.target.value &&
+                run(() => setShoppingWindowDay(e.target.value as ShoppingWindowDay))
+              }
+              className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-60"
+            >
+              {!shoppingWindowDay && <option value="">Pick a day</option>}
+              {SHOPPING_WINDOW_DAYS.map((d) => (
+                <option key={d.day} value={d.day}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
           </div>
-          <button
-            disabled={isPending || locked}
-            onClick={() => run(() => setWindowSkipped(!skipped))}
-            className={`tap-target rounded-full border px-4 py-2 text-sm font-medium disabled:opacity-60 ${
-              skipped
-                ? "border-ripe-terracotta bg-ripe-terracotta-light text-ripe-terracotta-dark"
-                : "border-border hover:bg-ripe-green-light"
-            }`}
-          >
-            {skipped ? "Skipped. Undo" : "Skip this week"}
-          </button>
+          {isSubscriber && (
+            <button
+              disabled={isPending || locked}
+              onClick={() => run(() => setWindowSkipped(!skipped))}
+              className={`tap-target rounded-full border px-4 py-2 text-sm font-medium disabled:opacity-60 ${
+                skipped
+                  ? "border-ripe-terracotta bg-ripe-terracotta-light text-ripe-terracotta-dark"
+                  : "border-border hover:bg-ripe-green-light"
+              }`}
+            >
+              {skipped ? "Skipped. Undo" : "Skip this week"}
+            </button>
+          )}
         </div>
 
         {/* Same as last week + quick add shelf */}
@@ -117,7 +138,7 @@ export function BasketWorkspace({
                 onClick={() => run(restoreLastWeek)}
                 className="tap-target rounded-full bg-ripe-green px-4 py-2 text-sm font-medium text-white hover:bg-ripe-green-dark disabled:opacity-60"
               >
-                Same as last week
+                Same as last time
               </button>
             )}
             {quickAdd.length > 0 && (
@@ -175,7 +196,8 @@ export function BasketWorkspace({
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{item.name}</p>
                         <p className="text-sm text-muted">
-                          {item.unit} · {formatNaira(item.memberPrice)} member
+                          {item.unit} · {formatNaira(priceOf(item))}
+                          {isSubscriber ? " member" : ""}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -200,7 +222,7 @@ export function BasketWorkspace({
                         </button>
                       </div>
                       <p className="w-16 shrink-0 text-right text-sm font-medium sm:w-20">
-                        {formatNaira(item.memberPrice * item.quantity)}
+                        {formatNaira(priceOf(item) * item.quantity)}
                       </p>
                     </div>
 
@@ -225,23 +247,40 @@ export function BasketWorkspace({
           <div className="mt-4 flex flex-col gap-1 border-t border-border pt-4">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Running value</span>
-              <span className="text-lg font-semibold">{formatNaira(memberSubtotal)}</span>
+              <span className="text-lg font-semibold">{formatNaira(runningValue)}</span>
             </div>
-            {savings > 0 && (
+            {isSubscriber && savings > 0 && (
               <p className="text-xs text-ripe-terracotta-dark">
                 Saving {formatNaira(savings)} on this basket vs non-member pricing
               </p>
             )}
-            {goalFit && (
+            {isSubscriber && goalFit && (
               <p className="mt-1 inline-flex w-fit rounded-full bg-ripe-green-light px-3 py-1 text-xs font-medium text-ripe-green">
                 {goalFit}
               </p>
             )}
           </div>
+
+          {items.length > 0 && editable && (
+            <div className="mt-5 rounded-2xl border border-border bg-surface p-4">
+              <button
+                disabled={isPending || !shoppingWindowDay}
+                onClick={() => run(checkoutStandingBasket)}
+                className="tap-target w-full rounded-full bg-ripe-terracotta px-6 py-3 text-sm font-medium text-white hover:bg-ripe-terracotta-dark disabled:opacity-50"
+              >
+                Check out this basket
+              </button>
+              <p className="mt-2 text-center text-xs text-muted">
+                {shoppingWindowDay
+                  ? "You pay at checkout. Nothing is charged before then."
+                  : "Pick a shipping day above to check out."}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      <AssistantRail signature={signature} locked={!editable} streak={streak} />
+      <AssistantRail signature={signature} locked={!editable} streak={streak} showStreak={isSubscriber} />
     </div>
   );
 }

@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <ZoneProvider initialZoneName={zone?.name ?? null}>
           <CartProvider initial={cart}>
             <AnnouncementBar />
-            <SiteHeader isSignedIn={Boolean(user)} isSubscriber={Boolean(user?.subscriptionTierId)} />
+            <SiteHeader isSignedIn={Boolean(user)} />
             <main className="flex-1">{children}</main>
             <SiteFooter />
             <CartDrawer />

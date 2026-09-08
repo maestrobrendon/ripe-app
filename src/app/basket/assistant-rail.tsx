@@ -12,10 +12,12 @@ export function AssistantRail({
   signature,
   locked,
   streak,
+  showStreak = true,
 }: {
   signature: string;
   locked: boolean;
   streak: StreakView;
+  showStreak?: boolean;
 }) {
   const [data, setData] = useState<HubSuggestion | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,9 +61,11 @@ export function AssistantRail({
         Reads your basket and goal. Tap a chip to apply it, no navigation.
       </p>
 
-      <div className="mt-3 border-t border-border pt-3">
-        <StreakBadge view={streak} />
-      </div>
+      {showStreak && (
+        <div className="mt-3 border-t border-border pt-3">
+          <StreakBadge view={streak} />
+        </div>
+      )}
 
       <div className="mt-4 space-y-3">
         {data?.recipe && (

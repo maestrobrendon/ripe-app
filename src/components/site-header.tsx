@@ -12,19 +12,11 @@ const NAV = [
   { href: "/fresh-cuts", label: "Fresh Cuts" },
 ];
 
-export function SiteHeader({
-  isSignedIn,
-  isSubscriber,
-}: {
-  isSignedIn: boolean;
-  isSubscriber: boolean;
-}) {
+export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
   const pathname = usePathname();
   const cart = useCart();
 
-  const links = isSubscriber
-    ? [...NAV, { href: "/basket", label: "Standing basket" }]
-    : NAV;
+  const links = isSignedIn ? [...NAV, { href: "/basket", label: "Basket" }] : NAV;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">

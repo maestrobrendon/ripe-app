@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/session";
 import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
 import { quoteDelivery } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { nextShoppingWindowDate } from "@/lib/shopping-window";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const DOW: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
@@ -28,6 +29,7 @@ export type CheckoutInput = {
   zoneSlug: string;
   deliveryDay: DeliveryDay;
   paymentMethod: "card" | "transfer";
+  source?: "basket";
 };
 
 export async function placeOrder(input: CheckoutInput) {
@@ -63,19 +65,25 @@ export async function placeOrder(input: CheckoutInput) {
 
   const accessToken = randomBytes(24).toString("base64url");
 
+  const isBasket = input.source === "basket" && Boolean(user);
+  const deliveryDate = isBasket
+    ? nextShoppingWindowDate(user!.shoppingWindowDay)
+    : nextDeliveryDate(input.deliveryDay);
+
   const order = await prisma.order.create({
     data: {
       accessToken,
       userId: user?.id ?? null,
       deliveryZoneId: zone?.id ?? null,
-      orderType: "ONE_OFF",
+      orderType: isBasket ? "BASKET" : "ONE_OFF",
       status: "RECEIVED",
       customerName: name,
       customerPhone: phone,
       customerEmail: (input.email || "").trim().slice(0, 254) || null,
       address,
       zoneName: zone?.name ?? input.zoneSlug,
-      deliveryDate: nextDeliveryDate(input.deliveryDay),
+      deliveryDate,
+      paidAt: new Date(),
       subtotal,
       deliveryFee: delivery.fee,
       total,

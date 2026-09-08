@@ -57,6 +57,23 @@ export const COOK_TIME_LABEL: Record<string, string> = {
   "up-to-hour": "Up to an hour",
 };
 
+export const PRODUCE_PREFERENCE_LABEL: Record<string, string> = {
+  fruits: "Fruits",
+  vegetables: "Vegetables",
+  "leafy-greens": "Leafy greens",
+  "root-veg": "Root veg",
+  herbs: "Herbs and spices",
+};
+
+// Order shown in onboarding. "everything" is the master toggle, handled separately.
+export const PRODUCE_PREFERENCE_OPTIONS = [
+  "fruits",
+  "vegetables",
+  "leafy-greens",
+  "root-veg",
+  "herbs",
+] as const;
+
 export const MEAL_FORMAT_LABEL: Record<string, string> = {
   "weeknight-dinners": "Quick weeknight dinners",
   "cook-ahead": "Cook-ahead",

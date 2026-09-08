@@ -33,6 +33,17 @@ enum OrderUnit {
 enum OrderType {
   ONE_OFF
   SUBSCRIPTION
+  BASKET
+  SAME_DAY
+}
+
+// The three days a basket can be scheduled to ship on. Distinct from the
+// subscription DeliveryDay (Mon/Wed/Fri) and from the ShoppingWindow edit
+// mechanic. Picking one never starts a countdown or authorises a charge.
+enum ShoppingWindowDay {
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }
 
 enum OrderStatus {
@@ -90,6 +101,10 @@ model User {
   subscriptionTierId  String?
   subscriptionTier    SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
   deliveryDay         DeliveryDay?
+  // Basket-order shipping day, chosen during onboarding. Null until then.
+  shoppingWindowDay   ShoppingWindowDay?
+  householdAdults     Int               @default(1)
+  householdKids       Int               @default(0)
   onboardingCompleted Boolean           @default(false)
   preferences         UserPreferences?
   streak              StreakStatus?
@@ -149,6 +164,8 @@ model UserPreferences {
   userId                String   @unique
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   primaryGoal           String?
+  // What the customer usually reaches for: fruits | vegetables | leafy-greens | root-veg | herbs
+  producePreferences    String[]
   householdType         String?
   weeklyBudgetBand      String?
   cookTimeAvailable     String?
@@ -302,6 +319,9 @@ model Order {
   paymentMethod  String
   itemSnapshot   Json
   items          OrderItem[]
+  // Set when the customer completes checkout. Nothing sets this on a schedule:
+  // a basket is only ever charged by the customer's own checkout action.
+  paidAt         DateTime?
   createdAt      DateTime      @default(now())
 }
 
