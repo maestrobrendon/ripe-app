@@ -100,8 +100,8 @@ export function StartFlow({
         <Link href="/" className="text-xl font-semibold tracking-tight text-ripe-green">
           Ripe
         </Link>
-        <Link href="/signup" className="text-xs text-muted underline">
-          Just make an account
+        <Link href="/login" className="text-xs text-muted underline">
+          Sign in
         </Link>
       </div>
 

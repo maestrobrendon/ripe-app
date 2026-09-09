@@ -80,7 +80,7 @@ export default async function SubscribePage() {
                 </p>
               ) : !user ? (
                 <Link
-                  href={`/signup?next=${encodeURIComponent("/subscribe")}`}
+                  href="/start"
                   className={`mt-6 rounded-full px-4 py-2.5 text-center text-sm font-medium ${
                     isMid ? "bg-ripe-green text-white" : "border border-ripe-green text-ripe-green"
                   }`}

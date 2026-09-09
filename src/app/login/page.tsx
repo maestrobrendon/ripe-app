@@ -49,7 +49,7 @@ export default async function LoginPage({
 
       <p className="mt-6 text-sm text-muted">
         New here?{" "}
-        <Link href={`/signup${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-ripe-green underline">
+        <Link href="/start" className="text-ripe-green underline">
           Create an account
         </Link>
       </p>
