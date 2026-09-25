@@ -5,18 +5,25 @@ import { useState } from "react";
 
 const CLOUD_NAME = "dusynu0kv";
 
-/** Unsigned Cloudinary delivery. Works off the cloud name alone, no API secret. */
-function cloudinaryLoader({
-  src,
-  width,
-  quality,
-}: {
-  src: string;
-  width: number;
-  quality?: number;
-}) {
-  const transform = `c_fill,g_auto,ar_1:1,f_auto,q_${quality ?? "auto"},w_${width}`;
-  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${transform}/${src}`;
+/**
+ * Unsigned Cloudinary delivery. Works off the cloud name alone, no API secret.
+ * g_auto keeps the subject in frame when the crop is tighter than the source.
+ */
+function makeLoader(aspectRatio: string) {
+  return ({ src, width, quality }: { src: string; width: number; quality?: number }) => {
+    const transform = `c_fill,g_auto,ar_${aspectRatio},f_auto,q_${quality ?? "auto"},w_${width}`;
+    return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${transform}/${src}`;
+  };
+}
+
+// Built once per ratio so the identity stays stable across renders.
+const LOADERS: Record<string, ReturnType<typeof makeLoader>> = {
+  "1:1": makeLoader("1:1"),
+  "4:3": makeLoader("4:3"),
+};
+
+function loaderFor(aspectRatio: string) {
+  return (LOADERS[aspectRatio] ??= makeLoader(aspectRatio));
 }
 
 /**
@@ -31,6 +38,7 @@ export function ProductImage({
   rounded = "rounded-xl",
   className = "",
   emojiClassName = "text-6xl",
+  aspectRatio = "1:1",
 }: {
   publicId: string | null | undefined;
   alt: string;
@@ -39,6 +47,8 @@ export function ProductImage({
   rounded?: string;
   className?: string;
   emojiClassName?: string;
+  /** Cloudinary crop ratio. Match it to the container's own aspect. */
+  aspectRatio?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const showPhoto = Boolean(publicId) && !failed;
@@ -53,7 +63,7 @@ export function ProductImage({
           alt={alt}
           fill
           sizes={sizes}
-          loader={cloudinaryLoader}
+          loader={loaderFor(aspectRatio)}
           onError={() => setFailed(true)}
           className="object-cover"
         />

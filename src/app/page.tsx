@@ -20,8 +20,8 @@ const COLLECTIONS: { title: string; href: string; blurb: string; where: Prisma.P
   { title: CATEGORY_LABEL.SEASONAL, href: "/shop?category=SEASONAL", blurb: "Only around for a few weeks.", where: { category: "SEASONAL" } },
 ];
 
-/** Produce that photographs well at hero scale, in preference order. */
-const HERO_IMAGE_SLUGS = ["watermelon", "pineapple", "mixed-fruit-cup", "tomato", "avocado"];
+/** Brand photography in Cloudinary, uploaded via prisma/scripts/upload-brand-image.ts. */
+const HERO_IMAGE_ID = "basket-hero-produce-bag";
 
 const TESTIMONIALS = [
   { quote: "The produce actually lasts the week. That never happened with the market.", name: "Adaeze, Lekki" },
@@ -30,13 +30,9 @@ const TESTIMONIALS = [
 ];
 
 export default async function LandingPage() {
-  const [featured, starterCandidates, heroProduct, ...collectionProducts] = await Promise.all([
+  const [featured, starterCandidates, ...collectionProducts] = await Promise.all([
     prisma.product.findMany({ where: { featured: true }, take: 8, orderBy: { name: "asc" } }),
     getHeroBasketCandidates(),
-    prisma.product.findFirst({
-      where: { slug: { in: HERO_IMAGE_SLUGS }, cloudinaryPublicId: { not: null } },
-      select: { name: true, imageEmoji: true, cloudinaryPublicId: true },
-    }),
     ...COLLECTIONS.map((c) =>
       prisma.product.findMany({ where: c.where, take: 4, orderBy: { name: "asc" } }),
     ),
@@ -77,17 +73,16 @@ export default async function LandingPage() {
             </LinkButton>
           </div>
 
-          {heroProduct && (
-            <ProductImage
-              publicId={heroProduct.cloudinaryPublicId}
-              alt={heroProduct.name}
-              emoji={heroProduct.imageEmoji}
-              className="aspect-square w-full"
-              rounded="rounded-card-lg"
-              emojiClassName="text-8xl"
-              sizes="(min-width: 1024px) 520px, 90vw"
-            />
-          )}
+          <ProductImage
+            publicId={HERO_IMAGE_ID}
+            alt="Unpacking a Basket delivery of oranges, bananas, peppers and greens"
+            emoji="🧺"
+            aspectRatio="4:3"
+            className="aspect-[4/3] w-full"
+            rounded="rounded-card-lg"
+            emojiClassName="text-8xl"
+            sizes="(min-width: 1024px) 560px, 90vw"
+          />
         </div>
       </section>
 
