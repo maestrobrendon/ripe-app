@@ -30,9 +30,8 @@ const TESTIMONIALS = [
 ];
 
 export default async function LandingPage() {
-  const [featured, tiers, starterCandidates, heroProduct, ...collectionProducts] = await Promise.all([
+  const [featured, starterCandidates, heroProduct, ...collectionProducts] = await Promise.all([
     prisma.product.findMany({ where: { featured: true }, take: 8, orderBy: { name: "asc" } }),
-    prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     getHeroBasketCandidates(),
     prisma.product.findFirst({
       where: { slug: { in: HERO_IMAGE_SLUGS }, cloudinaryPublicId: { not: null } },
@@ -236,26 +235,6 @@ export default async function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <Card variant="feature" className="bg-basket-green text-white">
-          <h2 className="text-heading-sm">Order often? Subscribe.</h2>
-          <p className="mt-3 max-w-xl text-sm text-white/80">
-            A Basket subscription unlocks member pricing across the catalog, free delivery on your set
-            days, combo pricing, and a standing weekly basket you edit before you are charged.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            {tiers.map((t) => (
-              <span key={t.id} className="rounded-full bg-white/15 px-4 py-2 text-sm">
-                {t.name} · {formatNaira(t.monthlyFee)}/mo
-              </span>
-            ))}
-          </div>
-          <LinkButton href="/subscribe" className="mt-6 bg-white! text-basket-green! hover:bg-white/90!">
-            Compare subscriptions
-          </LinkButton>
-        </Card>
       </section>
 
       <FaqBand />

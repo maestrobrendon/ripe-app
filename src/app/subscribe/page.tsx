@@ -35,7 +35,7 @@ export default async function SubscribePage() {
       </div>
 
       {currentSlug ? (
-        <Card className="mx-auto mt-10 max-w-md border-basket-green bg-basket-green-light text-center">
+        <Card tone="tint" className="mx-auto mt-10 max-w-md text-center">
           <p className="text-sm text-muted">You are subscribed to</p>
           <p className="text-2xl font-semibold">{user?.subscriptionTier?.name}</p>
           <p className="mt-1 text-sm text-muted">
@@ -50,10 +50,7 @@ export default async function SubscribePage() {
           const isMid = i === 1;
           const isCurrent = tier.slug === currentSlug;
           return (
-            <Card
-              key={tier.id}
-              className={`flex flex-col ${isMid ? "border-basket-green bg-basket-green-light" : ""}`}
-            >
+            <Card key={tier.id} tone={isMid ? "tint" : "surface"} className="flex flex-col">
               {isMid && (
                 <span className="mb-3 inline-block w-fit rounded-full bg-basket-green px-3 py-1 text-xs font-medium text-white">
                   Most popular
