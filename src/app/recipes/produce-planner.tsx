@@ -45,7 +45,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
   const redirect = result && "redirect" in result ? result.redirect : null;
 
   return (
-    <div className="rounded-3xl border border-border bg-surface p-5 sm:p-6">
+    <div className="rounded-card-lg border border-border bg-surface p-5 sm:p-6">
       <h2 className="text-lg font-semibold">Produce Planner</h2>
       <p className="mt-1 text-sm text-muted">
         Fruit and vegetable ideas for your week. Everything on the list comes from our shelves.
