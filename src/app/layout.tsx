@@ -11,7 +11,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CartDrawer } from "@/components/cart-drawer";
 import { AnnouncementBar } from "@/components/announcement-bar";
-import { WhatsAppWidget } from "@/components/whatsapp-widget";
+import { CoachWidget } from "@/components/coach-widget";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <main className="flex-1">{children}</main>
             <SiteFooter />
             <CartDrawer />
-            <WhatsAppWidget />
+            <CoachWidget />
           </CartProvider>
         </ZoneProvider>
       </body>

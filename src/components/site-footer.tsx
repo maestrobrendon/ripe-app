@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SUPPORT_WHATSAPP } from "@/lib/site";
 
 export function SiteFooter() {
   return (
@@ -34,7 +34,7 @@ export function SiteFooter() {
             <p className="text-sm font-medium text-foreground">Support</p>
             <ul className="mt-2 space-y-1 text-sm text-muted">
               <li><a href="mailto:hello@basket.ng" className="hover:text-foreground">hello@basket.ng</a></li>
-              <li><a href="https://wa.me/2348000000000" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp us</a></li>
+              <li><a href={`https://wa.me/${SUPPORT_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp us</a></li>
               <li><Link href="/account" className="hover:text-foreground">Your account</Link></li>
               <li><Link href="/terms" className="hover:text-foreground">Terms</Link></li>
             </ul>
