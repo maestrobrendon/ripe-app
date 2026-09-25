@@ -64,15 +64,28 @@ export function SearchBar({
 
   return (
     <div ref={boxRef} className={`relative ${compact ? "w-full" : "w-full max-w-sm"}`}>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} className="relative">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => results.length && setOpen(true)}
           autoFocus={autoFocus}
-          placeholder="Search produce"
+          placeholder="Search produce, boxes, recipes"
           aria-label="Search produce"
-          className="w-full rounded-full border border-border bg-surface px-4 py-2 text-sm"
+          className="w-full rounded-full border border-border bg-surface py-2.5 pl-11 pr-4 text-sm"
         />
       </form>
 
