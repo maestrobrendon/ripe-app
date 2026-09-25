@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { buildStarterPicks, type StarterCandidate, type StarterPick } from "@/lib/starter-basket-core";
+import {
+  buildStarterPicks,
+  DEFAULT_SEED_SLUGS,
+  type StarterCandidate,
+  type StarterPick,
+} from "@/lib/starter-basket-core";
 
 export * from "@/lib/starter-basket-core";
 
@@ -22,6 +27,20 @@ export async function getStarterCandidates(): Promise<StarterCandidate[]> {
     },
     orderBy: { name: "asc" },
   });
+}
+
+/**
+ * The subset a goal-less, preference-less basket can actually draw on. The hero
+ * estimator runs buildStarterPicks in the browser, so this keeps the whole
+ * catalogue out of the client payload without changing what it picks.
+ */
+export async function getHeroBasketCandidates(): Promise<StarterCandidate[]> {
+  const all = await getStarterCandidates();
+  return all.filter(
+    (c) =>
+      DEFAULT_SEED_SLUGS.includes(c.slug) ||
+      (c.category !== "BOX_BUNDLE" && c.featured && c.inSeason),
+  );
 }
 
 /** Starter picks for a saved user, from their preferences. */

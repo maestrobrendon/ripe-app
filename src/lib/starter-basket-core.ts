@@ -49,6 +49,9 @@ const STARTER_SEED: Record<string, { box: string; produce: string[] }> = {
 
 const DEFAULT_SEED = STARTER_SEED["general-wellness"];
 
+/** Slugs a goal-less basket seeds from, before the featured/in-season padding. */
+export const DEFAULT_SEED_SLUGS: string[] = [DEFAULT_SEED.box, ...DEFAULT_SEED.produce];
+
 export function householdScale(adults: number, kids: number): number {
   return Math.max(1, Math.round((adults || 1) + 0.5 * (kids || 0)));
 }

@@ -16,11 +16,13 @@
   --basket-cream: #faf6ee;
 
   /* Structural scale — pill controls, soft-radius cards, flat/hairline elevation.
-     Colors stay Basket's own; this is only the shape/weight system. */
+     Colors stay Basket's own; this is only the shape/weight system. Radii are
+     deliberately generous (not a token-name-only change from the old 16px) so
+     the card shape actually reads as different at a glance. */
   --radius-control: 9999px;
   --radius-input: 12px;
-  --radius-card: 20px;
-  --radius-card-lg: 28px;
+  --radius-card: 24px;
+  --radius-card-lg: 36px;
   --shadow-hairline: 0 0 0 1px var(--border);
   --shadow-elevated: 0 12px 32px rgba(31, 42, 31, 0.14);
 }
@@ -59,38 +61,39 @@ h1, h2, h3, h4 {
   font-family: var(--font-fraunces), Georgia, serif;
 }
 
-/* Confident, tightly-tracked display scale for brand-defining headings —
-   heavier weight and negative tracking at the top of the scale so headlines
-   read with authority instead of default serif airiness. */
+/* Confident, tightly-tracked display scale for brand-defining headings.
+   Weight 900 + noticeably larger sizes + tight negative tracking, so the
+   headline shape is unmistakably different from a default serif h1 rather
+   than a marginal weight bump. */
 .text-display {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 700;
-  font-size: clamp(2.5rem, 4.5vw, 3.75rem);
-  line-height: 1.04;
-  letter-spacing: -0.02em;
+  font-weight: 900;
+  font-size: clamp(2.75rem, 6vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
 }
 
 .text-heading {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 700;
-  font-size: clamp(1.875rem, 3vw, 2.5rem);
-  line-height: 1.1;
-  letter-spacing: -0.015em;
+  font-weight: 900;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
 }
 
 .text-heading-sm {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 600;
-  font-size: 1.5rem;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  font-size: 1.625rem;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
 }
 
 .text-subheading {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.125rem;
-  line-height: 1.35;
-  letter-spacing: -0.005em;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
 /* Mobile carousels: native swipe with snap points, scrollbar hidden. */

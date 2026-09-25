@@ -20,8 +20,16 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
 
   const links = isSignedIn ? [...NAV, { href: "/basket", label: "Basket" }] : NAV;
 
+  // On the landing page the header shares the hero's band colour and drops its
+  // divider, so nav and hero read as a single unbroken field.
+  const onHero = pathname === "/";
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+    <header
+      className={`sticky top-0 z-40 ${
+        onHero ? "bg-basket-green-light" : "border-b border-border bg-background/95 backdrop-blur"
+      }`}
+    >
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
         <div className="flex items-center gap-4">
           <Link href="/" className="text-heading-sm tracking-tight text-basket-green">

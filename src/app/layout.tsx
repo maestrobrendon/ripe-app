@@ -16,7 +16,7 @@ import { WhatsAppWidget } from "@/components/whatsapp-widget";
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "variable",
 });
 
 const inter = Inter({

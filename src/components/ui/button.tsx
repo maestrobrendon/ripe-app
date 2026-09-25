@@ -12,8 +12,8 @@ const VARIANT_CLASS: Record<Variant, string> = {
 
 const SIZE_CLASS: Record<Size, string> = {
   sm: "px-4 py-2 text-sm",
-  md: "px-6 py-2.5 text-sm",
-  lg: "px-6 py-3 text-sm",
+  md: "px-6 py-3 text-sm",
+  lg: "px-8 py-4 text-base",
 };
 
 function join(...classes: (string | undefined | false)[]) {
@@ -25,7 +25,7 @@ function join(...classes: (string | undefined | false)[]) {
 // A ghost button carries no fill/border by design -- it's the underlined
 // text-link pairing for a secondary action next to a filled primary one.
 function baseClass(variant: Variant, size: Size, className?: string) {
-  const shape = variant === "ghost" ? "" : "rounded-control font-medium";
+  const shape = variant === "ghost" ? "" : "rounded-control font-semibold";
   return join("inline-flex items-center justify-center transition", shape, VARIANT_CLASS[variant], variant === "ghost" ? "" : SIZE_CLASS[size], className);
 }
 
