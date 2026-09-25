@@ -5,7 +5,6 @@ import { FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { ProductCard } from "@/components/product-card";
 import { ProductGrid } from "@/components/product-grid";
 import { ProductImage } from "@/components/product-image";
-import { SearchBar } from "@/components/search-bar";
 import { FaqBand } from "@/components/faq-band";
 import { LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +20,9 @@ const COLLECTIONS: { title: string; href: string; blurb: string; where: Prisma.P
   { title: CATEGORY_LABEL.SEASONAL, href: "/shop?category=SEASONAL", blurb: "Only around for a few weeks.", where: { category: "SEASONAL" } },
 ];
 
+/** Produce that photographs well at hero scale, in preference order. */
+const HERO_IMAGE_SLUGS = ["watermelon", "pineapple", "mixed-fruit-cup", "tomato", "avocado"];
+
 const TESTIMONIALS = [
   { quote: "The produce actually lasts the week. That never happened with the market.", name: "Adaeze, Lekki" },
   { quote: "I subscribed after the second order. Free delivery on my day pays for itself.", name: "Tunde, Yaba" },
@@ -28,10 +30,14 @@ const TESTIMONIALS = [
 ];
 
 export default async function LandingPage() {
-  const [featured, tiers, starterCandidates, ...collectionProducts] = await Promise.all([
+  const [featured, tiers, starterCandidates, heroProduct, ...collectionProducts] = await Promise.all([
     prisma.product.findMany({ where: { featured: true }, take: 8, orderBy: { name: "asc" } }),
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     getHeroBasketCandidates(),
+    prisma.product.findFirst({
+      where: { slug: { in: HERO_IMAGE_SLUGS }, cloudinaryPublicId: { not: null } },
+      select: { name: true, imageEmoji: true, cloudinaryPublicId: true },
+    }),
     ...COLLECTIONS.map((c) =>
       prisma.product.findMany({ where: c.where, take: 4, orderBy: { name: "asc" } }),
     ),
@@ -39,47 +45,50 @@ export default async function LandingPage() {
 
   return (
     <div>
-      {/* Hero: copy on the left, a live basket estimator on the right. The
-          header sits on this same band so the nav and hero read as one field. */}
+      {/* Hero: short claim, three proof points, one action, one photograph.
+          The header shares this band so nav and hero read as one field, and
+          the grid is height-capped so the whole thing lands above the fold. */}
       <section className="bg-basket-green-light">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-12 pb-14 sm:px-6 sm:pt-16 sm:pb-20 lg:grid-cols-[1.05fr_minmax(380px,1fr)] lg:gap-14">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-2 lg:gap-16 lg:py-14">
           <div>
             <h1 className="text-display text-basket-green-dark">
-              Fruits and vegetables, delivered across Lagos
+              Fresh produce, delivered across Lagos
             </h1>
-            <p className="mt-5 max-w-xl text-base text-basket-green-dark/80 sm:text-lg">
-              Sourced locally from trusted farmers and checked by hand before it leaves us.
-            </p>
 
-            <ul className="mt-7 space-y-3">
+            <ul className="mt-8 space-y-4">
               {[
-                "No subscription needed to shop",
-                "Pick the day it ships: Thursday, Friday or Saturday",
-                "Nothing is charged automatically, ever",
+                "Locally sourced, checked by hand",
+                "Ships Thursday, Friday or Saturday",
+                "Nothing is charged automatically",
               ].map((point) => (
-                <li key={point} className="flex items-start gap-3 text-basket-green-dark">
+                <li key={point} className="flex items-center gap-3 text-basket-green-dark">
                   <span
                     aria-hidden
-                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-basket-green text-xs font-bold text-white"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-basket-green text-xs font-bold text-white"
                   >
                     ✓
                   </span>
-                  <span className="text-sm sm:text-base">{point}</span>
+                  <span className="text-base sm:text-lg">{point}</span>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <LinkButton href="/start" size="lg">Create your account</LinkButton>
-              <LinkButton href="/shop" variant="ghost">Browse everything</LinkButton>
-            </div>
-
-            <div className="mt-8 max-w-md">
-              <SearchBar />
-            </div>
+            <LinkButton href="/start" size="lg" className="mt-10">
+              Get started
+            </LinkButton>
           </div>
 
-          <BasketEstimator candidates={starterCandidates} />
+          {heroProduct && (
+            <ProductImage
+              publicId={heroProduct.cloudinaryPublicId}
+              alt={heroProduct.name}
+              emoji={heroProduct.imageEmoji}
+              className="aspect-square w-full"
+              rounded="rounded-card-lg"
+              emojiClassName="text-8xl"
+              sizes="(min-width: 1024px) 520px, 90vw"
+            />
+          )}
         </div>
       </section>
 
@@ -121,9 +130,9 @@ export default async function LandingPage() {
           <h2 className="text-heading text-white">How it works</h2>
           <div className="mt-10 grid gap-10 sm:grid-cols-3">
             {[
-              ["Choose your produce", "Browse the shop and build your cart, by the piece, the pair, or the kilo."],
-              ["We pick and pack", "Your order is sourced from partner farms and packed the morning it goes out."],
-              ["Delivered to you", "It arrives in your delivery window, anywhere we cover in Lagos."],
+              ["Choose your produce", "By the piece, the pair, or the kilo."],
+              ["We pick and pack", "Packed the morning it goes out."],
+              ["Delivered to you", "Anywhere we cover in Lagos."],
             ].map(([title, body], i) => (
               <div key={title}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-base font-bold text-basket-green">
@@ -135,27 +144,24 @@ export default async function LandingPage() {
             ))}
           </div>
           <LinkButton href="/start" size="lg" className="mt-10 bg-white! text-basket-green! hover:bg-white/90!">
-            Create your free account
+            Get started
           </LinkButton>
         </div>
       </section>
 
-      {/* Alternating text/visual blocks: the trust argument, then the two ways
-          to shop, framed as side-by-side cards. */}
+      {/* The trust argument, kept to one claim and three proofs. */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
             <h2 className="text-heading">Nothing is charged automatically</h2>
             <p className="mt-4 text-base text-muted">
-              Your basket sits saved to your account, and you edit it whenever you like. Picking a
-              shipping day sets which day it would go out. It does not start a countdown and it does
-              not authorise a payment.
+              Your basket stays saved and editable. Picking a day sets when it would ship, nothing more.
             </p>
             <ul className="mt-6 space-y-3 text-sm">
               {[
-                "The basket stays open and editable for as long as you want",
-                "Checking out yourself is the only thing that places an order",
-                "No scheduled charge runs in the background, on any plan",
+                "Edit it whenever you like",
+                "Checking out is what places the order",
+                "No scheduled charge, on any plan",
               ].map((point) => (
                 <li key={point} className="flex items-start gap-3">
                   <span aria-hidden className="mt-1 text-basket-green">✓</span>
@@ -163,9 +169,6 @@ export default async function LandingPage() {
                 </li>
               ))}
             </ul>
-            <LinkButton href="/start" variant="ghost" className="mt-6">
-              See how the basket works
-            </LinkButton>
           </div>
 
           {featured.length > 0 && (
@@ -187,56 +190,21 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing, answered with a real basket instead of a comparison table. */}
       <section className="border-y border-border bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <h2 className="text-heading">Two ways to shop</h2>
-          <p className="mt-3 max-w-xl text-muted">
-            Both use the same catalogue and the same produce. The difference is only how you pay.
-          </p>
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            {[
-              {
-                title: "Order when you want it",
-                body: "Build a cart, check out, done. No account subscription, no commitment, standard pricing.",
-                points: [
-                  "Pay per order",
-                  `Delivery free over ${formatNaira(FREE_DELIVERY_THRESHOLD)}`,
-                  "No monthly fee",
-                ],
-                href: "/shop",
-                cta: "Start shopping",
-                primary: true,
-              },
-              {
-                title: "Keep a standing basket",
-                body: "Save a basket to your account and adjust it week to week. Subscribe on top for member pricing.",
-                points: ["Member pricing across the catalogue", "Free delivery on your day", "Edit or skip any week"],
-                href: "/subscribe",
-                cta: "Compare subscriptions",
-                primary: false,
-              },
-            ].map((opt) => (
-              <Card key={opt.title} variant="feature" className="flex flex-col">
-                <h3 className="text-heading-sm">{opt.title}</h3>
-                <p className="mt-3 text-sm text-muted">{opt.body}</p>
-                <ul className="mt-5 flex-1 space-y-2 text-sm">
-                  {opt.points.map((point) => (
-                    <li key={point} className="flex gap-2">
-                      <span aria-hidden className="text-basket-green">✓</span>
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-                <LinkButton
-                  href={opt.href}
-                  variant={opt.primary ? "primary" : "secondary"}
-                  className="mt-6 w-full"
-                >
-                  {opt.cta}
-                </LinkButton>
-              </Card>
-            ))}
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <h2 className="text-heading">What a week costs</h2>
+            <p className="mt-4 text-base text-muted">
+              Set your household and see a real basket, priced both ways. Delivery is free over{" "}
+              {formatNaira(FREE_DELIVERY_THRESHOLD)}, or on every member order.
+            </p>
+            <LinkButton href="/subscribe" variant="ghost" className="mt-6">
+              Compare subscriptions
+            </LinkButton>
           </div>
+
+          <BasketEstimator candidates={starterCandidates} />
         </div>
       </section>
 

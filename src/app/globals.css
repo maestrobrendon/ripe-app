@@ -68,8 +68,8 @@ h1, h2, h3, h4 {
 .text-display {
   font-family: var(--font-fraunces), Georgia, serif;
   font-weight: 900;
-  font-size: clamp(2.75rem, 6vw, 5rem);
-  line-height: 0.98;
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  line-height: 1;
   letter-spacing: -0.03em;
 }
 
