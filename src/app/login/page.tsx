@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { PasswordField } from "@/components/ui/password-field";
 import { signIn } from "./actions";
 
 export default async function LoginPage({
@@ -28,17 +29,18 @@ export default async function LoginPage({
         {next && <input type="hidden" name="next" value={next} />}
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Email or phone</span>
-          <input name="contact" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+          <input name="contact" required className="w-full rounded-input border border-border px-3 py-2 text-sm" />
         </label>
-        <label className="block">
-          <span className="mb-1 flex items-center justify-between text-sm font-medium">
-            Password
+        <PasswordField
+          name="password"
+          label="Password"
+          required
+          labelExtra={
             <Link href="/forgot-password" className="text-xs font-normal text-basket-green underline">
               Forgot password?
             </Link>
-          </span>
-          <input name="password" type="password" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
-        </label>
+          }
+        />
         <button
           type="submit"
           className="w-full rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark"

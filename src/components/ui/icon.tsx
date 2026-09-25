@@ -1,13 +1,17 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  AccountSetting01Icon,
   ArrowRight02Icon,
   Cancel01Icon,
   CheckmarkBadge01Icon,
   CheckmarkCircle02Icon,
+  CreditCardIcon,
   DeliveryBox01Icon,
   FavouriteIcon,
+  Home01Icon,
   Loading03Icon,
   MinusSignIcon,
+  PencilEdit01Icon,
   PlantIcon,
   PlusSignIcon,
   Search01Icon,
@@ -17,6 +21,8 @@ import {
   Sun03Icon,
   TruckDeliveryIcon,
   UserIcon,
+  ViewIcon,
+  ViewOffIcon,
 } from "@hugeicons/core-free-icons";
 
 /**
@@ -42,6 +48,12 @@ export const ICONS = {
   shop: Store01Icon,
   reward: SparklesIcon,
   favourite: FavouriteIcon,
+  show: ViewIcon,
+  hide: ViewOffIcon,
+  home: Home01Icon,
+  preferences: AccountSetting01Icon,
+  payment: CreditCardIcon,
+  edit: PencilEdit01Icon,
 } as const;
 
 export type IconName = keyof typeof ICONS;

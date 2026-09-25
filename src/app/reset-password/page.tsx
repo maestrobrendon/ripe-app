@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PasswordField } from "@/components/ui/password-field";
 import { resetPassword } from "./actions";
 
 export default async function ResetPasswordPage({
@@ -43,28 +44,8 @@ export default async function ResetPasswordPage({
 
       <form action={resetPassword} className="mt-8 space-y-4">
         <input type="hidden" name="token" value={token} />
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">New password</span>
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            maxLength={200}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Confirm password</span>
-          <input
-            name="confirm"
-            type="password"
-            required
-            minLength={8}
-            maxLength={200}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-          />
-        </label>
+        <PasswordField name="password" label="New password" required minLength={8} maxLength={200} />
+        <PasswordField name="confirm" label="Confirm password" required minLength={8} maxLength={200} />
         <button
           type="submit"
           className="w-full rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark"

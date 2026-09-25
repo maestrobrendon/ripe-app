@@ -9,6 +9,7 @@ import { buildStarterPicks, type StarterCandidate } from "@/lib/starter-basket-c
 import { ProductImage } from "@/components/product-image";
 import { SITE_NAME } from "@/lib/site";
 import { Button } from "@/components/ui/button";
+import { PasswordField } from "@/components/ui/password-field";
 import { createAccountFromOnboarding } from "./actions";
 import { Icon } from "@/components/ui/icon";
 
@@ -314,16 +315,7 @@ export function StartFlow({
                   className="w-full rounded-input border border-border px-3 py-2 text-sm"
                 />
               </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium">Password</span>
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  className="w-full rounded-input border border-border px-3 py-2 text-sm"
-                />
-              </label>
+              <PasswordField name="password" label="Password" required minLength={8} />
               <Button type="submit" size="lg" className="w-full">
                 Create account
               </Button>
