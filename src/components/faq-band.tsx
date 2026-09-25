@@ -49,29 +49,24 @@ const FAQS = [
 
 export function FaqBand() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <div className="grid gap-8 rounded-3xl bg-basket-green p-8 text-white sm:p-12 md:grid-cols-[1fr_1.4fr]">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-white/60">Good to know</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Before you order.</h2>
-          <p className="mt-4 max-w-xs text-sm text-white/70">
-            The essentials on delivery, quality, and ordering from Basket.
-          </p>
-        </div>
+    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+      <h2 className="text-heading">Before you order</h2>
 
-        <div className="divide-y divide-white/15 border-y border-white/15">
-          {FAQS.map((f) => (
-            <details key={f.q} className="group py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
-                {f.q}
-                <span className="shrink-0 text-lg text-white/60 transition-transform group-open:rotate-45">
-                  +
-                </span>
-              </summary>
-              <p className="mt-2 max-w-lg text-sm text-white/70">{f.a}</p>
-            </details>
-          ))}
-        </div>
+      <div className="mt-10 max-w-3xl border-t border-border">
+        {FAQS.map((f) => (
+          <details key={f.q} className="group border-b border-border py-5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-semibold">
+              {f.q}
+              <span
+                aria-hidden
+                className="shrink-0 text-2xl font-normal text-muted transition-transform group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+            <p className="mt-3 max-w-2xl text-base text-muted">{f.a}</p>
+          </details>
+        ))}
       </div>
     </section>
   );

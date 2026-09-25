@@ -7,7 +7,6 @@ import { ProductGrid } from "@/components/product-grid";
 import { ProductImage } from "@/components/product-image";
 import { FaqBand } from "@/components/faq-band";
 import { LinkButton } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { BasketEstimator } from "@/components/basket-estimator";
 import { getHeroBasketCandidates } from "@/lib/starter-basket";
 import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
@@ -23,10 +22,54 @@ const COLLECTIONS: { title: string; href: string; blurb: string; where: Prisma.P
 /** Brand photography in Cloudinary, uploaded via prisma/scripts/upload-brand-image.ts. */
 const HERO_IMAGE_ID = "basket-hero-produce-bag";
 
-const TESTIMONIALS = [
-  { quote: "The produce actually lasts the week. That never happened with the market.", name: "Adaeze, Lekki" },
-  { quote: "I subscribed after the second order. Free delivery on my day pays for itself.", name: "Tunde, Yaba" },
-  { quote: "Ordering one box a week has made us eat far more vegetables.", name: "Ifeoma, Ikeja" },
+const iconProps = {
+  width: 28,
+  height: 28,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.5,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+} as const;
+
+// Every line here states something the app actually does. Volume claims stay
+// off until there are real numbers behind them.
+const FEATURES = [
+  {
+    title: "Checked by a person",
+    body: "Every order is looked over by hand before it leaves us, and replaced if it is not right.",
+    Icon: () => (
+      <svg {...iconProps} className="text-basket-green">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+      </svg>
+    ),
+  },
+  {
+    title: "Fixed delivery days",
+    body: "Each zone has set days with a 9am to 5pm window, and you pick the one that suits you.",
+    Icon: () => (
+      <svg {...iconProps} className="text-basket-green">
+        <path d="M3 16V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v9" />
+        <path d="M15 10h3.5l2.5 3.2V16h-2" />
+        <circle cx="7.5" cy="17.5" r="1.8" />
+        <circle cx="17" cy="17.5" r="1.8" />
+      </svg>
+    ),
+  },
+  {
+    title: "Sourced locally",
+    body: "Fruit and vegetables bought from farmers we work with directly, not a wholesale floor.",
+    Icon: () => (
+      <svg {...iconProps} className="text-basket-green">
+        <path d="M12 20v-8" />
+        <path d="M12 12c0-3.5-2.7-6-6.5-6 0 3.5 2.7 6 6.5 6z" />
+        <path d="M12 12c0-2.8 2.2-5 5.5-5 0 2.8-2.2 5-5.5 5z" />
+      </svg>
+    ),
+  },
 ];
 
 export default async function LandingPage() {
@@ -202,33 +245,17 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid gap-6 text-center sm:grid-cols-3">
-          {[
-            ["🧺", "Hand-picked quality", "Every order is checked by a person before it leaves."],
-            ["🚚", "Fast, reliable delivery", "Fixed delivery windows across the zones we cover."],
-            ["🌱", "Trusted by thousands", "Households across Lagos order from Basket every week."],
-          ].map(([emoji, title, body]) => (
-            <Card key={title}>
-              <div className="text-3xl">{emoji}</div>
-              <h3 className="mt-3 font-medium">{title}</h3>
-              <p className="mt-1 text-sm text-muted">{body}</p>
-            </Card>
+      {/* Trust signals as bare columns: stroke icon, heading, one line. No
+          card, border or shadow, so the type and spacing carry the section. */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+        <div className="grid gap-12 sm:grid-cols-3 sm:gap-10">
+          {FEATURES.map(({ Icon, title, body }) => (
+            <div key={title}>
+              <Icon />
+              <h3 className="mt-6 text-lg font-bold">{title}</h3>
+              <p className="mt-2 text-base text-muted">{body}</p>
+            </div>
           ))}
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-basket-green-light/50">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <h2 className="text-heading-sm">What customers say</h2>
-          <div className="snap-row -mx-4 mt-6 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-            {TESTIMONIALS.map((t) => (
-              <figure key={t.name} className="w-[80vw] max-w-[300px] shrink-0 rounded-card bg-surface p-6 sm:w-[300px]">
-                <blockquote className="text-sm">&ldquo;{t.quote}&rdquo;</blockquote>
-                <figcaption className="mt-3 text-xs font-medium text-muted">{t.name}</figcaption>
-              </figure>
-            ))}
-          </div>
         </div>
       </section>
 

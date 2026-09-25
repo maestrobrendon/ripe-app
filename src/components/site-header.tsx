@@ -14,6 +14,30 @@ const NAV = [
   { href: "/fresh-cuts", label: "Fresh Cuts" },
 ];
 
+// Icon-only controls still need an accessible name, so every use passes both
+// aria-label and title: the first for screen readers, the second for hover.
+const ICON_BUTTON =
+  "tap-target flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:border-basket-green hover:bg-basket-green-light";
+
+function UserIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function BagIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  );
+}
+
 export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
   const pathname = usePathname();
   const cart = useCart();
@@ -44,32 +68,36 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-2 md:ml-0">
-            {isSignedIn ? (
-              <LinkButton href="/account" variant="secondary" size="sm">
-                Account
-              </LinkButton>
-            ) : (
-              <>
-                <LinkButton href="/login" variant="secondary" size="sm" className="hidden sm:inline-flex">
-                  Sign in
-                </LinkButton>
-                <LinkButton href="/start" size="sm">
-                  Get started
-                </LinkButton>
-              </>
-            )}
+            <Link
+              href={isSignedIn ? "/account" : "/login"}
+              aria-label={isSignedIn ? "Your account" : "Sign in"}
+              title={isSignedIn ? "Your account" : "Sign in"}
+              className={ICON_BUTTON}
+            >
+              <UserIcon />
+            </Link>
+
             <button
               onClick={cart.openDrawer}
-              aria-label="Open cart"
-              className="tap-target relative rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-basket-green-light"
+              aria-label={
+                cart.itemCount > 0 ? `Open cart, ${cart.itemCount} items` : "Open cart"
+              }
+              title="Cart"
+              className={`${ICON_BUTTON} relative`}
             >
-              Cart
+              <BagIcon />
               {cart.itemCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-basket-terracotta text-xs font-medium text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-basket-terracotta text-xs font-medium text-white">
                   {cart.itemCount}
                 </span>
               )}
             </button>
+
+            {!isSignedIn && (
+              <LinkButton href="/start" size="sm">
+                Get started
+              </LinkButton>
+            )}
           </div>
         </div>
 

@@ -23,6 +23,8 @@ export function CoachWidget() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<Payload | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [draft, setDraft] = useState("");
+  const [asking, setAsking] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   // Loaded on first open so the widget costs a closed page nothing.
@@ -53,6 +55,37 @@ export function CoachWidget() {
   }, []);
 
   const ask = (reply: CoachReply) => setTurns((t) => [...t, { question: reply.question, reply }]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const question = draft.trim();
+    if (!question || asking) return;
+    setDraft("");
+    setAsking(true);
+    try {
+      const res = await fetch("/api/coach/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: question }),
+      });
+      const reply = (await res.json()) as CoachReply;
+      setTurns((t) => [...t, { question, reply: { ...reply, question } }]);
+    } catch {
+      setTurns((t) => [
+        ...t,
+        {
+          question,
+          reply: {
+            id: "offline",
+            question,
+            answer: "That did not go through. Check your connection and try again.",
+          },
+        },
+      ]);
+    } finally {
+      setAsking(false);
+    }
+  };
 
   const asked = new Set(turns.map((t) => t.reply.id));
   const remaining = data?.replies.filter((r) => !asked.has(r.id)) ?? [];
@@ -110,8 +143,8 @@ export function CoachWidget() {
             {data && turns.length === 0 && (
               <p className="text-sm text-muted">
                 {data.signedIn
-                  ? "Ask me about what is in season, your rewards, or how ordering works."
-                  : "Points and rewards build once you have an account. Ask me anything below."}
+                  ? "Tap a question below or type your own. I can help with what is in season, delivery, pricing, rewards and what we stock."
+                  : "Type a question or tap one below. Points and rewards start building once you have an account."}
               </p>
             )}
 
@@ -178,10 +211,10 @@ export function CoachWidget() {
             <div ref={endRef} />
           </div>
 
-          {/* Quick replies */}
-          {remaining.length > 0 && (
-            <div className="shrink-0 border-t border-border p-3">
-              <div className="flex flex-wrap gap-2">
+          {/* Quick replies, then a free-text box for anything not on them */}
+          <div className="shrink-0 border-t border-border p-3">
+            {remaining.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
                 {remaining.map((reply) => (
                   <button
                     key={reply.id}
@@ -192,8 +225,33 @@ export function CoachWidget() {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+
+            <form onSubmit={submit} className="flex items-center gap-2">
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Ask anything about Basket"
+                aria-label="Ask the coach a question"
+                maxLength={200}
+                className="min-w-0 flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-sm"
+              />
+              <button
+                type="submit"
+                disabled={asking || draft.trim().length < 2}
+                aria-label="Send question"
+                className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-basket-green text-white transition hover:bg-basket-green-dark disabled:opacity-40"
+              >
+                {asking ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
