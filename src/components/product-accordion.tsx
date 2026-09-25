@@ -23,7 +23,7 @@ export function ProductAccordion({ sections }: { sections: AccordionSection[] })
           <div className="mt-2 text-sm text-muted">
             <p>{s.body}</p>
             {s.link && (
-              <Link href={s.link.href} className="mt-2 inline-block font-medium text-ripe-green underline">
+              <Link href={s.link.href} className="mt-2 inline-block font-medium text-basket-green underline">
                 {s.link.label}
               </Link>
             )}

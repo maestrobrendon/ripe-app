@@ -5,6 +5,8 @@ import { ProductCard } from "@/components/product-card";
 import { ProductGrid } from "@/components/product-grid";
 import { SearchBar } from "@/components/search-bar";
 import { FaqBand } from "@/components/faq-band";
+import { LinkButton } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -33,7 +35,7 @@ export default async function LandingPage() {
   return (
     <div>
       <section className="mx-auto max-w-6xl px-4 pt-14 pb-12 sm:px-6 sm:pt-20">
-        <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl">
+        <h1 className="text-display max-w-2xl">
           What are you shopping for today?
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted sm:text-lg">
@@ -44,26 +46,19 @@ export default async function LandingPage() {
           <SearchBar />
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Link
-            href="/start"
-            className="rounded-full bg-ripe-green px-5 py-2.5 text-sm font-medium text-white hover:bg-ripe-green-dark"
-          >
-            Create your account
-          </Link>
-          <Link href="/shop" className="text-sm font-medium text-ripe-green underline">
-            Browse everything
-          </Link>
+          <LinkButton href="/start" size="lg">Create your account</LinkButton>
+          <LinkButton href="/shop" variant="ghost">Browse everything</LinkButton>
         </div>
         <div className="mt-3 text-sm">
-          <Link href="/subscribe" className="font-medium text-ripe-green underline">See subscription perks</Link>
+          <Link href="/subscribe" className="font-medium text-basket-green underline">See subscription perks</Link>
         </div>
       </section>
 
       {featured.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-6 sm:px-6">
           <div className="mb-4 flex items-end justify-between">
-            <h2 className="text-2xl font-semibold">Favorites</h2>
-            <Link href="/shop" className="text-sm text-ripe-green underline">View all</Link>
+            <h2 className="text-heading-sm">Favorites</h2>
+            <Link href="/shop" className="text-sm text-basket-green underline">View all</Link>
           </div>
           <div className="snap-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0">
             {featured.map((p) => (
@@ -82,10 +77,10 @@ export default async function LandingPage() {
           <section key={c.title} className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl font-semibold">{c.title}</h2>
+                <h2 className="text-heading-sm">{c.title}</h2>
                 <p className="text-sm text-muted">{c.blurb}</p>
               </div>
-              <Link href={c.href} className="text-sm text-ripe-green underline">View all</Link>
+              <Link href={c.href} className="text-sm text-basket-green underline">View all</Link>
             </div>
             <ProductGrid products={items} />
           </section>
@@ -94,7 +89,7 @@ export default async function LandingPage() {
 
       <section className="border-y border-border bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <h2 className="text-2xl font-semibold">How it works</h2>
+          <h2 className="text-heading-sm">How it works</h2>
           <div className="mt-8 grid gap-8 sm:grid-cols-3">
             {[
               ["Choose your produce", "Browse the shop and build your cart, by the piece, the pair, or the kilo."],
@@ -102,7 +97,7 @@ export default async function LandingPage() {
               ["Delivered to you", "It arrives in your delivery window, anywhere we cover in Lagos."],
             ].map(([title, body], i) => (
               <div key={title}>
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-ripe-green text-sm font-semibold text-white">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-basket-green text-sm font-semibold text-white">
                   {i + 1}
                 </div>
                 <h3 className="font-medium">{title}</h3>
@@ -118,23 +113,23 @@ export default async function LandingPage() {
           {[
             ["🧺", "Hand-picked quality", "Every order is checked by a person before it leaves."],
             ["🚚", "Fast, reliable delivery", "Fixed delivery windows across the zones we cover."],
-            ["🌱", "Trusted by thousands", "Households across Lagos order from Ripe every week."],
+            ["🌱", "Trusted by thousands", "Households across Lagos order from Basket every week."],
           ].map(([emoji, title, body]) => (
-            <div key={title} className="rounded-2xl border border-border bg-surface p-6">
+            <Card key={title}>
               <div className="text-3xl">{emoji}</div>
               <h3 className="mt-3 font-medium">{title}</h3>
               <p className="mt-1 text-sm text-muted">{body}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </section>
 
-      <section className="border-y border-border bg-ripe-green-light/50">
+      <section className="border-y border-border bg-basket-green-light/50">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <h2 className="text-2xl font-semibold">What customers say</h2>
+          <h2 className="text-heading-sm">What customers say</h2>
           <div className="snap-row -mx-4 mt-6 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
             {TESTIMONIALS.map((t) => (
-              <figure key={t.name} className="w-[80vw] max-w-[300px] shrink-0 rounded-2xl bg-surface p-6 sm:w-[300px]">
+              <figure key={t.name} className="w-[80vw] max-w-[300px] shrink-0 rounded-card bg-surface p-6 sm:w-[300px]">
                 <blockquote className="text-sm">&ldquo;{t.quote}&rdquo;</blockquote>
                 <figcaption className="mt-3 text-xs font-medium text-muted">{t.name}</figcaption>
               </figure>
@@ -144,10 +139,10 @@ export default async function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="rounded-3xl bg-ripe-green p-8 text-white sm:p-12">
-          <h2 className="text-2xl font-semibold">Order often? Subscribe.</h2>
+        <Card variant="feature" className="bg-basket-green text-white">
+          <h2 className="text-heading-sm">Order often? Subscribe.</h2>
           <p className="mt-3 max-w-xl text-sm text-white/80">
-            A Ripe subscription unlocks member pricing across the catalog, free delivery on your set
+            A Basket subscription unlocks member pricing across the catalog, free delivery on your set
             days, combo pricing, and a standing weekly basket you edit before you are charged.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -157,13 +152,10 @@ export default async function LandingPage() {
               </span>
             ))}
           </div>
-          <Link
-            href="/subscribe"
-            className="mt-6 inline-block rounded-full bg-white px-6 py-3 text-sm font-medium text-ripe-green hover:bg-white/90"
-          >
+          <LinkButton href="/subscribe" className="mt-6 bg-white! text-basket-green! hover:bg-white/90!">
             Compare subscriptions
-          </Link>
-        </div>
+          </LinkButton>
+        </Card>
       </section>
 
       <FaqBand />

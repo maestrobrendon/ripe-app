@@ -30,7 +30,7 @@ export function HeaderSearch() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Search produce"
         aria-expanded={open}
-        className="tap-target flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-ripe-green-light"
+        className="tap-target flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-basket-green-light"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <circle cx="11" cy="11" r="7" />

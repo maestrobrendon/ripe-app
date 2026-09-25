@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { ProductImage } from "@/components/product-image";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
 
 export type ProductCardData = AddableProduct & {
@@ -21,7 +23,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const change = (next: number) => cart.setQuantity(product, next);
 
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-surface p-3 transition hover:shadow-sm sm:p-4">
+    <Card className="flex flex-col transition hover:border-basket-green">
       <Link href={href} className="mb-2 block sm:mb-3">
         <ProductImage
           publicId={product.cloudinaryPublicId}
@@ -38,7 +40,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           <Link href={href} className="hover:underline">{product.name}</Link>
         </h3>
         {!product.inSeason && (
-          <span className="shrink-0 rounded-full bg-ripe-terracotta-light px-1.5 py-0.5 text-[10px] font-medium text-ripe-terracotta-dark sm:px-2 sm:text-[11px]">
+          <span className="shrink-0 rounded-full bg-basket-terracotta-light px-1.5 py-0.5 text-[10px] font-medium text-basket-terracotta-dark sm:px-2 sm:text-[11px]">
             Off-season
           </span>
         )}
@@ -58,19 +60,20 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
       <div className="mt-auto">
         {quantity === 0 ? (
-          <button
+          <Button
             disabled={isLoading}
             onClick={() => change(product.minOrderQty)}
-            className="tap-target w-full rounded-full bg-ripe-green px-4 py-2 text-sm font-medium text-white hover:bg-ripe-green-dark disabled:opacity-60"
+            size="sm"
+            className="tap-target w-full"
           >
             + Add
-          </button>
+          </Button>
         ) : (
-          <div className="flex items-center justify-between rounded-full border border-ripe-green px-1 py-1">
+          <div className="flex items-center justify-between rounded-full border border-basket-green px-1 py-1">
             <button
               disabled={isLoading}
               onClick={() => change(quantity - product.stepQty)}
-              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-ripe-green"
+              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-basket-green"
               aria-label={`Reduce ${product.name}`}
             >
               −
@@ -79,7 +82,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             <button
               disabled={isLoading}
               onClick={() => change(quantity + product.stepQty)}
-              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-ripe-green"
+              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-basket-green"
               aria-label={`Add ${product.name}`}
             >
               +
@@ -87,6 +90,6 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { HeaderSearch } from "@/components/header-search";
+import { LinkButton } from "@/components/ui/button";
+import { SITE_NAME } from "@/lib/site";
 
 const NAV = [
   { href: "/fruits", label: "Fruits" },
@@ -22,8 +24,8 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-xl font-semibold tracking-tight text-ripe-green">
-            Ripe
+          <Link href="/" className="text-heading-sm tracking-tight text-basket-green">
+            {SITE_NAME}
           </Link>
 
           <nav className="hidden items-center gap-5 lg:flex">
@@ -32,7 +34,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
                 key={link.href}
                 href={link.href}
                 className={`text-sm ${
-                  pathname === link.href ? "font-medium text-ripe-green" : "text-muted hover:text-foreground"
+                  pathname === link.href ? "font-medium text-basket-green" : "text-muted hover:text-foreground"
                 }`}
               >
                 {link.label}
@@ -42,21 +44,22 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
 
           <div className="ml-auto flex items-center gap-3">
             <HeaderSearch />
-            <Link
+            <LinkButton
               href={isSignedIn ? "/account" : "/login"}
               aria-label={isSignedIn ? "Your account" : "Sign in"}
-              className="rounded-full border border-border px-3 py-2 text-sm hover:bg-ripe-green-light"
+              variant="secondary"
+              size="sm"
             >
               {isSignedIn ? "Account" : "Sign in"}
-            </Link>
+            </LinkButton>
             <button
               onClick={cart.openDrawer}
               aria-label="Open cart"
-              className="relative rounded-full border border-border px-3 py-2 text-sm hover:bg-ripe-green-light"
+              className="relative rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-basket-green-light"
             >
               Cart
               {cart.itemCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ripe-terracotta text-xs font-medium text-white">
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-basket-terracotta text-xs font-medium text-white">
                   {cart.itemCount}
                 </span>
               )}
@@ -71,7 +74,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
               key={link.href}
               href={link.href}
               className={`shrink-0 text-sm ${
-                pathname === link.href ? "font-medium text-ripe-green" : "text-muted"
+                pathname === link.href ? "font-medium text-basket-green" : "text-muted"
               }`}
             >
               {link.label}

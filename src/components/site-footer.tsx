@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { SITE_NAME } from "@/lib/site";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-border bg-ripe-green-light/40">
+    <footer className="mt-24 border-t border-border bg-basket-green-light/40">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-4">
           <div>
-            <p className="text-lg font-semibold text-ripe-green">Ripe</p>
+            <p className="text-heading-sm text-basket-green">{SITE_NAME}</p>
             <p className="mt-2 max-w-xs text-sm text-muted">
               Fruits and vegetables, delivered across Lagos, sourced locally from trusted farmers.
             </p>
@@ -32,7 +33,7 @@ export function SiteFooter() {
           <div>
             <p className="text-sm font-medium text-foreground">Support</p>
             <ul className="mt-2 space-y-1 text-sm text-muted">
-              <li><a href="mailto:hello@ripe.ng" className="hover:text-foreground">hello@ripe.ng</a></li>
+              <li><a href="mailto:hello@basket.ng" className="hover:text-foreground">hello@basket.ng</a></li>
               <li><a href="https://wa.me/2348000000000" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp us</a></li>
               <li><Link href="/account" className="hover:text-foreground">Your account</Link></li>
               <li><Link href="/terms" className="hover:text-foreground">Terms</Link></li>
@@ -40,7 +41,7 @@ export function SiteFooter() {
           </div>
         </div>
         <p className="mt-8 text-xs text-muted">
-          Ripe is not trying to replace Chowdeck, roadside sellers, or supermarkets. It is built for people who already want to eat better, consistently.
+          Basket is not trying to replace Chowdeck, roadside sellers, or supermarkets. It is built for people who already want to eat better, consistently.
         </p>
       </div>
     </footer>

@@ -68,7 +68,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
             />
             <button
               disabled={loading || !text.trim()}
-              className="rounded-full bg-ripe-green px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-full bg-basket-green px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {loading ? "Working" : "Plan it"}
             </button>
@@ -82,7 +82,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
                   setText(ex);
                   call({ mode: "text", text: ex });
                 }}
-                className="rounded-full border border-border px-3 py-1 text-xs hover:bg-ripe-green-light"
+                className="rounded-full border border-border px-3 py-1 text-xs hover:bg-basket-green-light"
               >
                 {ex}
               </button>
@@ -95,7 +95,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
               <button
                 key={g.id}
                 onClick={() => call({ mode: "goal", goalId: g.id })}
-                className="rounded-full border border-ripe-green/40 px-3 py-1.5 text-xs font-medium text-ripe-green hover:bg-ripe-green-light"
+                className="rounded-full border border-basket-green/40 px-3 py-1.5 text-xs font-medium text-basket-green hover:bg-basket-green-light"
               >
                 {g.label}
               </button>
@@ -105,14 +105,14 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
           <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
             <button
               onClick={() => call({ mode: "week" })}
-              className="rounded-full bg-ripe-terracotta px-4 py-2 text-sm font-medium text-white hover:bg-ripe-terracotta-dark"
+              className="rounded-full bg-basket-terracotta px-4 py-2 text-sm font-medium text-white hover:bg-basket-terracotta-dark"
             >
               Give me this week&rsquo;s picks
             </button>
             {cart.items.length > 0 && (
               <button
                 onClick={() => call({ mode: "cart", cartSlugs: cart.items.map((i) => i.slug) })}
-                className="text-ripe-green underline"
+                className="text-basket-green underline"
               >
                 Read what&rsquo;s in my cart
               </button>
@@ -134,7 +134,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
       )}
 
       {redirect && (
-        <div className="mt-4 rounded-xl bg-ripe-terracotta-light/50 p-4 text-sm text-ripe-terracotta-dark">
+        <div className="mt-4 rounded-xl bg-basket-terracotta-light/50 p-4 text-sm text-basket-terracotta-dark">
           <p>{redirect}</p>
           <button onClick={reset} className="mt-2 text-xs font-medium underline">
             Try again
@@ -145,7 +145,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
       {result && "plan" in result && result.plan === null && (
         <div className="mt-4 rounded-xl border border-dashed border-border p-4 text-sm text-muted">
           We could not turn that into a produce plan. Try a fruit, a vegetable, or one of the goals above.
-          <button onClick={reset} className="ml-2 text-xs font-medium text-ripe-green underline">
+          <button onClick={reset} className="ml-2 text-xs font-medium text-basket-green underline">
             Start over
           </button>
         </div>
@@ -190,7 +190,7 @@ function PlanView({
     <div className="mt-5 border-t border-border pt-5">
       <div className="flex items-baseline justify-between">
         <h3 className="text-lg font-semibold">{plan.title}</h3>
-        <button onClick={onReset} className="text-xs text-ripe-green underline">
+        <button onClick={onReset} className="text-xs text-basket-green underline">
           Start over
         </button>
       </div>
@@ -211,7 +211,7 @@ function PlanView({
       {plan.ideas.length > 1 && (
         <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
           {addedAll ? (
-            <span className="text-sm font-medium text-ripe-green">
+            <span className="text-sm font-medium text-basket-green">
               Added the produce for this plan.{" "}
               <Link href="/cart" className="underline">View cart</Link>
             </span>
@@ -219,7 +219,7 @@ function PlanView({
             <button
               disabled={busy}
               onClick={() => addLines(allLines, "all")}
-              className="rounded-full bg-ripe-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-ripe-terracotta-dark disabled:opacity-60"
+              className="rounded-full bg-basket-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-60"
             >
               Add everything for this plan · {formatNaira(plan.combinedTotal)}
             </button>
@@ -242,11 +242,11 @@ function IdeaCard({
   onAdd: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-border p-4">
+    <div className="rounded-card border border-border p-4">
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-medium">
           {idea.name}
-          <span className="ml-2 rounded-full bg-ripe-green-light px-2 py-0.5 text-[11px] font-medium text-ripe-green">
+          <span className="ml-2 rounded-full bg-basket-green-light px-2 py-0.5 text-[11px] font-medium text-basket-green">
             {idea.kindLabel}
           </span>
         </p>
@@ -284,12 +284,12 @@ function IdeaCard({
 
       <div className="mt-3 flex items-center gap-3">
         {added ? (
-          <span className="text-xs font-medium text-ripe-green">Added</span>
+          <span className="text-xs font-medium text-basket-green">Added</span>
         ) : (
           <button
             disabled={busy}
             onClick={onAdd}
-            className="rounded-full border border-ripe-green px-4 py-1.5 text-xs font-medium text-ripe-green hover:bg-ripe-green-light disabled:opacity-60"
+            className="rounded-full border border-basket-green px-4 py-1.5 text-xs font-medium text-basket-green hover:bg-basket-green-light disabled:opacity-60"
           >
             Add the produce · {formatNaira(idea.produceTotal)}
           </button>

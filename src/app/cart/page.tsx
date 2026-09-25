@@ -16,13 +16,13 @@ export default function CartPage() {
       <h1 className="text-2xl font-semibold sm:text-3xl">Your cart</h1>
 
       {cart.items.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
+        <p className="mt-6 rounded-card border border-dashed border-border p-8 text-center text-sm text-muted">
           Your cart is empty.{" "}
-          <Link href="/shop" className="text-ripe-green underline">Start shopping</Link>.
+          <Link href="/shop" className="text-basket-green underline">Start shopping</Link>.
         </p>
       ) : (
         <div className="mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_320px]">
-          <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+          <ul className="divide-y divide-border rounded-card border border-border bg-surface">
             {cart.items.map((item) => {
               const price = cart.isSubscriber ? item.memberPrice : item.standardPrice;
               const addable = {
@@ -78,7 +78,7 @@ export default function CartPage() {
             })}
           </ul>
 
-          <div className="h-fit rounded-2xl border border-border bg-surface p-5 text-sm">
+          <div className="h-fit rounded-card border border-border bg-surface p-5 text-sm">
             <div className="flex justify-between">
               <span className="text-muted">Subtotal</span>
               <span>{formatNaira(cart.subtotal)}</span>
@@ -93,7 +93,7 @@ export default function CartPage() {
             </div>
 
             {!cart.isSubscriber && cart.savingsIfMember > 0 && (
-              <p className="mt-3 text-xs text-ripe-terracotta-dark">
+              <p className="mt-3 text-xs text-basket-terracotta-dark">
                 Members would pay {formatNaira(cart.memberSubtotal)} for this cart.{" "}
                 <Link href="/subscribe" className="underline">See subscription</Link>
               </p>
@@ -107,11 +107,11 @@ export default function CartPage() {
 
             <Link
               href="/checkout"
-              className="mt-4 block rounded-full bg-ripe-terracotta px-6 py-3 text-center text-sm font-medium text-white hover:bg-ripe-terracotta-dark"
+              className="mt-4 block rounded-full bg-basket-terracotta px-6 py-3 text-center text-sm font-medium text-white hover:bg-basket-terracotta-dark"
             >
               Continue to checkout
             </Link>
-            <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-ripe-green underline">
+            <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-basket-green underline">
               Ask the trained assistant what to make
             </Link>
           </div>

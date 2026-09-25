@@ -16,7 +16,7 @@ export default async function ResetPasswordPage({
           This password reset link is invalid or has already been used. Reset links expire
           30 minutes after they are sent.
         </p>
-        <Link href="/forgot-password" className="mt-4 inline-block text-sm font-medium text-ripe-green underline">
+        <Link href="/forgot-password" className="mt-4 inline-block text-sm font-medium text-basket-green underline">
           Request a new link
         </Link>
       </div>
@@ -28,15 +28,15 @@ export default async function ResetPasswordPage({
       <h1 className="text-3xl font-semibold">Choose a new password</h1>
 
       {error === "expired" ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
           That link has expired or was already used. <Link href="/forgot-password" className="underline">Request a new one</Link>.
         </p>
       ) : error === "throttled" ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
           Too many attempts. Please wait a few minutes and try again.
         </p>
       ) : error === "invalid" ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
           Passwords must be at least 8 characters and match.
         </p>
       ) : null}
@@ -67,7 +67,7 @@ export default async function ResetPasswordPage({
         </label>
         <button
           type="submit"
-          className="w-full rounded-full bg-ripe-green px-6 py-3 text-sm font-medium text-white hover:bg-ripe-green-dark"
+          className="w-full rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark"
         >
           Reset password
         </button>

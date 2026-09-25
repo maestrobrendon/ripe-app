@@ -13,7 +13,7 @@ export type CrossSellProduct = AddableProduct & {
 function Stars({ avg }: { avg: number }) {
   const full = Math.round(avg);
   return (
-    <span className="text-xs text-ripe-terracotta-dark" aria-label={`${avg} out of 5`}>
+    <span className="text-xs text-basket-terracotta-dark" aria-label={`${avg} out of 5`}>
       {"★".repeat(full)}
       <span className="text-border">{"★".repeat(5 - full)}</span>
     </span>
@@ -27,7 +27,7 @@ function Card({ product }: { product: CrossSellProduct }) {
   const price = cart.isSubscriber ? product.memberPrice : product.standardPrice;
 
   return (
-    <div className="flex w-40 shrink-0 flex-col rounded-2xl border border-border bg-surface p-3 sm:w-56 sm:p-4">
+    <div className="flex w-40 shrink-0 flex-col rounded-card border border-border bg-surface p-3 sm:w-56 sm:p-4">
       <Link href={`/products/${product.slug}`} className="mb-2 block sm:mb-3">
         <ProductImage
           publicId={product.cloudinaryPublicId}
@@ -57,14 +57,14 @@ function Card({ product }: { product: CrossSellProduct }) {
         {chooseOptions ? (
           <Link
             href={`/products/${product.slug}`}
-            className="block w-full rounded-full border border-ripe-green px-4 py-2 text-center text-xs font-medium uppercase tracking-wide text-ripe-green hover:bg-ripe-green-light"
+            className="block w-full rounded-full border border-basket-green px-4 py-2 text-center text-xs font-medium uppercase tracking-wide text-basket-green hover:bg-basket-green-light"
           >
             Choose options
           </Link>
         ) : (
           <button
             onClick={() => cart.setQuantity(product, (cart.items.find((i) => i.productId === product.id)?.quantity ?? 0) + product.minOrderQty)}
-            className="w-full rounded-full border border-ripe-green px-4 py-2 text-xs font-medium uppercase tracking-wide text-ripe-green hover:bg-ripe-green-light"
+            className="w-full rounded-full border border-basket-green px-4 py-2 text-xs font-medium uppercase tracking-wide text-basket-green hover:bg-basket-green-light"
           >
             {inCart ? "Add another" : "Add to cart"}
           </button>

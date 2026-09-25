@@ -71,7 +71,7 @@ export function CheckoutFlow({
         <StepIndicator steps={STEPS} currentStep={step} />
       </div>
 
-      <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
+      <div className="mt-8 rounded-card border border-border bg-surface p-6">
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Delivery address</h2>
@@ -124,7 +124,7 @@ export function CheckoutFlow({
                       key={d}
                       onClick={() => set("deliveryDay", d)}
                       className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                        form.deliveryDay === d ? "border-ripe-green bg-ripe-green-light" : "border-border"
+                        form.deliveryDay === d ? "border-basket-green bg-basket-green-light" : "border-border"
                       }`}
                     >
                       {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
@@ -143,7 +143,7 @@ export function CheckoutFlow({
         {step === 3 && (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Payment method</h2>
-            <p className="text-xs font-medium uppercase tracking-wide text-ripe-terracotta-dark">
+            <p className="text-xs font-medium uppercase tracking-wide text-basket-terracotta-dark">
               Test mode. No real payment is taken
             </p>
             <div className="space-y-2">
@@ -152,7 +152,7 @@ export function CheckoutFlow({
                   key={m}
                   onClick={() => set("paymentMethod", m)}
                   className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                    form.paymentMethod === m ? "border-ripe-green bg-ripe-green-light" : "border-border"
+                    form.paymentMethod === m ? "border-basket-green bg-basket-green-light" : "border-border"
                   }`}
                 >
                   {m === "card" ? "Card (test mode)" : "Bank transfer (test mode)"}
@@ -207,13 +207,13 @@ export function CheckoutFlow({
               <Row label="To" value={`${form.address} (${zones.find((z) => z.slug === form.zoneSlug)?.name ?? ""})`} />
               <Row label="Payment" value={form.paymentMethod === "card" ? "Card (test mode)" : "Bank transfer (test mode)"} />
             </div>
-            {error && <p className="rounded-lg bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">{error}</p>}
+            {error && <p className="rounded-lg bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setStep(3)} className={backBtn} disabled={isPending}>Back</button>
               <button
                 onClick={submit}
                 disabled={isPending}
-                className="rounded-full bg-ripe-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-ripe-terracotta-dark disabled:opacity-60"
+                className="rounded-full bg-basket-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-60"
               >
                 {isPending ? "Placing order…" : "Place order"}
               </button>
@@ -226,7 +226,7 @@ export function CheckoutFlow({
 }
 
 const input =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm";
+  "w-full rounded-input border border-border px-3 py-2 text-sm";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -247,10 +247,10 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const backBtn =
-  "rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-ripe-green-light disabled:opacity-60";
+  "rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-basket-green-light disabled:opacity-60";
 
 function nextBtn(enabled: boolean) {
   return `rounded-full px-6 py-2.5 text-sm font-medium text-white ${
-    enabled ? "bg-ripe-green hover:bg-ripe-green-dark" : "cursor-not-allowed bg-ripe-green/40"
+    enabled ? "bg-basket-green hover:bg-basket-green-dark" : "cursor-not-allowed bg-basket-green/40"
   }`;
 }

@@ -56,7 +56,7 @@ export default async function RecipesPage({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Link
             href="/recipes"
-            className={`rounded-full px-4 py-1.5 text-sm ${!goal && !ingredient ? "bg-ripe-green text-white" : "border border-border"}`}
+            className={`rounded-full px-4 py-1.5 text-sm ${!goal && !ingredient ? "bg-basket-green text-white" : "border border-border"}`}
           >
             All recipes
           </Link>
@@ -64,7 +64,7 @@ export default async function RecipesPage({
             <Link
               key={g.slug}
               href={`/recipes?goal=${g.slug}`}
-              className={`rounded-full px-4 py-1.5 text-sm ${goal === g.slug ? "bg-ripe-green text-white" : "border border-border"}`}
+              className={`rounded-full px-4 py-1.5 text-sm ${goal === g.slug ? "bg-basket-green text-white" : "border border-border"}`}
             >
               {GOAL_LABEL[g.slug] ?? g.label}
             </Link>
@@ -74,7 +74,7 @@ export default async function RecipesPage({
         {ingredientProduct && (
           <p className="mt-4 text-sm text-muted">
             Filtered to recipes using {ingredientProduct.name}.{" "}
-            <Link href="/recipes" className="text-ripe-green underline">Clear</Link>
+            <Link href="/recipes" className="text-basket-green underline">Clear</Link>
           </p>
         )}
 
@@ -86,7 +86,7 @@ export default async function RecipesPage({
               <Link
                 key={r.id}
                 href={`/recipes/${r.slug}`}
-                className="rounded-2xl border border-border bg-surface p-4 hover:shadow-sm"
+                className="rounded-card border border-border bg-surface p-4 hover:shadow-sm"
               >
                 <p className="font-medium">{r.title}</p>
                 <p className="mt-1 text-sm text-muted">{r.summary}</p>
@@ -95,7 +95,7 @@ export default async function RecipesPage({
                     const p = byId.get(id);
                     if (!p) return null;
                     return (
-                      <span key={id} className="rounded-full bg-ripe-green-light px-2 py-0.5 text-xs">
+                      <span key={id} className="rounded-full bg-basket-green-light px-2 py-0.5 text-xs">
                         {p.imageEmoji} {p.name}
                       </span>
                     );

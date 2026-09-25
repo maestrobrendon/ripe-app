@@ -80,7 +80,7 @@ export function CartDrawer() {
 
         <div className="border-t border-border px-4 py-4 sm:px-5">
           {!cart.isSubscriber && cart.savingsIfMember > 0 && (
-            <p className="mb-2 text-xs text-ripe-terracotta-dark">
+            <p className="mb-2 text-xs text-basket-terracotta-dark">
               Members would pay {formatNaira(cart.memberSubtotal)} for this cart.{" "}
               <Link href="/subscribe" className="underline" onClick={cart.closeDrawer}>
                 see subscription
@@ -106,14 +106,14 @@ export function CartDrawer() {
             <Link
               href="/cart"
               onClick={cart.closeDrawer}
-              className="flex-1 rounded-full border border-ripe-green px-4 py-3 text-center text-sm font-medium text-ripe-green hover:bg-ripe-green-light"
+              className="flex-1 rounded-full border border-basket-green px-4 py-3 text-center text-sm font-medium text-basket-green hover:bg-basket-green-light"
             >
               View cart
             </Link>
             <Link
               href="/checkout"
               onClick={cart.closeDrawer}
-              className="flex-1 rounded-full bg-ripe-terracotta px-4 py-3 text-center text-sm font-medium text-white hover:bg-ripe-terracotta-dark"
+              className="flex-1 rounded-full bg-basket-terracotta px-4 py-3 text-center text-sm font-medium text-white hover:bg-basket-terracotta-dark"
             >
               Checkout
             </Link>

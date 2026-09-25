@@ -44,7 +44,7 @@ export default async function ShopPage({
               key={c.value || "all"}
               href={href}
               className={`rounded-full px-4 py-1.5 text-sm ${
-                active ? "bg-ripe-green text-white" : "border border-border hover:bg-ripe-green-light"
+                active ? "bg-basket-green text-white" : "border border-border hover:bg-basket-green-light"
               }`}
             >
               {c.label}
@@ -60,7 +60,7 @@ export default async function ShopPage({
             return `/shop${params.toString() ? `?${params}` : ""}`;
           })()}
           className={`rounded-full px-4 py-1.5 text-sm ${
-            season === "in-season" ? "bg-ripe-green text-white" : "border border-border hover:bg-ripe-green-light"
+            season === "in-season" ? "bg-basket-green text-white" : "border border-border hover:bg-basket-green-light"
           }`}
         >
           In season only

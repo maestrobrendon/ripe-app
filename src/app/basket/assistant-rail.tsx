@@ -49,10 +49,10 @@ export function AssistantRail({
     });
 
   const chipCls =
-    "w-full rounded-xl border border-ripe-green/40 bg-ripe-green-light/40 p-3 text-left text-sm transition hover:border-ripe-green disabled:opacity-50";
+    "w-full rounded-xl border border-basket-green/40 bg-basket-green-light/40 p-3 text-left text-sm transition hover:border-basket-green disabled:opacity-50";
 
   return (
-    <aside className="rounded-2xl border border-border bg-surface p-4 lg:sticky lg:top-24 lg:self-start">
+    <aside className="rounded-card border border-border bg-surface p-4 lg:sticky lg:top-24 lg:self-start">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Trained assistant</h2>
         {loading && <span className="text-xs text-muted">thinking…</span>}
@@ -74,7 +74,7 @@ export function AssistantRail({
             onClick={() => run(() => addRecipeIngredients(data.recipe!.slug))}
             className={chipCls}
           >
-            <span className="text-xs font-medium uppercase tracking-wide text-ripe-green">Recipe</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-basket-green">Recipe</span>
             <p className="font-medium">Make {data.recipe.title}</p>
             {data.recipe.addNames.length > 0 && (
               <p className="text-xs text-muted">Adds {data.recipe.addNames.join(", ")}</p>
@@ -88,7 +88,7 @@ export function AssistantRail({
             onClick={() => run(() => setBasketItemQuantity(data.add!.id, 1))}
             className={chipCls}
           >
-            <span className="text-xs font-medium uppercase tracking-wide text-ripe-green">Add</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-basket-green">Add</span>
             <div className="mt-1 flex items-center gap-2">
               <ProductImage
                 publicId={data.add.cloudinaryPublicId}
@@ -109,9 +109,9 @@ export function AssistantRail({
           <button
             disabled={locked || isPending || !data.gap.fixId}
             onClick={() => data.gap?.fixId && run(() => setBasketItemQuantity(data.gap!.fixId!, 1))}
-            className={`${chipCls} border-ripe-terracotta/40 bg-ripe-terracotta-light/40`}
+            className={`${chipCls} border-basket-terracotta/40 bg-basket-terracotta-light/40`}
           >
-            <span className="text-xs font-medium uppercase tracking-wide text-ripe-terracotta-dark">
+            <span className="text-xs font-medium uppercase tracking-wide text-basket-terracotta-dark">
               Gap
             </span>
             <p className="font-medium">{data.gap.message}</p>

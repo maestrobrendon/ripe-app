@@ -48,13 +48,13 @@ export default async function OrderPage({
         {order.address} ({order.zoneName})
       </p>
 
-      <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
+      <div className="mt-8 rounded-card border border-border bg-surface p-6">
         <ol className="flex items-center justify-between">
           {ORDER_STATUS_STEPS.map((status, i) => (
             <li key={status} className="relative flex flex-1 flex-col items-center text-center">
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
-                  i <= currentIndex ? "bg-ripe-green text-white" : "border border-border text-muted"
+                  i <= currentIndex ? "bg-basket-green text-white" : "border border-border text-muted"
                 }`}
               >
                 {i <= currentIndex ? "✓" : i + 1}
@@ -63,7 +63,7 @@ export default async function OrderPage({
                 {ORDER_STATUS_LABEL[status]}
               </span>
               {i < ORDER_STATUS_STEPS.length - 1 && (
-                <span className={`absolute mt-4 h-px w-full ${i < currentIndex ? "bg-ripe-green" : "bg-border"}`} />
+                <span className={`absolute mt-4 h-px w-full ${i < currentIndex ? "bg-basket-green" : "bg-border"}`} />
               )}
             </li>
           ))}
@@ -72,7 +72,7 @@ export default async function OrderPage({
 
       <div className="mt-8">
         <h2 className="mb-3 text-lg font-medium">Items</h2>
-        <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+        <ul className="divide-y divide-border rounded-card border border-border bg-surface">
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 p-4 text-sm">
               <ProductImage
@@ -110,8 +110,8 @@ export default async function OrderPage({
       </div>
 
       <div className="mt-8 flex gap-4">
-        <Link href="/shop" className="text-sm font-medium text-ripe-green underline">Keep shopping</Link>
-        <Link href="/account" className="text-sm font-medium text-ripe-green underline">Your account</Link>
+        <Link href="/shop" className="text-sm font-medium text-basket-green underline">Keep shopping</Link>
+        <Link href="/account" className="text-sm font-medium text-basket-green underline">Your account</Link>
       </div>
     </div>
   );

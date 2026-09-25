@@ -7,6 +7,8 @@ import { PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS, formatNaira } fro
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import { buildStarterPicks, type StarterCandidate } from "@/lib/starter-basket-core";
 import { ProductImage } from "@/components/product-image";
+import { SITE_NAME } from "@/lib/site";
+import { Button } from "@/components/ui/button";
 import { createAccountFromOnboarding } from "./actions";
 
 type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
@@ -97,8 +99,8 @@ export function StartFlow({
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-xl font-semibold tracking-tight text-ripe-green">
-          Ripe
+        <Link href="/" className="text-heading-sm tracking-tight text-basket-green">
+          {SITE_NAME}
         </Link>
         <Link href="/login" className="text-xs text-muted underline">
           Sign in
@@ -109,7 +111,7 @@ export function StartFlow({
         <div className="mt-6">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
             <div
-              className="h-full rounded-full bg-ripe-green transition-all"
+              className="h-full rounded-full bg-basket-green transition-all"
               style={{ width: `${(Math.min(step, TOTAL_STEPS - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
             />
           </div>
@@ -119,7 +121,7 @@ export function StartFlow({
       <div className="mt-8">
         {step === 0 && (
           <Screen why="This is the one answer the trained assistant leans on when it suggests things.">
-            <h1 className="text-2xl font-semibold">What are you hoping to get out of shopping with Ripe?</h1>
+            <h1 className="text-heading-sm">What are you hoping to get out of shopping with Basket?</h1>
             <p className="mt-2 text-sm text-muted">Pick the one that fits best. You can change it later.</p>
             <div className="mt-6 grid gap-3">
               {GOALS.map((g) => (
@@ -138,13 +140,13 @@ export function StartFlow({
 
         {step === 1 && (
           <Screen why="So your basket leans towards what you actually reach for.">
-            <h1 className="text-2xl font-semibold">What do you usually reach for?</h1>
+            <h1 className="text-heading-sm">What do you usually reach for?</h1>
             <p className="mt-2 text-sm text-muted">Choose as many as you like.</p>
             <button
               type="button"
               onClick={toggleAllProduce}
               className={`mt-6 flex w-full items-center gap-3 rounded-xl border p-3 text-left text-sm ${
-                allProduce ? "border-ripe-green bg-ripe-green-light" : "border-border"
+                allProduce ? "border-basket-green bg-basket-green-light" : "border-border"
               }`}
             >
               <span className="text-xl">🧺</span>
@@ -166,7 +168,7 @@ export function StartFlow({
 
         {step === 2 && (
           <Screen why="This sizes the quantities we suggest, nothing else.">
-            <h1 className="text-2xl font-semibold">Who are you shopping for?</h1>
+            <h1 className="text-heading-sm">Who are you shopping for?</h1>
             <p className="mt-2 text-sm text-muted">So basket quantities are about right for your table.</p>
             <div className="mt-6 space-y-3">
               <Counter label="Adults" value={data.adults} min={1} onChange={(v) => set("adults", v)} />
@@ -177,7 +179,7 @@ export function StartFlow({
 
         {step === 3 && (
           <Screen why="So we can keep suggestions clear of anything you avoid.">
-            <h1 className="text-2xl font-semibold">Anything we should know?</h1>
+            <h1 className="text-heading-sm">Anything we should know?</h1>
             <div className="mt-6 grid gap-3">
               {(
                 [
@@ -203,7 +205,7 @@ export function StartFlow({
                 value={data.dietaryDetail}
                 onChange={(e) => set("dietaryDetail", e.target.value)}
                 placeholder="What should we keep out of your basket?"
-                className="mt-3 w-full rounded-lg border border-border px-3 py-2 text-sm"
+                className="mt-3 w-full rounded-input border border-border px-3 py-2 text-sm"
               />
             )}
           </Screen>
@@ -211,14 +213,14 @@ export function StartFlow({
 
         {step === 4 && (
           <div className="py-16 text-center">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-border border-t-ripe-green" />
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-border border-t-basket-green" />
             <p className="mt-4 text-sm text-muted">Saving your answers</p>
           </div>
         )}
 
         {step === 5 && (
           <Screen why="You can change every item after your account is made.">
-            <h1 className="text-2xl font-semibold">Here is a first basket to start from</h1>
+            <h1 className="text-heading-sm">Here is a first basket to start from</h1>
             <p className="mt-2 text-sm text-muted">
               Built from what you told us. Nothing is set in stone, you edit it whenever you like.
             </p>
@@ -248,7 +250,7 @@ export function StartFlow({
 
         {step === 6 && (
           <Screen why="Pick the day. Nothing is charged and no clock starts.">
-            <h1 className="text-2xl font-semibold">Which day would your basket ship?</h1>
+            <h1 className="text-heading-sm">Which day would your basket ship?</h1>
             <p className="mt-2 text-sm text-muted">
               This just sets the day your basket would go out if you check out. It does not commit you to
               anything and it does not start a countdown. You pay when you decide to, not before.
@@ -273,14 +275,14 @@ export function StartFlow({
 
         {step === 7 && (
           <Screen why="Email and password only. No address, no card.">
-            <h1 className="text-2xl font-semibold">Create your account</h1>
+            <h1 className="text-heading-sm">Create your account</h1>
             <p className="mt-2 text-sm text-muted">
               Your basket and answers are saved to this account. It is free and separate from any
               subscription.
             </p>
 
             {error && (
-              <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+              <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
                 {error === "failed"
                   ? "We could not create an account with those details. If you already have one, sign in instead."
                   : error === "missing"
@@ -300,7 +302,7 @@ export function StartFlow({
 
               <label className="block">
                 <span className="mb-1 block text-sm font-medium">Full name</span>
-                <input name="name" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                <input name="name" required className="w-full rounded-input border border-border px-3 py-2 text-sm" />
               </label>
               <label className="block">
                 <span className="mb-1 block text-sm font-medium">Email or phone</span>
@@ -308,7 +310,7 @@ export function StartFlow({
                   name="contact"
                   required
                   placeholder="you@example.com or 080..."
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+                  className="w-full rounded-input border border-border px-3 py-2 text-sm"
                 />
               </label>
               <label className="block">
@@ -318,19 +320,16 @@ export function StartFlow({
                   type="password"
                   required
                   minLength={8}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+                  className="w-full rounded-input border border-border px-3 py-2 text-sm"
                 />
               </label>
-              <button
-                type="submit"
-                className="w-full rounded-full bg-ripe-green px-6 py-3 text-sm font-medium text-white hover:bg-ripe-green-dark"
-              >
+              <Button type="submit" size="lg" className="w-full">
                 Create account
-              </button>
+              </Button>
             </form>
             <p className="mt-4 text-sm text-muted">
               Already have an account?{" "}
-              <Link href="/login" className="text-ripe-green underline">Sign in</Link>
+              <Link href="/login" className="text-basket-green underline">Sign in</Link>
             </p>
           </Screen>
         )}
@@ -339,19 +338,15 @@ export function StartFlow({
       {step < 7 && step !== 4 && (
         <div className="mt-8 flex items-center justify-between">
           {step > 0 ? (
-            <button onClick={back} className="tap-target rounded-full border border-border px-5 py-2 text-sm font-medium">
+            <Button onClick={back} variant="secondary" size="sm" className="tap-target">
               Back
-            </button>
+            </Button>
           ) : (
             <span />
           )}
-          <button
-            onClick={next}
-            disabled={!canNext}
-            className="tap-target rounded-full bg-ripe-green px-6 py-2 text-sm font-medium text-white hover:bg-ripe-green-dark disabled:opacity-40"
-          >
+          <Button onClick={next} disabled={!canNext} size="sm" className="tap-target">
             {step === 5 ? "Looks good" : step === 6 ? "Continue" : "Next"}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -362,7 +357,7 @@ function Screen({ why, children }: { why: string; children: React.ReactNode }) {
   return (
     <div>
       {children}
-      <p className="mt-6 rounded-xl bg-ripe-green-light/60 p-3 text-xs text-ripe-green-dark">{why}</p>
+      <p className="mt-6 rounded-xl bg-basket-green-light/60 p-3 text-xs text-basket-green-dark">{why}</p>
     </div>
   );
 }
@@ -385,7 +380,7 @@ function OptionCard({
       type="button"
       onClick={onClick}
       className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
-        selected ? "border-ripe-green bg-ripe-green-light" : "border-border hover:border-ripe-green/50"
+        selected ? "border-basket-green bg-basket-green-light" : "border-border hover:border-basket-green/50"
       }`}
     >
       <span className="text-2xl leading-none">{emoji}</span>

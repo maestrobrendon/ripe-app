@@ -84,14 +84,14 @@ export default async function BasketPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold">Your basket</h1>
+      <h1 className="text-heading">Your basket</h1>
       <p className="mt-1 text-sm text-muted">
         We keep this saved for you and pre-fill it to start. Edit it however you like. Nothing is
         charged automatically. Checking out is the only thing that places the order.
       </p>
 
       {windowCfg && (
-        <div className="mt-4 rounded-2xl border border-border bg-surface p-4 text-sm">
+        <div className="mt-4 rounded-card border border-border bg-surface p-4 text-sm">
           <span className="font-medium">Scheduled to ship {windowCfg.label}.</span>{" "}
           <span className="text-muted">{windowCfg.cutoffCopy}. Cutoff times are placeholders for now.</span>
         </div>
@@ -99,13 +99,13 @@ export default async function BasketPage() {
 
       {/* Subscriber-only window countdown */}
       {isSubscriber && windowRow && (
-        <div className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-sm">
+        <div className="mt-4 flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface p-4 text-sm">
           {state.skipped ? (
-            <span className="font-medium text-ripe-terracotta-dark">You have skipped this week.</span>
+            <span className="font-medium text-basket-terracotta-dark">You have skipped this week.</span>
           ) : state.locked ? (
-            <span className="font-medium text-ripe-terracotta-dark">This week&rsquo;s edit window is closed.</span>
+            <span className="font-medium text-basket-terracotta-dark">This week&rsquo;s edit window is closed.</span>
           ) : (
-            <span className="font-medium text-ripe-green">Edit window closes in {state.hoursLeft} hours</span>
+            <span className="font-medium text-basket-green">Edit window closes in {state.hoursLeft} hours</span>
           )}
           {basket.frequencyWeeks === 2 && <span className="text-muted">Delivering every 2 weeks</span>}
         </div>
@@ -115,13 +115,13 @@ export default async function BasketPage() {
       {isSubscriber && tier && (
         <>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-ripe-green px-3 py-1 text-xs font-medium text-white">
+            <span className="rounded-full bg-basket-green px-3 py-1 text-xs font-medium text-white">
               {tier.name} member
             </span>
             {tier.perks.map((perk) => (
               <span
                 key={perk}
-                className="rounded-full border border-ripe-green/40 bg-ripe-green-light/50 px-3 py-1 text-xs text-ripe-green"
+                className="rounded-full border border-basket-green/40 bg-basket-green-light/50 px-3 py-1 text-xs text-basket-green"
               >
                 ✓ {perk}
               </span>
@@ -129,7 +129,7 @@ export default async function BasketPage() {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <StreakCard view={streak} />
-            <div className="rounded-2xl border border-border bg-surface p-4">
+            <div className="rounded-card border border-border bg-surface p-4">
               <p className="text-xs text-muted">Saved with membership so far</p>
               <p className="text-2xl font-semibold">{formatNaira(cumulativeSavings)}</p>
               <p className="text-xs text-muted">Across every order vs standard pricing</p>
@@ -139,12 +139,12 @@ export default async function BasketPage() {
       )}
 
       {!isSubscriber && (
-        <div className="mt-4 rounded-2xl border border-dashed border-border p-4 text-sm">
+        <div className="mt-4 rounded-card border border-dashed border-border p-4 text-sm">
           <span className="text-muted">
             Ordering often? A subscription unlocks member pricing, free delivery on your day, and combo
             pricing.
           </span>{" "}
-          <a href="/subscribe" className="font-medium text-ripe-green underline">
+          <a href="/subscribe" className="font-medium text-basket-green underline">
             See what it unlocks
           </a>
         </div>

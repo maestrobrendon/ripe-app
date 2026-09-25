@@ -13,7 +13,7 @@ type SendEmailInput = {
 
 async function sendEmail({ to, subject, html, text }: SendEmailInput): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "Ripe <no-reply@ripe.ng>";
+  const from = process.env.RESEND_FROM_EMAIL || "Basket <no-reply@basket.ng>";
 
   if (!apiKey) {
     // No provider configured (local dev). Log so the flow is still testable
@@ -45,10 +45,10 @@ async function sendEmail({ to, subject, html, text }: SendEmailInput): Promise<b
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   await sendEmail({
     to,
-    subject: "Reset your Ripe password",
-    text: `We got a request to reset your Ripe password. Use this link within 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+    subject: "Reset your Basket password",
+    text: `We got a request to reset your Basket password. Use this link within 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
     html: `
-      <p>We got a request to reset your Ripe password.</p>
+      <p>We got a request to reset your Basket password.</p>
       <p><a href="${resetUrl}">Reset your password</a> (link expires in 30 minutes)</p>
       <p>If you did not request this, you can ignore this email.</p>
     `,

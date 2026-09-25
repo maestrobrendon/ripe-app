@@ -94,7 +94,7 @@ export function BasketWorkspace({
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
         {/* Shipping day + (subscriber) skip */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface p-4">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">Ships</span>
             <select
@@ -120,8 +120,8 @@ export function BasketWorkspace({
               onClick={() => run(() => setWindowSkipped(!skipped))}
               className={`tap-target rounded-full border px-4 py-2 text-sm font-medium disabled:opacity-60 ${
                 skipped
-                  ? "border-ripe-terracotta bg-ripe-terracotta-light text-ripe-terracotta-dark"
-                  : "border-border hover:bg-ripe-green-light"
+                  ? "border-basket-terracotta bg-basket-terracotta-light text-basket-terracotta-dark"
+                  : "border-border hover:bg-basket-green-light"
               }`}
             >
               {skipped ? "Skipped. Undo" : "Skip this week"}
@@ -131,12 +131,12 @@ export function BasketWorkspace({
 
         {/* Same as last week + quick add shelf */}
         {editable && (canRestore || quickAdd.length > 0) && (
-          <div className="rounded-2xl border border-border bg-surface p-4">
+          <div className="rounded-card border border-border bg-surface p-4">
             {canRestore && (
               <button
                 disabled={isPending}
                 onClick={() => run(restoreLastWeek)}
-                className="tap-target rounded-full bg-ripe-green px-4 py-2 text-sm font-medium text-white hover:bg-ripe-green-dark disabled:opacity-60"
+                className="tap-target rounded-full bg-basket-green px-4 py-2 text-sm font-medium text-white hover:bg-basket-green-dark disabled:opacity-60"
               >
                 Same as last time
               </button>
@@ -150,7 +150,7 @@ export function BasketWorkspace({
                       key={q.id}
                       disabled={isPending}
                       onClick={() => run(() => setBasketItemQuantity(q.id, q.minOrderQty))}
-                      className="flex shrink-0 items-center gap-2 rounded-full border border-border py-1.5 pl-1.5 pr-3 text-xs font-medium hover:bg-ripe-green-light disabled:opacity-60"
+                      className="flex shrink-0 items-center gap-2 rounded-full border border-border py-1.5 pl-1.5 pr-3 text-xs font-medium hover:bg-basket-green-light disabled:opacity-60"
                     >
                       <ProductImage
                         publicId={q.cloudinaryPublicId}
@@ -174,11 +174,11 @@ export function BasketWorkspace({
         <div>
           <h2 className="mb-3 text-lg font-medium">In your basket</h2>
           {items.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted">
+            <p className="rounded-card border border-dashed border-border p-6 text-center text-sm text-muted">
               Your basket is empty. Use quick add above, or the assistant.
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border rounded-card border border-border bg-surface">
               {items.map((item) => {
                 const flag = flaggedMap.get(item.productId);
                 return (
@@ -227,12 +227,12 @@ export function BasketWorkspace({
                     </div>
 
                     {flag && editable && (
-                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-ripe-terracotta-light/50 p-2 text-xs">
-                        <span className="text-ripe-terracotta-dark">{flag.reason}.</span>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-basket-terracotta-light/50 p-2 text-xs">
+                        <span className="text-basket-terracotta-dark">{flag.reason}.</span>
                         <button
                           disabled={isPending}
                           onClick={() => run(() => swapBasketItem(flag.productId, flag.swapToId))}
-                          className="rounded-full border border-ripe-green px-3 py-1 font-medium text-ripe-green hover:bg-ripe-green-light disabled:opacity-60"
+                          className="rounded-full border border-basket-green px-3 py-1 font-medium text-basket-green hover:bg-basket-green-light disabled:opacity-60"
                         >
                           Swap for {flag.swapToEmoji} {flag.swapToName}
                         </button>
@@ -250,23 +250,23 @@ export function BasketWorkspace({
               <span className="text-lg font-semibold">{formatNaira(runningValue)}</span>
             </div>
             {isSubscriber && savings > 0 && (
-              <p className="text-xs text-ripe-terracotta-dark">
+              <p className="text-xs text-basket-terracotta-dark">
                 Saving {formatNaira(savings)} on this basket vs non-member pricing
               </p>
             )}
             {isSubscriber && goalFit && (
-              <p className="mt-1 inline-flex w-fit rounded-full bg-ripe-green-light px-3 py-1 text-xs font-medium text-ripe-green">
+              <p className="mt-1 inline-flex w-fit rounded-full bg-basket-green-light px-3 py-1 text-xs font-medium text-basket-green">
                 {goalFit}
               </p>
             )}
           </div>
 
           {items.length > 0 && editable && (
-            <div className="mt-5 rounded-2xl border border-border bg-surface p-4">
+            <div className="mt-5 rounded-card border border-border bg-surface p-4">
               <button
                 disabled={isPending || !shoppingWindowDay}
                 onClick={() => run(checkoutStandingBasket)}
-                className="tap-target w-full rounded-full bg-ripe-terracotta px-6 py-3 text-sm font-medium text-white hover:bg-ripe-terracotta-dark disabled:opacity-50"
+                className="tap-target w-full rounded-full bg-basket-terracotta px-6 py-3 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-50"
               >
                 Check out this basket
               </button>

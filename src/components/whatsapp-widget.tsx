@@ -2,7 +2,7 @@ import Link from "next/link";
 
 // Support runs on WhatsApp from day one. Swap in the real business number later.
 const WHATSAPP_NUMBER = "2348000000000";
-const PREFILL = "Hi Ripe, I have a question about";
+const PREFILL = "Hi Basket, I have a question about";
 
 export function WhatsAppWidget() {
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(PREFILL)}`;

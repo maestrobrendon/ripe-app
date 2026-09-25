@@ -1,7 +1,7 @@
 import type { Product } from "@/generated/prisma/client";
 
 /**
- * The Produce Planner. Ripe only sells fruit and vegetables, so every idea here
+ * The Produce Planner. Basket only sells fruit and vegetables, so every idea here
  * is a produce preparation: a blend, a salad, a roast tray, a quick sauté, a
  * fruit plate, a batch of base, a week of cut fruit. Pantry lists stay to
  * ordinary basics (oil, salt, lime, yoghurt) because the produce is the dish.

@@ -1,7 +1,7 @@
 import { CollectionPage } from "@/components/collection-page";
 import { FRESH_CUTS_TAG } from "@/lib/product";
 
-export const metadata = { title: "Fresh Cuts. Ripe" };
+export const metadata = { title: "Fresh Cuts. Basket" };
 
 // Working name for the pre-cut, ready-to-eat line (see the brief, Section 1).
 export default function FreshCutsPage() {

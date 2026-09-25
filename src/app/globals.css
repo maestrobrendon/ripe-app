@@ -7,13 +7,22 @@
   --muted: #6b6459;
   --border: #e6ddc9;
 
-  --ripe-green: #1f4d3a;
-  --ripe-green-dark: #16362a;
-  --ripe-green-light: #e7f0e9;
-  --ripe-terracotta: #c96a3c;
-  --ripe-terracotta-dark: #a8552d;
-  --ripe-terracotta-light: #f6e3d6;
-  --ripe-cream: #faf6ee;
+  --basket-green: #1f4d3a;
+  --basket-green-dark: #16362a;
+  --basket-green-light: #e7f0e9;
+  --basket-terracotta: #c96a3c;
+  --basket-terracotta-dark: #a8552d;
+  --basket-terracotta-light: #f6e3d6;
+  --basket-cream: #faf6ee;
+
+  /* Structural scale — pill controls, soft-radius cards, flat/hairline elevation.
+     Colors stay Basket's own; this is only the shape/weight system. */
+  --radius-control: 9999px;
+  --radius-input: 12px;
+  --radius-card: 20px;
+  --radius-card-lg: 28px;
+  --shadow-hairline: 0 0 0 1px var(--border);
+  --shadow-elevated: 0 12px 32px rgba(31, 42, 31, 0.14);
 }
 
 @theme inline {
@@ -23,16 +32,21 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
 
-  --color-ripe-green: var(--ripe-green);
-  --color-ripe-green-dark: var(--ripe-green-dark);
-  --color-ripe-green-light: var(--ripe-green-light);
-  --color-ripe-terracotta: var(--ripe-terracotta);
-  --color-ripe-terracotta-dark: var(--ripe-terracotta-dark);
-  --color-ripe-terracotta-light: var(--ripe-terracotta-light);
-  --color-ripe-cream: var(--ripe-cream);
+  --color-basket-green: var(--basket-green);
+  --color-basket-green-dark: var(--basket-green-dark);
+  --color-basket-green-light: var(--basket-green-light);
+  --color-basket-terracotta: var(--basket-terracotta);
+  --color-basket-terracotta-dark: var(--basket-terracotta-dark);
+  --color-basket-terracotta-light: var(--basket-terracotta-light);
+  --color-basket-cream: var(--basket-cream);
 
   --font-sans: var(--font-fraunces), Georgia, serif;
   --font-body: var(--font-inter), Arial, Helvetica, sans-serif;
+
+  --radius-control: var(--radius-control);
+  --radius-input: var(--radius-input);
+  --radius-card: var(--radius-card);
+  --radius-card-lg: var(--radius-card-lg);
 }
 
 body {
@@ -43,6 +57,40 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-fraunces), Georgia, serif;
+}
+
+/* Confident, tightly-tracked display scale for brand-defining headings —
+   heavier weight and negative tracking at the top of the scale so headlines
+   read with authority instead of default serif airiness. */
+.text-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(2.5rem, 4.5vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+
+.text-heading {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(1.875rem, 3vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.text-heading-sm {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.text-subheading {
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
 }
 
 /* Mobile carousels: native swipe with snap points, scrollbar hidden. */

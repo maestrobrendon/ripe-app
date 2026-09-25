@@ -57,13 +57,13 @@ export default async function SearchPage({
           placeholder="Search produce"
           className="w-64 rounded-full border border-border px-4 py-2 text-sm"
         />
-        <button className="rounded-full bg-ripe-green px-5 py-2 text-sm font-medium text-white">Search</button>
+        <button className="rounded-full bg-basket-green px-5 py-2 text-sm font-medium text-white">Search</button>
       </form>
 
       <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
         <Link
           href={buildHref({ category: undefined })}
-          className={`rounded-full px-3 py-1 ${!sp.category ? "bg-ripe-green text-white" : "border border-border"}`}
+          className={`rounded-full px-3 py-1 ${!sp.category ? "bg-basket-green text-white" : "border border-border"}`}
         >
           All categories
         </Link>
@@ -71,14 +71,14 @@ export default async function SearchPage({
           <Link
             key={c}
             href={buildHref({ category: sp.category === c ? undefined : c })}
-            className={`rounded-full px-3 py-1 ${sp.category === c ? "bg-ripe-green text-white" : "border border-border"}`}
+            className={`rounded-full px-3 py-1 ${sp.category === c ? "bg-basket-green text-white" : "border border-border"}`}
           >
             {CATEGORY_LABEL[c]}
           </Link>
         ))}
         <Link
           href={buildHref({ season: sp.season === "in-season" ? undefined : "in-season" })}
-          className={`rounded-full px-3 py-1 ${sp.season === "in-season" ? "bg-ripe-green text-white" : "border border-border"}`}
+          className={`rounded-full px-3 py-1 ${sp.season === "in-season" ? "bg-basket-green text-white" : "border border-border"}`}
         >
           In season
         </Link>

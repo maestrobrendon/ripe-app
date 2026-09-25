@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZone } from "@/lib/zone";
 import { readCart } from "@/lib/cart";
@@ -24,7 +25,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ripe. Fruits and vegetables, delivered fresh across Lagos",
+  title: `${SITE_NAME}. ${SITE_TAGLINE}`,
   description:
     "Shop fruits and vegetables sourced locally from trusted farmers, delivered across Lagos. Subscribe for member pricing and a standing weekly basket.",
 };

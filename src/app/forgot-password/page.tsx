@@ -13,14 +13,14 @@ export default async function ForgotPasswordPage({
       <h1 className="text-3xl font-semibold">Reset your password</h1>
 
       {sent ? (
-        <div className="mt-6 rounded-lg border border-ripe-green bg-ripe-green-light p-4 text-sm">
+        <div className="mt-6 rounded-lg border border-basket-green bg-basket-green-light p-4 text-sm">
           <p>
-            If that email matches a Ripe account, we have sent a link to reset your password.
+            If that email matches a Basket account, we have sent a link to reset your password.
             It expires in 30 minutes.
           </p>
           <p className="mt-2 text-muted">
             Signed up with a phone number only? Email reset is not available yet for
-            phone-only accounts. <Link href="/login" className="text-ripe-green underline">Contact us</Link> for help.
+            phone-only accounts. <Link href="/login" className="text-basket-green underline">Contact us</Link> for help.
           </p>
         </div>
       ) : (
@@ -40,7 +40,7 @@ export default async function ForgotPasswordPage({
             </label>
             <button
               type="submit"
-              className="w-full rounded-full bg-ripe-green px-6 py-3 text-sm font-medium text-white hover:bg-ripe-green-dark"
+              className="w-full rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark"
             >
               Send reset link
             </button>
@@ -49,7 +49,7 @@ export default async function ForgotPasswordPage({
       )}
 
       <p className="mt-6 text-sm text-muted">
-        <Link href="/login" className="text-ripe-green underline">Back to sign in</Link>
+        <Link href="/login" className="text-basket-green underline">Back to sign in</Link>
       </p>
     </div>
   );

@@ -15,11 +15,11 @@ export default async function LoginPage({
       <h1 className="text-3xl font-semibold">Sign in</h1>
 
       {error === "throttled" ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
           Too many sign-in attempts. Please wait a few minutes and try again.
         </p>
       ) : error ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
           That email or phone and password did not match.
         </p>
       ) : null}
@@ -33,7 +33,7 @@ export default async function LoginPage({
         <label className="block">
           <span className="mb-1 flex items-center justify-between text-sm font-medium">
             Password
-            <Link href="/forgot-password" className="text-xs font-normal text-ripe-green underline">
+            <Link href="/forgot-password" className="text-xs font-normal text-basket-green underline">
               Forgot password?
             </Link>
           </span>
@@ -41,7 +41,7 @@ export default async function LoginPage({
         </label>
         <button
           type="submit"
-          className="w-full rounded-full bg-ripe-green px-6 py-3 text-sm font-medium text-white hover:bg-ripe-green-dark"
+          className="w-full rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark"
         >
           Sign in
         </button>
@@ -49,7 +49,7 @@ export default async function LoginPage({
 
       <p className="mt-6 text-sm text-muted">
         New here?{" "}
-        <Link href="/start" className="text-ripe-green underline">
+        <Link href="/start" className="text-basket-green underline">
           Create an account
         </Link>
       </p>

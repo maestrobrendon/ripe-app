@@ -29,7 +29,7 @@ export function StreakBadge({ view }: { view: StreakView }) {
 export function StreakCard({ view }: { view: StreakView }) {
   const line = nextRewardLine(view);
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4">
+    <div className="rounded-card border border-border bg-surface p-4">
       <p className="text-xs text-muted">Weekly streak</p>
       <p className="text-2xl font-semibold">
         {view.currentStreakWeeks} {view.currentStreakWeeks === 1 ? "week" : "weeks"}

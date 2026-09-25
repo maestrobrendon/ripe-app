@@ -50,12 +50,12 @@ const FAQS = [
 export function FaqBand() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <div className="grid gap-8 rounded-3xl bg-ripe-green p-8 text-white sm:p-12 md:grid-cols-[1fr_1.4fr]">
+      <div className="grid gap-8 rounded-3xl bg-basket-green p-8 text-white sm:p-12 md:grid-cols-[1fr_1.4fr]">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-white/60">Good to know</p>
           <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Before you order.</h2>
           <p className="mt-4 max-w-xs text-sm text-white/70">
-            The essentials on delivery, quality, and ordering from Ripe.
+            The essentials on delivery, quality, and ordering from Basket.
           </p>
         </div>
 

@@ -5,6 +5,8 @@ import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { formatNaira } from "@/lib/format";
 import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { addToStandingBasket } from "@/app/basket/actions";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type Mode = "one-time" | "subscribe";
 
@@ -45,11 +47,11 @@ export function BuyBox({
   const subscribeLabel = !isSubscriber ? "Subscribe to add" : "Add to standing basket";
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-      <p className="text-xs font-medium uppercase tracking-wide text-ripe-green">
-        Freshly selected · Ripe quality checked
+    <Card>
+      <p className="text-xs font-medium uppercase tracking-wide text-basket-green">
+        Freshly selected · Basket quality checked
       </p>
-      <h1 className="mt-2 text-3xl font-semibold leading-tight">{name}</h1>
+      <h1 className="text-heading mt-2">{name}</h1>
 
       <div className="mt-3 flex flex-wrap items-baseline gap-2">
         {hasMemberSaving && (
@@ -57,7 +59,7 @@ export function BuyBox({
         )}
         <span className="text-2xl font-semibold">{formatNaira(headlinePrice)}</span>
         {hasMemberSaving && (
-          <span className="rounded-full bg-ripe-green-light px-2 py-0.5 text-xs font-medium text-ripe-green">
+          <span className="rounded-full bg-basket-green-light px-2 py-0.5 text-xs font-medium text-basket-green">
             member price
           </span>
         )}
@@ -90,26 +92,24 @@ export function BuyBox({
       {/* CTA */}
       <div className="mt-4">
         {mode === "one-time" ? (
-          <button
-            onClick={addOneTime}
-            className="w-full rounded-full bg-ripe-green px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-ripe-green-dark"
-          >
+          <Button onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
             Add to cart
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={() => startTransition(() => addToStandingBasket(product.id, qty, frequency))}
             disabled={isPending}
-            className="w-full rounded-full bg-ripe-green px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-ripe-green-dark disabled:opacity-60"
+            size="lg"
+            className="w-full uppercase tracking-wide"
           >
             {isPending ? "Adding." : subscribeLabel}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Stock */}
       <p className="mt-3 flex items-center gap-2 text-sm">
-        <span className={`h-2.5 w-2.5 rounded-full ${inSeason ? "bg-ripe-green" : "bg-ripe-terracotta"}`} />
+        <span className={`h-2.5 w-2.5 rounded-full ${inSeason ? "bg-basket-green" : "bg-basket-terracotta"}`} />
         {inSeason ? "In stock" : "Limited this season"}
       </p>
 
@@ -124,7 +124,7 @@ export function BuyBox({
 
       {/* Purchase mode */}
       <div className="mt-5 overflow-hidden rounded-xl border border-border text-sm">
-        <label className="flex cursor-pointer items-center gap-2 border-b border-border p-3 has-[:checked]:bg-ripe-green-light">
+        <label className="flex cursor-pointer items-center gap-2 border-b border-border p-3 has-[:checked]:bg-basket-green-light">
           <input
             type="radio"
             name="mode"
@@ -133,7 +133,7 @@ export function BuyBox({
           />
           One-time purchase
         </label>
-        <div className="p-3 has-[:checked]:bg-ripe-green-light">
+        <div className="p-3 has-[:checked]:bg-basket-green-light">
           <label className="flex cursor-pointer items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <input
@@ -170,6 +170,6 @@ export function BuyBox({
         </div>
       </div>
       <p className="mt-2 text-xs text-muted">Auto-renews. Skip or cancel anytime.</p>
-    </div>
+    </Card>
   );
 }

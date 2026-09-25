@@ -33,7 +33,7 @@ function Radio({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-sm has-[:checked]:border-ripe-green has-[:checked]:bg-ripe-green-light">
+    <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-sm has-[:checked]:border-basket-green has-[:checked]:bg-basket-green-light">
       <input type="radio" name={name} checked={checked} onChange={onChange} />
       <span>
         <span className="font-medium">{label}</span>
@@ -83,7 +83,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
         Step {step + 1} of {STEPS.length}: {STEPS[step]}
       </p>
 
-      <div className="mt-4 rounded-2xl border border-border bg-surface p-5">
+      <div className="mt-4 rounded-card border border-border bg-surface p-5">
         {step === 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium">What is your main goal right now?</p>
@@ -139,7 +139,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
                 <button
                   key={tag}
                   onClick={() => set("dietaryNotes", data.dietaryNotes === tag ? undefined : tag)}
-                  className={`rounded-full px-3 py-1 ${data.dietaryNotes === tag ? "bg-ripe-green text-white" : "border border-border"}`}
+                  className={`rounded-full px-3 py-1 ${data.dietaryNotes === tag ? "bg-basket-green text-white" : "border border-border"}`}
                 >
                   {tag}
                 </button>
@@ -164,7 +164,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
                   key={p.id}
                   onClick={() => toggle("favoriteProductIds", p.id)}
                   className={`rounded-full px-3 py-1 text-sm ${
-                    data.favoriteProductIds.includes(p.id) ? "bg-ripe-green text-white" : "border border-border"
+                    data.favoriteProductIds.includes(p.id) ? "bg-basket-green text-white" : "border border-border"
                   }`}
                 >
                   {p.imageEmoji} {p.name}
@@ -183,7 +183,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
                   key={value}
                   onClick={() => toggle("mealFormatPreference", value)}
                   className={`rounded-full px-3 py-1 text-sm ${
-                    data.mealFormatPreference.includes(value) ? "bg-ripe-green text-white" : "border border-border"
+                    data.mealFormatPreference.includes(value) ? "bg-basket-green text-white" : "border border-border"
                   }`}
                 >
                   {label}
@@ -221,7 +221,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
           {step < STEPS.length - 1 ? (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="rounded-full bg-ripe-green px-5 py-2 text-sm font-medium text-white hover:bg-ripe-green-dark"
+              className="rounded-full bg-basket-green px-5 py-2 text-sm font-medium text-white hover:bg-basket-green-dark"
             >
               Next
             </button>
@@ -229,7 +229,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
             <button
               onClick={() => finish(data)}
               disabled={isPending}
-              className="rounded-full bg-ripe-terracotta px-5 py-2 text-sm font-medium text-white hover:bg-ripe-terracotta-dark disabled:opacity-60"
+              className="rounded-full bg-basket-terracotta px-5 py-2 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-60"
             >
               {isPending ? "Saving." : "Finish"}
             </button>
