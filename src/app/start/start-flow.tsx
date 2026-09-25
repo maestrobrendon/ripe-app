@@ -10,6 +10,7 @@ import { ProductImage } from "@/components/product-image";
 import { SITE_NAME } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { createAccountFromOnboarding } from "./actions";
+import { Icon } from "@/components/ui/icon";
 
 type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
 type WindowDay = "THURSDAY" | "FRIDAY" | "SATURDAY";
@@ -414,7 +415,7 @@ function Counter({
           aria-label={`Fewer ${label.toLowerCase()}`}
           className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-lg disabled:opacity-30"
         >
-          −
+          <Icon name="minus" size={16} />
         </button>
         <span className="w-5 text-center text-sm font-semibold">{value}</span>
         <button
@@ -423,7 +424,7 @@ function Counter({
           aria-label={`More ${label.toLowerCase()}`}
           className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-lg"
         >
-          +
+          <Icon name="plus" size={16} />
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ProductImage } from "@/components/product-image";
+import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { LEVELS, type CoachProgress } from "@/lib/coach";
 import { SUPPORT_WHATSAPP } from "@/lib/site";
@@ -107,9 +108,9 @@ export function CoachWidget() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close the coach"
-                className="tap-target -mr-1 -mt-1 rounded-full px-2 text-lg leading-none text-white/80 hover:text-white"
+                className="tap-target -mr-1 -mt-1 rounded-full p-1 text-white/80 hover:text-white"
               >
-                ×
+                <Icon name="close" size={20} />
               </button>
             </div>
 
@@ -243,11 +244,9 @@ export function CoachWidget() {
                 className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-basket-green text-white transition hover:bg-basket-green-dark disabled:opacity-40"
               >
                 {asking ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  <Icon name="spinner" size={18} className="animate-spin" />
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
+                  <Icon name="send" size={18} />
                 )}
               </button>
             </form>
@@ -261,7 +260,7 @@ export function CoachWidget() {
         aria-label={open ? "Close the Basket coach" : "Open the Basket coach"}
         className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-basket-green px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-basket-green-dark"
       >
-        <span aria-hidden className="text-lg leading-none">🧺</span>
+        <Icon name={open ? "close" : "reward"} size={20} />
         <span className="hidden sm:inline">{open ? "Close" : "Ask the coach"}</span>
         {!open && progress && progress.level.index > 1 && (
           <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">

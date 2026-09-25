@@ -7,6 +7,7 @@ import { LinkButton } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
+import { Icon } from "@/components/ui/icon";
 
 const DAY_LIST = SHOPPING_WINDOW_DAYS.map((d) => d.label).join(", ");
 
@@ -32,7 +33,7 @@ function Stepper({
           aria-label={`Fewer ${label.toLowerCase()}`}
           className="tap-target flex h-9 w-9 items-center justify-center rounded-full border border-border text-lg leading-none disabled:opacity-30"
         >
-          −
+          <Icon name="minus" size={16} />
         </button>
         <span className="w-8 text-center text-base font-semibold">{value}</span>
         <button
@@ -41,7 +42,7 @@ function Stepper({
           aria-label={`More ${label.toLowerCase()}`}
           className="tap-target flex h-9 w-9 items-center justify-center rounded-full border border-border text-lg leading-none"
         >
-          +
+          <Icon name="plus" size={16} />
         </button>
       </div>
     </div>

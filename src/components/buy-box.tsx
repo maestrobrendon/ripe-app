@@ -7,6 +7,7 @@ import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { addToStandingBasket } from "@/app/basket/actions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 type Mode = "one-time" | "subscribe";
 
@@ -80,11 +81,11 @@ export function BuyBox({
         <p className="mb-1 text-xs font-medium text-muted">Quantity</p>
         <div className="flex w-fit items-center gap-1 rounded-full border border-border px-1">
           <button onClick={dec} className="h-9 w-9 rounded-full text-lg" aria-label="Reduce quantity">
-            −
+            <Icon name="minus" size={16} />
           </button>
           <span className="w-10 text-center text-sm">{qty}</span>
           <button onClick={inc} className="h-9 w-9 rounded-full text-lg" aria-label="Increase quantity">
-            +
+            <Icon name="plus" size={16} />
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { ProductGrid } from "@/components/product-grid";
 import { ProductImage } from "@/components/product-image";
 import { FaqBand } from "@/components/faq-band";
 import { LinkButton } from "@/components/ui/button";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { BasketEstimator } from "@/components/basket-estimator";
 import { getHeroBasketCandidates } from "@/lib/starter-basket";
 import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
@@ -22,53 +23,23 @@ const COLLECTIONS: { title: string; href: string; blurb: string; where: Prisma.P
 /** Brand photography in Cloudinary, uploaded via prisma/scripts/upload-brand-image.ts. */
 const HERO_IMAGE_ID = "basket-hero-produce-bag";
 
-const iconProps = {
-  width: 28,
-  height: 28,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.5,
-  strokeLinecap: "round",
-  strokeLinejoin: "round",
-  "aria-hidden": true,
-} as const;
-
 // Every line here states something the app actually does. Volume claims stay
 // off until there are real numbers behind them.
-const FEATURES = [
+const FEATURES: { title: string; body: string; icon: IconName }[] = [
   {
+    icon: "quality",
     title: "Checked by a person",
     body: "Every order is looked over by hand before it leaves us, and replaced if it is not right.",
-    Icon: () => (
-      <svg {...iconProps} className="text-basket-green">
-        <circle cx="12" cy="12" r="9" />
-        <path d="m8.5 12.5 2.5 2.5 4.5-5" />
-      </svg>
-    ),
   },
   {
+    icon: "delivery",
     title: "Fixed delivery days",
     body: "Each zone has set days with a 9am to 5pm window, and you pick the one that suits you.",
-    Icon: () => (
-      <svg {...iconProps} className="text-basket-green">
-        <path d="M3 16V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v9" />
-        <path d="M15 10h3.5l2.5 3.2V16h-2" />
-        <circle cx="7.5" cy="17.5" r="1.8" />
-        <circle cx="17" cy="17.5" r="1.8" />
-      </svg>
-    ),
   },
   {
+    icon: "local",
     title: "Sourced locally",
     body: "Fruit and vegetables bought from farmers we work with directly, not a wholesale floor.",
-    Icon: () => (
-      <svg {...iconProps} className="text-basket-green">
-        <path d="M12 20v-8" />
-        <path d="M12 12c0-3.5-2.7-6-6.5-6 0 3.5 2.7 6 6.5 6z" />
-        <path d="M12 12c0-2.8 2.2-5 5.5-5 0 2.8-2.2 5-5.5 5z" />
-      </svg>
-    ),
   },
 ];
 
@@ -100,11 +71,8 @@ export default async function LandingPage() {
                 "Nothing is charged automatically",
               ].map((point) => (
                 <li key={point} className="flex items-center gap-3 text-basket-green-dark">
-                  <span
-                    aria-hidden
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-basket-green text-xs font-bold text-white"
-                  >
-                    ✓
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-basket-green text-white">
+                    <Icon name="check" size={15} strokeWidth={2} />
                   </span>
                   <span className="text-base sm:text-lg">{point}</span>
                 </li>
@@ -201,7 +169,9 @@ export default async function LandingPage() {
                 "No scheduled charge, on any plan",
               ].map((point) => (
                 <li key={point} className="flex items-start gap-3">
-                  <span aria-hidden className="mt-1 text-basket-green">✓</span>
+                  <span className="mt-0.5 shrink-0 text-basket-green">
+                    <Icon name="check" size={18} />
+                  </span>
                   <span>{point}</span>
                 </li>
               ))}
@@ -249,9 +219,9 @@ export default async function LandingPage() {
           card, border or shadow, so the type and spacing carry the section. */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="grid gap-12 sm:grid-cols-3 sm:gap-10">
-          {FEATURES.map(({ Icon, title, body }) => (
+          {FEATURES.map(({ icon, title, body }) => (
             <div key={title}>
-              <Icon />
+              <Icon name={icon} size={40} className="text-basket-green" />
               <h3 className="mt-6 text-lg font-bold">{title}</h3>
               <p className="mt-2 text-base text-muted">{body}</p>
             </div>

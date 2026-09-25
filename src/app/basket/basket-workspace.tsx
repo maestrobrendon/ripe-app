@@ -16,6 +16,7 @@ import {
   checkoutStandingBasket,
 } from "./actions";
 import type { ShoppingWindowDay } from "@/generated/prisma/enums";
+import { Icon } from "@/components/ui/icon";
 
 export type BasketLine = {
   productId: string;
@@ -208,7 +209,7 @@ export function BasketWorkspace({
                             run(() => setBasketItemQuantity(item.productId, item.quantity - item.stepQty))
                           }
                         >
-                          −
+                          <Icon name="minus" size={16} />
                         </button>
                         <span className="w-6 text-center text-sm">{item.quantity}</span>
                         <button
@@ -218,7 +219,7 @@ export function BasketWorkspace({
                             run(() => setBasketItemQuantity(item.productId, item.quantity + item.stepQty))
                           }
                         >
-                          +
+                          <Icon name="plus" size={16} />
                         </button>
                       </div>
                       <p className="w-16 shrink-0 text-right text-sm font-medium sm:w-20">

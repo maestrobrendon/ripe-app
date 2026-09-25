@@ -5,6 +5,7 @@ import { useCart } from "@/components/cart-provider";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
+import { Icon } from "@/components/ui/icon";
 
 export default function CartPage() {
   const cart = useCart();
@@ -59,7 +60,7 @@ export default function CartPage() {
                       onClick={() => cart.setQuantity(addable, item.quantity - item.stepQty)}
                       aria-label={`Reduce ${item.name}`}
                     >
-                      −
+                      <Icon name="minus" size={16} />
                     </button>
                     <span className="w-6 text-center text-sm">{item.quantity}</span>
                     <button
@@ -67,7 +68,7 @@ export default function CartPage() {
                       onClick={() => cart.setQuantity(addable, item.quantity + item.stepQty)}
                       aria-label={`Add ${item.name}`}
                     >
-                      +
+                      <Icon name="plus" size={16} />
                     </button>
                   </div>
                   <p className="ml-auto w-20 shrink-0 text-right text-sm font-medium sm:ml-0">

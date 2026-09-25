@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 
 type Result = { slug: string; name: string; unit: string; imageEmoji: string; price: number };
@@ -65,19 +66,9 @@ export function SearchBar({
   return (
     <div ref={boxRef} className={`relative ${compact ? "w-full" : "w-full max-w-sm"}`}>
       <form onSubmit={submit} className="relative">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+          <Icon name="search" size={18} />
+        </span>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}

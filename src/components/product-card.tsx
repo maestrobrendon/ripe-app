@@ -6,6 +6,7 @@ import { ProductImage } from "@/components/product-image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
+import { Icon } from "@/components/ui/icon";
 
 export type ProductCardData = AddableProduct & {
   inSeason: boolean;
@@ -76,7 +77,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
               className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-basket-green"
               aria-label={`Reduce ${product.name}`}
             >
-              −
+              <Icon name="minus" size={16} />
             </button>
             <span className="text-xs font-medium sm:text-sm">{quantity} in cart</span>
             <button
@@ -85,7 +86,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
               className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-basket-green"
               aria-label={`Add ${product.name}`}
             >
-              +
+              <Icon name="plus" size={16} />
             </button>
           </div>
         )}

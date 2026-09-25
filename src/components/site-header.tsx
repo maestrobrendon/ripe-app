@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { SearchBar } from "@/components/search-bar";
 import { LinkButton } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { SITE_NAME } from "@/lib/site";
 
 const NAV = [
@@ -17,26 +18,7 @@ const NAV = [
 // Icon-only controls still need an accessible name, so every use passes both
 // aria-label and title: the first for screen readers, the second for hover.
 const ICON_BUTTON =
-  "tap-target flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:border-basket-green hover:bg-basket-green-light";
-
-function UserIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function BagIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-      <path d="M3 6h18" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  );
-}
+  "tap-target flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition hover:border-basket-green hover:bg-basket-green-light";
 
 export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
   const pathname = usePathname();
@@ -74,7 +56,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
               title={isSignedIn ? "Your account" : "Sign in"}
               className={ICON_BUTTON}
             >
-              <UserIcon />
+              <Icon name="account" size={22} />
             </Link>
 
             <button
@@ -85,7 +67,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
               title="Cart"
               className={`${ICON_BUTTON} relative`}
             >
-              <BagIcon />
+              <Icon name="cart" size={22} />
               {cart.itemCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-basket-terracotta text-xs font-medium text-white">
                   {cart.itemCount}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
 
@@ -57,11 +58,8 @@ export function FaqBand() {
           <details key={f.q} className="group border-b border-border py-5">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-semibold">
               {f.q}
-              <span
-                aria-hidden
-                className="shrink-0 text-2xl font-normal text-muted transition-transform group-open:rotate-45"
-              >
-                +
+              <span className="shrink-0 text-muted transition-transform group-open:rotate-45">
+                <Icon name="plus" size={22} />
               </span>
             </summary>
             <p className="mt-3 max-w-2xl text-base text-muted">{f.a}</p>

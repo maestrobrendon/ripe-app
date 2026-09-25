@@ -6,6 +6,7 @@ import { startSubscription } from "./actions";
 import { TierControls } from "./tier-controls";
 import { Card } from "@/components/ui/card";
 import { LinkButton, Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 const DAYS = ["MONDAY", "WEDNESDAY", "FRIDAY"] as const;
 
@@ -65,7 +66,9 @@ export default async function SubscribePage() {
               <ul className="mt-5 flex-1 space-y-2 text-sm">
                 {tier.perks.map((perk) => (
                   <li key={perk} className="flex gap-2">
-                    <span className="text-basket-green">✓</span>
+                    <span className="mt-0.5 shrink-0 text-basket-green">
+                      <Icon name="check" size={16} />
+                    </span>
                     <span>{perk}</span>
                   </li>
                 ))}

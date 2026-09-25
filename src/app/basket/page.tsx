@@ -14,6 +14,7 @@ import { formatNaira } from "@/lib/format";
 import { shoppingWindowConfig } from "@/lib/shopping-window";
 import { StreakCard } from "@/components/streak-badge";
 import { BasketWorkspace } from "./basket-workspace";
+import { Icon } from "@/components/ui/icon";
 
 export default async function BasketPage() {
   const user = await getCurrentUser();
@@ -121,9 +122,10 @@ export default async function BasketPage() {
             {tier.perks.map((perk) => (
               <span
                 key={perk}
-                className="rounded-full border border-basket-green/40 bg-basket-green-light/50 px-3 py-1 text-xs text-basket-green"
+                className="inline-flex items-center gap-1.5 rounded-full border border-basket-green/40 bg-basket-green-light/50 px-3 py-1 text-xs text-basket-green"
               >
-                ✓ {perk}
+                <Icon name="check" size={14} />
+                {perk}
               </span>
             ))}
           </div>
