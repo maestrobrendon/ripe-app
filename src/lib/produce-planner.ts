@@ -375,13 +375,6 @@ export const PLANNER_GOALS: { id: string; label: string; tag: string }[] = [
   { id: "try-new", label: "Something new to try", tag: "seasonal" },
 ];
 
-export const PLANNER_EXAMPLES = [
-  "More greens this week",
-  "What do I do with a watermelon",
-  "Lighter dinners for two",
-  "A pepper base to batch",
-];
-
 // When someone asks for a whole cooked dish, point them at the produce part of it.
 const REDIRECTS: { match: string[]; message: string }[] = [
   {

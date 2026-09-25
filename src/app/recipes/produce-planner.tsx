@@ -4,16 +4,46 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { ProductImage } from "@/components/product-image";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import {
   PLANNER_GOALS,
-  PLANNER_EXAMPLES,
   type ProducePlan,
   type PlanIdea,
   type PlanLine,
 } from "@/lib/produce-planner";
 
 type Result = { plan: ProducePlan } | { redirect: string } | { plan: null };
+
+function Servings({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted">Cooking for</span>
+      <div className="flex items-center gap-1 rounded-full border border-border p-1">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(1, value - 1))}
+          disabled={value <= 1}
+          aria-label="Fewer people"
+          className="tap-target flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-30"
+        >
+          <Icon name="minus" size={15} />
+        </button>
+        <span className="w-6 text-center text-sm font-semibold">{value}</span>
+        <button
+          type="button"
+          onClick={() => onChange(Math.min(20, value + 1))}
+          disabled={value >= 20}
+          aria-label="More people"
+          className="tap-target flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-30"
+        >
+          <Icon name="plus" size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function ProducePlanner({ defaultServings }: { defaultServings: number }) {
   const cart = useCart();
@@ -43,109 +73,97 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
 
   const plan = result && "plan" in result ? result.plan : null;
   const redirect = result && "redirect" in result ? result.redirect : null;
+  const failed = result !== null && "plan" in result && result.plan === null;
 
   return (
-    <div className="rounded-card-lg border border-border bg-surface p-5 sm:p-6">
-      <h2 className="text-lg font-semibold">Produce Planner</h2>
-      <p className="mt-1 text-sm text-muted">
-        Fruit and vegetable ideas for your week. Everything on the list comes from our shelves.
-      </p>
+    <div className="rounded-card-lg border border-border bg-surface p-5 sm:p-8">
+      {/* Servings sits with the title because it applies to every route in,
+          not just the button it used to sit beside. */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h3 className="text-heading-sm">Produce Planner</h3>
+          <p className="mt-1 text-muted">Everything it suggests comes off our shelves.</p>
+        </div>
+        <Servings value={servings} onChange={setServings} />
+      </div>
 
       {!plan && !redirect && (
-        <>
+        <div className="mt-8">
+          <label htmlFor="planner-input" className="text-sm font-semibold">
+            What are you working with?
+          </label>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               if (text.trim()) call({ mode: "text", text: text.trim() });
             }}
-            className="mt-4 flex gap-2"
+            className="mt-2 flex flex-col gap-2 sm:flex-row"
           >
             <input
+              id="planner-input"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Type a goal, a fruit, or a vegetable"
-              className="flex-1 rounded-full border border-border px-4 py-2 text-sm"
+              placeholder="A watermelon, a pepper base, lighter dinners"
+              className="flex-1 rounded-full border border-border px-5 py-3 text-base"
             />
-            <button
-              disabled={loading || !text.trim()}
-              className="rounded-full bg-basket-green px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
+            <Button type="submit" disabled={loading || !text.trim()} size="md" className="shrink-0">
               {loading ? "Working" : "Plan it"}
-            </button>
+            </Button>
           </form>
 
+          {/* One row of themes. There used to be two, and they overlapped:
+              "More greens this week" appeared in both, doing different things. */}
+          <p className="mt-8 text-sm font-semibold">Or pick a theme</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {PLANNER_EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => {
-                  setText(ex);
-                  call({ mode: "text", text: ex });
-                }}
-                className="rounded-full border border-border px-3 py-1 text-xs hover:bg-basket-green-light"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-
-          <p className="mt-5 text-xs font-medium uppercase tracking-wide text-muted">Or point me at the week</p>
-          <div className="mt-2 flex flex-wrap gap-2">
             {PLANNER_GOALS.map((g) => (
               <button
                 key={g.id}
+                disabled={loading}
                 onClick={() => call({ mode: "goal", goalId: g.id })}
-                className="rounded-full border border-basket-green/40 px-3 py-1.5 text-xs font-medium text-basket-green hover:bg-basket-green-light"
+                className="tap-target rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:border-basket-green hover:bg-basket-green-light disabled:opacity-50"
               >
                 {g.label}
               </button>
             ))}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-            <button
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={loading}
               onClick={() => call({ mode: "week" })}
-              className="rounded-full bg-basket-terracotta px-4 py-2 text-sm font-medium text-white hover:bg-basket-terracotta-dark"
             >
-              Give me this week&rsquo;s picks
-            </button>
+              Surprise me with this week&rsquo;s picks
+            </Button>
             {cart.items.length > 0 && (
               <button
+                disabled={loading}
                 onClick={() => call({ mode: "cart", cartSlugs: cart.items.map((i) => i.slug) })}
-                className="text-basket-green underline"
+                className="text-sm font-semibold text-basket-green underline disabled:opacity-50"
               >
-                Read what&rsquo;s in my cart
+                Plan around what is in my cart
               </button>
             )}
-            <label className="ml-auto flex items-center gap-1 text-xs text-muted">
-              for
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={servings}
-                onChange={(e) => setServings(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
-                className="w-14 rounded-lg border border-border px-2 py-1"
-              />
-              people
-            </label>
           </div>
-        </>
+        </div>
       )}
 
       {redirect && (
-        <div className="mt-4 rounded-xl bg-basket-terracotta-light/50 p-4 text-sm text-basket-terracotta-dark">
+        <div className="mt-6 rounded-card border border-basket-terracotta/40 bg-basket-terracotta-light/50 p-4 text-basket-terracotta-dark">
           <p>{redirect}</p>
-          <button onClick={reset} className="mt-2 text-xs font-medium underline">
-            Try again
+          <button onClick={reset} className="mt-3 text-sm font-semibold underline">
+            Try something else
           </button>
         </div>
       )}
 
-      {result && "plan" in result && result.plan === null && (
-        <div className="mt-4 rounded-xl border border-dashed border-border p-4 text-sm text-muted">
-          We could not turn that into a produce plan. Try a fruit, a vegetable, or one of the goals above.
-          <button onClick={reset} className="ml-2 text-xs font-medium text-basket-green underline">
+      {failed && (
+        <div className="mt-6 rounded-card border border-dashed border-border p-4">
+          <p className="text-muted">
+            We could not turn that into a produce plan. Try a fruit, a vegetable, or one of the themes.
+          </p>
+          <button onClick={reset} className="mt-3 text-sm font-semibold text-basket-green underline">
             Start over
           </button>
         </div>
@@ -187,16 +205,16 @@ function PlanView({
   );
 
   return (
-    <div className="mt-5 border-t border-border pt-5">
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-lg font-semibold">{plan.title}</h3>
-        <button onClick={onReset} className="text-xs text-basket-green underline">
+    <div className="mt-8 border-t border-border pt-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h4 className="text-heading-sm">{plan.title}</h4>
+        <button onClick={onReset} className="text-sm font-semibold text-basket-green underline">
           Start over
         </button>
       </div>
-      <p className="mt-1 text-sm text-muted">{plan.intro}</p>
+      <p className="mt-2 text-muted">{plan.intro}</p>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-6 space-y-4">
         {plan.ideas.map((idea) => (
           <IdeaCard
             key={idea.slug}
@@ -209,20 +227,19 @@ function PlanView({
       </div>
 
       {plan.ideas.length > 1 && (
-        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
+        <div className="mt-6 border-t border-border pt-6">
           {addedAll ? (
-            <span className="text-sm font-medium text-basket-green">
-              Added the produce for this plan.{" "}
-              <Link href="/cart" className="underline">View cart</Link>
-            </span>
+            <p className="flex flex-wrap items-center gap-2 font-semibold text-basket-green">
+              <Icon name="check" size={18} />
+              Added the produce for this plan.
+              <Link href="/cart" className="underline">
+                View cart
+              </Link>
+            </p>
           ) : (
-            <button
-              disabled={busy}
-              onClick={() => addLines(allLines, "all")}
-              className="rounded-full bg-basket-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-60"
-            >
-              Add everything for this plan · {formatNaira(plan.combinedTotal)}
-            </button>
+            <Button disabled={busy} onClick={() => addLines(allLines, "all")} size="lg">
+              Add everything · {formatNaira(plan.combinedTotal)}
+            </Button>
           )}
         </div>
       )}
@@ -242,57 +259,53 @@ function IdeaCard({
   onAdd: () => void;
 }) {
   return (
-    <div className="rounded-card border border-border p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="font-medium">
-          {idea.name}
-          <span className="ml-2 rounded-full bg-basket-green-light px-2 py-0.5 text-[11px] font-medium text-basket-green">
-            {idea.kindLabel}
-          </span>
-        </p>
-        <span className="shrink-0 text-xs text-muted">
+    <div className="rounded-card border border-border p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h5 className="text-base font-bold">{idea.name}</h5>
+        <span className="shrink-0 text-sm text-muted">
           {idea.servings} servings · {idea.timeMinutes} min
         </span>
       </div>
+      <span className="mt-2 inline-block rounded-full bg-basket-green-light px-3 py-0.5 text-xs font-semibold text-basket-green">
+        {idea.kindLabel}
+      </span>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <p className="mt-4 text-muted">{idea.method}</p>
+
+      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-muted">You will need</p>
+      <div className="mt-2 flex flex-wrap gap-2">
         {idea.produce.map((l) => (
           <span
             key={l.productId}
-            className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-xs"
+            className="flex items-center gap-2 rounded-full border border-border py-1 pl-1 pr-3 text-sm"
           >
             <ProductImage
               publicId={l.cloudinaryPublicId}
               alt={l.name}
               emoji={l.imageEmoji}
-              className="h-5 w-5"
+              className="h-7 w-7"
               rounded="rounded-full"
-              emojiClassName="text-xs"
-              sizes="20px"
+              emojiClassName="text-sm"
+              sizes="28px"
             />
             {l.name} × {l.quantity}
           </span>
         ))}
       </div>
-
-      <p className="mt-3 text-sm text-muted">{idea.method}</p>
       {idea.pantry.length > 0 && (
-        <p className="mt-1 text-xs text-muted">
-          From your kitchen: {idea.pantry.join(", ")}.
-        </p>
+        <p className="mt-3 text-sm text-muted">From your kitchen: {idea.pantry.join(", ")}.</p>
       )}
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-5">
         {added ? (
-          <span className="text-xs font-medium text-basket-green">Added</span>
+          <p className="flex items-center gap-2 text-sm font-semibold text-basket-green">
+            <Icon name="check" size={16} />
+            Added to cart
+          </p>
         ) : (
-          <button
-            disabled={busy}
-            onClick={onAdd}
-            className="rounded-full border border-basket-green px-4 py-1.5 text-xs font-medium text-basket-green hover:bg-basket-green-light disabled:opacity-60"
-          >
+          <Button variant="secondary" size="sm" disabled={busy} onClick={onAdd}>
             Add the produce · {formatNaira(idea.produceTotal)}
-          </button>
+          </Button>
         )}
       </div>
     </div>
