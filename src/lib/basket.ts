@@ -14,6 +14,17 @@ export async function getOrCreateStandingBasket(userId: string, deliveryDay: Del
   });
 }
 
+/** Item count only, for lightweight surfaces like the header status line. */
+export async function getStandingBasketItemCount(userId: string): Promise<number> {
+  const basket = await prisma.basket.findFirst({ where: { userId, isStanding: true }, select: { id: true } });
+  if (!basket) return 0;
+  const items = await prisma.basketItem.aggregate({
+    where: { basketId: basket.id },
+    _sum: { quantity: true },
+  });
+  return items._sum.quantity ?? 0;
+}
+
 export async function getStandingBasketView(userId: string) {
   const basket = await prisma.basket.findFirst({
     where: { userId, isStanding: true },

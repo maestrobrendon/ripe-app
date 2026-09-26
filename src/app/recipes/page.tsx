@@ -6,6 +6,7 @@ import { GOAL_LABEL } from "@/lib/format";
 import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { ProducePlanner } from "./produce-planner";
+import { IdeasSheetTrigger } from "@/app/basket/ideas-sheet-trigger";
 
 export const metadata = { title: "Recipes. Basket" };
 
@@ -76,6 +77,15 @@ export default async function RecipesPage({
                 </li>
               ))}
             </ul>
+
+            {user && (
+              <div className="mt-7">
+                <IdeasSheetTrigger
+                  className="tap-target inline-flex items-center gap-1.5 rounded-full border border-carbon px-4 py-2 text-sm font-semibold text-carbon hover:bg-white"
+                  label="Get ideas for your basket"
+                />
+              </div>
+            )}
           </div>
 
           <ProductImage

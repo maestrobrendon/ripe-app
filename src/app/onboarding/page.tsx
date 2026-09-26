@@ -25,7 +25,7 @@ export default async function OnboardingPage({
     <div className="mx-auto max-w-lg px-4 py-14 sm:px-6">
       <h1 className="text-3xl font-semibold">Your preferences</h1>
       <p className="mt-2 text-sm text-muted">
-        These fine-tune what the trained assistant suggests. Household size, produce preferences and your
+        These fine-tune what Ideas suggests. Household size, produce preferences and your
         basket day live on your account page.
       </p>
       <OnboardingFlow products={products} next={safeNext} />

@@ -122,7 +122,7 @@ export function StartFlow({
 
       <div className="mt-8">
         {step === 0 && (
-          <Screen why="This is the one answer the trained assistant leans on when it suggests things.">
+          <Screen why="This is the one answer Ideas leans on when it suggests things.">
             <h1 className="text-heading">What are you hoping to get out of shopping with Basket?</h1>
             <p className="mt-2 text-sm text-muted">Pick the one that fits best. You can change it later.</p>
             <div className="mt-6 grid gap-3">

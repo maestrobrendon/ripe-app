@@ -15,16 +15,22 @@ const NAV = [
   { href: "/fresh-cuts", label: "Fresh Cuts" },
 ];
 
+export type MemberStatus = {
+  firstInitial: string;
+  shipDayLabel: string | null;
+  zoneName: string | null;
+  itemCount: number;
+};
+
 // Icon-only controls still need an accessible name, so every use passes both
 // aria-label and title: the first for screen readers, the second for hover.
 const ICON_BUTTON =
   "tap-target flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-sky-wash";
 
-export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
+export function SiteHeader({ member }: { member: MemberStatus | null }) {
   const pathname = usePathname();
   const cart = useCart();
-
-  const links = isSignedIn ? [...NAV, { href: "/basket", label: "Basket" }] : NAV;
+  const isSignedIn = Boolean(member);
 
   // On the landing page the header shares the hero's band colour and drops its
   // divider, so nav and hero read as a single unbroken field.
@@ -42,8 +48,12 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
           <Link href="/" className="logo-wordmark shrink-0 text-2xl text-carbon">
             {SITE_NAME}
           </Link>
-          <span aria-hidden className="hidden h-6 w-px bg-border lg:block" />
-          <span className="hidden shrink-0 text-sm text-muted lg:block">Produce, delivered</span>
+          {!member && (
+            <>
+              <span aria-hidden className="hidden h-6 w-px bg-border lg:block" />
+              <span className="hidden shrink-0 text-sm text-muted lg:block">Produce, delivered</span>
+            </>
+          )}
 
           <div className="hidden flex-1 md:block md:max-w-xl">
             <SearchBar compact />
@@ -54,9 +64,13 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
               href={isSignedIn ? "/account" : "/login"}
               aria-label={isSignedIn ? "Your account" : "Sign in"}
               title={isSignedIn ? "Your account" : "Sign in"}
-              className={ICON_BUTTON}
+              className={
+                isSignedIn
+                  ? "tap-target flex h-11 w-11 items-center justify-center rounded-full bg-carbon text-sm font-semibold text-white"
+                  : ICON_BUTTON
+              }
             >
-              <Icon name="account" size={22} />
+              {isSignedIn ? member!.firstInitial : <Icon name="account" size={22} />}
             </Link>
 
             <button
@@ -83,6 +97,23 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
           </div>
         </div>
 
+        {/* Status slot: marketing copy for a stranger, live basket state for a
+            member. One line at every width, truncated from the right rather
+            than wrapped, so it never pushes the row below it around. */}
+        {member && (
+          <p className="truncate pb-2 text-sm sm:pb-3">
+            {member.shipDayLabel ? (
+              <span className="font-medium text-carbon">Ships {member.shipDayLabel}</span>
+            ) : (
+              <Link href="/basket?pickDay=1" className="font-medium text-carbon underline underline-offset-2">
+                Pick a ship day
+              </Link>
+            )}
+            {member.zoneName && <span className="text-muted"> · {member.zoneName}</span>}
+            <span className="text-muted"> · {member.itemCount} {member.itemCount === 1 ? "item" : "items"}</span>
+          </p>
+        )}
+
         {/* Phones get the search field on its own line rather than a cramped row */}
         <div className="pb-3 md:hidden">
           <SearchBar compact />
@@ -90,7 +121,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
 
         {/* Row two: the category nav, scrollable on narrow screens */}
         <nav className="-mx-4 flex gap-5 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6">
-          {links.map((link) => (
+          {NAV.map((link) => (
             <Link
               key={link.href}
               href={link.href}

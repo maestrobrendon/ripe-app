@@ -4,18 +4,9 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
-import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import type { StreakView } from "@/lib/streak-config";
-import { AssistantRail } from "./assistant-rail";
-import {
-  setBasketItemQuantity,
-  setShoppingWindowDay,
-  setWindowSkipped,
-  swapBasketItem,
-  restoreLastWeek,
-  checkoutStandingBasket,
-} from "./actions";
-import type { ShoppingWindowDay } from "@/generated/prisma/enums";
+import { IdeasDesktopPanel } from "./ideas-desktop-panel";
+import { setBasketItemQuantity, setWindowSkipped, swapBasketItem, restoreLastWeek } from "./actions";
 import { Icon } from "@/components/ui/icon";
 
 export type BasketLine = {
@@ -50,7 +41,6 @@ export type Flagged = {
 export function BasketWorkspace({
   items,
   isSubscriber,
-  shoppingWindowDay,
   locked,
   skipped,
   streak,
@@ -65,7 +55,6 @@ export function BasketWorkspace({
 }: {
   items: BasketLine[];
   isSubscriber: boolean;
-  shoppingWindowDay: ShoppingWindowDay | null;
   locked: boolean;
   skipped: boolean;
   streak: StreakView;
@@ -94,45 +83,25 @@ export function BasketWorkspace({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        {/* Shipping day + (subscriber) skip */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface p-4">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">Ships</span>
-            <select
-              defaultValue={shoppingWindowDay ?? ""}
-              disabled={isPending}
-              onChange={(e) =>
-                e.target.value &&
-                run(() => setShoppingWindowDay(e.target.value as ShoppingWindowDay))
-              }
-              className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-60"
-            >
-              {!shoppingWindowDay && <option value="">Pick a day</option>}
-              {SHOPPING_WINDOW_DAYS.map((d) => (
-                <option key={d.day} value={d.day}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {isSubscriber && (
+        {/* Subscriber-only skip toggle. Ship day itself lives in the status card and bottom bar. */}
+        {isSubscriber && (
+          <div className="flex justify-end">
             <button
               disabled={isPending || locked}
               onClick={() => run(() => setWindowSkipped(!skipped))}
               className={`tap-target rounded-full border px-4 py-2 text-sm font-medium disabled:opacity-60 ${
-                skipped
-                  ? "border-border bg-ember/12 text-carbon"
-                  : "border-border hover:bg-sky-wash"
+                skipped ? "border-border bg-ember/12 text-carbon" : "border-border hover:bg-sky-wash"
               }`}
             >
               {skipped ? "Skipped. Undo" : "Skip this week"}
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Same as last week + quick add shelf */}
+        {/* Same as last week + quick add shelf. The chip row fades at both edges
+            and scrolls flush from the container edge, per the mobile pass. */}
         {editable && (canRestore || quickAdd.length > 0) && (
-          <div className="rounded-card border border-border bg-surface p-4">
+          <div className="rounded-card border border-border bg-surface p-4 shadow-sm">
             {canRestore && (
               <button
                 disabled={isPending}
@@ -145,7 +114,14 @@ export function BasketWorkspace({
             {quickAdd.length > 0 && (
               <div className={canRestore ? "mt-3" : ""}>
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Quick add</p>
-                <div className="snap-row -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+                <div
+                  className="snap-row -mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+                  style={{
+                    maskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
+                    WebkitMaskImage:
+                      "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
+                  }}
+                >
                   {quickAdd.map((q) => (
                     <button
                       key={q.id}
@@ -176,12 +152,20 @@ export function BasketWorkspace({
           <h2 className="mb-3 text-lg font-medium">In your basket</h2>
           {items.length === 0 ? (
             <p className="rounded-card border border-dashed border-border p-6 text-center text-sm text-muted">
-              Your basket is empty. Use quick add above, or the assistant.
+              Your basket is empty. Ideas has a starter set ready to add.
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+            <ul className="divide-y divide-border rounded-card border border-border bg-surface shadow-sm">
               {items.map((item) => {
                 const flag = flaggedMap.get(item.productId);
+                // At quantity 1 the unit price and the line total are the same
+                // number: showing it on both sides of the row reads like a
+                // double charge, so it appears once, on the right, until the
+                // quantity actually makes the multiplication worth showing.
+                const unitLine =
+                  item.quantity === 1
+                    ? item.unit
+                    : `${item.unit} · ${formatNaira(priceOf(item))}${isSubscriber ? " member" : ""}`;
                 return (
                   <li key={item.productId} className="p-3 sm:p-4">
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -196,10 +180,7 @@ export function BasketWorkspace({
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{item.name}</p>
-                        <p className="text-sm text-muted">
-                          {item.unit} · {formatNaira(priceOf(item))}
-                          {isSubscriber ? " member" : ""}
-                        </p>
+                        <p className="text-sm text-muted">{unitLine}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -261,27 +242,10 @@ export function BasketWorkspace({
               </p>
             )}
           </div>
-
-          {items.length > 0 && editable && (
-            <div className="mt-5 rounded-card border border-border bg-surface p-4">
-              <button
-                disabled={isPending || !shoppingWindowDay}
-                onClick={() => run(checkoutStandingBasket)}
-                className="tap-target w-full rounded-full bg-carbon px-6 py-3 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-50"
-              >
-                Check out this basket
-              </button>
-              <p className="mt-2 text-center text-xs text-muted">
-                {shoppingWindowDay
-                  ? "You pay at checkout. Nothing is charged before then."
-                  : "Pick a shipping day above to check out."}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
-      <AssistantRail signature={signature} locked={!editable} streak={streak} showStreak={isSubscriber} />
+      <IdeasDesktopPanel signature={signature} locked={!editable} streak={streak} showStreak={isSubscriber} />
     </div>
   );
 }

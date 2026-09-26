@@ -1,10 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
 import { formatNaira, CATEGORY_LABEL } from "@/lib/format";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { ProductCard } from "@/components/product-card";
 import { ProductGrid } from "@/components/product-grid";
-import { ProductImage } from "@/components/product-image";
 import { FaqBand } from "@/components/faq-band";
 import { LinkButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -42,6 +44,12 @@ const FEATURES: { title: string; body: string; icon: IconName }[] = [
 ];
 
 export default async function LandingPage() {
+  // A member's home is the basket hub, not the shop front. Fruits, Recipes,
+  // Boxes & Baskets and Fresh Cuts are places a member goes to fill it, not
+  // the landing page.
+  const user = await getCurrentUser();
+  if (user) redirect("/basket");
+
   const [featured, starterCandidates, ...collectionProducts] = await Promise.all([
     prisma.product.findMany({ where: { featured: true }, take: 8, orderBy: { name: "asc" } }),
     getHeroBasketCandidates(),
@@ -167,22 +175,19 @@ export default async function LandingPage() {
             </ul>
           </div>
 
-          {featured.length > 0 && (
-            <div className="grid grid-cols-2 gap-4">
-              {featured.slice(0, 4).map((p) => (
-                <ProductImage
-                  key={p.id}
-                  publicId={p.cloudinaryPublicId}
-                  alt={p.name}
-                  emoji={p.imageEmoji}
-                  className="aspect-square w-full"
-                  rounded="rounded-card"
-                  emojiClassName="text-5xl"
-                  sizes="(min-width: 1024px) 240px, 45vw"
-                />
-              ))}
+          <div className="flex justify-center lg:justify-end">
+            <div className="relative w-full max-w-[700px] overflow-visible bg-transparent">
+              <Image
+                src="https://res.cloudinary.com/dusynu0kv/image/upload/v1790412022/ivnufvuhzbwllkjb7jjl.png"
+                alt="No automatic charges"
+                width={980}
+                height={700}
+                priority
+                className="h-auto w-full object-contain bg-transparent"
+                sizes="(min-width: 1024px) 700px, 90vw"
+              />
             </div>
-          )}
+          </div>
         </div>
       </section>
 

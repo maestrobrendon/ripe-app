@@ -167,6 +167,25 @@ export async function addRecipeIngredients(recipeSlug: string) {
   revalidatePath("/basket");
 }
 
+/** Add every pick from an Ideas starter set in one go, for the empty-basket case. */
+export async function applyStarterPicks(picks: { productId: string; quantity: number }[]) {
+  const user = await requireUser();
+  await assertWindowOpen(user.id);
+  const basket = await getOrCreateStandingBasket(user.id, user.deliveryDay ?? "WEDNESDAY");
+
+  await prisma.basketItem.createMany({
+    data: picks.map((p) => ({ basketId: basket.id, productId: p.productId, quantity: p.quantity })),
+    skipDuplicates: true,
+  });
+  revalidatePath("/basket");
+}
+
+/** The onboarding-style explainer shows once on a member's first basket visit, then never again. */
+export async function markBasketIntroSeen() {
+  const user = await requireUser();
+  await prisma.user.update({ where: { id: user.id }, data: { basketIntroSeen: true } });
+}
+
 /** Restore the items from the member's most recent finalized order into this window. */
 export async function restoreLastWeek() {
   const user = await requireUser();

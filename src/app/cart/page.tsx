@@ -113,7 +113,7 @@ export default function CartPage() {
               Continue to checkout
             </Link>
             <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-carbon underline">
-              Ask the trained assistant what to make
+              Get ideas for what to make
             </Link>
           </div>
         </div>

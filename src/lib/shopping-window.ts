@@ -23,6 +23,12 @@ export const SHOPPING_WINDOW_DAY_LABEL: Record<ShoppingWindowDay, string> = {
   SATURDAY: "Saturday",
 };
 
+export const SHOPPING_WINDOW_DAY_SHORT_LABEL: Record<ShoppingWindowDay, string> = {
+  THURSDAY: "Thu",
+  FRIDAY: "Fri",
+  SATURDAY: "Sat",
+};
+
 export function shoppingWindowConfig(day: ShoppingWindowDay) {
   return SHOPPING_WINDOW_DAYS.find((d) => d.day === day) ?? SHOPPING_WINDOW_DAYS[0];
 }

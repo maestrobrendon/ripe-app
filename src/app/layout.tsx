@@ -6,13 +6,14 @@ import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZone } from "@/lib/zone";
 import { readCart } from "@/lib/cart";
+import { getStandingBasketItemCount } from "@/lib/basket";
+import { SHOPPING_WINDOW_DAY_SHORT_LABEL } from "@/lib/shopping-window";
 import { CartProvider } from "@/components/cart-provider";
 import { ZoneProvider } from "@/components/zone-gate";
-import { SiteHeader } from "@/components/site-header";
+import { SiteHeader, type MemberStatus } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CartDrawer } from "@/components/cart-drawer";
 import { AnnouncementBar } from "@/components/announcement-bar";
-import { CoachWidget } from "@/components/coach-widget";
 
 // Stands in for Ozik. Dr Kabel is a locally installed single-weight display
 // face, so it's self-hosted here rather than pulled from Google Fonts.
@@ -37,17 +38,27 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const [user, cart, zone] = await Promise.all([getCurrentUser(), readCart(), getActiveZone()]);
 
+  let member: MemberStatus | null = null;
+  if (user) {
+    const itemCount = await getStandingBasketItemCount(user.id);
+    member = {
+      firstInitial: user.name.trim().charAt(0).toUpperCase() || "?",
+      shipDayLabel: user.shoppingWindowDay ? SHOPPING_WINDOW_DAY_SHORT_LABEL[user.shoppingWindowDay] : null,
+      zoneName: user.deliveryZone?.name ?? null,
+      itemCount,
+    };
+  }
+
   return (
     <html lang="en" className={`${drKabel.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <ZoneProvider initialZoneName={zone?.name ?? null}>
           <CartProvider initial={cart}>
             <AnnouncementBar />
-            <SiteHeader isSignedIn={Boolean(user)} />
+            <SiteHeader member={member} />
             <main className="flex-1">{children}</main>
             <SiteFooter />
             <CartDrawer />
-            <CoachWidget />
           </CartProvider>
         </ZoneProvider>
       </body>
