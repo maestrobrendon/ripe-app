@@ -1,4 +1,4 @@
-export const metadata = { title: "Terms. Ripe" };
+export const metadata = { title: "Terms. Basket" };
 
 export default function TermsPage() {
   return (
@@ -10,7 +10,7 @@ export default function TermsPage() {
           policy will be added before public launch.
         </p>
         <p>
-          Ripe delivers fresh produce across selected Lagos zones. Prices, delivery days and coverage
+          Basket delivers fresh produce across selected Lagos zones. Prices, delivery days and coverage
           depend on your area and can change. Orders are subject to a minimum cart value shown at
           checkout.
         </p>
@@ -18,7 +18,7 @@ export default function TermsPage() {
           Payment is currently in test mode and no real charge is taken. Subscriptions can be changed or
           cancelled at any time from your account.
         </p>
-        <p>Questions: hello@ripe.ng</p>
+        <p>Questions: hello@basket.ng</p>
       </div>
     </div>
   );

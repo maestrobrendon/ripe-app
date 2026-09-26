@@ -3,32 +3,32 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateStandingBasket, getStandingBasketView, prefillStandingBasket } from "@/lib/basket";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
-import {
-  recomputeStreak,
-  computeCumulativeSavings,
-  computeGoalFit,
-  getQuickAddItems,
-  getFlaggedSwaps,
-} from "@/lib/basket-hub";
-import { formatNaira } from "@/lib/format";
+import { computeGoalFit, getQuickAddItems, getFlaggedSwaps } from "@/lib/basket-hub";
+import { recomputeStreak } from "@/lib/streak";
+import { markBasketIntroSeen } from "./actions";
+import { MemberStatusCard } from "./member-status-card";
 import { BasketWorkspace } from "./basket-workspace";
+import { BottomBar } from "./bottom-bar";
 
-export default async function BasketPage() {
+export default async function BasketPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pickDay?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/basket");
-  if (!user.subscriptionTierId) redirect("/subscribe");
 
+  const { pickDay } = await searchParams;
+
+  const isSubscriber = Boolean(user.subscriptionTierId);
   const deliveryDay = user.deliveryDay ?? "WEDNESDAY";
   const basket = await getOrCreateStandingBasket(user.id, deliveryDay);
-  const window = await getOrCreateCurrentWindow(user.id);
   await prefillStandingBasket(user.id, basket.id);
 
-  const [view, tier, allProducts, streak, cumulativeSavings, lastOrder] = await Promise.all([
+  const [view, allProducts, streak, lastOrder] = await Promise.all([
     getStandingBasketView(user.id),
-    prisma.subscriptionTier.findUniqueOrThrow({ where: { id: user.subscriptionTierId } }),
     prisma.product.findMany(),
     recomputeStreak(user.id),
-    computeCumulativeSavings(user.id),
     prisma.order.findFirst({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -36,7 +36,10 @@ export default async function BasketPage() {
     }),
   ]);
 
-  const state = windowState(window);
+  // The window lock / skip mechanic is subscriber-only.
+  const windowRow = isSubscriber ? await getOrCreateCurrentWindow(user.id) : null;
+  const state = windowRow ? windowState(windowRow) : { locked: false, skipped: false, hoursLeft: 0, msLeft: 0 };
+
   const basketItems = view?.basket.items ?? [];
   const basketProductIds = basketItems.map((i) => i.productId);
 
@@ -68,97 +71,78 @@ export default async function BasketPage() {
     inSeason: i.product.inSeason,
     stepQty: i.product.stepQty,
     imageEmoji: i.product.imageEmoji,
+    cloudinaryPublicId: i.product.cloudinaryPublicId,
     memberPrice: i.product.memberPrice,
     standardPrice: i.product.standardPrice,
     quantity: i.quantity,
   }));
 
+  const runningValue = isSubscriber ? view?.memberSubtotal ?? 0 : view?.standardSubtotal ?? 0;
+  const showIntro = !user.basketIntroSeen;
+  if (showIntro) await markBasketIntroSeen();
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold">Your standing basket</h1>
-      <p className="mt-1 text-sm text-muted">
-        We pre-fill this each week. Edit it however you like. You are only charged for what is in it when
-        the window closes.
-      </p>
-
-      {/* Window countdown (existing edit-before-charge logic) */}
-      <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-sm">
-        {state.skipped ? (
-          <span className="font-medium text-ripe-terracotta-dark">You have skipped this week.</span>
-        ) : state.locked ? (
-          <span className="font-medium text-ripe-terracotta-dark">This week&rsquo;s window is closed.</span>
-        ) : (
-          <span className="font-medium text-ripe-green">Window closes in {state.hoursLeft} hours</span>
-        )}
-        <span className="text-muted">
-          Closes{" "}
-          {window.closesAt.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "short" })}
-        </span>
-        {basket.frequencyWeeks === 2 && (
-          <span className="text-muted">Delivering every 2 weeks</span>
-        )}
-      </div>
-
-      {/* Perks strip */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <span className="rounded-full bg-ripe-green px-3 py-1 text-xs font-medium text-white">
-          {tier.name} member
-        </span>
-        {tier.perks.map((perk) => (
-          <span
-            key={perk}
-            className="rounded-full border border-ripe-green/40 bg-ripe-green-light/50 px-3 py-1 text-xs text-ripe-green"
-          >
-            ✓ {perk}
-          </span>
-        ))}
-      </div>
-
-      {/* Streak + savings */}
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="text-xs text-muted">Weekly streak</p>
-          <p className="text-2xl font-semibold">
-            {streak.currentStreak} {streak.currentStreak === 1 ? "week" : "weeks"}
+    <div className="min-h-[calc(100svh-1px)] bg-soft-mist">
+      {/* Bottom padding clears the fixed checkout bar so it never overlaps the last item. */}
+      <div className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:px-6 sm:py-10">
+        {showIntro && (
+          <p className="mb-4 text-sm text-muted">
+            Your basket is saved and pre-filled to start. Edit it however you like. Nothing is charged
+            automatically. Checking out is the only thing that places the order.
           </p>
-          <p className="text-xs text-muted">
-            {streak.currentStreak === 0
-              ? "Keep a week unskipped to start a streak"
-              : `Longest run: ${streak.longestStreak} weeks`}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="text-xs text-muted">Saved with membership so far</p>
-          <p className="text-2xl font-semibold">{formatNaira(cumulativeSavings)}</p>
-          <p className="text-xs text-muted">Across every order vs standard pricing</p>
-        </div>
-      </div>
+        )}
 
-      <div className="mt-8">
-        <BasketWorkspace
-          items={lines}
-          locked={state.locked}
-          skipped={state.skipped}
-          deliveryDay={deliveryDay}
-          memberSubtotal={view?.memberSubtotal ?? 0}
+        <MemberStatusCard
+          firstName={user.name.trim().split(/\s+/)[0] || "There"}
+          shipDay={user.shoppingWindowDay}
+          runningValue={runningValue}
+          isSubscriber={isSubscriber}
           savings={view?.savings ?? 0}
-          goalFit={goalFit}
-          quickAdd={quickAdd.map((p) => ({
-            id: p.id,
-            name: p.name,
-            imageEmoji: p.imageEmoji,
-            minOrderQty: p.minOrderQty,
-          }))}
-          flagged={flagged}
-          canRestore={Boolean(lastOrder)}
+          potentialSavings={view?.savings ?? 0}
+          streak={streak}
           signature={signature}
+          locked={state.locked || state.skipped}
+          autoOpenDayPicker={pickDay === "1"}
         />
+
+        {isSubscriber && windowRow && (state.skipped || state.locked) && (
+          <p className="mt-3 text-center text-sm text-muted">
+            {state.skipped ? "You have skipped this week." : "This week's edit window is closed."}
+          </p>
+        )}
+
+        <div className="mt-6">
+          <BasketWorkspace
+            items={lines}
+            isSubscriber={isSubscriber}
+            locked={state.locked}
+            skipped={state.skipped}
+            streak={streak}
+            memberSubtotal={view?.memberSubtotal ?? 0}
+            standardSubtotal={view?.standardSubtotal ?? 0}
+            savings={view?.savings ?? 0}
+            goalFit={goalFit}
+            quickAdd={quickAdd.map((p) => ({
+              id: p.id,
+              name: p.name,
+              imageEmoji: p.imageEmoji,
+              cloudinaryPublicId: p.cloudinaryPublicId,
+              minOrderQty: p.minOrderQty,
+            }))}
+            flagged={flagged}
+            canRestore={Boolean(lastOrder)}
+            signature={signature}
+          />
+        </div>
       </div>
 
-      <p className="mt-8 rounded-xl border border-dashed border-border p-4 text-xs text-muted">
-        Known gap (phase 2): windows are opened and charged on a schedule in production. For now the
-        window is created when you visit this page and no real charge is taken.
-      </p>
+      <BottomBar
+        runningValue={runningValue}
+        shipDay={user.shoppingWindowDay}
+        hasItems={lines.length > 0}
+        skipped={state.skipped}
+        locked={state.locked}
+      />
     </div>
   );
 }

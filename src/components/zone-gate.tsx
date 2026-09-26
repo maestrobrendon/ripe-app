@@ -97,7 +97,7 @@ export function ZoneProvider({
       {children}
       {open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-card border border-border bg-surface p-6">
             {status === "out-of-area" ? (
               <>
                 <h2 className="text-lg font-semibold">Not in your area yet</h2>
@@ -105,7 +105,7 @@ export function ZoneProvider({
                   We do not deliver to your location yet. Leave your email and we will let you know when we do.
                 </p>
                 {saved ? (
-                  <p className="mt-4 rounded-lg bg-ripe-green-light p-3 text-sm">Thanks. We will be in touch.</p>
+                  <p className="mt-4 rounded-lg bg-sky-wash p-3 text-sm">Thanks. We will be in touch.</p>
                 ) : (
                   <div className="mt-4 flex gap-2">
                     <input
@@ -117,13 +117,13 @@ export function ZoneProvider({
                     />
                     <button
                       onClick={joinWaitlist}
-                      className="rounded-full bg-ripe-green px-4 py-2 text-sm font-medium text-white"
+                      className="rounded-full bg-carbon px-4 py-2 text-sm font-medium text-white"
                     >
                       Notify me
                     </button>
                   </div>
                 )}
-                <button onClick={() => setStatus("idle")} className="mt-4 text-sm text-ripe-green underline">
+                <button onClick={() => setStatus("idle")} className="mt-4 text-sm text-carbon underline">
                   Back
                 </button>
               </>
@@ -137,7 +137,7 @@ export function ZoneProvider({
                 <button
                   onClick={useLocation}
                   disabled={status === "locating"}
-                  className="mt-4 w-full rounded-full bg-ripe-green px-4 py-2.5 text-sm font-medium text-white hover:bg-ripe-green-dark disabled:opacity-60"
+                  className="mt-4 w-full rounded-full bg-carbon px-4 py-2.5 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-60"
                 >
                   {status === "locating" ? "Finding you." : "Use my location"}
                 </button>

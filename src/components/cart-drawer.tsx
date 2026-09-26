@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
+import { Icon } from "@/components/ui/icon";
 
 export function CartDrawer() {
   const cart = useCart();
@@ -19,15 +21,19 @@ export function CartDrawer() {
         onClick={cart.closeDrawer}
         className="absolute inset-0 bg-black/30"
       />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-surface shadow-xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+      <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-surface">
+        <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
           <h2 className="text-lg font-semibold">Your cart</h2>
-          <button onClick={cart.closeDrawer} className="text-muted hover:text-foreground" aria-label="Close">
+          <button
+            onClick={cart.closeDrawer}
+            className="tap-target flex items-center justify-center text-muted hover:text-foreground"
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
           {cart.items.length === 0 ? (
             <p className="text-sm text-muted">Nothing in your cart yet. Add produce from the shop.</p>
           ) : (
@@ -36,28 +42,34 @@ export function CartDrawer() {
                 const price = cart.isSubscriber ? item.memberPrice : item.standardPrice;
                 return (
                   <li key={item.productId} className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-ripe-green-light text-2xl">
-                      {item.imageEmoji}
-                    </div>
+                    <ProductImage
+                      publicId={item.cloudinaryPublicId}
+                      alt={item.name}
+                      emoji={item.imageEmoji}
+                      className="h-12 w-12 shrink-0"
+                      rounded="rounded-lg"
+                      emojiClassName="text-xl"
+                      sizes="48px"
+                    />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
                       <p className="text-xs text-muted">{item.unit} · {formatNaira(price)}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <button
-                        className="h-7 w-7 rounded-full border border-border text-sm"
+                        className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-sm"
                         onClick={() => cart.setQuantity(toAddable(item), item.quantity - item.stepQty)}
                         aria-label={`Reduce ${item.name}`}
                       >
-                        −
+                        <Icon name="minus" size={16} />
                       </button>
                       <span className="w-5 text-center text-sm">{item.quantity}</span>
                       <button
-                        className="h-7 w-7 rounded-full border border-border text-sm"
+                        className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-sm"
                         onClick={() => cart.setQuantity(toAddable(item), item.quantity + item.stepQty)}
                         aria-label={`Add ${item.name}`}
                       >
-                        +
+                        <Icon name="plus" size={16} />
                       </button>
                     </div>
                   </li>
@@ -67,9 +79,9 @@ export function CartDrawer() {
           )}
         </div>
 
-        <div className="border-t border-border px-5 py-4">
+        <div className="border-t border-border px-4 py-4 sm:px-5">
           {!cart.isSubscriber && cart.savingsIfMember > 0 && (
-            <p className="mb-2 text-xs text-ripe-terracotta-dark">
+            <p className="mb-2 text-xs text-carbon">
               Members would pay {formatNaira(cart.memberSubtotal)} for this cart.{" "}
               <Link href="/subscribe" className="underline" onClick={cart.closeDrawer}>
                 see subscription
@@ -95,14 +107,14 @@ export function CartDrawer() {
             <Link
               href="/cart"
               onClick={cart.closeDrawer}
-              className="flex-1 rounded-full border border-ripe-green px-4 py-2.5 text-center text-sm font-medium text-ripe-green hover:bg-ripe-green-light"
+              className="flex-1 rounded-full border border-carbon px-4 py-3 text-center text-sm font-medium text-carbon hover:bg-sky-wash"
             >
               View cart
             </Link>
             <Link
               href="/checkout"
               onClick={cart.closeDrawer}
-              className="flex-1 rounded-full bg-ripe-terracotta px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-ripe-terracotta-dark"
+              className="flex-1 rounded-full bg-carbon px-4 py-3 text-center text-sm font-medium text-white hover:bg-carbon/85"
             >
               Checkout
             </Link>
@@ -123,6 +135,7 @@ function toAddable(item: ReturnType<typeof useCart>["items"][number]) {
     minOrderQty: item.minOrderQty,
     stepQty: item.stepQty,
     imageEmoji: item.imageEmoji,
+    cloudinaryPublicId: item.cloudinaryPublicId,
     memberPrice: item.memberPrice,
     standardPrice: item.standardPrice,
   };

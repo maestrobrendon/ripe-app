@@ -8,6 +8,7 @@ import { BuyBox } from "@/components/buy-box";
 import { ProductAccordion } from "@/components/product-accordion";
 import { BrandStoryBand } from "@/components/brand-story-band";
 import { CompleteYourBasket, type CrossSellProduct } from "@/components/complete-your-basket";
+import { ProductImage } from "@/components/product-image";
 
 export default async function ProductPage({
   params,
@@ -56,9 +57,15 @@ export default async function ProductPage({
         <div className="mt-4 grid gap-8 lg:grid-cols-2">
           {/* Image */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="flex aspect-square items-center justify-center rounded-3xl border border-border bg-ripe-green-light text-[9rem]">
-              {product.imageEmoji}
-            </div>
+            <ProductImage
+              publicId={product.cloudinaryPublicId}
+              alt={product.name}
+              emoji={product.imageEmoji}
+              rounded="rounded-3xl"
+              sizes="(min-width: 1024px) 480px, 90vw"
+              className="aspect-square w-full border border-border"
+              emojiClassName="text-[9rem]"
+            />
           </div>
 
           {/* Buy + copy */}

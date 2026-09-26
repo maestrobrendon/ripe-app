@@ -12,7 +12,7 @@ export async function startSubscription(formData: FormData) {
   const deliveryDay = String(formData.get("deliveryDay") ?? "WEDNESDAY") as DeliveryDay;
 
   if (!user) {
-    redirect(`/signup?next=${encodeURIComponent("/subscribe")}`);
+    redirect("/start");
   }
 
   const tier = await prisma.subscriptionTier.findUnique({ where: { slug } });

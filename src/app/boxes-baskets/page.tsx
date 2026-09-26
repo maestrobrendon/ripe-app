@@ -1,6 +1,6 @@
 import { CollectionPage } from "@/components/collection-page";
 
-export const metadata = { title: "Boxes & Baskets. Ripe" };
+export const metadata = { title: "Boxes & Baskets. Basket" };
 
 export default function BoxesBasketsPage() {
   return (

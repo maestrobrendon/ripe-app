@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useCart } from "@/components/cart-provider";
 import { StepIndicator } from "@/components/step-indicator";
+import { ProductImage } from "@/components/product-image";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { placeOrder, type CheckoutInput } from "./actions";
@@ -14,6 +15,8 @@ const DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
 export function CheckoutFlow({
   zones,
   defaults,
+  source,
+  shoppingWindowLabel,
 }: {
   zones: { slug: string; name: string; area: string }[];
   defaults: {
@@ -24,8 +27,11 @@ export function CheckoutFlow({
     zoneSlug: string;
     deliveryDay: DeliveryDay;
   };
+  source?: "basket";
+  shoppingWindowLabel?: string | null;
 }) {
   const cart = useCart();
+  const isBasket = source === "basket";
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<CheckoutInput>({
     name: defaults.name,
@@ -35,6 +41,7 @@ export function CheckoutFlow({
     zoneSlug: defaults.zoneSlug || zones[0]?.slug || "",
     deliveryDay: defaults.deliveryDay,
     paymentMethod: "card",
+    source,
   });
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -64,7 +71,7 @@ export function CheckoutFlow({
         <StepIndicator steps={STEPS} currentStep={step} />
       </div>
 
-      <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
+      <div className="mt-8 rounded-card border border-border bg-surface p-6">
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Delivery address</h2>
@@ -101,21 +108,31 @@ export function CheckoutFlow({
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Choose a delivery window</h2>
-            <p className="text-sm text-muted">We deliver on these days in your zone. Pick the one that works.</p>
-            <div className="space-y-2">
-              {DAYS.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => set("deliveryDay", d)}
-                  className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                    form.deliveryDay === d ? "border-ripe-green bg-ripe-green-light" : "border-border"
-                  }`}
-                >
-                  {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
-                </button>
-              ))}
-            </div>
+            <h2 className="text-lg font-medium">Delivery window</h2>
+            {isBasket ? (
+              <p className="rounded-lg border border-border p-3 text-sm">
+                This basket is scheduled to ship on{" "}
+                <span className="font-medium">{shoppingWindowLabel ?? "your chosen day"}</span>. Change it
+                on the basket page.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted">We deliver on these days in your zone. Pick the one that works.</p>
+                <div className="space-y-2">
+                  {DAYS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => set("deliveryDay", d)}
+                      className={`block w-full rounded-lg border p-3 text-left text-sm ${
+                        form.deliveryDay === d ? "border-border bg-lavender" : "border-border bg-paper-white"
+                      }`}
+                    >
+                      {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className={backBtn}>Back</button>
               <button onClick={() => setStep(3)} className={nextBtn(true)}>Continue</button>
@@ -126,7 +143,7 @@ export function CheckoutFlow({
         {step === 3 && (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Payment method</h2>
-            <p className="text-xs font-medium uppercase tracking-wide text-ripe-terracotta-dark">
+            <p className="text-xs font-medium uppercase tracking-wide text-carbon">
               Test mode. No real payment is taken
             </p>
             <div className="space-y-2">
@@ -135,7 +152,7 @@ export function CheckoutFlow({
                   key={m}
                   onClick={() => set("paymentMethod", m)}
                   className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                    form.paymentMethod === m ? "border-ripe-green bg-ripe-green-light" : "border-border"
+                    form.paymentMethod === m ? "border-border bg-lavender" : "border-border bg-paper-white"
                   }`}
                 >
                   {m === "card" ? "Card (test mode)" : "Bank transfer (test mode)"}
@@ -156,9 +173,18 @@ export function CheckoutFlow({
               {cart.items.map((i) => {
                 const price = cart.isSubscriber ? i.memberPrice : i.standardPrice;
                 return (
-                  <li key={i.productId} className="flex justify-between py-2 text-sm">
-                    <span>{i.imageEmoji} {i.name} × {i.quantity}</span>
-                    <span>{formatNaira(price * i.quantity)}</span>
+                  <li key={i.productId} className="flex items-center gap-3 py-2 text-sm">
+                    <ProductImage
+                      publicId={i.cloudinaryPublicId}
+                      alt={i.name}
+                      emoji={i.imageEmoji}
+                      className="h-9 w-9 shrink-0"
+                      rounded="rounded-lg"
+                      emojiClassName="text-base"
+                      sizes="36px"
+                    />
+                    <span className="min-w-0 flex-1 truncate">{i.name} × {i.quantity}</span>
+                    <span className="shrink-0">{formatNaira(price * i.quantity)}</span>
                   </li>
                 );
               })}
@@ -170,17 +196,24 @@ export function CheckoutFlow({
                 <span>Total</span>
                 <span>{formatNaira(total)}</span>
               </div>
-              <Row label="Delivers" value={`${DELIVERY_DAY_LABEL[form.deliveryDay]}, 9am to 5pm`} />
+              <Row
+                label="Delivers"
+                value={
+                  isBasket
+                    ? `${shoppingWindowLabel ?? "Your chosen day"}, 9am to 5pm`
+                    : `${DELIVERY_DAY_LABEL[form.deliveryDay]}, 9am to 5pm`
+                }
+              />
               <Row label="To" value={`${form.address} (${zones.find((z) => z.slug === form.zoneSlug)?.name ?? ""})`} />
               <Row label="Payment" value={form.paymentMethod === "card" ? "Card (test mode)" : "Bank transfer (test mode)"} />
             </div>
-            {error && <p className="rounded-lg bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">{error}</p>}
+            {error && <p className="rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setStep(3)} className={backBtn} disabled={isPending}>Back</button>
               <button
                 onClick={submit}
                 disabled={isPending}
-                className="rounded-full bg-ripe-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-ripe-terracotta-dark disabled:opacity-60"
+                className="rounded-full bg-carbon px-6 py-2.5 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-60"
               >
                 {isPending ? "Placing order…" : "Place order"}
               </button>
@@ -193,7 +226,7 @@ export function CheckoutFlow({
 }
 
 const input =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm";
+  "w-full rounded-input border border-border px-3 py-2 text-sm";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -214,10 +247,10 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const backBtn =
-  "rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-ripe-green-light disabled:opacity-60";
+  "rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-sky-wash disabled:opacity-60";
 
 function nextBtn(enabled: boolean) {
   return `rounded-full px-6 py-2.5 text-sm font-medium text-white ${
-    enabled ? "bg-ripe-green hover:bg-ripe-green-dark" : "cursor-not-allowed bg-ripe-green/40"
+    enabled ? "bg-carbon hover:bg-carbon/85" : "cursor-not-allowed bg-carbon/40"
   }`;
 }

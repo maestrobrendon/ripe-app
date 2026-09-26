@@ -15,6 +15,7 @@ export type CartLineView = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId: string | null;
   memberPrice: number;
   standardPrice: number;
   quantity: number;
@@ -61,6 +62,7 @@ function buildView(
     minOrderQty: i.product.minOrderQty,
     stepQty: i.product.stepQty,
     imageEmoji: i.product.imageEmoji,
+    cloudinaryPublicId: i.product.cloudinaryPublicId,
     memberPrice: i.product.memberPrice,
     standardPrice: i.product.standardPrice,
     quantity: i.quantity,

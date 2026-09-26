@@ -14,6 +14,7 @@ export function toAddable(p: Product): AddableProduct {
     minOrderQty: p.minOrderQty,
     stepQty: p.stepQty,
     imageEmoji: p.imageEmoji,
+    cloudinaryPublicId: p.cloudinaryPublicId,
     memberPrice: p.memberPrice,
     standardPrice: p.standardPrice,
   };

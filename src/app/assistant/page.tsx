@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// The trained assistant now lives inside Recipes (see the brief, Section 2).
+// Ideas now lives in the basket hub, with a second entry point on Recipes.
 export default function AssistantRedirect() {
-  redirect("/recipes");
+  redirect("/basket");
 }
