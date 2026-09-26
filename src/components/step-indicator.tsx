@@ -9,9 +9,9 @@ export function StepIndicator({ steps, currentStep }: { steps: string[]; current
             <span
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
                 state === "done"
-                  ? "bg-basket-green text-white"
+                  ? "bg-carbon text-white"
                   : state === "current"
-                  ? "border-2 border-basket-green text-basket-green"
+                  ? "border-2 border-carbon text-carbon"
                   : "border border-border text-muted"
               }`}
             >

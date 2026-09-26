@@ -32,7 +32,7 @@ export default async function RecipePage({
             <Link
               key={g}
               href={`/recipes?goal=${g}`}
-              className="rounded-full bg-basket-green-light px-2 py-0.5 text-xs"
+              className="rounded-full bg-sky-wash px-2 py-0.5 text-xs"
             >
               {GOAL_LABEL[g] ?? g}
             </Link>

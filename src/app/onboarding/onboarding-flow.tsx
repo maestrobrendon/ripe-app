@@ -33,7 +33,7 @@ function Radio({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-3 text-sm has-[:checked]:border-basket-green has-[:checked]:bg-basket-green-light">
+    <label className="flex cursor-pointer items-start gap-2 rounded-input border border-border p-3 text-sm has-[:checked]:bg-lavender">
       <input type="radio" name={name} checked={checked} onChange={onChange} />
       <span>
         <span className="font-medium">{label}</span>
@@ -139,7 +139,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
                 <button
                   key={tag}
                   onClick={() => set("dietaryNotes", data.dietaryNotes === tag ? undefined : tag)}
-                  className={`rounded-full px-3 py-1 ${data.dietaryNotes === tag ? "bg-basket-green text-white" : "border border-border"}`}
+                  className={`rounded-full px-3 py-1 ${data.dietaryNotes === tag ? "bg-carbon text-white" : "border border-border"}`}
                 >
                   {tag}
                 </button>
@@ -164,7 +164,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
                   key={p.id}
                   onClick={() => toggle("favoriteProductIds", p.id)}
                   className={`rounded-full px-3 py-1 text-sm ${
-                    data.favoriteProductIds.includes(p.id) ? "bg-basket-green text-white" : "border border-border"
+                    data.favoriteProductIds.includes(p.id) ? "bg-carbon text-white" : "border border-border"
                   }`}
                 >
                   {p.imageEmoji} {p.name}
@@ -183,7 +183,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
                   key={value}
                   onClick={() => toggle("mealFormatPreference", value)}
                   className={`rounded-full px-3 py-1 text-sm ${
-                    data.mealFormatPreference.includes(value) ? "bg-basket-green text-white" : "border border-border"
+                    data.mealFormatPreference.includes(value) ? "bg-carbon text-white" : "border border-border"
                   }`}
                 >
                   {label}
@@ -221,7 +221,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
           {step < STEPS.length - 1 ? (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="rounded-full bg-basket-green px-5 py-2 text-sm font-medium text-white hover:bg-basket-green-dark"
+              className="rounded-full bg-carbon px-5 py-2 text-sm font-medium text-white hover:bg-carbon/85"
             >
               Next
             </button>
@@ -229,7 +229,7 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
             <button
               onClick={() => finish(data)}
               disabled={isPending}
-              className="rounded-full bg-basket-terracotta px-5 py-2 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-60"
+              className="rounded-full bg-carbon px-5 py-2 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-60"
             >
               {isPending ? "Saving." : "Finish"}
             </button>

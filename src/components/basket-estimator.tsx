@@ -79,7 +79,7 @@ export function BasketEstimator({ candidates }: { candidates: StarterCandidate[]
     <div className="overflow-hidden rounded-card-lg border border-border bg-surface">
       {/* Segmented control: the two ways to pay for the same basket */}
       <div className="p-4 sm:p-5">
-        <div className="flex rounded-full bg-basket-green-light p-1">
+        <div className="flex rounded-full bg-sky-wash p-1">
           {[
             { label: "One-off order", member: false },
             { label: "Member price", member: true },
@@ -91,8 +91,8 @@ export function BasketEstimator({ candidates }: { candidates: StarterCandidate[]
               aria-pressed={isMember === opt.member}
               className={`tap-target flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
                 isMember === opt.member
-                  ? "bg-basket-green text-white"
-                  : "text-basket-green-dark hover:bg-white/50"
+                  ? "bg-carbon text-white"
+                  : "text-carbon hover:bg-white/50"
               }`}
             >
               {opt.label}
@@ -122,7 +122,7 @@ export function BasketEstimator({ candidates }: { candidates: StarterCandidate[]
                 {picks.length} kinds, {itemCount} items
               </p>
             </div>
-            <p className="text-heading-sm shrink-0">{formatNaira(subtotal)}</p>
+            <p className="text-heading shrink-0">{formatNaira(subtotal)}</p>
           </div>
 
           {picks.length > 0 && (
@@ -157,7 +157,7 @@ export function BasketEstimator({ candidates }: { candidates: StarterCandidate[]
           </div>
           {isMember ? (
             saving > 0 && (
-              <div className="flex justify-between text-basket-terracotta-dark">
+              <div className="flex justify-between text-carbon">
                 <span>You save vs one-off</span>
                 <span className="font-semibold">{formatNaira(saving)}</span>
               </div>

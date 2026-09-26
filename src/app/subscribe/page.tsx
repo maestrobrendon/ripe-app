@@ -21,8 +21,8 @@ export default async function SubscribePage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-sm font-medium uppercase tracking-wide text-basket-terracotta-dark">Optional upgrade</p>
-        <h1 className="text-heading mt-2">
+        <p className="text-sm font-medium uppercase tracking-wide text-carbon">Optional upgrade</p>
+        <h1 className="text-heading-lg mt-2">
           Subscribe for member pricing and a standing basket
         </h1>
         <p className="mt-4 text-sm text-muted">
@@ -30,7 +30,7 @@ export default async function SubscribePage() {
           account. It unlocks member pricing across the catalog, free delivery on your set days, combo
           pricing on boxes, and a standing weekly basket you edit before you are charged.
         </p>
-        <Link href="/shop" className="mt-4 inline-block text-sm font-medium text-basket-green underline">
+        <Link href="/shop" className="mt-4 inline-block text-sm font-medium text-carbon underline">
           Or just start shopping
         </Link>
       </div>
@@ -53,7 +53,7 @@ export default async function SubscribePage() {
           return (
             <Card key={tier.id} tone={isMid ? "tint" : "surface"} className="flex flex-col">
               {isMid && (
-                <span className="mb-3 inline-block w-fit rounded-full bg-basket-green px-3 py-1 text-xs font-medium text-white">
+                <span className="mb-3 inline-block w-fit rounded-full bg-carbon px-3 py-1 text-xs font-medium text-white">
                   Most popular
                 </span>
               )}
@@ -66,7 +66,7 @@ export default async function SubscribePage() {
               <ul className="mt-5 flex-1 space-y-2 text-sm">
                 {tier.perks.map((perk) => (
                   <li key={perk} className="flex gap-2">
-                    <span className="mt-0.5 shrink-0 text-basket-green">
+                    <span className="mt-0.5 shrink-0 text-carbon">
                       <Icon name="check" size={16} />
                     </span>
                     <span>{perk}</span>

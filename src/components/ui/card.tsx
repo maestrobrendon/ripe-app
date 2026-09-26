@@ -10,9 +10,12 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
 // Colour lives here rather than in a caller's className: Tailwind resolves
 // competing utilities by stylesheet order, not class order, so a `bg-*` passed
 // in className silently loses to the one set here.
+// Lavender is the palette's accent card fill; sky wash is reserved for the
+// full-bleed section bands, so a tinted card stays distinct from the band it
+// may be sitting on.
 const TONE_CLASS: Record<Tone, string> = {
   surface: "border-border bg-surface",
-  tint: "border-basket-green bg-basket-green-light",
+  tint: "border-border bg-lavender",
 };
 
 function join(...classes: (string | undefined | false)[]) {

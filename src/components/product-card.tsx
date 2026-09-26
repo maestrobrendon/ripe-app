@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const change = (next: number) => cart.setQuantity(product, next);
 
   return (
-    <Card className="flex flex-col transition hover:border-basket-green">
+    <Card className="flex flex-col transition hover:bg-sky-wash">
       <Link href={href} className="mb-2 block sm:mb-3">
         <ProductImage
           publicId={product.cloudinaryPublicId}
@@ -41,7 +41,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           <Link href={href} className="hover:underline">{product.name}</Link>
         </h3>
         {!product.inSeason && (
-          <span className="shrink-0 rounded-full bg-basket-terracotta-light px-1.5 py-0.5 text-[10px] font-medium text-basket-terracotta-dark sm:px-2 sm:text-[11px]">
+          <span className="shrink-0 rounded-full bg-ember/12 px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">
             Off-season
           </span>
         )}
@@ -70,11 +70,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             + Add
           </Button>
         ) : (
-          <div className="flex items-center justify-between rounded-full border border-basket-green px-1 py-1">
+          <div className="flex items-center justify-between rounded-full border border-carbon px-1 py-1">
             <button
               disabled={isLoading}
               onClick={() => change(quantity - product.stepQty)}
-              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-basket-green"
+              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-carbon"
               aria-label={`Reduce ${product.name}`}
             >
               <Icon name="minus" size={16} />
@@ -83,7 +83,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             <button
               disabled={isLoading}
               onClick={() => change(quantity + product.stepQty)}
-              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-basket-green"
+              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-carbon"
               aria-label={`Add ${product.name}`}
             >
               <Icon name="plus" size={16} />

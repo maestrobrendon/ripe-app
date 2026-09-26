@@ -18,8 +18,8 @@ export default async function WelcomePage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-14 sm:px-6">
-      <p className="text-sm font-medium uppercase tracking-wide text-basket-green">Account created</p>
-      <h1 className="text-heading mt-2">Welcome to {SITE_NAME}, {user.name.split(" ")[0]}</h1>
+      <p className="text-sm font-medium uppercase tracking-wide text-carbon">Account created</p>
+      <h1 className="text-heading-lg mt-2">Welcome to {SITE_NAME}, {user.name.split(" ")[0]}</h1>
 
       <Card className="mt-8 space-y-4 text-sm">
         <p className="font-medium">How this works</p>

@@ -95,9 +95,9 @@ export function CoachWidget() {
   return (
     <>
       {open && (
-        <div className="fixed inset-x-4 bottom-24 z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-card-lg border border-border bg-surface shadow-xl sm:inset-x-auto sm:right-5 sm:w-96">
+        <div className="fixed inset-x-4 bottom-24 z-50 flex max-h-[70svh] flex-col overflow-hidden rounded-card-lg border border-border bg-surface sm:inset-x-auto sm:right-5 sm:w-96">
           {/* Progress header: level, points, and the bar to the next level */}
-          <div className="shrink-0 bg-basket-green p-4 text-white">
+          <div className="shrink-0 bg-carbon p-4 text-white">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">Basket coach</p>
@@ -151,7 +151,7 @@ export function CoachWidget() {
 
             {turns.map((turn, i) => (
               <div key={`${turn.reply.id}-${i}`} className="space-y-2">
-                <p className="ml-auto w-fit max-w-[85%] rounded-card bg-basket-green-light px-3 py-2 text-sm font-medium text-basket-green-dark">
+                <p className="ml-auto w-fit max-w-[85%] rounded-card bg-sky-wash px-3 py-2 text-sm font-medium text-carbon">
                   {turn.question}
                 </p>
 
@@ -165,7 +165,7 @@ export function CoachWidget() {
                           <Link
                             href={`/products/${p.slug}`}
                             onClick={() => setOpen(false)}
-                            className="flex items-center gap-2 rounded-card p-1 hover:bg-basket-green-light"
+                            className="flex items-center gap-2 rounded-card p-1 hover:bg-sky-wash"
                           >
                             <ProductImage
                               publicId={p.cloudinaryPublicId}
@@ -191,7 +191,7 @@ export function CoachWidget() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-block text-sm font-semibold text-basket-green underline"
+                      className="mt-3 inline-block text-sm font-semibold text-carbon underline"
                     >
                       Open WhatsApp
                     </a>
@@ -200,7 +200,7 @@ export function CoachWidget() {
                       <Link
                         href={turn.reply.link.href}
                         onClick={() => setOpen(false)}
-                        className="mt-3 inline-block text-sm font-semibold text-basket-green underline"
+                        className="mt-3 inline-block text-sm font-semibold text-carbon underline"
                       >
                         {turn.reply.link.label}
                       </Link>
@@ -220,7 +220,7 @@ export function CoachWidget() {
                   <button
                     key={reply.id}
                     onClick={() => ask(reply)}
-                    className="tap-target rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-basket-green hover:bg-basket-green-light"
+                    className="tap-target rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-sky-wash"
                   >
                     {reply.question}
                   </button>
@@ -241,7 +241,7 @@ export function CoachWidget() {
                 type="submit"
                 disabled={asking || draft.trim().length < 2}
                 aria-label="Send question"
-                className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-basket-green text-white transition hover:bg-basket-green-dark disabled:opacity-40"
+                className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-carbon text-white transition hover:bg-carbon/85 disabled:opacity-40"
               >
                 {asking ? (
                   <Icon name="spinner" size={18} className="animate-spin" />
@@ -258,7 +258,8 @@ export function CoachWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close the Basket coach" : "Open the Basket coach"}
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-basket-green px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-basket-green-dark"
+        className="fixed right-5 z-40 flex items-center gap-2 rounded-full bg-carbon px-4 py-3 text-sm font-semibold text-white transition hover:bg-carbon/85"
+        style={{ bottom: "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem))" }}
       >
         <Icon name={open ? "close" : "reward"} size={20} />
         <span className="hidden sm:inline">{open ? "Close" : "Ask the coach"}</span>

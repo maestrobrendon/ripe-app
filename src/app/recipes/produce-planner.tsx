@@ -81,7 +81,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
           not just the button it used to sit beside. */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="text-heading-sm">Produce Planner</h3>
+          <h3 className="text-heading">Produce Planner</h3>
           <p className="mt-1 text-muted">Everything it suggests comes off our shelves.</p>
         </div>
         <Servings value={servings} onChange={setServings} />
@@ -120,7 +120,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
                 key={g.id}
                 disabled={loading}
                 onClick={() => call({ mode: "goal", goalId: g.id })}
-                className="tap-target rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:border-basket-green hover:bg-basket-green-light disabled:opacity-50"
+                className="tap-target rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-sky-wash disabled:opacity-50"
               >
                 {g.label}
               </button>
@@ -140,7 +140,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
               <button
                 disabled={loading}
                 onClick={() => call({ mode: "cart", cartSlugs: cart.items.map((i) => i.slug) })}
-                className="text-sm font-semibold text-basket-green underline disabled:opacity-50"
+                className="text-sm font-semibold text-carbon underline disabled:opacity-50"
               >
                 Plan around what is in my cart
               </button>
@@ -150,7 +150,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
       )}
 
       {redirect && (
-        <div className="mt-6 rounded-card border border-basket-terracotta/40 bg-basket-terracotta-light/50 p-4 text-basket-terracotta-dark">
+        <div className="mt-6 rounded-card border border-border bg-ember/12 p-4 text-carbon">
           <p>{redirect}</p>
           <button onClick={reset} className="mt-3 text-sm font-semibold underline">
             Try something else
@@ -163,7 +163,7 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
           <p className="text-muted">
             We could not turn that into a produce plan. Try a fruit, a vegetable, or one of the themes.
           </p>
-          <button onClick={reset} className="mt-3 text-sm font-semibold text-basket-green underline">
+          <button onClick={reset} className="mt-3 text-sm font-semibold text-carbon underline">
             Start over
           </button>
         </div>
@@ -207,8 +207,8 @@ function PlanView({
   return (
     <div className="mt-8 border-t border-border pt-8">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h4 className="text-heading-sm">{plan.title}</h4>
-        <button onClick={onReset} className="text-sm font-semibold text-basket-green underline">
+        <h4 className="text-heading">{plan.title}</h4>
+        <button onClick={onReset} className="text-sm font-semibold text-carbon underline">
           Start over
         </button>
       </div>
@@ -229,7 +229,7 @@ function PlanView({
       {plan.ideas.length > 1 && (
         <div className="mt-6 border-t border-border pt-6">
           {addedAll ? (
-            <p className="flex flex-wrap items-center gap-2 font-semibold text-basket-green">
+            <p className="flex flex-wrap items-center gap-2 font-semibold text-carbon">
               <Icon name="check" size={18} />
               Added the produce for this plan.
               <Link href="/cart" className="underline">
@@ -266,7 +266,7 @@ function IdeaCard({
           {idea.servings} servings · {idea.timeMinutes} min
         </span>
       </div>
-      <span className="mt-2 inline-block rounded-full bg-basket-green-light px-3 py-0.5 text-xs font-semibold text-basket-green">
+      <span className="mt-2 inline-block rounded-full bg-sky-wash px-3 py-0.5 text-xs font-semibold text-carbon">
         {idea.kindLabel}
       </span>
 
@@ -298,7 +298,7 @@ function IdeaCard({
 
       <div className="mt-5">
         {added ? (
-          <p className="flex items-center gap-2 text-sm font-semibold text-basket-green">
+          <p className="flex items-center gap-2 text-sm font-semibold text-carbon">
             <Icon name="check" size={16} />
             Added to cart
           </p>

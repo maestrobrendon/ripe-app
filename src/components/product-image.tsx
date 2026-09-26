@@ -55,7 +55,7 @@ export function ProductImage({
 
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden bg-basket-green-light ${rounded} ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden bg-sky-wash ${rounded} ${className}`}
     >
       {showPhoto ? (
         <Image

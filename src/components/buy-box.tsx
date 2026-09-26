@@ -49,10 +49,10 @@ export function BuyBox({
 
   return (
     <Card>
-      <p className="text-xs font-medium uppercase tracking-wide text-basket-green">
+      <p className="text-xs font-medium uppercase tracking-wide text-carbon">
         Freshly selected · Basket quality checked
       </p>
-      <h1 className="text-heading mt-2">{name}</h1>
+      <h1 className="text-heading-lg mt-2">{name}</h1>
 
       <div className="mt-3 flex flex-wrap items-baseline gap-2">
         {hasMemberSaving && (
@@ -60,7 +60,7 @@ export function BuyBox({
         )}
         <span className="text-2xl font-semibold">{formatNaira(headlinePrice)}</span>
         {hasMemberSaving && (
-          <span className="rounded-full bg-basket-green-light px-2 py-0.5 text-xs font-medium text-basket-green">
+          <span className="rounded-full bg-sky-wash px-2 py-0.5 text-xs font-medium text-carbon">
             member price
           </span>
         )}
@@ -110,7 +110,7 @@ export function BuyBox({
 
       {/* Stock */}
       <p className="mt-3 flex items-center gap-2 text-sm">
-        <span className={`h-2.5 w-2.5 rounded-full ${inSeason ? "bg-basket-green" : "bg-basket-terracotta"}`} />
+        <span className={`h-2.5 w-2.5 rounded-full border border-carbon ${inSeason ? "bg-mint-pop" : "bg-ember"}`} />
         {inSeason ? "In stock" : "Limited this season"}
       </p>
 
@@ -125,7 +125,7 @@ export function BuyBox({
 
       {/* Purchase mode */}
       <div className="mt-5 overflow-hidden rounded-xl border border-border text-sm">
-        <label className="flex cursor-pointer items-center gap-2 border-b border-border p-3 has-[:checked]:bg-basket-green-light">
+        <label className="flex cursor-pointer items-center gap-2 border-b border-border p-3 has-[:checked]:bg-lavender">
           <input
             type="radio"
             name="mode"
@@ -134,7 +134,7 @@ export function BuyBox({
           />
           One-time purchase
         </label>
-        <div className="p-3 has-[:checked]:bg-basket-green-light">
+        <div className="p-3 has-[:checked]:bg-lavender">
           <label className="flex cursor-pointer items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <input

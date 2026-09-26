@@ -81,7 +81,7 @@ export function SearchBar({
       </form>
 
       {open && results.length > 0 && (
-        <ul className="absolute z-50 mt-2 w-full overflow-hidden rounded-card border border-border bg-surface shadow-lg">
+        <ul className="absolute z-50 mt-2 w-full overflow-hidden rounded-card border border-border bg-surface">
           {results.map((r) => (
             <li key={r.slug}>
               <Link
@@ -90,7 +90,7 @@ export function SearchBar({
                   setOpen(false);
                   onNavigate?.();
                 }}
-                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-basket-green-light"
+                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-sky-wash"
               >
                 <span className="text-xl">{r.imageEmoji}</span>
                 <span className="flex-1">{r.name}</span>
@@ -101,7 +101,7 @@ export function SearchBar({
           <li>
             <button
               onClick={submit}
-              className="w-full px-4 py-2 text-left text-xs font-medium text-basket-green hover:bg-basket-green-light"
+              className="w-full px-4 py-2 text-left text-xs font-medium text-carbon hover:bg-sky-wash"
             >
               See all results for &ldquo;{q.trim()}&rdquo;
             </button>

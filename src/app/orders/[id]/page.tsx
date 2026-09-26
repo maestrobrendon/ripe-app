@@ -54,7 +54,7 @@ export default async function OrderPage({
             <li key={status} className="relative flex flex-1 flex-col items-center text-center">
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
-                  i <= currentIndex ? "bg-basket-green text-white" : "border border-border text-muted"
+                  i <= currentIndex ? "bg-carbon text-white" : "border border-border text-muted"
                 }`}
               >
                 {i <= currentIndex ? "✓" : i + 1}
@@ -63,7 +63,7 @@ export default async function OrderPage({
                 {ORDER_STATUS_LABEL[status]}
               </span>
               {i < ORDER_STATUS_STEPS.length - 1 && (
-                <span className={`absolute mt-4 h-px w-full ${i < currentIndex ? "bg-basket-green" : "bg-border"}`} />
+                <span className={`absolute mt-4 h-px w-full ${i < currentIndex ? "bg-carbon" : "bg-border"}`} />
               )}
             </li>
           ))}
@@ -110,8 +110,8 @@ export default async function OrderPage({
       </div>
 
       <div className="mt-8 flex gap-4">
-        <Link href="/shop" className="text-sm font-medium text-basket-green underline">Keep shopping</Link>
-        <Link href="/account" className="text-sm font-medium text-basket-green underline">Your account</Link>
+        <Link href="/shop" className="text-sm font-medium text-carbon underline">Keep shopping</Link>
+        <Link href="/account" className="text-sm font-medium text-carbon underline">Your account</Link>
       </div>
     </div>
   );

@@ -124,7 +124,7 @@ export function CheckoutFlow({
                       key={d}
                       onClick={() => set("deliveryDay", d)}
                       className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                        form.deliveryDay === d ? "border-basket-green bg-basket-green-light" : "border-border"
+                        form.deliveryDay === d ? "border-border bg-lavender" : "border-border bg-paper-white"
                       }`}
                     >
                       {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
@@ -143,7 +143,7 @@ export function CheckoutFlow({
         {step === 3 && (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Payment method</h2>
-            <p className="text-xs font-medium uppercase tracking-wide text-basket-terracotta-dark">
+            <p className="text-xs font-medium uppercase tracking-wide text-carbon">
               Test mode. No real payment is taken
             </p>
             <div className="space-y-2">
@@ -152,7 +152,7 @@ export function CheckoutFlow({
                   key={m}
                   onClick={() => set("paymentMethod", m)}
                   className={`block w-full rounded-lg border p-3 text-left text-sm ${
-                    form.paymentMethod === m ? "border-basket-green bg-basket-green-light" : "border-border"
+                    form.paymentMethod === m ? "border-border bg-lavender" : "border-border bg-paper-white"
                   }`}
                 >
                   {m === "card" ? "Card (test mode)" : "Bank transfer (test mode)"}
@@ -207,13 +207,13 @@ export function CheckoutFlow({
               <Row label="To" value={`${form.address} (${zones.find((z) => z.slug === form.zoneSlug)?.name ?? ""})`} />
               <Row label="Payment" value={form.paymentMethod === "card" ? "Card (test mode)" : "Bank transfer (test mode)"} />
             </div>
-            {error && <p className="rounded-lg bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">{error}</p>}
+            {error && <p className="rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setStep(3)} className={backBtn} disabled={isPending}>Back</button>
               <button
                 onClick={submit}
                 disabled={isPending}
-                className="rounded-full bg-basket-terracotta px-6 py-2.5 text-sm font-medium text-white hover:bg-basket-terracotta-dark disabled:opacity-60"
+                className="rounded-full bg-carbon px-6 py-2.5 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-60"
               >
                 {isPending ? "Placing order…" : "Place order"}
               </button>
@@ -247,10 +247,10 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const backBtn =
-  "rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-basket-green-light disabled:opacity-60";
+  "rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-sky-wash disabled:opacity-60";
 
 function nextBtn(enabled: boolean) {
   return `rounded-full px-6 py-2.5 text-sm font-medium text-white ${
-    enabled ? "bg-basket-green hover:bg-basket-green-dark" : "cursor-not-allowed bg-basket-green/40"
+    enabled ? "bg-carbon hover:bg-carbon/85" : "cursor-not-allowed bg-carbon/40"
   }`;
 }

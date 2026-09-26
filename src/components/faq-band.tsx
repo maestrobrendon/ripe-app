@@ -51,7 +51,7 @@ const FAQS = [
 export function FaqBand() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-      <h2 className="text-heading">Before you order</h2>
+      <h2 className="text-heading-lg">Before you order</h2>
 
       <div className="mt-10 max-w-3xl border-t border-border">
         {FAQS.map((f) => (

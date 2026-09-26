@@ -13,7 +13,7 @@ export type CrossSellProduct = AddableProduct & {
 function Stars({ avg }: { avg: number }) {
   const full = Math.round(avg);
   return (
-    <span className="text-xs text-basket-terracotta-dark" aria-label={`${avg} out of 5`}>
+    <span className="text-xs text-carbon" aria-label={`${avg} out of 5`}>
       {"★".repeat(full)}
       <span className="text-border">{"★".repeat(5 - full)}</span>
     </span>
@@ -57,14 +57,14 @@ function Card({ product }: { product: CrossSellProduct }) {
         {chooseOptions ? (
           <Link
             href={`/products/${product.slug}`}
-            className="block w-full rounded-full border border-basket-green px-4 py-2 text-center text-xs font-medium uppercase tracking-wide text-basket-green hover:bg-basket-green-light"
+            className="block w-full rounded-full border border-carbon px-4 py-2 text-center text-xs font-medium uppercase tracking-wide text-carbon hover:bg-sky-wash"
           >
             Choose options
           </Link>
         ) : (
           <button
             onClick={() => cart.setQuantity(product, (cart.items.find((i) => i.productId === product.id)?.quantity ?? 0) + product.minOrderQty)}
-            className="w-full rounded-full border border-basket-green px-4 py-2 text-xs font-medium uppercase tracking-wide text-basket-green hover:bg-basket-green-light"
+            className="w-full rounded-full border border-carbon px-4 py-2 text-xs font-medium uppercase tracking-wide text-carbon hover:bg-sky-wash"
           >
             {inCart ? "Add another" : "Add to cart"}
           </button>

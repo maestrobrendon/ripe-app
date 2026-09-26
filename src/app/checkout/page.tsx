@@ -27,7 +27,7 @@ export default async function CheckoutPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <h1 className="text-heading">Checkout</h1>
+      <h1 className="text-heading-lg">Checkout</h1>
       <CheckoutFlow
         zones={zones.map((z) => ({ slug: z.slug, name: z.name, area: z.area }))}
         source={isBasket ? "basket" : undefined}

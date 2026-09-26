@@ -22,7 +22,7 @@ export async function CollectionPage({
           <h1 className="text-3xl font-semibold">{title}</h1>
           <p className="mt-1 max-w-xl text-sm text-muted">{blurb}</p>
         </div>
-        <Link href="/shop" className="text-sm font-medium text-basket-green underline">
+        <Link href="/shop" className="text-sm font-medium text-carbon underline">
           Shop all produce
         </Link>
       </div>

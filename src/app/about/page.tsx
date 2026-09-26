@@ -41,10 +41,10 @@ export default function AboutPage() {
       </div>
 
       <div className="mt-10 flex gap-3">
-        <Link href="/shop" className="rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark">
+        <Link href="/shop" className="rounded-full bg-carbon px-6 py-3 text-sm font-medium text-white hover:bg-carbon/85">
           Browse the shop
         </Link>
-        <Link href="/subscribe" className="rounded-full border border-border px-6 py-3 text-sm font-medium hover:bg-basket-green-light">
+        <Link href="/subscribe" className="rounded-full border border-border px-6 py-3 text-sm font-medium hover:bg-sky-wash">
           See subscription perks
         </Link>
       </div>

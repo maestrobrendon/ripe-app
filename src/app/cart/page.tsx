@@ -19,7 +19,7 @@ export default function CartPage() {
       {cart.items.length === 0 ? (
         <p className="mt-6 rounded-card border border-dashed border-border p-8 text-center text-sm text-muted">
           Your cart is empty.{" "}
-          <Link href="/shop" className="text-basket-green underline">Start shopping</Link>.
+          <Link href="/shop" className="text-carbon underline">Start shopping</Link>.
         </p>
       ) : (
         <div className="mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_320px]">
@@ -94,7 +94,7 @@ export default function CartPage() {
             </div>
 
             {!cart.isSubscriber && cart.savingsIfMember > 0 && (
-              <p className="mt-3 text-xs text-basket-terracotta-dark">
+              <p className="mt-3 text-xs text-carbon">
                 Members would pay {formatNaira(cart.memberSubtotal)} for this cart.{" "}
                 <Link href="/subscribe" className="underline">See subscription</Link>
               </p>
@@ -108,11 +108,11 @@ export default function CartPage() {
 
             <Link
               href="/checkout"
-              className="mt-4 block rounded-full bg-basket-terracotta px-6 py-3 text-center text-sm font-medium text-white hover:bg-basket-terracotta-dark"
+              className="mt-4 block rounded-full bg-carbon px-6 py-3 text-center text-sm font-medium text-white hover:bg-carbon/85"
             >
               Continue to checkout
             </Link>
-            <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-basket-green underline">
+            <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-carbon underline">
               Ask the trained assistant what to make
             </Link>
           </div>

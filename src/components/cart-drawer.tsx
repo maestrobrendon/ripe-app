@@ -21,7 +21,7 @@ export function CartDrawer() {
         onClick={cart.closeDrawer}
         className="absolute inset-0 bg-black/30"
       />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-surface shadow-xl">
+      <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-surface">
         <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
           <h2 className="text-lg font-semibold">Your cart</h2>
           <button
@@ -81,7 +81,7 @@ export function CartDrawer() {
 
         <div className="border-t border-border px-4 py-4 sm:px-5">
           {!cart.isSubscriber && cart.savingsIfMember > 0 && (
-            <p className="mb-2 text-xs text-basket-terracotta-dark">
+            <p className="mb-2 text-xs text-carbon">
               Members would pay {formatNaira(cart.memberSubtotal)} for this cart.{" "}
               <Link href="/subscribe" className="underline" onClick={cart.closeDrawer}>
                 see subscription
@@ -107,14 +107,14 @@ export function CartDrawer() {
             <Link
               href="/cart"
               onClick={cart.closeDrawer}
-              className="flex-1 rounded-full border border-basket-green px-4 py-3 text-center text-sm font-medium text-basket-green hover:bg-basket-green-light"
+              className="flex-1 rounded-full border border-carbon px-4 py-3 text-center text-sm font-medium text-carbon hover:bg-sky-wash"
             >
               View cart
             </Link>
             <Link
               href="/checkout"
               onClick={cart.closeDrawer}
-              className="flex-1 rounded-full bg-basket-terracotta px-4 py-3 text-center text-sm font-medium text-white hover:bg-basket-terracotta-dark"
+              className="flex-1 rounded-full bg-carbon px-4 py-3 text-center text-sm font-medium text-white hover:bg-carbon/85"
             >
               Checkout
             </Link>

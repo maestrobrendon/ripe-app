@@ -4,10 +4,13 @@ import type { ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
 type Variant = "primary" | "secondary" | "ghost";
 type Size = "sm" | "md" | "lg";
 
+// Actions are carbon-filled or carbon-outlined only. The palette's saturated
+// colours are decorative in this system and never carry an action.
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary: "bg-basket-green text-white hover:bg-basket-green-dark disabled:opacity-60",
-  secondary: "border border-border text-foreground hover:bg-basket-green-light disabled:opacity-60",
-  ghost: "text-basket-green underline underline-offset-2 hover:text-basket-green-dark disabled:opacity-60",
+  primary: "bg-carbon text-paper-white hover:bg-carbon/85 disabled:opacity-60",
+  secondary:
+    "border border-border bg-paper-white text-foreground hover:bg-sky-wash disabled:opacity-60",
+  ghost: "text-carbon underline underline-offset-2 hover:text-carbon/70 disabled:opacity-60",
 };
 
 const SIZE_CLASS: Record<Size, string> = {

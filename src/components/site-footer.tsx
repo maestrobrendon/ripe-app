@@ -3,11 +3,11 @@ import { SITE_NAME, SUPPORT_WHATSAPP } from "@/lib/site";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-border bg-basket-green-light/40">
+    <footer className="mt-24 border-t border-border bg-sky-wash">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-4">
           <div>
-            <p className="text-heading-sm text-basket-green">{SITE_NAME}</p>
+            <p className="text-heading text-carbon">{SITE_NAME}</p>
             <p className="mt-2 max-w-xs text-sm text-muted">
               Fruits and vegetables, delivered across Lagos, sourced locally from trusted farmers.
             </p>

@@ -85,7 +85,7 @@ export default async function BasketPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-heading">Your basket</h1>
+      <h1 className="text-heading-lg">Your basket</h1>
       <p className="mt-1 text-sm text-muted">
         We keep this saved for you and pre-fill it to start. Edit it however you like. Nothing is
         charged automatically. Checking out is the only thing that places the order.
@@ -102,11 +102,11 @@ export default async function BasketPage() {
       {isSubscriber && windowRow && (
         <div className="mt-4 flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface p-4 text-sm">
           {state.skipped ? (
-            <span className="font-medium text-basket-terracotta-dark">You have skipped this week.</span>
+            <span className="font-medium text-carbon">You have skipped this week.</span>
           ) : state.locked ? (
-            <span className="font-medium text-basket-terracotta-dark">This week&rsquo;s edit window is closed.</span>
+            <span className="font-medium text-carbon">This week&rsquo;s edit window is closed.</span>
           ) : (
-            <span className="font-medium text-basket-green">Edit window closes in {state.hoursLeft} hours</span>
+            <span className="font-medium text-carbon">Edit window closes in {state.hoursLeft} hours</span>
           )}
           {basket.frequencyWeeks === 2 && <span className="text-muted">Delivering every 2 weeks</span>}
         </div>
@@ -116,13 +116,13 @@ export default async function BasketPage() {
       {isSubscriber && tier && (
         <>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-basket-green px-3 py-1 text-xs font-medium text-white">
+            <span className="rounded-full bg-carbon px-3 py-1 text-xs font-medium text-white">
               {tier.name} member
             </span>
             {tier.perks.map((perk) => (
               <span
                 key={perk}
-                className="inline-flex items-center gap-1.5 rounded-full border border-basket-green/40 bg-basket-green-light/50 px-3 py-1 text-xs text-basket-green"
+                className="inline-flex items-center gap-1.5 rounded-full border border-carbon/40 bg-sky-wash px-3 py-1 text-xs text-carbon"
               >
                 <Icon name="check" size={14} />
                 {perk}
@@ -146,7 +146,7 @@ export default async function BasketPage() {
             Ordering often? A subscription unlocks member pricing, free delivery on your day, and combo
             pricing.
           </span>{" "}
-          <a href="/subscribe" className="font-medium text-basket-green underline">
+          <a href="/subscribe" className="font-medium text-carbon underline">
             See what it unlocks
           </a>
         </div>

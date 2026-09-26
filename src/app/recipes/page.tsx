@@ -54,11 +54,11 @@ export default async function RecipesPage({
   return (
     <div>
       {/* Hero: what this page is for, and the one rule that makes it different */}
-      <section className="bg-basket-green-light">
+      <section className="bg-sky-wash">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16">
           <div>
-            <h1 className="text-display text-basket-green-dark">Cook what is in the bag</h1>
-            <p className="mt-5 max-w-lg text-base text-basket-green-dark/80 sm:text-lg">
+            <h1 className="text-display-xl text-carbon">Cook what is in the bag</h1>
+            <p className="mt-5 max-w-lg text-base text-carbon/80 sm:text-lg">
               Every recipe here is built from fruit and vegetables we actually stock, so the shopping
               list is one tap, not a separate errand.
             </p>
@@ -68,8 +68,8 @@ export default async function RecipesPage({
                 "Ingredients link straight to the shop",
                 "Food ideas, not medical advice",
               ].map((point) => (
-                <li key={point} className="flex items-center gap-3 text-basket-green-dark">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-basket-green text-white">
+                <li key={point} className="flex items-center gap-3 text-carbon">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-carbon text-white">
                     <Icon name="check" size={15} strokeWidth={2} />
                   </span>
                   <span className="text-base">{point}</span>
@@ -95,7 +95,7 @@ export default async function RecipesPage({
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-heading">Recipe library</h2>
+            <h2 className="text-heading-lg">Recipe library</h2>
             <p className="mt-2 text-muted">
               {isFiltered
                 ? `${recipes.length} of ${totalRecipes} recipes match.`
@@ -109,8 +109,8 @@ export default async function RecipesPage({
             href="/recipes"
             className={`rounded-full px-4 py-2 text-sm font-medium transition ${
               !isFiltered
-                ? "bg-basket-green text-white"
-                : "border border-border hover:border-basket-green hover:bg-basket-green-light"
+                ? "bg-carbon text-white"
+                : "border border-border hover:bg-sky-wash"
             }`}
           >
             All recipes
@@ -121,8 +121,8 @@ export default async function RecipesPage({
               href={`/recipes?goal=${g.slug}`}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 goal === g.slug
-                  ? "bg-basket-green text-white"
-                  : "border border-border hover:border-basket-green hover:bg-basket-green-light"
+                  ? "bg-carbon text-white"
+                  : "border border-border hover:bg-sky-wash"
               }`}
             >
               {GOAL_LABEL[g.slug] ?? g.label}
@@ -147,7 +147,7 @@ export default async function RecipesPage({
           <div className="mt-10 border-t border-border py-16 text-center">
             <p className="text-lg font-semibold">Nothing matches that yet</p>
             <p className="mt-2 text-muted">Try another goal, or clear the filter to see everything.</p>
-            <Link href="/recipes" className="mt-4 inline-block font-semibold text-basket-green underline">
+            <Link href="/recipes" className="mt-4 inline-block font-semibold text-carbon underline">
               Show all recipes
             </Link>
           </div>
@@ -171,7 +171,7 @@ export default async function RecipesPage({
                           publicId={p.cloudinaryPublicId}
                           alt={p.name}
                           emoji={p.imageEmoji}
-                          className={`h-16 w-16 ring-2 ring-background transition group-hover:ring-basket-green-light ${
+                          className={`h-16 w-16 ring-2 ring-paper-white transition group-hover:ring-sky-wash ${
                             i > 0 ? "-ml-4" : ""
                           }`}
                           rounded="rounded-full"
@@ -180,7 +180,7 @@ export default async function RecipesPage({
                         />
                       ))}
                       {ingredients.length > 4 && (
-                        <span className="-ml-4 flex h-16 w-16 items-center justify-center rounded-full bg-basket-green-light text-sm font-semibold text-basket-green ring-2 ring-background">
+                        <span className="-ml-4 flex h-16 w-16 items-center justify-center rounded-full bg-sky-wash text-sm font-semibold text-carbon ring-2 ring-paper-white">
                           +{ingredients.length - 4}
                         </span>
                       )}
@@ -204,11 +204,11 @@ export default async function RecipesPage({
       </section>
 
       {/* The planner, given its own room and a plain explanation of the job it does */}
-      <section className="border-y border-border bg-basket-green-light/40">
+      <section className="border-y border-border bg-sky-wash">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
-              <h2 className="text-heading">Not sure what to cook?</h2>
+              <h2 className="text-heading-lg">Not sure what to cook?</h2>
               <p className="mt-4 text-base text-muted">
                 Tell the planner what you already have, or what you are eating for, and it returns
                 ideas for the week. Everything it suggests comes off our shelves, so you can add the

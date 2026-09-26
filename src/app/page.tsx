@@ -9,6 +9,7 @@ import { FaqBand } from "@/components/faq-band";
 import { LinkButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { BasketEstimator } from "@/components/basket-estimator";
+import { HeroIllustration } from "@/components/hero-illustration";
 import { getHeroBasketCandidates } from "@/lib/starter-basket";
 import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
 import type { Prisma } from "@/generated/prisma/client";
@@ -19,9 +20,6 @@ const COLLECTIONS: { title: string; href: string; blurb: string; where: Prisma.P
   { title: CATEGORY_LABEL.FRUIT, href: "/fruits", blurb: "Picked days before it reaches your door.", where: { category: "FRUIT" } },
   { title: CATEGORY_LABEL.SEASONAL, href: "/shop?category=SEASONAL", blurb: "Only around for a few weeks.", where: { category: "SEASONAL" } },
 ];
-
-/** Brand photography in Cloudinary, uploaded via prisma/scripts/upload-brand-image.ts. */
-const HERO_IMAGE_ID = "basket-hero-produce-bag";
 
 // Every line here states something the app actually does. Volume claims stay
 // off until there are real numbers behind them.
@@ -54,13 +52,13 @@ export default async function LandingPage() {
 
   return (
     <div>
-      {/* Hero: short claim, three proof points, one action, one photograph.
+      {/* Hero: short claim, three proof points, one action, one illustration.
           The header shares this band so nav and hero read as one field, and
           the grid is height-capped so the whole thing lands above the fold. */}
-      <section className="bg-basket-green-light">
+      <section className="bg-sky-wash">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-2 lg:gap-16 lg:py-14">
           <div>
-            <h1 className="text-display text-basket-green-dark">
+            <h1 className="text-display-xl text-carbon">
               Fresh produce, delivered across Lagos
             </h1>
 
@@ -70,8 +68,8 @@ export default async function LandingPage() {
                 "Ships Thursday, Friday or Saturday",
                 "Nothing is charged automatically",
               ].map((point) => (
-                <li key={point} className="flex items-center gap-3 text-basket-green-dark">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-basket-green text-white">
+                <li key={point} className="flex items-center gap-3 text-carbon">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-carbon text-white">
                     <Icon name="check" size={15} strokeWidth={2} />
                   </span>
                   <span className="text-base sm:text-lg">{point}</span>
@@ -84,24 +82,15 @@ export default async function LandingPage() {
             </LinkButton>
           </div>
 
-          <ProductImage
-            publicId={HERO_IMAGE_ID}
-            alt="Unpacking a Basket delivery of oranges, bananas, peppers and greens"
-            emoji="🧺"
-            aspectRatio="4:3"
-            className="aspect-[4/3] w-full"
-            rounded="rounded-card-lg"
-            emojiClassName="text-8xl"
-            sizes="(min-width: 1024px) 560px, 90vw"
-          />
+          <HeroIllustration />
         </div>
       </section>
 
       {featured.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-6 sm:px-6">
           <div className="mb-4 flex items-end justify-between">
-            <h2 className="text-heading-sm">Favorites</h2>
-            <Link href="/shop" className="text-sm text-basket-green underline">View all</Link>
+            <h2 className="text-heading">Favorites</h2>
+            <Link href="/shop" className="text-sm text-carbon underline">View all</Link>
           </div>
           <div className="snap-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0">
             {featured.map((p) => (
@@ -120,19 +109,19 @@ export default async function LandingPage() {
           <section key={c.title} className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-heading-sm">{c.title}</h2>
+                <h2 className="text-heading">{c.title}</h2>
                 <p className="text-sm text-muted">{c.blurb}</p>
               </div>
-              <Link href={c.href} className="text-sm text-basket-green underline">View all</Link>
+              <Link href={c.href} className="text-sm text-carbon underline">View all</Link>
             </div>
             <ProductGrid products={items} />
           </section>
         );
       })}
 
-      <section className="bg-basket-green">
+      <section className="bg-carbon">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <h2 className="text-heading text-white">How it works</h2>
+          <h2 className="text-heading-lg text-white">How it works</h2>
           <div className="mt-10 grid gap-10 sm:grid-cols-3">
             {[
               ["Choose your produce", "By the piece, the pair, or the kilo."],
@@ -140,7 +129,7 @@ export default async function LandingPage() {
               ["Delivered to you", "Anywhere we cover in Lagos."],
             ].map(([title, body], i) => (
               <div key={title}>
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-base font-bold text-basket-green">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-base font-bold text-carbon">
                   {i + 1}
                 </div>
                 <h3 className="text-lg font-semibold text-white">{title}</h3>
@@ -148,7 +137,7 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
-          <LinkButton href="/start" size="lg" className="mt-10 bg-white! text-basket-green! hover:bg-white/90!">
+          <LinkButton href="/start" size="lg" className="mt-10 bg-white! text-carbon! hover:bg-white/90!">
             Get started
           </LinkButton>
         </div>
@@ -158,7 +147,7 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <h2 className="text-heading">Nothing is charged automatically</h2>
+            <h2 className="text-heading-lg">Nothing is charged automatically</h2>
             <p className="mt-4 text-base text-muted">
               Your basket stays saved and editable. Picking a day sets when it would ship, nothing more.
             </p>
@@ -169,7 +158,7 @@ export default async function LandingPage() {
                 "No scheduled charge, on any plan",
               ].map((point) => (
                 <li key={point} className="flex items-start gap-3">
-                  <span className="mt-0.5 shrink-0 text-basket-green">
+                  <span className="mt-0.5 shrink-0 text-carbon">
                     <Icon name="check" size={18} />
                   </span>
                   <span>{point}</span>
@@ -201,7 +190,7 @@ export default async function LandingPage() {
       <section className="border-y border-border bg-surface">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16">
           <div>
-            <h2 className="text-heading">What a week costs</h2>
+            <h2 className="text-heading-lg">What a week costs</h2>
             <p className="mt-4 text-base text-muted">
               Set your household and see a real basket, priced both ways. Delivery is free over{" "}
               {formatNaira(FREE_DELIVERY_THRESHOLD)}, or on every member order.
@@ -221,7 +210,7 @@ export default async function LandingPage() {
         <div className="grid gap-12 sm:grid-cols-3 sm:gap-10">
           {FEATURES.map(({ icon, title, body }) => (
             <div key={title}>
-              <Icon name={icon} size={40} className="text-basket-green" />
+              <Icon name={icon} size={40} className="text-carbon" />
               <h3 className="mt-6 text-lg font-bold">{title}</h3>
               <p className="mt-2 text-base text-muted">{body}</p>
             </div>

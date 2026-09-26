@@ -38,13 +38,13 @@ function SectionHeading({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Icon name={icon} size={18} strokeWidth={2} className="text-basket-green" />
+        <Icon name={icon} size={18} strokeWidth={2} className="text-carbon" />
         <p className="text-sm font-semibold">{title}</p>
       </div>
       {action && (
         <Link
           href={action.href}
-          className="flex items-center gap-1 text-sm font-semibold text-basket-green underline underline-offset-2"
+          className="flex items-center gap-1 text-sm font-semibold text-carbon underline underline-offset-2"
         >
           <Icon name="edit" size={13} strokeWidth={2} />
           {action.label}
@@ -79,7 +79,7 @@ export default async function AccountPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Account</p>
-          <h1 className="text-heading">{firstName ? `Hi, ${firstName}` : "Your account"}</h1>
+          <h1 className="text-heading-lg">{firstName ? `Hi, ${firstName}` : "Your account"}</h1>
           <p className="mt-1 text-sm text-muted">{user.email ?? user.phone}</p>
         </div>
         <form action={signOut}>
@@ -96,7 +96,7 @@ export default async function AccountPage() {
           tone={user.subscriptionTier ? "tint" : "surface"}
           className="lg:col-span-1 sm:col-span-2"
         >
-          <div className="flex items-center gap-2 text-basket-green">
+          <div className="flex items-center gap-2 text-carbon">
             <Icon name="reward" size={18} strokeWidth={2} />
             <p className="text-xs font-semibold uppercase tracking-wide">Subscription</p>
           </div>
@@ -108,10 +108,10 @@ export default async function AccountPage() {
                 {user.deliveryDay ? DELIVERY_DAY_LABEL[user.deliveryDay] : "TBC"}
               </p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-                <Link href="/subscribe" className="text-sm font-semibold text-basket-green underline">
+                <Link href="/subscribe" className="text-sm font-semibold text-carbon underline">
                   Change or cancel
                 </Link>
-                <Link href="/basket" className="text-sm font-semibold text-basket-green underline">
+                <Link href="/basket" className="text-sm font-semibold text-carbon underline">
                   Edit standing basket
                 </Link>
               </div>
@@ -120,7 +120,7 @@ export default async function AccountPage() {
             <>
               <p className="mt-2 text-lg font-semibold">Not subscribed</p>
               <p className="text-sm text-muted">Subscribe for member pricing and a weekly streak.</p>
-              <Link href="/subscribe" className="mt-3 inline-block text-sm font-semibold text-basket-green underline">
+              <Link href="/subscribe" className="mt-3 inline-block text-sm font-semibold text-carbon underline">
                 See what a subscription unlocks
               </Link>
             </>
@@ -131,14 +131,14 @@ export default async function AccountPage() {
 
         {basketItems.length > 0 && (
           <Card>
-            <div className="flex items-center gap-2 text-basket-green">
+            <div className="flex items-center gap-2 text-carbon">
               <Icon name="cart" size={18} strokeWidth={2} />
               <p className="text-xs font-semibold uppercase tracking-wide">Your basket</p>
             </div>
             <p className="mt-2 text-2xl font-semibold">{formatNaira(basketValue)}</p>
             <p className="text-sm text-muted">
               {basketItems.length} {basketItems.length === 1 ? "item" : "items"} ·{" "}
-              <Link href="/basket" className="font-semibold text-basket-green underline">
+              <Link href="/basket" className="font-semibold text-carbon underline">
                 Edit
               </Link>
             </p>
@@ -208,7 +208,7 @@ export default async function AccountPage() {
           ) : (
             <p className="mt-4 text-sm text-muted">
               You have not filled these in yet.{" "}
-              <Link href="/onboarding?next=/account" className="font-semibold text-basket-green underline">
+              <Link href="/onboarding?next=/account" className="font-semibold text-carbon underline">
                 Do it now
               </Link>
               .
@@ -238,7 +238,7 @@ export default async function AccountPage() {
               {PRODUCE_PREFERENCE_OPTIONS.map((slug) => (
                 <label
                   key={slug}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition has-[:checked]:border-basket-green has-[:checked]:bg-basket-green-light"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition has-[:checked]:bg-lavender"
                 >
                   <input type="checkbox" name="produce" value={slug} defaultChecked={prefs?.producePreferences.includes(slug)} className="sr-only" />
                   {PRODUCE_PREFERENCE_LABEL[slug]}
@@ -291,7 +291,7 @@ export default async function AccountPage() {
 
       <div className="mt-6">
         <div className="flex items-center gap-2 px-1">
-          <Icon name="parcel" size={18} strokeWidth={2} className="text-basket-green" />
+          <Icon name="parcel" size={18} strokeWidth={2} className="text-carbon" />
           <p className="text-sm font-semibold">Order history</p>
         </div>
         {orders.length === 0 ? (
@@ -305,7 +305,7 @@ export default async function AccountPage() {
               return (
                 <li key={o.id} className="flex items-center justify-between gap-3 p-4 text-sm">
                   <div className="min-w-0">
-                    <Link href={`/orders/${o.id}`} className="font-semibold text-basket-green underline">
+                    <Link href={`/orders/${o.id}`} className="font-semibold text-carbon underline">
                       Order #{o.id.slice(-8)}
                     </Link>
                     <p className="mt-0.5 text-xs text-muted">
@@ -316,7 +316,7 @@ export default async function AccountPage() {
                     <span
                       className={
                         delivered
-                          ? "rounded-full bg-basket-green-light px-2.5 py-1 text-xs font-semibold text-basket-green"
+                          ? "rounded-full bg-sky-wash px-2.5 py-1 text-xs font-semibold text-carbon"
                           : "rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted"
                       }
                     >

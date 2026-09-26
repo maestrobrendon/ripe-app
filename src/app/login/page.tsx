@@ -16,11 +16,11 @@ export default async function LoginPage({
       <h1 className="text-3xl font-semibold">Sign in</h1>
 
       {error === "throttled" ? (
-        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
+        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
           Too many sign-in attempts. Please wait a few minutes and try again.
         </p>
       ) : error ? (
-        <p className="mt-4 rounded-lg border border-basket-terracotta bg-basket-terracotta-light p-3 text-sm text-basket-terracotta-dark">
+        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
           That email or phone and password did not match.
         </p>
       ) : null}
@@ -36,14 +36,14 @@ export default async function LoginPage({
           label="Password"
           required
           labelExtra={
-            <Link href="/forgot-password" className="text-xs font-normal text-basket-green underline">
+            <Link href="/forgot-password" className="text-xs font-normal text-carbon underline">
               Forgot password?
             </Link>
           }
         />
         <button
           type="submit"
-          className="w-full rounded-full bg-basket-green px-6 py-3 text-sm font-medium text-white hover:bg-basket-green-dark"
+          className="w-full rounded-full bg-carbon px-6 py-3 text-sm font-medium text-white hover:bg-carbon/85"
         >
           Sign in
         </button>
@@ -51,7 +51,7 @@ export default async function LoginPage({
 
       <p className="mt-6 text-sm text-muted">
         New here?{" "}
-        <Link href="/start" className="text-basket-green underline">
+        <Link href="/start" className="text-carbon underline">
           Create an account
         </Link>
       </p>

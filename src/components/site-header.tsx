@@ -18,7 +18,7 @@ const NAV = [
 // Icon-only controls still need an accessible name, so every use passes both
 // aria-label and title: the first for screen readers, the second for hover.
 const ICON_BUTTON =
-  "tap-target flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition hover:border-basket-green hover:bg-basket-green-light";
+  "tap-target flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-sky-wash";
 
 export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
   const pathname = usePathname();
@@ -33,13 +33,13 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
   return (
     <header
       className={`sticky top-0 z-40 ${
-        onHero ? "bg-basket-green-light" : "border-b border-border bg-background/95 backdrop-blur"
+        onHero ? "bg-sky-wash" : "border-b border-border bg-background/95 backdrop-blur"
       }`}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Row one: brand, search, account actions */}
         <div className="flex items-center gap-3 py-3 sm:gap-4">
-          <Link href="/" className="text-heading-sm shrink-0 tracking-tight text-basket-green">
+          <Link href="/" className="logo-wordmark shrink-0 text-2xl text-carbon">
             {SITE_NAME}
           </Link>
           <span aria-hidden className="hidden h-6 w-px bg-border lg:block" />
@@ -69,7 +69,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
             >
               <Icon name="cart" size={22} />
               {cart.itemCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-basket-terracotta text-xs font-medium text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-carbon bg-ember text-xs font-medium text-carbon">
                   {cart.itemCount}
                 </span>
               )}
@@ -96,7 +96,7 @@ export function SiteHeader({ isSignedIn }: { isSignedIn: boolean }) {
               href={link.href}
               className={`shrink-0 text-sm ${
                 pathname === link.href
-                  ? "font-semibold text-basket-green"
+                  ? "font-semibold text-carbon"
                   : "text-muted hover:text-foreground"
               }`}
             >
