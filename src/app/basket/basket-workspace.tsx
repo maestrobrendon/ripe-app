@@ -88,7 +88,13 @@ export function BasketWorkspace({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-6">
+      {/* min-w-0 overrides the grid item's default min-width:auto. Without
+          it, the horizontally-scrolling quick-add row below (overflow-x-auto)
+          can't shrink the whole column below its own content's natural
+          width, so the column — and the "In your basket" list card inside it
+          — render wider than the phone's viewport instead of scrolling
+          internally. */}
+      <div className="min-w-0 space-y-6">
         {/* The window lock is a subscriber-basket mechanic; a free-trial basket
             never auto-recurs, so there is nothing here to skip. */}
         {!isFreeTrial && (

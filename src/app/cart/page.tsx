@@ -6,6 +6,7 @@ import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { Icon } from "@/components/ui/icon";
+import { HomeCartTabs } from "@/components/home-cart-tabs";
 
 export default function CartPage() {
   const cart = useCart();
@@ -14,6 +15,11 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10 sm:px-6">
+      {/* "/" rather than "/basket" directly: a guest can reach this cart with
+          no account, and "/" already sends a signed-in visitor to "/basket"
+          on its own without forcing a login redirect on a guest here. */}
+      <HomeCartTabs homeHref="/" />
+
       <h1 className="text-2xl font-semibold sm:text-3xl">Your cart</h1>
 
       {cart.items.length === 0 ? (
@@ -23,7 +29,7 @@ export default function CartPage() {
         </p>
       ) : (
         <div className="mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_320px]">
-          <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+          <ul className="min-w-0 divide-y divide-border rounded-card border border-border bg-surface">
             {cart.items.map((item) => {
               const price = cart.isSubscriber ? item.memberPrice : item.standardPrice;
               const addable = {

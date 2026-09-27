@@ -14,6 +14,7 @@ import { SiteHeader, type MemberStatus } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CartDrawer } from "@/components/cart-drawer";
 import { AnnouncementBar } from "@/components/announcement-bar";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 // Stands in for Ozik. Dr Kabel is a locally installed single-weight display
 // face, so it's self-hosted here rather than pulled from Google Fonts.
@@ -59,9 +60,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <CartProvider initial={cart}>
             <AnnouncementBar />
             <SiteHeader member={member} />
-            <main className="flex-1">{children}</main>
+            {/* var(--mobile-nav-h) accounts for the fixed tab bar below,
+                which only renders under sm — see globals.css. */}
+            <main className="flex-1" style={{ paddingBottom: "var(--mobile-nav-h)" }}>
+              {children}
+            </main>
             <SiteFooter />
             <CartDrawer />
+            <MobileBottomNav signedIn={Boolean(user)} />
           </CartProvider>
         </ZoneProvider>
       </body>

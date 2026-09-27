@@ -51,9 +51,12 @@ export function BottomBar({
 
   return (
     <>
+      {/* Stacks directly above the global mobile tab bar (var(--mobile-nav-h),
+          zero on desktop where that bar doesn't render) instead of overlapping
+          it, so only the tab bar itself needs to account for the safe area. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 py-3"
-        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        className="fixed inset-x-0 z-30 border-t border-border bg-surface px-4 py-3"
+        style={{ bottom: "var(--mobile-nav-h)" }}
       >
         <div className="mx-auto flex max-w-5xl items-center gap-3">
           <div className="min-w-0 shrink-0">
@@ -64,7 +67,7 @@ export function BottomBar({
           <button
             onClick={() => !skipped && !locked && setDayPickerOpen(true)}
             disabled={skipped || locked}
-            className="tap-target flex-1 truncate rounded-full border border-border px-3 py-2 text-center text-sm font-medium hover:bg-sky-wash disabled:opacity-50"
+            className="tap-target min-w-0 flex-1 truncate rounded-full border border-border px-3 py-2 text-center text-sm font-medium hover:bg-sky-wash disabled:opacity-50"
           >
             {shipDay ? `Ships ${shipDayShortLabel(shipDay)}` : "Pick a day"}
           </button>

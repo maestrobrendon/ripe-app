@@ -3,6 +3,8 @@ import {
   AccountSetting01Icon,
   ArrowRight02Icon,
   Cancel01Icon,
+  ChatBotIcon,
+  ChefHatIcon,
   CheckmarkBadge01Icon,
   CheckmarkCircle02Icon,
   CreditCardIcon,
@@ -54,6 +56,8 @@ export const ICONS = {
   preferences: AccountSetting01Icon,
   payment: CreditCardIcon,
   edit: PencilEdit01Icon,
+  recipes: ChefHatIcon,
+  assistant: ChatBotIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -33,6 +33,19 @@
   --radius-input: 12px;
   --radius-card: 24px;
   --radius-card-lg: 36px;
+
+  /* The global mobile tab bar's own content height (excluding the safe-area
+     inset it adds on top of this). Any other fixed bottom bar stacks above it
+     by offsetting `bottom` by this variable, so the two never overlap and
+     only the bottom-most one needs to account for the safe area. Zero on
+     desktop, where the tab bar doesn't render. */
+  --mobile-nav-h: 60px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --mobile-nav-h: 0px;
+  }
 }
 
 @theme inline {

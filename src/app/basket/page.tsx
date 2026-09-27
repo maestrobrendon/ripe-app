@@ -7,6 +7,7 @@ import { computeGoalFit, getQuickAddItems, getFlaggedSwaps } from "@/lib/basket-
 import { recomputeStreak } from "@/lib/streak";
 import { markBasketIntroSeen } from "./actions";
 import { SubscriberGate } from "@/components/ui/subscriber-gate";
+import { HomeCartTabs } from "@/components/home-cart-tabs";
 import { MemberStatusCard } from "./member-status-card";
 import { BasketSwitcher } from "./basket-switcher";
 import { BasketWorkspace } from "./basket-workspace";
@@ -91,6 +92,8 @@ export default async function BasketPage({
     <div className="min-h-[calc(100svh-1px)] bg-soft-mist">
       {/* Bottom padding clears the fixed checkout bar so it never overlaps the last item. */}
       <div className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:px-6 sm:py-10">
+        <HomeCartTabs homeHref={`/basket?b=${basket.id}`} />
+
         {showIntro && (
           <p className="mb-4 text-sm text-muted">
             Your basket is saved and pre-filled to start. Edit it however you like. Nothing is charged
