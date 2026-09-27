@@ -56,12 +56,14 @@ export function MemberStatusCard({
 
   return (
     <div className="rounded-card-lg border border-border bg-surface p-5 shadow-sm sm:p-6">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <h1 className="text-heading-lg">{firstName}, your week</h1>
         {/* Persistent, not one-time: the standard-pricing rule on a free-trial
-            basket should never be a surprise weeks after it's forgotten. */}
+            basket should never be a surprise weeks after it's forgotten. Its
+            own row on mobile, so it never squeezes the name into a jagged
+            one-word-per-line wrap. */}
         {isFreeTrial && (
-          <span className="mt-1 shrink-0 rounded-full border border-border bg-lavender px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-carbon">
+          <span className="inline-flex w-fit shrink-0 items-center rounded-full border border-border bg-lavender px-2.5 py-1 text-xs font-semibold text-carbon sm:mt-1">
             Free trial · standard pricing
           </span>
         )}

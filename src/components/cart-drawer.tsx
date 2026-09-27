@@ -6,9 +6,12 @@ import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { Icon } from "@/components/ui/icon";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 
 export function CartDrawer() {
   const cart = useCart();
+
+  useBodyScrollLock(cart.isOpen);
 
   if (!cart.isOpen) return null;
 

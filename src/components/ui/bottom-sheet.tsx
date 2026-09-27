@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 
 /**
  * Mobile bottom sheet: backdrop tap, Escape, and a drag-down gesture all
@@ -29,6 +30,8 @@ export function BottomSheet({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  useBodyScrollLock(open);
 
   if (!open) return null;
 

@@ -36,8 +36,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         />
       </Link>
 
+      {/* Fixed-height title, badge, and price blocks so a card with a long
+          name and a member-price line takes the same room as one without,
+          keeping every card in a row the same height regardless of content. */}
       <div className="mb-1 flex items-start justify-between gap-2">
-        <h3 className="text-sm font-medium leading-snug sm:text-base">
+        <h3 className="line-clamp-2 min-h-10 min-w-0 text-sm font-medium leading-snug break-words sm:min-h-11 sm:text-base">
           <Link href={href} className="hover:underline">{product.name}</Link>
         </h3>
         {!product.inSeason && (
@@ -46,17 +49,19 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </span>
         )}
       </div>
-      <p className="mb-2 text-xs text-muted">{product.unit}</p>
+      <p className="mb-2 truncate text-xs text-muted">{product.unit}</p>
 
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <div className="mb-3 flex flex-col gap-0.5">
         <span className="text-base font-semibold sm:text-lg">{formatNaira(price)}</span>
-        {cart.isSubscriber ? (
-          <span className="text-xs text-muted line-through">{formatNaira(product.standardPrice)}</span>
-        ) : (
-          product.memberPrice < product.standardPrice && (
-            <span className="text-xs text-muted">members {formatNaira(product.memberPrice)}</span>
-          )
-        )}
+        <span className="text-xs text-muted">
+          {cart.isSubscriber ? (
+            <span className="line-through">{formatNaira(product.standardPrice)}</span>
+          ) : product.memberPrice < product.standardPrice ? (
+            <>members {formatNaira(product.memberPrice)}</>
+          ) : (
+            <>&nbsp;</>
+          )}
+        </span>
       </div>
 
       <div className="mt-auto">

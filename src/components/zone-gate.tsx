@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 
 type Zone = { slug: string; name: string; area: string };
 
@@ -32,6 +33,8 @@ export function ZoneProvider({
   const router = useRouter();
 
   const openPicker = useCallback(() => setOpen(true), []);
+
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!zoneName) {
