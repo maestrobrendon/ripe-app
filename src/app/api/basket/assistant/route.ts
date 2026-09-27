@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { getStandingBasketView } from "@/lib/basket";
+import { getActiveBasketReadOnly, getBasketView, getOwnedBasket } from "@/lib/basket";
 import { resolveStarterBasket } from "@/lib/starter-basket";
 import { buildHubSuggestion } from "@/lib/basket-assistant";
 
@@ -15,11 +15,15 @@ export type IdeasResponse =
  * empty-basket starter set in particular is most useful to someone who has
  * not subscribed yet.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json<IdeasResponse>({ kind: "signed-out" });
 
-  const view = await getStandingBasketView(user.id);
+  const requestedId = request.nextUrl.searchParams.get("basketId");
+  const basket = requestedId
+    ? await getOwnedBasket(user.id, requestedId)
+    : await getActiveBasketReadOnly(user.id);
+  const view = basket ? await getBasketView(basket.id) : null;
   const basketItems = view?.basket.items ?? [];
 
   if (basketItems.length === 0) {
@@ -34,7 +38,7 @@ export async function GET() {
     .map((id) => byId.get(id)?.slug)
     .filter((s): s is string => Boolean(s));
 
-  const basket = basketItems.map((i) => ({
+  const basketForSuggestion = basketItems.map((i) => ({
     slug: i.product.slug,
     name: i.product.name,
     category: i.product.category,
@@ -42,7 +46,7 @@ export async function GET() {
   }));
 
   const suggestion = buildHubSuggestion({
-    basket,
+    basket: basketForSuggestion,
     goal: user.preferences?.primaryGoal ?? null,
     context: {
       favorites: favoriteSlugs,

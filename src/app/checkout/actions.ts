@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { requireUser } from "@/lib/session";
 import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
 import { quoteDelivery } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
@@ -30,6 +30,7 @@ export type CheckoutInput = {
   deliveryDay: DeliveryDay;
   paymentMethod: "card" | "transfer";
   source?: "basket";
+  basketId?: string;
 };
 
 export async function placeOrder(input: CheckoutInput) {
@@ -38,7 +39,10 @@ export async function placeOrder(input: CheckoutInput) {
     throw new Error("Too many checkout attempts. Please try again in a few minutes.");
   }
 
-  const [user, cart] = await Promise.all([getCurrentUser(), readCart()]);
+  // An account is required to check out, for individual orders as well as
+  // basket orders. Browsing and cart-building both stay account-free; this is
+  // the one gate, at payment.
+  const [user, cart] = await Promise.all([requireUser(), readCart()]);
 
   if (cart.items.length === 0) throw new Error("Your cart is empty.");
   const name = input.name.trim().slice(0, 120);
@@ -50,30 +54,40 @@ export async function placeOrder(input: CheckoutInput) {
 
   const zone = await prisma.deliveryZone.findUnique({ where: { slug: input.zoneSlug } });
 
-  const isSubscriber = Boolean(user?.subscriptionTierId);
-  const delivery = quoteDelivery(cart.subtotal, isSubscriber);
-  const subtotal = cart.subtotal;
-  const total = subtotal + delivery.fee;
+  const isBasket = input.source === "basket";
+  const basket = isBasket && input.basketId
+    ? await prisma.basket.findFirst({ where: { id: input.basketId, userId: user.id } })
+    : null;
+  // A basket order prices from that basket's own locked mode, never live
+  // subscriber status, so a free-trial basket can never slip into member
+  // pricing even if the account has since subscribed. A non-basket order
+  // still follows live status, same as before.
+  const isMemberPriced = basket ? basket.pricingMode === "MEMBER" : Boolean(user.subscriptionTierId);
 
   const snapshot = cart.items.map((i) => ({
     productId: i.productId,
     name: i.name,
     unit: i.unit,
     quantity: i.quantity,
-    unitPrice: isSubscriber ? i.memberPrice : i.standardPrice,
+    unitPrice: isMemberPriced ? i.memberPrice : i.standardPrice,
   }));
+  // Recomputed from the snapshot rather than trusting cart.subtotal, which is
+  // priced off live subscriber status and can disagree with a basket's own
+  // locked pricing mode.
+  const subtotal = snapshot.reduce((sum, s) => sum + s.unitPrice * s.quantity, 0);
+  const delivery = quoteDelivery(subtotal, isMemberPriced);
+  const total = subtotal + delivery.fee;
 
   const accessToken = randomBytes(24).toString("base64url");
 
-  const isBasket = input.source === "basket" && Boolean(user);
-  const deliveryDate = isBasket
-    ? nextShoppingWindowDate(user!.shoppingWindowDay)
+  const deliveryDate = basket
+    ? nextShoppingWindowDate(basket.shoppingWindowDay)
     : nextDeliveryDate(input.deliveryDay);
 
   const order = await prisma.order.create({
     data: {
       accessToken,
-      userId: user?.id ?? null,
+      userId: user.id,
       deliveryZoneId: zone?.id ?? null,
       orderType: isBasket ? "BASKET" : "ONE_OFF",
       status: "RECEIVED",

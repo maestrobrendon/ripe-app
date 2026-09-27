@@ -17,11 +17,13 @@ export function shipDayShortLabel(day: ShoppingWindowDay | null): string | null 
  * rather than each rolling its own <select>.
  */
 export function DayPickerSheet({
+  basketId,
   open,
   onClose,
   currentDay,
   onPicked,
 }: {
+  basketId?: string;
   open: boolean;
   onClose: () => void;
   currentDay: ShoppingWindowDay | null;
@@ -33,7 +35,7 @@ export function DayPickerSheet({
 
   const pick = (day: ShoppingWindowDay) => {
     startTransition(async () => {
-      await setShoppingWindowDay(day);
+      await setShoppingWindowDay(basketId, day);
       router.refresh();
       onPicked?.(day);
       onClose();

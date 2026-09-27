@@ -6,6 +6,7 @@ import { GOAL_LABEL } from "@/lib/format";
 import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { ProducePlanner } from "./produce-planner";
+import { RecipeAssistant } from "./recipe-assistant";
 import { IdeasSheetTrigger } from "@/app/basket/ideas-sheet-trigger";
 
 export const metadata = { title: "Recipes. Basket" };
@@ -93,7 +94,7 @@ export default async function RecipesPage({
             alt="Tossing a salad of kale, tomatoes and cucumber beside a bag of produce"
             emoji="🥗"
             aspectRatio="4:3"
-            className="aspect-[4/3] w-full"
+            className="aspect-4/3 w-full"
             rounded="rounded-card-lg"
             emojiClassName="text-8xl"
             sizes="(min-width: 1024px) 560px, 90vw"
@@ -231,14 +232,15 @@ export default async function RecipesPage({
               alt="Unpacking oranges, bananas, kale and tomatoes from a paper bag"
               emoji="🧺"
               aspectRatio="4:3"
-              className="aspect-[4/3] w-full"
+              className="aspect-4/3 w-full"
               rounded="rounded-card-lg"
               emojiClassName="text-7xl"
               sizes="(min-width: 1024px) 520px, 90vw"
             />
           </div>
 
-          <div className="mt-12">
+          <div className="mt-12 space-y-6">
+            <RecipeAssistant defaultServings={defaultServings} servingsKnown={Boolean(prefs?.householdType)} />
             <ProducePlanner defaultServings={defaultServings} />
           </div>
         </div>

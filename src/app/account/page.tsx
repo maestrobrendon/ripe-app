@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getStandingBasketView } from "@/lib/basket";
+import { getActiveBasketReadOnly, getBasketView } from "@/lib/basket";
 import { prisma } from "@/lib/prisma";
 import {
   formatNaira,
@@ -18,6 +18,8 @@ import {
 import { bandById } from "@/lib/budget";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import { recomputeStreak } from "@/lib/streak";
+import { getActiveAccountPromo } from "@/lib/account-promo";
+import { PromoBanner } from "./promo-banner";
 import { StreakCard } from "@/components/streak-badge";
 import { ProductImage } from "@/components/product-image";
 import { Card } from "@/components/ui/card";
@@ -58,21 +60,33 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [zones, view, orders, streak] = await Promise.all([
+  const [zones, activeBasket, individualOrders, basketOrders, streak] = await Promise.all([
     prisma.deliveryZone.findMany({ where: { isServed: true }, orderBy: { sortOrder: "asc" } }),
-    getStandingBasketView(user.id),
-    prisma.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
+    getActiveBasketReadOnly(user.id),
+    // Individual and basket order history are kept separate everywhere, not
+    // merged into one list, per the addendum's ordering model.
+    prisma.order.findMany({
+      where: { userId: user.id, orderType: "ONE_OFF" },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    prisma.order.findMany({
+      where: { userId: user.id, orderType: "BASKET" },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
     recomputeStreak(user.id),
   ]);
+  const view = activeBasket ? await getBasketView(activeBasket.id) : null;
 
   const prefs = user.preferences;
   const firstName = user.name?.trim().split(/\s+/)[0];
   const basketItems = view?.basket.items ?? [];
-  const basketValue = view
-    ? user.subscriptionTierId
-      ? view.memberSubtotal
-      : view.standardSubtotal
-    : 0;
+  // Locked to the basket's own pricing mode, not live subscriber status: a
+  // free-trial basket still prices standard here even after subscribing.
+  const basketValue = view?.effectiveSubtotal ?? 0;
+  const basketIsMemberPriced = view?.basket.pricingMode === "MEMBER";
+  const promo = getActiveAccountPromo();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
@@ -88,6 +102,8 @@ export default async function AccountPage() {
           </Button>
         </form>
       </div>
+
+      {promo && <PromoBanner promo={promo} />}
 
       {/* Snapshot: the few things worth seeing at a glance before scrolling into settings. */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -238,7 +254,7 @@ export default async function AccountPage() {
               {PRODUCE_PREFERENCE_OPTIONS.map((slug) => (
                 <label
                   key={slug}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition has-[:checked]:bg-lavender"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition has-checked:bg-lavender"
                 >
                   <input type="checkbox" name="produce" value={slug} defaultChecked={prefs?.producePreferences.includes(slug)} className="sr-only" />
                   {PRODUCE_PREFERENCE_LABEL[slug]}
@@ -255,7 +271,7 @@ export default async function AccountPage() {
           <SectionHeading icon="cart" title="Your basket" action={{ href: "/basket", label: "Edit" }} />
           <ul className="mt-4 space-y-2 text-sm">
             {basketItems.map((i) => {
-              const price = user.subscriptionTierId ? i.product.memberPrice : i.product.standardPrice;
+              const price = basketIsMemberPriced ? i.product.memberPrice : i.product.standardPrice;
               return (
                 <li key={i.id} className="flex items-center gap-2">
                   <ProductImage
@@ -292,15 +308,57 @@ export default async function AccountPage() {
       <div className="mt-6">
         <div className="flex items-center gap-2 px-1">
           <Icon name="parcel" size={18} strokeWidth={2} className="text-carbon" />
-          <p className="text-sm font-semibold">Order history</p>
+          <p className="text-sm font-semibold">Basket orders</p>
         </div>
-        {orders.length === 0 ? (
+        {basketOrders.length === 0 ? (
           <p className="mt-3 rounded-card border border-dashed border-border p-6 text-center text-sm text-muted">
-            No orders yet. Once you check out, they will show up here.
+            No basket orders yet. Once you check out your basket, they will show up here.
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-card border border-border bg-surface">
-            {orders.map((o) => {
+            {basketOrders.map((o) => {
+              const delivered = o.status === "DELIVERED";
+              return (
+                <li key={o.id} className="flex items-center justify-between gap-3 p-4 text-sm">
+                  <div className="min-w-0">
+                    <Link href={`/orders/${o.id}`} className="font-semibold text-carbon underline">
+                      Order #{o.id.slice(-8)}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {o.deliveryDate.toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span
+                      className={
+                        delivered
+                          ? "rounded-full bg-sky-wash px-2.5 py-1 text-xs font-semibold text-carbon"
+                          : "rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted"
+                      }
+                    >
+                      {ORDER_STATUS_LABEL[o.status]}
+                    </span>
+                    <span className="font-semibold">{formatNaira(o.total)}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-6">
+        <div className="flex items-center gap-2 px-1">
+          <Icon name="parcel" size={18} strokeWidth={2} className="text-carbon" />
+          <p className="text-sm font-semibold">Individual orders</p>
+        </div>
+        {individualOrders.length === 0 ? (
+          <p className="mt-3 rounded-card border border-dashed border-border p-6 text-center text-sm text-muted">
+            No individual orders yet. One-off orders you check out separately from your basket show up here.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border rounded-card border border-border bg-surface">
+            {individualOrders.map((o) => {
               const delivered = o.status === "DELIVERED";
               return (
                 <li key={o.id} className="flex items-center justify-between gap-3 p-4 text-sm">

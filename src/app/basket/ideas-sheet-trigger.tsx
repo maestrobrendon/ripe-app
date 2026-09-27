@@ -11,11 +11,13 @@ import { IdeasPanel } from "./ideas-panel";
  * hub's status card and from the Recipes page, per the addendum.
  */
 export function IdeasSheetTrigger({
+  basketId,
   signature,
   locked = false,
   className,
   label = "Get ideas",
 }: {
+  basketId?: string;
   signature?: string;
   locked?: boolean;
   className?: string;
@@ -37,7 +39,7 @@ export function IdeasSheetTrigger({
       </button>
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title="Ideas">
-        <IdeasPanel signature={signature} locked={locked} onApplied={() => setOpen(false)} />
+        <IdeasPanel basketId={basketId} signature={signature} locked={locked} onApplied={() => setOpen(false)} />
       </BottomSheet>
     </>
   );

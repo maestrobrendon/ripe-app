@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { getStandingBasketView } from "@/lib/basket";
+import { getActiveBasketReadOnly, getBasketView } from "@/lib/basket";
 import { recomputeStreak } from "@/lib/streak";
 import { computeCoachProgress } from "@/lib/coach";
 import { STREAK_MILESTONES, type StreakView } from "@/lib/streak-config";
@@ -55,7 +55,7 @@ export async function GET() {
     // refresh that row, so a read can trail reality right after a checkout, and
     // a wrong number is worse here than one upsert per widget open.
     user ? recomputeStreak(user.id) : Promise.resolve(null),
-    user ? getStandingBasketView(user.id) : Promise.resolve(null),
+    user ? getActiveBasketReadOnly(user.id).then((b) => (b ? getBasketView(b.id) : null)) : Promise.resolve(null),
   ]);
 
   const priceOf = (p: { memberPrice: number; standardPrice: number }) =>

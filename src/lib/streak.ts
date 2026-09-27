@@ -15,7 +15,8 @@ export async function recomputeStreak(userId: string): Promise<StreakView> {
   const thisWeek = currentWeekStart();
 
   const [orders, skippedWindows, prev] = await Promise.all([
-    prisma.order.findMany({ where: { userId }, select: { createdAt: true } }),
+    // Ties to completed orders, not logins: paidAt is the completion mark.
+    prisma.order.findMany({ where: { userId, paidAt: { not: null } }, select: { createdAt: true } }),
     prisma.shoppingWindow.findMany({
       where: { userId, status: "SKIPPED" },
       select: { opensAt: true },

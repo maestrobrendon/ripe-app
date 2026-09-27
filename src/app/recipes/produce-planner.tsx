@@ -47,7 +47,6 @@ function Servings({ value, onChange }: { value: number; onChange: (v: number) =>
 
 export function ProducePlanner({ defaultServings }: { defaultServings: number }) {
   const cart = useCart();
-  const [text, setText] = useState("");
   const [servings, setServings] = useState(defaultServings);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -68,7 +67,6 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
 
   const reset = () => {
     setResult(null);
-    setText("");
   };
 
   const plan = result && "plan" in result ? result.plan : null;
@@ -89,31 +87,9 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
 
       {!plan && !redirect && (
         <div className="mt-8">
-          <label htmlFor="planner-input" className="text-sm font-semibold">
-            What are you working with?
-          </label>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (text.trim()) call({ mode: "text", text: text.trim() });
-            }}
-            className="mt-2 flex flex-col gap-2 sm:flex-row"
-          >
-            <input
-              id="planner-input"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="A watermelon, a pepper base, lighter dinners"
-              className="flex-1 rounded-full border border-border px-5 py-3 text-base"
-            />
-            <Button type="submit" disabled={loading || !text.trim()} size="md" className="shrink-0">
-              {loading ? "Working" : "Plan it"}
-            </Button>
-          </form>
-
           {/* One row of themes. There used to be two, and they overlapped:
               "More greens this week" appeared in both, doing different things. */}
-          <p className="mt-8 text-sm font-semibold">Or pick a theme</p>
+          <p className="text-sm font-semibold">Pick a theme</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {PLANNER_GOALS.map((g) => (
               <button
@@ -174,13 +150,13 @@ export function ProducePlanner({ defaultServings }: { defaultServings: number })
   );
 }
 
-function PlanView({
+export function PlanView({
   plan,
   onReset,
   onRefresh,
 }: {
   plan: ProducePlan;
-  onReset: () => void;
+  onReset?: () => void;
   onRefresh: () => Promise<void>;
 }) {
   const [addedAll, setAddedAll] = useState(false);
@@ -208,9 +184,11 @@ function PlanView({
     <div className="mt-8 border-t border-border pt-8">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h4 className="text-heading">{plan.title}</h4>
-        <button onClick={onReset} className="text-sm font-semibold text-carbon underline">
-          Start over
-        </button>
+        {onReset && (
+          <button onClick={onReset} className="text-sm font-semibold text-carbon underline">
+            Start over
+          </button>
+        )}
       </div>
       <p className="mt-2 text-muted">{plan.intro}</p>
 

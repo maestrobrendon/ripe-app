@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import type { StreakView } from "@/lib/streak-config";
@@ -39,8 +40,10 @@ export type Flagged = {
 };
 
 export function BasketWorkspace({
+  basketId,
   items,
-  isSubscriber,
+  isMemberPriced,
+  isFreeTrial,
   locked,
   skipped,
   streak,
@@ -53,8 +56,11 @@ export function BasketWorkspace({
   canRestore,
   signature,
 }: {
+  basketId: string;
   items: BasketLine[];
-  isSubscriber: boolean;
+  /** Whether this specific basket is priced at member rates, locked at creation. */
+  isMemberPriced: boolean;
+  isFreeTrial: boolean;
   locked: boolean;
   skipped: boolean;
   streak: StreakView;
@@ -71,8 +77,8 @@ export function BasketWorkspace({
   const router = useRouter();
   const editable = !locked && !skipped;
   const flaggedMap = new Map(flagged.map((f) => [f.productId, f]));
-  const priceOf = (l: BasketLine) => (isSubscriber ? l.memberPrice : l.standardPrice);
-  const runningValue = isSubscriber ? memberSubtotal : standardSubtotal;
+  const priceOf = (l: BasketLine) => (isMemberPriced ? l.memberPrice : l.standardPrice);
+  const runningValue = isMemberPriced ? memberSubtotal : standardSubtotal;
 
   const run = (fn: () => Promise<unknown>) =>
     startTransition(async () => {
@@ -83,12 +89,13 @@ export function BasketWorkspace({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        {/* Subscriber-only skip toggle. Ship day itself lives in the status card and bottom bar. */}
-        {isSubscriber && (
+        {/* The window lock is a subscriber-basket mechanic; a free-trial basket
+            never auto-recurs, so there is nothing here to skip. */}
+        {!isFreeTrial && (
           <div className="flex justify-end">
             <button
               disabled={isPending || locked}
-              onClick={() => run(() => setWindowSkipped(!skipped))}
+              onClick={() => run(() => setWindowSkipped(basketId, !skipped))}
               className={`tap-target rounded-full border px-4 py-2 text-sm font-medium disabled:opacity-60 ${
                 skipped ? "border-border bg-ember/12 text-carbon" : "border-border hover:bg-sky-wash"
               }`}
@@ -105,7 +112,7 @@ export function BasketWorkspace({
             {canRestore && (
               <button
                 disabled={isPending}
-                onClick={() => run(restoreLastWeek)}
+                onClick={() => run(() => restoreLastWeek(basketId))}
                 className="tap-target rounded-full bg-carbon px-4 py-2 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-60"
               >
                 Same as last time
@@ -113,7 +120,12 @@ export function BasketWorkspace({
             )}
             {quickAdd.length > 0 && (
               <div className={canRestore ? "mt-3" : ""}>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Quick add</p>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Quick add</p>
+                  <Link href="/fruits" className="text-xs font-medium text-carbon underline">
+                    See all
+                  </Link>
+                </div>
                 <div
                   className="snap-row -mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
                   style={{
@@ -126,7 +138,7 @@ export function BasketWorkspace({
                     <button
                       key={q.id}
                       disabled={isPending}
-                      onClick={() => run(() => setBasketItemQuantity(q.id, q.minOrderQty))}
+                      onClick={() => run(() => setBasketItemQuantity(basketId, q.id, q.minOrderQty))}
                       className="flex shrink-0 items-center gap-2 rounded-full border border-border py-1.5 pl-1.5 pr-3 text-xs font-medium hover:bg-sky-wash disabled:opacity-60"
                     >
                       <ProductImage
@@ -165,7 +177,7 @@ export function BasketWorkspace({
                 const unitLine =
                   item.quantity === 1
                     ? item.unit
-                    : `${item.unit} · ${formatNaira(priceOf(item))}${isSubscriber ? " member" : ""}`;
+                    : `${item.unit} · ${formatNaira(priceOf(item))}${isMemberPriced ? " member" : ""}`;
                 return (
                   <li key={item.productId} className="p-3 sm:p-4">
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -187,7 +199,7 @@ export function BasketWorkspace({
                           disabled={isPending || !editable}
                           className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border disabled:opacity-40"
                           onClick={() =>
-                            run(() => setBasketItemQuantity(item.productId, item.quantity - item.stepQty))
+                            run(() => setBasketItemQuantity(basketId, item.productId, item.quantity - item.stepQty))
                           }
                         >
                           <Icon name="minus" size={16} />
@@ -197,7 +209,7 @@ export function BasketWorkspace({
                           disabled={isPending || !editable}
                           className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border disabled:opacity-40"
                           onClick={() =>
-                            run(() => setBasketItemQuantity(item.productId, item.quantity + item.stepQty))
+                            run(() => setBasketItemQuantity(basketId, item.productId, item.quantity + item.stepQty))
                           }
                         >
                           <Icon name="plus" size={16} />
@@ -213,7 +225,7 @@ export function BasketWorkspace({
                         <span className="text-carbon">{flag.reason}.</span>
                         <button
                           disabled={isPending}
-                          onClick={() => run(() => swapBasketItem(flag.productId, flag.swapToId))}
+                          onClick={() => run(() => swapBasketItem(basketId, flag.productId, flag.swapToId))}
                           className="rounded-full border border-carbon px-3 py-1 font-medium text-carbon hover:bg-sky-wash disabled:opacity-60"
                         >
                           Swap for {flag.swapToEmoji} {flag.swapToName}
@@ -231,12 +243,12 @@ export function BasketWorkspace({
               <span className="font-medium">Running value</span>
               <span className="text-lg font-semibold">{formatNaira(runningValue)}</span>
             </div>
-            {isSubscriber && savings > 0 && (
+            {isMemberPriced && savings > 0 && (
               <p className="text-xs text-carbon">
                 Saving {formatNaira(savings)} on this basket vs non-member pricing
               </p>
             )}
-            {isSubscriber && goalFit && (
+            {isMemberPriced && goalFit && (
               <p className="mt-1 inline-flex w-fit rounded-full bg-sky-wash px-3 py-1 text-xs font-medium text-carbon">
                 {goalFit}
               </p>
@@ -245,7 +257,13 @@ export function BasketWorkspace({
         </div>
       </div>
 
-      <IdeasDesktopPanel signature={signature} locked={!editable} streak={streak} showStreak={isSubscriber} />
+      <IdeasDesktopPanel
+        basketId={basketId}
+        signature={signature}
+        locked={!editable}
+        streak={streak}
+        showStreak={isMemberPriced}
+      />
     </div>
   );
 }

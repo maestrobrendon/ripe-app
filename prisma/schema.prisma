@@ -34,7 +34,23 @@ enum OrderType {
   ONE_OFF
   SUBSCRIPTION
   BASKET
-  SAME_DAY
+}
+
+// A basket's price is fixed to one mode at creation and never silently
+// recomputed off live subscriber status. A free-trial basket is always
+// STANDARD, permanently, even if the account subscribes later.
+enum PricingMode {
+  STANDARD
+  MEMBER
+}
+
+// How a product's quantity field is denominated. SINGLE/SET count units;
+// WEIGHT counts grams, priced against referenceWeightG. Every product must
+// carry one explicitly, there is no meaningful default.
+enum SoldAs {
+  SINGLE
+  SET
+  WEIGHT
 }
 
 // The three days a basket can be scheduled to ship on. Distinct from the
@@ -109,6 +125,10 @@ model User {
   // The one-time "your basket is saved, nothing is auto-charged" explainer.
   // Shown once on a member's first basket visit after signup, then never again.
   basketIntroSeen     Boolean           @default(false)
+  // An unsubscribed account gets exactly one basket, ever, at standard pricing.
+  // This flips permanently on creation; it never resets, even if that basket
+  // is later deleted.
+  hasCreatedFreeTrialBasket Boolean     @default(false)
   preferences         UserPreferences?
   streak              StreakStatus?
   sessions            Session[]
@@ -189,6 +209,17 @@ model Product {
   orderUnit     OrderUnit       @default(PIECE)
   minOrderQty   Int             @default(1)
   stepQty       Int             @default(1)
+  // How the quantity field is denominated. WEIGHT products carry their
+  // quantity in grams; memberPrice/standardPrice then price referenceWeightG
+  // grams, not one raw gram, and the line total scales from that reference.
+  // The DB default exists only so this column could be added to existing
+  // rows; the seed/backfill sets an explicit, correct value on every product.
+  soldAs            SoldAs      @default(SINGLE)
+  // Only meaningful when soldAs is SET: how many units make up one set.
+  setSize           Int?
+  // Only meaningful when soldAs is WEIGHT: the gram weight that
+  // memberPrice/standardPrice are priced against.
+  referenceWeightG  Int?
   memberPrice   Int
   standardPrice Int
   inSeason      Boolean         @default(true)
@@ -261,17 +292,29 @@ model CartItem {
 }
 
 // Subscriber standing basket, edited during a recurring shopping window.
+// A member's basket. Non-subscribers are capped at exactly one (the free
+// trial); subscribers can hold several side by side, each with its own items,
+// ship day and shopping window.
 model Basket {
-  id             String       @id @default(cuid())
+  id             String             @id @default(cuid())
   userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  isStanding     Boolean      @default(true)
+  user           User               @relation(fields: [userId], references: [id])
+  isStanding     Boolean            @default(true)
   deliveryDay    DeliveryDay
   // Delivery cadence chosen via Subscribe & save: 1 = weekly, 2 = every 2 weeks.
-  frequencyWeeks Int          @default(1)
+  frequencyWeeks Int                @default(1)
+  // The day this specific basket would ship. Per-basket so a subscriber's
+  // several baskets can each run on a different day.
+  shoppingWindowDay ShoppingWindowDay?
+  // Set once at creation and never recomputed from live subscriber status.
+  isFreeTrial    Boolean            @default(false)
+  pricingMode    PricingMode        @default(STANDARD)
   items          BasketItem[]
-  updatedAt   DateTime     @updatedAt
-  createdAt   DateTime     @default(now())
+  windows        ShoppingWindow[]
+  updatedAt      DateTime           @updatedAt
+  createdAt      DateTime           @default(now())
+
+  @@index([userId])
 }
 
 model BasketItem {
@@ -290,12 +333,17 @@ model ShoppingWindow {
   id        String       @id @default(cuid())
   userId    String
   user      User         @relation(fields: [userId], references: [id])
+  // Scoped to one basket, so a subscriber's several baskets each run their own
+  // independent edit-window countdown rather than sharing a single clock.
+  basketId  String?
+  basket    Basket?      @relation(fields: [basketId], references: [id], onDelete: Cascade)
   opensAt   DateTime
   closesAt  DateTime
   status    WindowStatus @default(OPEN)
   createdAt DateTime     @default(now())
 
   @@index([userId])
+  @@index([basketId])
 }
 
 model Order {

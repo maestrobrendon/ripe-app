@@ -1,32 +1,34 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateStandingBasket, getStandingBasketView, prefillStandingBasket } from "@/lib/basket";
+import { resolveActiveBasket, getBasketView, getUserBaskets, prefillStandingBasket } from "@/lib/basket";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
 import { computeGoalFit, getQuickAddItems, getFlaggedSwaps } from "@/lib/basket-hub";
 import { recomputeStreak } from "@/lib/streak";
 import { markBasketIntroSeen } from "./actions";
+import { SubscriberGate } from "@/components/ui/subscriber-gate";
 import { MemberStatusCard } from "./member-status-card";
+import { BasketSwitcher } from "./basket-switcher";
 import { BasketWorkspace } from "./basket-workspace";
 import { BottomBar } from "./bottom-bar";
 
 export default async function BasketPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pickDay?: string }>;
+  searchParams: Promise<{ pickDay?: string; b?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/basket");
 
-  const { pickDay } = await searchParams;
+  const { pickDay, b: requestedBasketId } = await searchParams;
 
   const isSubscriber = Boolean(user.subscriptionTierId);
   const deliveryDay = user.deliveryDay ?? "WEDNESDAY";
-  const basket = await getOrCreateStandingBasket(user.id, deliveryDay);
+  const basket = await resolveActiveBasket(user.id, requestedBasketId, { isSubscriber, deliveryDay });
   await prefillStandingBasket(user.id, basket.id);
 
-  const [view, allProducts, streak, lastOrder] = await Promise.all([
-    getStandingBasketView(user.id),
+  const [view, allProducts, streak, lastOrder, allBaskets] = await Promise.all([
+    getBasketView(basket.id),
     prisma.product.findMany(),
     recomputeStreak(user.id),
     prisma.order.findFirst({
@@ -34,14 +36,18 @@ export default async function BasketPage({
       orderBy: { createdAt: "desc" },
       select: { id: true },
     }),
+    // Only a subscriber can have more than one, so this is skipped otherwise.
+    isSubscriber ? getUserBaskets(user.id) : Promise.resolve([]),
   ]);
 
-  // The window lock / skip mechanic is subscriber-only.
-  const windowRow = isSubscriber ? await getOrCreateCurrentWindow(user.id) : null;
+  // The window lock is a subscriber-basket mechanic; a free-trial basket never
+  // auto-recurs, so it never opens a window to lock or skip.
+  const windowRow = !basket.isFreeTrial ? await getOrCreateCurrentWindow(basket.id) : null;
   const state = windowRow ? windowState(windowRow) : { locked: false, skipped: false, hoursLeft: 0, msLeft: 0 };
 
   const basketItems = view?.basket.items ?? [];
   const basketProductIds = basketItems.map((i) => i.productId);
+  const isMemberPriced = basket.pricingMode === "MEMBER";
 
   const flagged = getFlaggedSwaps(
     basketItems.map((i) => ({ productId: i.productId, product: i.product })),
@@ -77,7 +83,7 @@ export default async function BasketPage({
     quantity: i.quantity,
   }));
 
-  const runningValue = isSubscriber ? view?.memberSubtotal ?? 0 : view?.standardSubtotal ?? 0;
+  const runningValue = view?.effectiveSubtotal ?? 0;
   const showIntro = !user.basketIntroSeen;
   if (showIntro) await markBasketIntroSeen();
 
@@ -92,11 +98,27 @@ export default async function BasketPage({
           </p>
         )}
 
+        {isSubscriber && allBaskets.length > 1 && (
+          <BasketSwitcher
+            baskets={allBaskets.map((bk, i) => ({ id: bk.id, label: `Basket ${i + 1}` }))}
+            activeId={basket.id}
+          />
+        )}
+        {!isSubscriber && (
+          <SubscriberGate
+            className="mb-4"
+            title="Multiple baskets"
+            body="Your free basket is standard pricing, one only. Subscribe to hold several baskets at member pricing."
+          />
+        )}
+
         <MemberStatusCard
+          basketId={basket.id}
           firstName={user.name.trim().split(/\s+/)[0] || "There"}
-          shipDay={user.shoppingWindowDay}
+          shipDay={basket.shoppingWindowDay}
           runningValue={runningValue}
-          isSubscriber={isSubscriber}
+          isMemberPriced={isMemberPriced}
+          isFreeTrial={basket.isFreeTrial}
           savings={view?.savings ?? 0}
           potentialSavings={view?.savings ?? 0}
           streak={streak}
@@ -105,7 +127,7 @@ export default async function BasketPage({
           autoOpenDayPicker={pickDay === "1"}
         />
 
-        {isSubscriber && windowRow && (state.skipped || state.locked) && (
+        {windowRow && (state.skipped || state.locked) && (
           <p className="mt-3 text-center text-sm text-muted">
             {state.skipped ? "You have skipped this week." : "This week's edit window is closed."}
           </p>
@@ -113,8 +135,10 @@ export default async function BasketPage({
 
         <div className="mt-6">
           <BasketWorkspace
+            basketId={basket.id}
             items={lines}
-            isSubscriber={isSubscriber}
+            isMemberPriced={isMemberPriced}
+            isFreeTrial={basket.isFreeTrial}
             locked={state.locked}
             skipped={state.skipped}
             streak={streak}
@@ -137,8 +161,9 @@ export default async function BasketPage({
       </div>
 
       <BottomBar
+        basketId={basket.id}
         runningValue={runningValue}
-        shipDay={user.shoppingWindowDay}
+        shipDay={basket.shoppingWindowDay}
         hasItems={lines.length > 0}
         skipped={state.skipped}
         locked={state.locked}

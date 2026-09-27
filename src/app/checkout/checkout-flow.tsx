@@ -16,6 +16,7 @@ export function CheckoutFlow({
   zones,
   defaults,
   source,
+  basketId,
   shoppingWindowLabel,
 }: {
   zones: { slug: string; name: string; area: string }[];
@@ -28,6 +29,7 @@ export function CheckoutFlow({
     deliveryDay: DeliveryDay;
   };
   source?: "basket";
+  basketId?: string;
   shoppingWindowLabel?: string | null;
 }) {
   const cart = useCart();
@@ -42,6 +44,7 @@ export function CheckoutFlow({
     deliveryDay: defaults.deliveryDay,
     paymentMethod: "card",
     source,
+    basketId,
   });
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();

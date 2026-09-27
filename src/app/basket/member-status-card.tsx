@@ -17,10 +17,12 @@ import { IdeasSheetTrigger } from "./ideas-sheet-trigger";
  * prominent unresolved question on the page until it is.
  */
 export function MemberStatusCard({
+  basketId,
   firstName,
   shipDay,
   runningValue,
-  isSubscriber,
+  isMemberPriced,
+  isFreeTrial,
   savings,
   potentialSavings,
   streak,
@@ -28,10 +30,13 @@ export function MemberStatusCard({
   locked,
   autoOpenDayPicker = false,
 }: {
+  basketId: string;
   firstName: string;
   shipDay: ShoppingWindowDay | null;
   runningValue: number;
-  isSubscriber: boolean;
+  /** Whether this specific basket is priced at member rates, locked at creation. */
+  isMemberPriced: boolean;
+  isFreeTrial: boolean;
   savings: number;
   potentialSavings: number;
   streak: StreakView;
@@ -45,13 +50,22 @@ export function MemberStatusCard({
   const [dayPickerOpen, setDayPickerOpen] = useState(autoOpenDayPicker);
 
   useEffect(() => {
-    if (autoOpenDayPicker) router.replace("/basket", { scroll: false });
+    if (autoOpenDayPicker) router.replace(`/basket?b=${basketId}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="rounded-card-lg border border-border bg-surface p-5 shadow-sm sm:p-6">
-      <h1 className="text-heading-lg">{firstName}, your week</h1>
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-heading-lg">{firstName}, your week</h1>
+        {/* Persistent, not one-time: the standard-pricing rule on a free-trial
+            basket should never be a surprise weeks after it's forgotten. */}
+        {isFreeTrial && (
+          <span className="mt-1 shrink-0 rounded-full border border-border bg-lavender px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-carbon">
+            Free trial · standard pricing
+          </span>
+        )}
+      </div>
 
       {shipDay ? (
         <button
@@ -75,10 +89,10 @@ export function MemberStatusCard({
         <span className="text-2xl font-semibold">{formatNaira(runningValue)}</span>
       </div>
 
-      {isSubscriber && savings > 0 && (
+      {isMemberPriced && savings > 0 && (
         <p className="mt-1 text-sm text-carbon">You&rsquo;ve saved {formatNaira(savings)} on this basket</p>
       )}
-      {!isSubscriber && potentialSavings > 0 && (
+      {!isMemberPriced && potentialSavings > 0 && (
         <a href="/subscribe" className="mt-1 block text-sm text-carbon underline">
           You&rsquo;d save {formatNaira(potentialSavings)} on this basket as a member
         </a>
@@ -91,10 +105,11 @@ export function MemberStatusCard({
       )}
 
       <div className="mt-4 lg:hidden">
-        <IdeasSheetTrigger signature={signature} locked={locked} />
+        <IdeasSheetTrigger basketId={basketId} signature={signature} locked={locked} />
       </div>
 
       <DayPickerSheet
+        basketId={basketId}
         open={dayPickerOpen}
         onClose={() => setDayPickerOpen(false)}
         currentDay={shipDay}

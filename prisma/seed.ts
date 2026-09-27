@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, ProductCategory, OrderUnit, DeliveryDay } from "../src/generated/prisma/client";
+import { PrismaClient, ProductCategory, OrderUnit, DeliveryDay, SoldAs } from "../src/generated/prisma/client";
 import { dbConnectionString } from "../src/lib/db-url";
 import { hashPassword } from "../src/lib/auth";
 
@@ -87,6 +87,62 @@ type SeedProduct = {
   tags: string[];
   imageEmoji: string;
   featured?: boolean;
+};
+
+/**
+ * Pricing mode is derived from orderUnit/unit rather than hand-annotated on
+ * every product literal, so the ~60 existing entries above don't all need
+ * editing by hand. PAIR becomes a set of 2 (or whatever "pair of N" says);
+ * WEIGHT parses its reference weight straight out of the unit label; anything
+ * else counts single units. See the addendum, Section 3.
+ */
+// Sold in sets but not encoded as orderUnit PAIR, so the generic rule below
+// can't detect them from the data alone. Avocado is the addendum's own
+// named example: minOrderQty 2 with a per-piece label, not "pair of 2".
+const SET_OVERRIDES: Record<string, number> = {
+  avocado: 2,
+};
+
+function deriveSoldAs(p: SeedProduct): { soldAs: SoldAs; setSize: number | null; referenceWeightG: number | null } {
+  if (p.slug in SET_OVERRIDES) {
+    return { soldAs: SoldAs.SET, setSize: SET_OVERRIDES[p.slug], referenceWeightG: null };
+  }
+  if (p.orderUnit === "PAIR") {
+    const m = p.unit.match(/pair of (\d+)/);
+    return { soldAs: SoldAs.SET, setSize: m ? Number(m[1]) : 2, referenceWeightG: null };
+  }
+  if (p.orderUnit === "WEIGHT") {
+    const kg = p.unit.match(/per (\d+)\s*kg/);
+    const g = p.unit.match(/per (\d+)\s*g\b/);
+    const referenceWeightG = kg ? Number(kg[1]) * 1000 : g ? Number(g[1]) : /per kg/.test(p.unit) ? 1000 : null;
+    return { soldAs: SoldAs.WEIGHT, setSize: null, referenceWeightG };
+  }
+  return { soldAs: SoldAs.SINGLE, setSize: null, referenceWeightG: null };
+}
+
+// Quantity used to be inconsistent within each mode: some SET items allowed an
+// odd count (a "pair" orderable as 1 or 3), and some WEIGHT items counted raw
+// grams instead of packs of the reference weight, which multiplied against a
+// per-reference-weight price into absurd totals (e.g. guava's old 500-gram
+// minimum against a per-500g price). Every product's quantity now counts
+// whole units of its set/reference weight, so price * quantity is always
+// correct without a separate conversion step anywhere it's read. Applied to
+// the `products` array further down, once it exists.
+const QUANTITY_FIXES: Record<string, { minOrderQty: number; stepQty: number }> = {
+  avocado: { minOrderQty: 2, stepQty: 2 },
+  orange: { minOrderQty: 2, stepQty: 2 },
+  apple: { minOrderQty: 2, stepQty: 2 },
+  lime: { minOrderQty: 2, stepQty: 2 },
+  corn: { minOrderQty: 2, stepQty: 2 },
+  guava: { minOrderQty: 1, stepQty: 1 },
+  dates: { minOrderQty: 1, stepQty: 1 },
+  "red-grapes": { minOrderQty: 1, stepQty: 1 },
+  "green-grapes": { minOrderQty: 1, stepQty: 1 },
+  "black-grapes": { minOrderQty: 1, stepQty: 1 },
+  beetroot: { minOrderQty: 1, stepQty: 1 },
+  mushrooms: { minOrderQty: 1, stepQty: 1 },
+  "beef-tomato": { minOrderQty: 1, stepQty: 1 },
+  "salad-mix": { minOrderQty: 1, stepQty: 1 },
 };
 
 const P = (
@@ -780,6 +836,11 @@ const products: SeedProduct[] = [
   }),
 ];
 
+for (const [slug, fix] of Object.entries(QUANTITY_FIXES)) {
+  const p = products.find((p) => p.slug === slug);
+  if (p) Object.assign(p, fix);
+}
+
 const recipes: {
   slug: string;
   title: string;
@@ -886,6 +947,7 @@ async function main() {
     const extra = EXTRAS[product.slug] ?? {};
     const common = {
       ...product,
+      ...deriveSoldAs(product),
       cloudinaryPublicId: CLOUDINARY[product.slug] ?? null,
       blurb: extra.blurb ?? `${product.description} ${product.educationCopy}`,
       sourcingLine: extra.sourcingLine ?? "Freshly selected and quality checked before it leaves us.",

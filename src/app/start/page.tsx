@@ -8,13 +8,13 @@ export const metadata = { title: "Get started" };
 export default async function StartPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   const user = await getCurrentUser();
-  if (user) redirect("/account");
+  if (user) redirect(next && next.startsWith("/") ? next : "/account");
 
   const candidates = await getStarterCandidates();
 
-  return <StartFlow candidates={candidates} error={error ?? null} />;
+  return <StartFlow candidates={candidates} error={error ?? null} next={next && next.startsWith("/") ? next : null} />;
 }

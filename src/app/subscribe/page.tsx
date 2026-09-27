@@ -10,10 +10,15 @@ import { Icon } from "@/components/ui/icon";
 
 const DAYS = ["MONDAY", "WEDNESDAY", "FRIDAY"] as const;
 
-export default async function SubscribePage() {
-  const [tiers, user] = await Promise.all([
+export default async function SubscribePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string }>;
+}) {
+  const [tiers, user, { reason }] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     getCurrentUser(),
+    searchParams,
   ]);
 
   const currentSlug = user?.subscriptionTier?.slug ?? null;
@@ -34,6 +39,13 @@ export default async function SubscribePage() {
           Or just start shopping
         </Link>
       </div>
+
+      {reason === "free-basket-used" && (
+        <div className="mx-auto mt-8 max-w-2xl rounded-card border border-dashed border-border bg-surface p-4 text-center text-sm text-muted">
+          Your free basket is a one-time trial at standard pricing. Subscribe to hold more than one basket
+          and unlock member pricing.
+        </div>
+      )}
 
       {currentSlug ? (
         <Card tone="tint" className="mx-auto mt-10 max-w-md text-center">

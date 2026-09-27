@@ -9,11 +9,11 @@ export default function AboutPage() {
 
       <div className="mt-8 space-y-6 text-base leading-relaxed text-foreground">
         <p>
-          A lot of the produce grown around Lagos never makes it to a Lagos plate in good condition. It
-          changes hands several times between the farm and the market. Each stop adds time, handling, and
-          cost, and a meaningful share of it spoils before it is sold. Farmers absorb some of that loss,
-          buyers absorb the rest of it in price, and the produce that does arrive is often already a few
-          days past its best.
+          A lot of the produce grown around Lagos never makes it to a plate in good condition. It changes
+          hands several times between the farm and the market. Each stop adds time, handling, and cost, and
+          a meaningful share of it spoils before it is sold. Farmers absorb some of that loss, buyers absorb
+          the rest of it in price, and the produce that does arrive is often already a few days past its
+          best.
         </p>
 
         <p>
@@ -25,18 +25,17 @@ export default function AboutPage() {
 
         <h2 className="pt-4 text-2xl font-semibold">What Basket is for</h2>
         <p>
-          Basket is built for people who already want to eat more fruits and vegetables and want a service
-          that makes that consistent. A shop you can use with no commitment, and a standing basket that
-          shows up on the same day every week, at a price grounded in what the same produce costs at a
-          Lagos supermarket.
+          Basket is for people who&rsquo;ve decided eating better is worth planning around. Shop with no
+          commitment, whenever you want. Or set a standing basket that shows up on the same day every week,
+          priced fairly against what the same produce actually costs, member pricing included.
         </p>
 
-        <h2 className="pt-4 text-2xl font-semibold">What Basket is not</h2>
+        <h2 className="pt-4 text-2xl font-semibold">Who it&rsquo;s for</h2>
         <p>
-          Basket is not trying to replace Chowdeck, the roadside seller on your street, or the supermarket
-          down the road. Those all serve real, different needs: instant food, convenience, one-stop
-          shopping. Basket is a narrower thing: a produce shop, with an optional subscription for regular
-          customers, built for people who have already decided eating better is worth planning around.
+          You already know fruit and vegetables belong in your week, that&rsquo;s not new information.
+          Basket exists for whatever comes after knowing: training for something, working toward a goal
+          weight, going vegan, or just trying to eat properly instead of meaning to. The basket, the
+          guidance, and the sourcing are built to make showing up for that the easy part.
         </p>
       </div>
 

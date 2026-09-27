@@ -14,12 +14,14 @@ import { DayPickerSheet, shipDayShortLabel } from "./day-picker-sheet";
  * basket becomes the next sheet instead of a greyed-out dead end.
  */
 export function BottomBar({
+  basketId,
   runningValue,
   shipDay,
   hasItems,
   skipped,
   locked,
 }: {
+  basketId: string;
   runningValue: number;
   shipDay: ShoppingWindowDay | null;
   hasItems: boolean;
@@ -30,7 +32,7 @@ export function BottomBar({
   const [emptyNoticeOpen, setEmptyNoticeOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const doCheckout = () => startTransition(() => checkoutStandingBasket());
+  const doCheckout = () => startTransition(() => checkoutStandingBasket(basketId));
 
   const onCheckoutTap = () => {
     if (skipped || locked) return;
@@ -78,6 +80,7 @@ export function BottomBar({
       </div>
 
       <DayPickerSheet
+        basketId={basketId}
         open={dayPickerOpen}
         onClose={() => setDayPickerOpen(false)}
         currentDay={shipDay}

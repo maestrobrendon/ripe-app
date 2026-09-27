@@ -5,11 +5,12 @@ import Link from "next/link";
 import { GOALS } from "@/lib/assistant";
 import { PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS, formatNaira } from "@/lib/format";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
-import { buildStarterPicks, type StarterCandidate } from "@/lib/starter-basket-core";
+import { buildStarterPicks, type StarterCandidate, type StarterPick } from "@/lib/starter-basket-core";
 import { ProductImage } from "@/components/product-image";
 import { SITE_NAME } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/ui/password-field";
+import { StepIndicator } from "@/components/step-indicator";
 import { createAccountFromOnboarding } from "./actions";
 import { Icon } from "@/components/ui/icon";
 
@@ -41,17 +42,25 @@ const PRODUCE_EMOJI: Record<string, string> = {
   herbs: "🌿",
 };
 
-const TOTAL_STEPS = 7;
+// Steps, in order: 0 interstitial, 1-4 questions, 5 saving beat, 6 basket
+// preview, 7 the fifth question (ship day), 8 account creation. Only the five
+// real questions get a "Step N of 5" counter; the interstitial, the saving
+// beat, the preview and the account screen are not questions.
+const LAST_STEP = 8;
+const QUESTION_NUMBER: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4, 7: 5 };
+const TOTAL_QUESTIONS = 5;
 
 export function StartFlow({
   candidates,
   error,
+  next,
 }: {
   candidates: StarterCandidate[];
   error: string | null;
+  next: string | null;
 }) {
   // Land back on the account screen if validation bounced us here.
-  const [step, setStep] = useState(error ? 7 : 0);
+  const [step, setStep] = useState(error ? LAST_STEP : 0);
   const [data, setData] = useState<Data>({
     goal: null,
     produce: [],
@@ -70,7 +79,7 @@ export function StartFlow({
   const toggleAllProduce = () =>
     set("produce", allProduce ? [] : [...PRODUCE_PREFERENCE_OPTIONS]);
 
-  const picks = useMemo(
+  const suggestedPicks = useMemo(
     () =>
       buildStarterPicks(
         { goalSlug: data.goal, producePreferences: data.produce, adults: data.adults, kids: data.kids },
@@ -78,25 +87,51 @@ export function StartFlow({
       ),
     [data.goal, data.produce, data.adults, data.kids, candidates],
   );
+
+  // The system's suggestion is a starting point, not a lock: seeded once from
+  // the algorithmic picks, then edited freely with its own add/remove state.
+  const [customPicks, setCustomPicks] = useState<StarterPick[] | null>(null);
+  const picks = customPicks ?? suggestedPicks;
   const previewValue = picks.reduce((sum, p) => sum + p.standardPrice * p.quantity, 0);
+  const removePick = (productId: string) =>
+    setCustomPicks((picks ?? suggestedPicks).filter((p) => p.productId !== productId));
+  const addCandidate = (c: StarterCandidate) =>
+    setCustomPicks([
+      ...(customPicks ?? suggestedPicks),
+      {
+        productId: c.id,
+        slug: c.slug,
+        name: c.name,
+        quantity: c.minOrderQty,
+        imageEmoji: c.imageEmoji,
+        cloudinaryPublicId: c.cloudinaryPublicId,
+        memberPrice: c.memberPrice,
+        standardPrice: c.standardPrice,
+      },
+    ]);
+  const pickedIds = new Set(picks.map((p) => p.productId));
+  const moreToAdd = candidates.filter((c) => !pickedIds.has(c.id)).slice(0, 8);
 
   // Screen 5: brief "saving" beat, then auto-advance.
   useEffect(() => {
-    if (step !== 4) return;
-    const t = setTimeout(() => setStep(5), 1200);
+    if (step !== 5) return;
+    const t = setTimeout(() => setStep(6), 1200);
     return () => clearTimeout(t);
   }, [step]);
 
   const canNext =
-    (step === 0 && data.goal) ||
-    (step === 1 && data.produce.length > 0) ||
-    step === 2 ||
-    (step === 3 && (data.dietary !== "allergies" || data.dietaryDetail.trim().length > 0)) ||
-    step === 5 ||
-    (step === 6 && data.windowDay);
+    step === 0 ||
+    (step === 1 && data.goal) ||
+    (step === 2 && data.produce.length > 0) ||
+    step === 3 ||
+    (step === 4 && (data.dietary !== "allergies" || data.dietaryDetail.trim().length > 0)) ||
+    step === 6 ||
+    (step === 7 && data.windowDay);
 
-  const next = () => setStep((s) => Math.min(7, s + 1));
-  const back = () => setStep((s) => Math.max(0, s - 1));
+  const goNext = () => setStep((s) => Math.min(LAST_STEP, s === 4 ? 5 : s + 1));
+  const back = () => setStep((s) => Math.max(0, s === 6 ? 4 : s - 1));
+
+  const questionNumber = QUESTION_NUMBER[step];
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
@@ -109,19 +144,27 @@ export function StartFlow({
         </Link>
       </div>
 
-      {step < TOTAL_STEPS && step !== 4 && (
+      {questionNumber && (
         <div className="mt-6">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full rounded-full bg-carbon transition-all"
-              style={{ width: `${(Math.min(step, TOTAL_STEPS - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
-            />
-          </div>
+          <StepIndicator
+            steps={Array.from({ length: TOTAL_QUESTIONS }, (_, i) => `${i + 1}`)}
+            currentStep={questionNumber}
+          />
         </div>
       )}
 
       <div className="mt-8">
         {step === 0 && (
+          <div>
+            <h1 className="text-heading">Let&rsquo;s get you set up</h1>
+            <p className="mt-3 text-base text-muted">
+              First, a few quick questions so your baskets and suggestions actually fit you, then
+              you&rsquo;re in. Takes about a minute.
+            </p>
+          </div>
+        )}
+
+        {step === 1 && (
           <Screen why="This is the one answer Ideas leans on when it suggests things.">
             <h1 className="text-heading">What are you hoping to get out of shopping with Basket?</h1>
             <p className="mt-2 text-sm text-muted">Pick the one that fits best. You can change it later.</p>
@@ -140,7 +183,7 @@ export function StartFlow({
           </Screen>
         )}
 
-        {step === 1 && (
+        {step === 2 && (
           <Screen why="So your basket leans towards what you actually reach for.">
             <h1 className="text-heading">What do you usually reach for?</h1>
             <p className="mt-2 text-sm text-muted">Choose as many as you like.</p>
@@ -168,7 +211,7 @@ export function StartFlow({
           </Screen>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <Screen why="This sizes the quantities we suggest, nothing else.">
             <h1 className="text-heading">Who are you shopping for?</h1>
             <p className="mt-2 text-sm text-muted">So basket quantities are about right for your table.</p>
@@ -179,7 +222,7 @@ export function StartFlow({
           </Screen>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <Screen why="So we can keep suggestions clear of anything you avoid.">
             <h1 className="text-heading">Anything we should know?</h1>
             <div className="mt-6 grid gap-3">
@@ -213,36 +256,76 @@ export function StartFlow({
           </Screen>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <div className="py-16 text-center">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-border border-t-carbon" />
             <p className="mt-4 text-sm text-muted">Saving your answers</p>
           </div>
         )}
 
-        {step === 5 && (
-          <Screen why="You can change every item after your account is made.">
+        {step === 6 && (
+          <Screen why="This is a starting point. Add or remove anything before your account is made.">
             <h1 className="text-heading">Here is a first basket to start from</h1>
             <p className="mt-2 text-sm text-muted">
-              Built from what you told us. Nothing is set in stone, you edit it whenever you like.
+              Built from what you told us. Remove what you don&rsquo;t want, add what&rsquo;s missing.
             </p>
-            <ul className="mt-6 space-y-3">
-              {picks.map((p) => (
-                <li key={p.productId} className="flex items-center gap-3">
-                  <ProductImage
-                    publicId={p.cloudinaryPublicId}
-                    alt={p.name}
-                    emoji={p.imageEmoji}
-                    className="h-12 w-12 shrink-0"
-                    rounded="rounded-xl"
-                    emojiClassName="text-2xl"
-                    sizes="48px"
-                  />
-                  <span className="min-w-0 flex-1 text-sm font-medium">{p.name}</span>
-                  <span className="shrink-0 text-sm text-muted">× {p.quantity}</span>
-                </li>
-              ))}
-            </ul>
+            {picks.length > 0 ? (
+              <ul className="mt-6 space-y-3">
+                {picks.map((p) => (
+                  <li key={p.productId} className="flex items-center gap-3">
+                    <ProductImage
+                      publicId={p.cloudinaryPublicId}
+                      alt={p.name}
+                      emoji={p.imageEmoji}
+                      className="h-12 w-12 shrink-0"
+                      rounded="rounded-xl"
+                      emojiClassName="text-2xl"
+                      sizes="48px"
+                    />
+                    <span className="min-w-0 flex-1 text-sm font-medium">{p.name}</span>
+                    <span className="shrink-0 text-sm text-muted">× {p.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => removePick(p.productId)}
+                      aria-label={`Remove ${p.name}`}
+                      className="tap-target flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted hover:bg-sky-wash hover:text-carbon"
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-6 text-sm text-muted">Nothing in here yet. Add something below.</p>
+            )}
+
+            {moreToAdd.length > 0 && (
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Add something else</p>
+                <div className="flex flex-wrap gap-2">
+                  {moreToAdd.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => addCandidate(c)}
+                      className="flex items-center gap-1.5 rounded-full border border-border py-1.5 pl-1.5 pr-3 text-xs font-medium hover:bg-sky-wash"
+                    >
+                      <ProductImage
+                        publicId={c.cloudinaryPublicId}
+                        alt={c.name}
+                        emoji={c.imageEmoji}
+                        className="h-6 w-6"
+                        rounded="rounded-full"
+                        emojiClassName="text-sm"
+                        sizes="24px"
+                      />
+                      {c.name} +
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 flex justify-between border-t border-border pt-4 text-sm font-semibold">
               <span>Rough weekly value</span>
               <span>{formatNaira(previewValue)}</span>
@@ -250,7 +333,7 @@ export function StartFlow({
           </Screen>
         )}
 
-        {step === 6 && (
+        {step === 7 && (
           <Screen why="Pick the day. Nothing is charged and no clock starts.">
             <h1 className="text-heading">Which day would your basket ship?</h1>
             <p className="mt-2 text-sm text-muted">
@@ -275,7 +358,7 @@ export function StartFlow({
           </Screen>
         )}
 
-        {step === 7 && (
+        {step === 8 && (
           <Screen why="Email and password only. No address, no card.">
             <h1 className="text-heading">Create your account</h1>
             <p className="mt-2 text-sm text-muted">
@@ -301,6 +384,12 @@ export function StartFlow({
               <input type="hidden" name="dietary" value={data.dietary} />
               <input type="hidden" name="dietaryDetail" value={data.dietaryDetail} />
               <input type="hidden" name="windowDay" value={data.windowDay ?? ""} />
+              <input
+                type="hidden"
+                name="starterPicks"
+                value={JSON.stringify(picks.map((p) => ({ productId: p.productId, quantity: p.quantity })))}
+              />
+              {next && <input type="hidden" name="next" value={next} />}
 
               <label className="block">
                 <span className="mb-1 block text-sm font-medium">Full name</span>
@@ -328,7 +417,7 @@ export function StartFlow({
         )}
       </div>
 
-      {step < 7 && step !== 4 && (
+      {step < LAST_STEP && step !== 5 && (
         <div className="mt-8 flex items-center justify-between">
           {step > 0 ? (
             <Button onClick={back} variant="secondary" size="sm" className="tap-target">
@@ -337,8 +426,8 @@ export function StartFlow({
           ) : (
             <span />
           )}
-          <Button onClick={next} disabled={!canNext} size="sm" className="tap-target">
-            {step === 5 ? "Looks good" : step === 6 ? "Continue" : "Next"}
+          <Button onClick={goNext} disabled={!canNext} size="sm" className="tap-target">
+            {step === 0 ? "Let's go" : step === 6 ? "Looks good" : step === 7 ? "Continue" : "Next"}
           </Button>
         </div>
       )}

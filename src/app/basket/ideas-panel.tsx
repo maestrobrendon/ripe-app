@@ -19,10 +19,13 @@ const chipCls =
  * between the desktop panel and the mobile sheet, so both stay in sync.
  */
 export function IdeasPanel({
+  basketId,
   signature,
   locked,
   onApplied,
 }: {
+  /** Which basket to read/act on. Omit only on surfaces with no basket context (e.g. Recipes). */
+  basketId?: string;
   /** A fingerprint of the basket's contents; refetches suggestions when it changes. */
   signature?: string;
   locked: boolean;
@@ -40,7 +43,10 @@ export function IdeasPanel({
     const id = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/basket/assistant");
+        const url = basketId
+          ? `/api/basket/assistant?basketId=${encodeURIComponent(basketId)}`
+          : "/api/basket/assistant";
+        const res = await fetch(url);
         if (res.ok) setData((await res.json()) as IdeasResponse);
       } catch {
         /* keep the last suggestion on a transient failure */
@@ -49,7 +55,7 @@ export function IdeasPanel({
       }
     }, delay);
     return () => clearTimeout(id);
-  }, [signature]);
+  }, [signature, basketId]);
 
   const run = (fn: () => Promise<unknown>) =>
     startTransition(async () => {
@@ -101,7 +107,12 @@ export function IdeasPanel({
         <Button
           disabled={locked || isPending}
           onClick={() =>
-            run(() => applyStarterPicks(data.picks.map((p) => ({ productId: p.productId, quantity: p.quantity }))))
+            run(() =>
+              applyStarterPicks(
+                basketId,
+                data.picks.map((p) => ({ productId: p.productId, quantity: p.quantity })),
+              ),
+            )
           }
           size="sm"
           className="w-full"
@@ -119,7 +130,7 @@ export function IdeasPanel({
       {gap && (
         <button
           disabled={locked || isPending || !gap.fixId}
-          onClick={() => gap.fixId && run(() => setBasketItemQuantity(gap.fixId!, 1))}
+          onClick={() => gap.fixId && run(() => setBasketItemQuantity(basketId, gap.fixId!, 1))}
           className={`${chipCls} border-border bg-ember/12`}
         >
           <span className="text-xs font-medium uppercase tracking-wide text-carbon">Gap</span>
@@ -144,7 +155,7 @@ export function IdeasPanel({
       {recipe && (
         <button
           disabled={locked || isPending}
-          onClick={() => run(() => addRecipeIngredients(recipe.slug))}
+          onClick={() => run(() => addRecipeIngredients(basketId, recipe.slug))}
           className={chipCls}
         >
           <span className="text-xs font-medium uppercase tracking-wide text-carbon">Recipe</span>
@@ -158,7 +169,7 @@ export function IdeasPanel({
       {add && (
         <button
           disabled={locked || isPending}
-          onClick={() => run(() => setBasketItemQuantity(add.id, 1))}
+          onClick={() => run(() => setBasketItemQuantity(basketId, add.id, 1))}
           className={chipCls}
         >
           <span className="text-xs font-medium uppercase tracking-wide text-carbon">Add</span>

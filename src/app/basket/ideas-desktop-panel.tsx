@@ -6,11 +6,13 @@ import { IdeasPanel } from "./ideas-panel";
 
 /** Desktop's always-visible right column. Mobile gets the same content in a sheet instead. */
 export function IdeasDesktopPanel({
+  basketId,
   signature,
   locked,
   streak,
   showStreak = true,
 }: {
+  basketId: string;
   signature: string;
   locked: boolean;
   streak: StreakView;
@@ -30,7 +32,7 @@ export function IdeasDesktopPanel({
       )}
 
       <div className="mt-4">
-        <IdeasPanel signature={signature} locked={locked} />
+        <IdeasPanel basketId={basketId} signature={signature} locked={locked} />
       </div>
     </aside>
   );

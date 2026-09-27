@@ -41,7 +41,7 @@ export function SiteFooter() {
           </div>
         </div>
         <p className="mt-8 text-xs text-muted">
-          Basket is not trying to replace Chowdeck, roadside sellers, or supermarkets. It is built for people who already want to eat better, consistently.
+          Built for people who&rsquo;ve already decided eating better is worth planning around.
         </p>
       </div>
     </footer>

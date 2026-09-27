@@ -11,6 +11,7 @@ import { GOALS } from "@/lib/assistant";
 import { PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import { buildStarterPicks, getStarterCandidates } from "@/lib/starter-basket";
+import { createUserBasket } from "@/lib/basket";
 import type { ShoppingWindowDay } from "@/generated/prisma/enums";
 
 const HOUR = 60 * 60 * 1000;
@@ -115,14 +116,35 @@ export async function createAccountFromOnboarding(formData: FormData) {
     redirect("/start?error=failed");
   }
 
-  // Seed the standing basket from the quiz answers.
+  // The onboarding preview screen lets the member edit the suggested picks
+  // before the account exists, so honour that edited list rather than
+  // recomputing it blind. Falls back to a fresh recompute if it's missing or
+  // malformed (e.g. JS-disabled submission).
+  let picks: { productId: string; quantity: number }[] = [];
   try {
+    const parsed = JSON.parse(String(formData.get("starterPicks") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      picks = parsed.filter(
+        (p): p is { productId: string; quantity: number } =>
+          p && typeof p.productId === "string" && Number.isFinite(p.quantity) && p.quantity > 0,
+      );
+    }
+  } catch {
+    picks = [];
+  }
+  if (picks.length === 0) {
     const candidates = await getStarterCandidates();
-    const picks = buildStarterPicks({ goalSlug, producePreferences, adults, kids }, candidates);
+    picks = buildStarterPicks({ goalSlug, producePreferences, adults, kids }, candidates);
+  }
+
+  // This is the member's first basket: the free trial, permanently priced at
+  // standard rates regardless of any subscription taken out afterward.
+  try {
     if (picks.length > 0) {
-      const basket = await prisma.basket.create({
-        data: { userId, isStanding: true, deliveryDay: "WEDNESDAY" },
-      });
+      const basket = await createUserBasket(userId, { isSubscriber: false, deliveryDay: "WEDNESDAY" });
+      if (windowDay) {
+        await prisma.basket.update({ where: { id: basket.id }, data: { shoppingWindowDay: windowDay } });
+      }
       await prisma.basketItem.createMany({
         data: picks.map((p) => ({ basketId: basket.id, productId: p.productId, quantity: p.quantity })),
         skipDuplicates: true,
@@ -133,5 +155,6 @@ export async function createAccountFromOnboarding(formData: FormData) {
   }
 
   await createSession(userId);
-  redirect("/welcome");
+  const next = String(formData.get("next") ?? "");
+  redirect(next.startsWith("/") ? next : "/welcome");
 }

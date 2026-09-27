@@ -67,26 +67,16 @@ export default async function LandingPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-2 lg:gap-16 lg:py-14">
           <div>
             <h1 className="text-display-xl text-carbon">
-              Fresh produce, delivered across Lagos
+              Whatever the goal, there&rsquo;s a basket.
             </h1>
 
-            <ul className="mt-8 space-y-4">
-              {[
-                "Locally sourced, checked by hand",
-                "Ships Thursday, Friday or Saturday",
-                "Nothing is charged automatically",
-              ].map((point) => (
-                <li key={point} className="flex items-center gap-3 text-carbon">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-carbon text-white">
-                    <Icon name="check" size={15} strokeWidth={2} />
-                  </span>
-                  <span className="text-base sm:text-lg">{point}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-6 max-w-lg text-base text-carbon/80 sm:text-lg">
+              Shop anytime, no subscription needed to get started. Set a basket that shows up on
+              your day every week.
+            </p>
 
             <LinkButton href="/start" size="lg" className="mt-10">
-              Get started
+              Start shopping
             </LinkButton>
           </div>
 
@@ -95,7 +85,7 @@ export default async function LandingPage() {
       </section>
 
       {featured.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-6 sm:px-6">
+        <section className="mx-auto max-w-6xl px-4 pt-10 pb-6 sm:px-6 sm:pt-14">
           <div className="mb-4 flex items-end justify-between">
             <h2 className="text-heading">Favorites</h2>
             <Link href="/shop" className="text-sm text-carbon underline">View all</Link>
@@ -134,7 +124,7 @@ export default async function LandingPage() {
             {[
               ["Choose your produce", "By the piece, the pair, or the kilo."],
               ["We pick and pack", "Packed the morning it goes out."],
-              ["Delivered to you", "Anywhere we cover in Lagos."],
+              ["Delivered to you", "On your set day, wherever we cover."],
             ].map(([title, body], i) => (
               <div key={title}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-base font-bold text-carbon">
@@ -176,7 +166,7 @@ export default async function LandingPage() {
           </div>
 
           <div className="flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[700px] overflow-visible bg-transparent">
+            <div className="relative w-full max-w-175 overflow-visible bg-transparent">
               <Image
                 src="https://res.cloudinary.com/dusynu0kv/image/upload/v1790412022/ivnufvuhzbwllkjb7jjl.png"
                 alt="No automatic charges"

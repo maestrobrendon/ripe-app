@@ -57,8 +57,10 @@ export const COACH_ANSWERS: CoachAnswer[] = [
   {
     id: "quality",
     keywords: ["not fresh", "bad produce", "spoiled", "rotten", "refund", "replace", "quality", "complaint", "damaged"],
+    // FOUNDER REVIEW: conditioned per the addendum, Section 11; confirm the
+    // qualifying window and process before this goes live.
     answer:
-      "Every order is quality checked by a person before it leaves us. If something is not right, tell us within 24 hours and we will replace it or refund it.",
+      "Every order is quality checked by a person before it leaves us. If an item arrives damaged or not fresh, tell us within 24 hours with a photo of what you received, and we will look into it. That can mean a replacement, a credit, or a refund for that item, depending on what we find.",
   },
   {
     id: "subscription",
