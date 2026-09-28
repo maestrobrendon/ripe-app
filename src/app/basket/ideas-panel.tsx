@@ -8,6 +8,7 @@ import { ProductImage } from "@/components/product-image";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
 import { addRecipeIngredients, applyStarterPicks, setBasketItemQuantity } from "./actions";
+import { GetIdeasChat } from "@/components/get-ideas-chat";
 
 const chipCls =
   "w-full rounded-input border border-border bg-sky-wash p-3 text-left text-sm transition hover:bg-lavender disabled:opacity-50";
@@ -71,15 +72,25 @@ export function IdeasPanel({
     return null;
   }
 
+  const starters = [
+    "What am I missing for a healthy week?",
+    "Build me a basket for post-workout, 2 people",
+    "Suggest something quick to cook tonight",
+  ];
+  const chat = <GetIdeasChat source="BASKET_SHEET" contextRef={basketId} starters={starters} />;
+
   if (data.kind === "starter") {
     if (data.picks.length === 0) {
       return (
-        <div className="rounded-input border border-dashed border-border p-3 text-sm text-muted">
-          Not enough in the shop right now to put together a starter set.{" "}
-          <Link href="/shop" className="font-semibold text-carbon underline">
-            Browse the shop
-          </Link>
-          .
+        <div>
+          <div className="rounded-input border border-dashed border-border p-3 text-sm text-muted">
+            Not enough in the shop right now to put together a starter set.{" "}
+            <Link href="/shop" className="font-semibold text-carbon underline">
+              Browse the shop
+            </Link>
+            .
+          </div>
+          {chat}
         </div>
       );
     }
@@ -119,6 +130,7 @@ export function IdeasPanel({
         >
           Add these {data.picks.length} items
         </Button>
+        {chat}
       </div>
     );
   }
@@ -198,6 +210,7 @@ export function IdeasPanel({
           for what to make with it.
         </div>
       )}
+      {chat}
     </div>
   );
 }

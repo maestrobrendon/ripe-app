@@ -6,9 +6,11 @@ import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZone } from "@/lib/zone";
 import { readCart } from "@/lib/cart";
-import { getActiveBasketReadOnly, getBasketItemCount } from "@/lib/basket";
+import { getActiveBasketReadOnly, getBasketItemCount, getUserBaskets } from "@/lib/basket";
 import { SHOPPING_WINDOW_DAY_SHORT_LABEL } from "@/lib/shopping-window";
 import { CartProvider } from "@/components/cart-provider";
+import { DestinationProvider, type DestinationBasket } from "@/components/destination-provider";
+import { DestinationToast } from "@/components/destination-pill";
 import { ZoneProvider } from "@/components/zone-gate";
 import { SiteHeader, type MemberStatus } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -40,8 +42,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const [user, cart, zone] = await Promise.all([getCurrentUser(), readCart(), getActiveZone()]);
 
   let member: MemberStatus | null = null;
+  let destinationBaskets: DestinationBasket[] = [];
   if (user) {
-    const activeBasket = await getActiveBasketReadOnly(user.id);
+    const [activeBasket, allBaskets] = await Promise.all([
+      getActiveBasketReadOnly(user.id),
+      getUserBaskets(user.id),
+    ]);
     const itemCount = activeBasket ? await getBasketItemCount(activeBasket.id) : 0;
     member = {
       firstInitial: user.name.trim().charAt(0).toUpperCase() || "?",
@@ -51,6 +57,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       zoneName: user.deliveryZone?.name ?? null,
       itemCount,
     };
+    destinationBaskets = allBaskets.map((b) => ({
+      id: b.id,
+      label: b.goalTag || (b.shoppingWindowDay ? `${SHOPPING_WINDOW_DAY_SHORT_LABEL[b.shoppingWindowDay]} basket` : "Basket"),
+    }));
   }
 
   return (
@@ -58,16 +68,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <ZoneProvider initialZoneName={zone?.name ?? null}>
           <CartProvider initial={cart}>
-            <AnnouncementBar />
-            <SiteHeader member={member} />
-            {/* var(--mobile-nav-h) accounts for the fixed tab bar below,
-                which only renders under sm — see globals.css. */}
-            <main className="flex-1" style={{ paddingBottom: "var(--mobile-nav-h)" }}>
-              {children}
-            </main>
-            <SiteFooter />
-            <CartDrawer />
-            <MobileBottomNav signedIn={Boolean(user)} />
+            <DestinationProvider signedIn={Boolean(user)} baskets={destinationBaskets}>
+              <AnnouncementBar />
+              <SiteHeader member={member} />
+              {/* var(--mobile-nav-h) accounts for the fixed tab bar below,
+                  which only renders under sm — see globals.css. */}
+              <main className="flex-1" style={{ paddingBottom: "var(--mobile-nav-h)" }}>
+                {children}
+              </main>
+              {/* Signed-in users get every former footer link from Account →
+                  Help and info instead; a footer under the bottom nav read like
+                  a website, not the app (Basket vs. Cart addendum, Section 6). */}
+              {!user && <SiteFooter />}
+              <CartDrawer />
+              <DestinationToast />
+              <MobileBottomNav signedIn={Boolean(user)} />
+            </DestinationProvider>
           </CartProvider>
         </ZoneProvider>
       </body>

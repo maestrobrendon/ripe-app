@@ -53,6 +53,20 @@ enum SoldAs {
   WEIGHT
 }
 
+// A produce item's dominant colour, for the Produce Planner's "colours
+// covered" variety stat (informational, not medical advice). A fixed lookup
+// assigned once when the catalogue was built, not guessed at request time —
+// null for anything that isn't a single-colour item (a mixed box or a mix
+// like coleslaw), which the stat then simply doesn't count.
+enum ProduceColor {
+  RED
+  ORANGE
+  YELLOW
+  GREEN
+  PURPLE
+  WHITE_BROWN
+}
+
 // The three days a basket can be scheduled to ship on. Distinct from the
 // subscription DeliveryDay (Mon/Wed/Fri) and from the ShoppingWindow edit
 // mechanic. Picking one never starts a countdown or authorises a charge.
@@ -138,6 +152,10 @@ model User {
   baskets             Basket[]
   orders              Order[]
   windows             ShoppingWindow[]
+  savedRecipes        SavedRecipe[]
+  weeklyMealPlans     WeeklyMealPlan[]
+  producePlans        ProducePlan[]
+  assistantThreads    AssistantThread[]
 }
 
 // Server-side session. The cookie holds only the opaque random token.
@@ -220,6 +238,7 @@ model Product {
   // Only meaningful when soldAs is WEIGHT: the gram weight that
   // memberPrice/standardPrice are priced against.
   referenceWeightG  Int?
+  color         ProduceColor?
   memberPrice   Int
   standardPrice Int
   inSeason      Boolean         @default(true)
@@ -250,15 +269,119 @@ model Product {
 }
 
 model Recipe {
-  id                   String   @id @default(cuid())
-  slug                 String   @unique
+  id                   String        @id @default(cuid())
+  slug                 String        @unique
   title                String
   summary              String
   goalTags             String[]
   ingredientProductIds String[]
   instructions         String
-  isAssistantGenerated Boolean  @default(false)
-  createdAt            DateTime @default(now())
+  isAssistantGenerated Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  savedBy              SavedRecipe[]
+}
+
+// A free account's saved recipes — the Recipes-page-by-tier addendum's one
+// piece of real write access for Recipes itself. Saving a favorite isn't a
+// basket mutation, so it doesn't need to go through the Assistant's tool
+// layer the way basket/cart changes do.
+model SavedRecipe {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId String
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  savedAt  DateTime @default(now())
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+}
+
+enum MealPlanDayStatus {
+  PLANNED
+  SKIPPED
+  COOKED
+}
+
+// One row per member per week. `days` holds exactly 7 entries shaped like
+// { day: ShoppingWindowDay-style label, recipeId: string | null, suggestion:
+// { title, ingredientProductIds } | null, status: MealPlanDayStatus }, kept
+// as JSON because a day can point at a real Recipe or a plain generated
+// suggestion with no catalogue row of its own.
+model WeeklyMealPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStartDate DateTime
+  days          Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, weekStartDate])
+  @@index([userId])
+}
+
+// A saved Produce Planner result (Recipes addendum, Section 2c). Free
+// accounts keep only their latest plan; subscribers keep history — both are
+// just rows here, "latest" and "history" are query-shape, not schema.
+model ProducePlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart     DateTime
+  householdSize Int
+  goal          String?
+  theme         String?
+  // { productId, qty, prep: "raw" | "cooked" | "either" }[]
+  items         Json
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Kachi's persisted chat history (Basket vs. Cart addendum, Section 4).
+// "assistant" is a route/table name only; the customer-facing name is Kachi
+// everywhere in the UI.
+enum AssistantThreadSource {
+  ASSISTANT
+  BASKET_SHEET
+  CART_SHEET
+  MEAL_PLANNER
+  PRODUCE_PLANNER
+}
+
+model AssistantThread {
+  id         String                @id @default(cuid())
+  userId     String
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  source     AssistantThreadSource @default(ASSISTANT)
+  // Free-form pointer to what started this thread, e.g. a basket id — display
+  // only, never trusted for authorization.
+  contextRef String?
+  messages   AssistantMessage[]
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+enum AssistantMessageRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
+model AssistantMessage {
+  id        String                @id @default(cuid())
+  threadId  String
+  thread    AssistantThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      AssistantMessageRole
+  content   String
+  toolCalls Json?
+  createdAt DateTime              @default(now())
+
+  @@index([threadId, createdAt])
 }
 
 // Email capture for visitors whose zone is outside current coverage.
@@ -309,6 +432,9 @@ model Basket {
   // Set once at creation and never recomputed from live subscriber status.
   isFreeTrial    Boolean            @default(false)
   pricingMode    PricingMode        @default(STANDARD)
+  // Optional template tag from a "New basket" goal template (Gym week,
+  // Family, Plant-based, Weight management), display-only.
+  goalTag        String?
   items          BasketItem[]
   windows        ShoppingWindow[]
   updatedAt      DateTime           @updatedAt

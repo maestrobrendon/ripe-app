@@ -32,7 +32,7 @@ function tabsFor(signedIn: boolean): Tab[] {
     },
     {
       href: "/assistant",
-      label: "Assistant",
+      label: "Kachi",
       icon: "assistant",
       match: (p) => p.startsWith("/assistant"),
     },

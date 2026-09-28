@@ -19,6 +19,7 @@ import {
   BasketCapReachedError,
 } from "@/lib/basket";
 import { setBasketItemQuantity } from "@/app/basket/actions";
+import { getOrCreateCart, cartViewForCart, setCartItemQuantity } from "@/lib/cart";
 import type { CurrentUser } from "@/lib/session";
 
 export type ToolResult<T = unknown> = { ok: true; data: T } | { ok: false; error: string };
@@ -124,6 +125,27 @@ export async function toolAdjustItemQuantity(
   });
 }
 
+export async function toolAddItemsToBasket(
+  user: CurrentUser,
+  args: { basket_id: string; items: { product_id: string; quantity: number }[] },
+) {
+  return run(user.id, "add_items_to_basket", args, async () => {
+    await requireOwnedBasket(user.id, args.basket_id);
+    const results: { productId: string; name: string; newQuantity: number }[] = [];
+    for (const item of args.items) {
+      const product = await prisma.product.findUnique({ where: { id: item.product_id } });
+      if (!product) continue;
+      const existing = await prisma.basketItem.findUnique({
+        where: { basketId_productId: { basketId: args.basket_id, productId: item.product_id } },
+      });
+      const nextQuantity = (existing?.quantity ?? 0) + Math.max(0, item.quantity);
+      await setBasketItemQuantity(args.basket_id, item.product_id, nextQuantity);
+      results.push({ productId: item.product_id, name: product.name, newQuantity: nextQuantity });
+    }
+    return { added: results };
+  });
+}
+
 export async function toolSwitchActiveBasket(user: CurrentUser, args: { basket_id: string }) {
   return run(user.id, "switch_active_basket", args, async () => {
     await requireOwnedBasket(user.id, args.basket_id);
@@ -173,6 +195,53 @@ export async function toolGetDeliveryZone(user: CurrentUser) {
       area: user.deliveryZone.area,
       deliveryDays: user.deliveryZone.deliveryDays,
     };
+  });
+}
+
+// Cart tools. The cart is per-browser (an anonymous cookie token, see
+// lib/cart.ts) rather than per-user, so these act on the caller's current
+// cookie-scoped cart via getOrCreateCart() — the same cart the Cart tab
+// already shows this user, since the request carries the same cookie.
+
+export async function toolGetCartContents(user: CurrentUser) {
+  return run(user.id, "get_cart_contents", {}, async () => {
+    const cart = await getOrCreateCart();
+    const view = await cartViewForCart(cart.id);
+    return {
+      items: view.items.map((i) => ({ productId: i.productId, name: i.name, unit: i.unit, quantity: i.quantity })),
+      subtotal: view.subtotal,
+    };
+  });
+}
+
+export async function toolAddItemsToCart(user: CurrentUser, args: { items: { product_id: string; quantity: number }[] }) {
+  return run(user.id, "add_items_to_cart", args, async () => {
+    const cart = await getOrCreateCart();
+    const results = [];
+    for (const item of args.items) {
+      const existing = await prisma.cartItem.findUnique({
+        where: { cartId_productId: { cartId: cart.id, productId: item.product_id } },
+      });
+      const nextQuantity = (existing?.quantity ?? 0) + Math.max(0, item.quantity);
+      results.push(await setCartItemQuantity(cart.id, item.product_id, nextQuantity));
+    }
+    return { added: results };
+  });
+}
+
+export async function toolRemoveItemFromCart(user: CurrentUser, args: { product_id: string }) {
+  return run(user.id, "remove_item_from_cart", args, async () => {
+    const cart = await getOrCreateCart();
+    await setCartItemQuantity(cart.id, args.product_id, 0);
+    return { productId: args.product_id, removed: true };
+  });
+}
+
+export async function toolAdjustCartItemQuantity(user: CurrentUser, args: { product_id: string; quantity: number }) {
+  return run(user.id, "adjust_cart_item_quantity", args, async () => {
+    const cart = await getOrCreateCart();
+    const result = await setCartItemQuantity(cart.id, args.product_id, Math.max(0, args.quantity));
+    return result;
   });
 }
 

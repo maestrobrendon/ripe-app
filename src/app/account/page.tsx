@@ -16,6 +16,7 @@ import {
   PRODUCE_PREFERENCE_OPTIONS,
 } from "@/lib/format";
 import { bandById } from "@/lib/budget";
+import { SUPPORT_WHATSAPP } from "@/lib/site";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import { recomputeStreak } from "@/lib/streak";
 import { getActiveAccountPromo } from "@/lib/account-promo";
@@ -303,6 +304,27 @@ export default async function AccountPage() {
         <p className="mt-3 rounded-input border border-dashed border-border p-3 text-sm text-muted">
           Test mode is active. No real payment method is stored yet.
         </p>
+      </Card>
+
+      <Card className="mt-6">
+        <SectionHeading icon="preferences" title="Help and info" />
+        <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+          <li><Link href="/faq" className="font-medium text-carbon underline underline-offset-2">FAQ</Link></li>
+          <li><Link href="/delivery-areas" className="font-medium text-carbon underline underline-offset-2">Delivery areas</Link></li>
+          <li><Link href="/about" className="font-medium text-carbon underline underline-offset-2">About Basket</Link></li>
+          <li><Link href="/terms" className="font-medium text-carbon underline underline-offset-2">Terms</Link></li>
+          <li><a href="mailto:hello@basket.ng" className="font-medium text-carbon underline underline-offset-2">Email us</a></li>
+          <li>
+            <a
+              href={`https://wa.me/${SUPPORT_WHATSAPP}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-carbon underline underline-offset-2"
+            >
+              WhatsApp us
+            </a>
+          </li>
+        </ul>
       </Card>
 
       <div className="mt-6">

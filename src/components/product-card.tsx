@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { useDestination, type Destination } from "@/components/destination-provider";
+import { DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
+import { setBasketItemQuantity } from "@/app/basket/actions";
 import { ProductImage } from "@/components/product-image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,13 +19,72 @@ export type ProductCardData = AddableProduct & {
 
 export function ProductCard({ product }: { product: ProductCardData }) {
   const cart = useCart();
-  const line = cart.items.find((i) => i.productId === product.id);
-  const quantity = line?.quantity ?? 0;
-  const isLoading = cart.loadingProductId === product.id;
+  const dest = useDestination();
+  const goingToBasket = dest.signedIn && dest.destination.type === "basket";
+
+  // Only the cart tracks item quantity client-side app-wide; a basket
+  // destination's quantity here is this card's own optimistic count of what
+  // it has sent this basket this session, not a live read of the basket.
+  const [basketQty, setBasketQty] = useState(0);
+  const [basketLoading, setBasketLoading] = useState(false);
+  const destinationKey = dest.signedIn && dest.destination.type === "basket" ? dest.destination.basketId : "cart";
+  useEffect(() => {
+    // Resets this card's optimistic count when the "shopping into" target
+    // changes, so switching baskets doesn't carry over a stale local number.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBasketQty(0);
+  }, [destinationKey]);
+
+  const cartLine = cart.items.find((i) => i.productId === product.id);
+  const quantity = goingToBasket ? basketQty : cartLine?.quantity ?? 0;
+  const isLoading = goingToBasket ? basketLoading : cart.loadingProductId === product.id;
   const price = cart.isSubscriber ? product.memberPrice : product.standardPrice;
   const href = `/products/${product.slug}`;
 
-  const change = (next: number) => cart.setQuantity(product, next);
+  const change = async (next: number) => {
+    if (goingToBasket && dest.destination.type === "basket") {
+      setBasketLoading(true);
+      try {
+        await setBasketItemQuantity(dest.destination.basketId, product.id, next);
+        setBasketQty(next);
+        if (next > basketQty) {
+          dest.announceAdd({
+            productId: product.id,
+            productName: product.name,
+            quantity: next,
+            destination: dest.destination,
+            destinationLabel: dest.destination.label,
+          });
+        }
+      } finally {
+        setBasketLoading(false);
+      }
+      return;
+    }
+    const wasEmpty = quantity === 0;
+    await cart.setQuantity(product, next);
+    if (wasEmpty && next > 0 && dest.signedIn) {
+      dest.announceAdd({
+        productId: product.id,
+        productName: product.name,
+        quantity: next,
+        destination: { type: "cart" },
+        destinationLabel: "Cart",
+      });
+    }
+  };
+
+  const addOverride = async (destination: Destination) => {
+    await addToDestination(destination, product.id, product.minOrderQty);
+    if (destination.type === "cart") await cart.refresh();
+    dest.announceAdd({
+      productId: product.id,
+      productName: product.name,
+      quantity: product.minOrderQty,
+      destination,
+      destinationLabel: destination.type === "cart" ? "Cart" : destination.label,
+    });
+  };
 
   return (
     <Card className="flex flex-col transition hover:bg-sky-wash">
@@ -66,14 +129,17 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
       <div className="mt-auto">
         {quantity === 0 ? (
-          <Button
-            disabled={isLoading}
-            onClick={() => change(product.minOrderQty)}
-            size="sm"
-            className="tap-target w-full"
-          >
-            + Add
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              disabled={isLoading}
+              onClick={() => change(product.minOrderQty)}
+              size="sm"
+              className="tap-target w-full"
+            >
+              + Add
+            </Button>
+            <DestinationOverrideChevron onPick={addOverride} />
+          </div>
         ) : (
           <div className="flex items-center justify-between rounded-full border border-carbon px-1 py-1">
             <button
@@ -84,7 +150,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             >
               <Icon name="minus" size={16} />
             </button>
-            <span className="text-xs font-medium sm:text-sm">{quantity} in cart</span>
+            <span className="text-xs font-medium sm:text-sm">
+              {quantity} {goingToBasket ? `in ${dest.destination.type === "basket" ? dest.destination.label : "basket"}` : "in cart"}
+            </span>
             <button
               disabled={isLoading}
               onClick={() => change(quantity + product.stepQty)}

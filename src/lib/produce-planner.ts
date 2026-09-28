@@ -415,6 +415,10 @@ export type PlanLine = {
   cloudinaryPublicId: string | null;
   quantity: number;
   lineCost: number;
+  category: Product["category"];
+  soldAs: Product["soldAs"];
+  referenceWeightG: number | null;
+  color: Product["color"];
 };
 
 export type PlanIdea = {
@@ -460,6 +464,10 @@ function buildIdea(def: IdeaDef, servings: number, products: Map<string, Product
       cloudinaryPublicId: product.cloudinaryPublicId,
       quantity,
       lineCost: product.standardPrice * quantity,
+      category: product.category,
+      soldAs: product.soldAs,
+      referenceWeightG: product.referenceWeightG,
+      color: product.color,
     });
   }
   return {

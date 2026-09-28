@@ -1,15 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useCart } from "@/components/cart-provider";
+import { useDestination } from "@/components/destination-provider";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { Icon } from "@/components/ui/icon";
 import { HomeCartTabs } from "@/components/home-cart-tabs";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { GetIdeasChat } from "@/components/get-ideas-chat";
 
 export default function CartPage() {
   const cart = useCart();
+  const { signedIn } = useDestination();
+  const [ideasOpen, setIdeasOpen] = useState(false);
   const delivery = quoteDelivery(cart.subtotal, cart.isSubscriber);
   const total = cart.subtotal + delivery.fee;
 
@@ -118,12 +124,33 @@ export default function CartPage() {
             >
               Continue to checkout
             </Link>
-            <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-carbon underline">
-              Get ideas for what to make
-            </Link>
+            {signedIn ? (
+              <button
+                type="button"
+                onClick={() => setIdeasOpen(true)}
+                className="mt-3 block w-full text-center text-xs font-medium text-carbon underline"
+              >
+                Get ideas for what to make
+              </button>
+            ) : (
+              <Link href="/recipes" className="mt-3 block text-center text-xs font-medium text-carbon underline">
+                Get ideas for what to make
+              </Link>
+            )}
           </div>
         </div>
       )}
+
+      <BottomSheet open={ideasOpen} onClose={() => setIdeasOpen(false)} title="Get ideas">
+        <GetIdeasChat
+          source="CART_SHEET"
+          starters={[
+            "What am I missing for Saturday's recipe?",
+            "Suggest a quick dinner from what's in my cart",
+            "Help me round out this order",
+          ]}
+        />
+      </BottomSheet>
     </div>
   );
 }

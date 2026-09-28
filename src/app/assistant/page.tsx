@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { AssistantChat } from "./assistant-chat";
 
-export const metadata = { title: "Assistant. Basket" };
+export const metadata = { title: "Kachi. Basket" };
 
 /**
  * Its own top-level tab, full screen on every breakpoint (per the Mobile Nav

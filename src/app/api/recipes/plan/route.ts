@@ -1,17 +1,32 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
 import {
   planFromText,
   planFromGoal,
   planThisWeek,
   planFromCartSlugs,
+  type PlanResponse,
 } from "@/lib/produce-planner";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import {
+  GUEST_CAP_COOKIE,
+  GUEST_FREE_USES_PER_DAY,
+  readGuestPlannerUseCount,
+  nextGuestPlannerCookieValue,
+} from "@/lib/planner-cap";
 
 export async function POST(request: Request) {
   const ip = await clientIp();
   if (!rateLimit(`plan:ip:${ip}`, 40, 60 * 1000).ok) {
     return NextResponse.json({ error: "Slow down a moment." }, { status: 429 });
+  }
+
+  const user = await getCurrentUser();
+  const usedBefore = user ? 0 : await readGuestPlannerUseCount();
+
+  if (!user && usedBefore >= GUEST_FREE_USES_PER_DAY) {
+    return NextResponse.json({ locked: true, usesLeft: 0 });
   }
 
   let body: {
@@ -33,21 +48,34 @@ export async function POST(request: Request) {
       ? Math.trunc(body.servings)
       : 3;
 
+  let result: PlanResponse;
   if (body.mode === "week") {
-    return NextResponse.json({ plan: planThisWeek(servings, products) });
-  }
-  if (body.mode === "cart") {
+    result = { plan: planThisWeek(servings, products) };
+  } else if (body.mode === "cart") {
     const slugs = Array.isArray(body.cartSlugs)
       ? body.cartSlugs.filter((s): s is string => typeof s === "string").slice(0, 50)
       : [];
-    return NextResponse.json({ plan: planFromCartSlugs(slugs, servings, products) });
-  }
-  if (body.mode === "goal" && typeof body.goalId === "string") {
-    return NextResponse.json({ plan: planFromGoal(body.goalId, servings, products) });
-  }
-  if (body.mode === "text" && typeof body.text === "string") {
-    return NextResponse.json(planFromText(body.text.slice(0, 200), products));
+    result = { plan: planFromCartSlugs(slugs, servings, products) };
+  } else if (body.mode === "goal" && typeof body.goalId === "string") {
+    result = { plan: planFromGoal(body.goalId, servings, products) };
+  } else if (body.mode === "text" && typeof body.text === "string") {
+    result = planFromText(body.text.slice(0, 200), products);
+  } else {
+    result = { plan: null };
   }
 
-  return NextResponse.json({ plan: null });
+  const usesLeft = user ? null : Math.max(0, GUEST_FREE_USES_PER_DAY - usedBefore - 1);
+  const response = NextResponse.json({ ...result, usesLeft });
+
+  if (!user) {
+    response.cookies.set(GUEST_CAP_COOKIE, nextGuestPlannerCookieValue(usedBefore), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 2,
+    });
+  }
+
+  return response;
 }

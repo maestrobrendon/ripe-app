@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { useDestination } from "@/components/destination-provider";
+import { DestinationPill, DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
 import { formatNaira } from "@/lib/format";
 import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { addToStandingBasket } from "@/app/basket/actions";
@@ -23,6 +25,7 @@ export function BuyBox({
   isSubscriber: boolean;
 }) {
   const cart = useCart();
+  const dest = useDestination();
   const [qty, setQty] = useState(product.minOrderQty);
   const [mode, setMode] = useState<Mode>("one-time");
   const [frequency, setFrequency] = useState<1 | 2>(1);
@@ -40,15 +43,48 @@ export function BuyBox({
   const dec = () => setQty((q) => Math.max(product.minOrderQty, q - step));
   const inc = () => setQty((q) => q + step);
 
-  const addOneTime = () => {
+  const addOneTime = async () => {
+    if (dest.signedIn && dest.destination.type === "basket") {
+      await addToDestination(dest.destination, product.id, qty);
+      dest.announceAdd({
+        productId: product.id,
+        productName: name,
+        quantity: qty,
+        destination: dest.destination,
+        destinationLabel: dest.destination.label,
+      });
+      return;
+    }
     const existing = cart.items.find((i) => i.productId === product.id)?.quantity ?? 0;
-    cart.setQuantity(product, existing + qty);
+    await cart.setQuantity(product, existing + qty);
+    if (dest.signedIn) {
+      dest.announceAdd({
+        productId: product.id,
+        productName: name,
+        quantity: existing + qty,
+        destination: { type: "cart" },
+        destinationLabel: "Cart",
+      });
+    }
+  };
+
+  const addOverride = async (destination: Parameters<typeof addToDestination>[0]) => {
+    await addToDestination(destination, product.id, qty);
+    if (destination.type === "cart") await cart.refresh();
+    dest.announceAdd({
+      productId: product.id,
+      productName: name,
+      quantity: qty,
+      destination,
+      destinationLabel: destination.type === "cart" ? "Cart" : destination.label,
+    });
   };
 
   const subscribeLabel = !isSubscriber ? "Subscribe to add" : "Add to standing basket";
 
   return (
     <Card>
+      <DestinationPill />
       <p className="text-xs font-medium uppercase tracking-wide text-carbon">
         Freshly selected · Basket quality checked
       </p>
@@ -93,9 +129,12 @@ export function BuyBox({
       {/* CTA */}
       <div className="mt-4">
         {mode === "one-time" ? (
-          <Button onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
-            Add to cart
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
+              {dest.signedIn && dest.destination.type === "basket" ? `Add to ${dest.destination.label}` : "Add to cart"}
+            </Button>
+            <DestinationOverrideChevron onPick={addOverride} />
+          </div>
         ) : (
           <Button
             onClick={() => startTransition(() => addToStandingBasket(product.id, qty, frequency))}

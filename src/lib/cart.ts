@@ -132,3 +132,28 @@ export async function cartViewForCart(cartId: string): Promise<CartView> {
 export async function clearCart(cartId: string) {
   await prisma.cartItem.deleteMany({ where: { cartId } });
 }
+
+/**
+ * The one place cart item quantity is written, so the cart API route,
+ * Recipes/Planner buttons, and the Assistant's cart tools all go through the
+ * same snapping and delete-at-zero rules (Basket vs. Cart addendum, Section 5:
+ * a shared service, not a path that only exists because the model asked).
+ */
+export async function setCartItemQuantity(cartId: string, productId: string, quantity: number) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) throw new Error("That product doesn't exist.");
+
+  if (quantity <= 0) {
+    await prisma.cartItem.deleteMany({ where: { cartId, productId } });
+    return { productId, name: product.name, quantity: 0 };
+  }
+
+  const above = Math.max(0, quantity - product.minOrderQty);
+  const snapped = product.minOrderQty + Math.ceil(above / product.stepQty) * product.stepQty;
+  await prisma.cartItem.upsert({
+    where: { cartId_productId: { cartId, productId } },
+    update: { quantity: snapped },
+    create: { cartId, productId, quantity: snapped },
+  });
+  return { productId, name: product.name, quantity: snapped };
+}

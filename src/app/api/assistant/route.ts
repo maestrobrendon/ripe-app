@@ -7,14 +7,27 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getActiveBasketReadOnly } from "@/lib/basket";
 import {
+  createThread,
+  getOwnedThread,
+  appendMessage,
+  deriveTitle,
+  recentMessagesForModel,
+} from "@/lib/assistant-threads";
+import type { AssistantThreadSource } from "@/generated/prisma/enums";
+import {
   toolGetBasketContents,
   toolAddItemToBasket,
+  toolAddItemsToBasket,
   toolRemoveItemFromBasket,
   toolAdjustItemQuantity,
   toolSwitchActiveBasket,
   toolCreateBasket,
   toolGetOrderStatus,
   toolGetDeliveryZone,
+  toolGetCartContents,
+  toolAddItemsToCart,
+  toolRemoveItemFromCart,
+  toolAdjustCartItemQuantity,
   listBasketsForContext,
 } from "@/lib/assistant-tools";
 
@@ -24,21 +37,18 @@ import {
 // this file when Google moves on again.
 const MODEL_ID = process.env.ASSISTANT_MODEL_ID || "gemini-3.8-flash";
 
-type ChatTurn = { role: "user" | "assistant"; content: string };
-
-function isChatTurn(v: unknown): v is ChatTurn {
-  return (
-    typeof v === "object" &&
-    v !== null &&
-    ((v as ChatTurn).role === "user" || (v as ChatTurn).role === "assistant") &&
-    typeof (v as ChatTurn).content === "string"
-  );
-}
+const VALID_SOURCES: AssistantThreadSource[] = [
+  "ASSISTANT",
+  "BASKET_SHEET",
+  "CART_SHEET",
+  "MEAL_PLANNER",
+  "PRODUCE_PLANNER",
+];
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Sign in to use the assistant." }, { status: 401 });
+    return NextResponse.json({ error: "Sign in to use Kachi." }, { status: 401 });
   }
 
   // Our own budget on top of Gemini's: cheap to check, and it means most
@@ -48,7 +58,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply: "Give me a second and try again." }, { status: 429 });
   }
 
-  let body: { message?: unknown; history?: unknown };
+  let body: { message?: unknown; threadId?: unknown; source?: unknown; contextRef?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -58,10 +68,24 @@ export async function POST(request: Request) {
   const message = typeof body.message === "string" ? body.message.trim().slice(0, 2000) : "";
   if (!message) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
-  const history = (Array.isArray(body.history) ? body.history : [])
-    .filter(isChatTurn)
-    .slice(-20)
-    .map((t) => ({ role: t.role, content: t.content.slice(0, 2000) }));
+  const requestedThreadId = typeof body.threadId === "string" ? body.threadId : null;
+  const source =
+    typeof body.source === "string" && VALID_SOURCES.includes(body.source as AssistantThreadSource)
+      ? (body.source as AssistantThreadSource)
+      : "ASSISTANT";
+  const contextRef = typeof body.contextRef === "string" ? body.contextRef.slice(0, 200) : null;
+
+  let thread = requestedThreadId ? await getOwnedThread(user.id, requestedThreadId) : null;
+  const history = thread ? await recentMessagesForModel(thread.id, 20) : [];
+  if (!thread) {
+    thread = await getOwnedThread(user.id, (await createThread(user.id, { title: deriveTitle(message), source, contextRef })).id);
+  }
+  if (!thread) {
+    return NextResponse.json({ error: "Couldn't start that chat." }, { status: 500 });
+  }
+  const threadId = thread.id;
+
+  await appendMessage(threadId, "USER", message);
 
   const [products, baskets, activeBasket] = await Promise.all([
     prisma.product.findMany({
@@ -83,9 +107,9 @@ export async function POST(request: Request) {
   // Every rule the model gets is one the tools below re-check independently;
   // this prompt is context and a nudge, never the actual authorization
   // boundary. See assistant-tools.ts for the boundary that actually matters.
-  const systemPrompt = `You are Basket's ordering assistant. Never call yourself "AI", a "bot", or a "chatbot" to the customer; if asked what you are, say you're Basket's assistant.
+  const systemPrompt = `You are Kachi, Basket's ordering assistant. Never call yourself "AI", a "bot", or a "chatbot" to the customer — you're Kachi.
 
-You help with exactly one thing: this signed-in customer's own basket(s) and cart. Use the tools you're given to look things up and make real changes — don't just describe what you would do, actually call the tool.
+You help with exactly one thing: this signed-in customer's own basket(s) and cart. Use the tools you're given to look things up and make real changes — don't just describe what you would do, actually call the tool. Prefer the batch tools (add_items_to_basket, add_items_to_cart) when adding more than one product, so it costs one call, not several.
 
 Recipes and general "what should I cook" guidance are a separate part of the app, not your job. If asked, say so briefly and point them to Recipes.
 
@@ -98,6 +122,8 @@ ${basketLines}
 
 Product catalogue (id :: name (unit, min order, step)):
 ${catalogueLines}`;
+
+  const itemsShape = z.array(z.object({ product_id: z.string(), quantity: z.number().positive() }));
 
   const tools = {
     get_basket_contents: tool({
@@ -114,6 +140,11 @@ ${catalogueLines}`;
         quantity: z.number().positive(),
       }),
       execute: async (input) => toolAddItemToBasket(user, input),
+    }),
+    add_items_to_basket: tool({
+      description: "Add several products to one of this customer's own baskets in one call.",
+      inputSchema: z.object({ basket_id: z.string(), items: itemsShape }),
+      execute: async (input) => toolAddItemsToBasket(user, input),
     }),
     remove_item_from_basket: tool({
       description: "Remove a product entirely from one of this customer's own baskets.",
@@ -151,6 +182,26 @@ ${catalogueLines}`;
       inputSchema: z.object({}),
       execute: async () => toolGetDeliveryZone(user),
     }),
+    get_cart_contents: tool({
+      description: "Read the items in this customer's one-off cart (separate from their baskets).",
+      inputSchema: z.object({}),
+      execute: async () => toolGetCartContents(user),
+    }),
+    add_items_to_cart: tool({
+      description: "Add one or more products to this customer's cart, on top of whatever quantity is already there.",
+      inputSchema: z.object({ items: itemsShape }),
+      execute: async (input) => toolAddItemsToCart(user, input),
+    }),
+    remove_item_from_cart: tool({
+      description: "Remove a product entirely from this customer's cart.",
+      inputSchema: z.object({ product_id: z.string() }),
+      execute: async (input) => toolRemoveItemFromCart(user, input),
+    }),
+    adjust_cart_item_quantity: tool({
+      description: "Set a product in this customer's cart to an exact quantity.",
+      inputSchema: z.object({ product_id: z.string(), quantity: z.number().min(0) }),
+      execute: async (input) => toolAdjustCartItemQuantity(user, input),
+    }),
   };
 
   try {
@@ -162,16 +213,23 @@ ${catalogueLines}`;
       stopWhen: stepCountIs(6),
     });
 
-    return NextResponse.json({ reply: result.text || "Done." });
+    const reply = result.text || "Done.";
+    const toolCallSummary = result.steps
+      ?.flatMap((s) => s.toolCalls ?? [])
+      .map((c) => ({ tool: c.toolName, input: c.input }));
+    await appendMessage(threadId, "ASSISTANT", reply, toolCallSummary?.length ? toolCallSummary : undefined);
+
+    return NextResponse.json({ reply, threadId, title: thread.title });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     if (/429|rate.?limit|quota/i.test(detail)) {
-      return NextResponse.json(
-        { reply: "I'm a little busy right now — give me a second and try again." },
-        { status: 429 },
-      );
+      const reply = "I'm a little busy right now — give me a second and try again.";
+      await appendMessage(threadId, "ASSISTANT", reply);
+      return NextResponse.json({ reply, threadId, title: thread.title }, { status: 429 });
     }
     console.error(JSON.stringify({ scope: "assistant-route", userId: user.id, error: detail }));
-    return NextResponse.json({ reply: "Something went wrong on my side. Try again in a moment." }, { status: 500 });
+    const reply = "Something went wrong on my side. Try again in a moment.";
+    await appendMessage(threadId, "ASSISTANT", reply);
+    return NextResponse.json({ reply, threadId, title: thread.title }, { status: 500 });
   }
 }
