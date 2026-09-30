@@ -12,6 +12,7 @@ import { LinkButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { BasketEstimator } from "@/components/basket-estimator";
 import { HeroIllustration } from "@/components/hero-illustration";
+import { SplitReveal } from "@/components/motion/split-reveal";
 import { getHeroBasketCandidates } from "@/lib/starter-basket";
 import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
 import type { Prisma } from "@/generated/prisma/client";
@@ -66,9 +67,9 @@ export default async function LandingPage() {
       <section className="bg-sky-wash">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-2 lg:gap-16 lg:py-14">
           <div>
-            <h1 className="text-display-xl text-carbon">
+            <SplitReveal className="text-display-xl text-carbon">
               Whatever the goal, there&rsquo;s a basket.
-            </h1>
+            </SplitReveal>
 
             <p className="mt-6 max-w-lg text-base text-carbon/80 sm:text-lg">
               Shop anytime, no subscription needed to get started. Set a basket that shows up on

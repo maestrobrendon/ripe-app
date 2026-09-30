@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { useDestination } from "@/components/destination-provider";
 import { DestinationPill, DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
@@ -9,7 +9,8 @@ import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { addToStandingBasket } from "@/app/basket/actions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
+import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { flyToCart } from "@/components/ui/fly-to-cart";
 
 type Mode = "one-time" | "subscribe";
 
@@ -40,10 +41,10 @@ export function BuyBox({
   const headlinePrice = hasMemberSaving ? product.memberPrice : product.standardPrice;
 
   const step = product.stepQty;
-  const dec = () => setQty((q) => Math.max(product.minOrderQty, q - step));
-  const inc = () => setQty((q) => q + step);
+  const ctaRef = useRef<HTMLButtonElement>(null);
 
   const addOneTime = async () => {
+    if (ctaRef.current) flyToCart(ctaRef.current, product.imageEmoji);
     if (dest.signedIn && dest.destination.type === "basket") {
       await addToDestination(dest.destination, product.id, qty);
       dest.announceAdd({
@@ -115,22 +116,23 @@ export function BuyBox({
       {/* Quantity */}
       <div className="mt-4">
         <p className="mb-1 text-xs font-medium text-muted">Quantity</p>
-        <div className="flex w-fit items-center gap-1 rounded-full border border-border px-1">
-          <button onClick={dec} className="h-9 w-9 rounded-full text-lg" aria-label="Reduce quantity">
-            <Icon name="minus" size={16} />
-          </button>
-          <span className="w-10 text-center text-sm">{qty}</span>
-          <button onClick={inc} className="h-9 w-9 rounded-full text-lg" aria-label="Increase quantity">
-            <Icon name="plus" size={16} />
-          </button>
-        </div>
+        <QuantityStepper
+          variant="hero"
+          alwaysStepper
+          quantity={qty}
+          min={product.minOrderQty}
+          step={step}
+          label={name}
+          onChange={setQty}
+          className="w-fit"
+        />
       </div>
 
       {/* CTA */}
       <div className="mt-4">
         {mode === "one-time" ? (
           <div className="flex items-center gap-1.5">
-            <Button onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
+            <Button ref={ctaRef} onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
               {dest.signedIn && dest.destination.type === "basket" ? `Add to ${dest.destination.label}` : "Add to cart"}
             </Button>
             <DestinationOverrideChevron onPick={addOverride} />
@@ -142,7 +144,7 @@ export function BuyBox({
             size="lg"
             className="w-full uppercase tracking-wide"
           >
-            {isPending ? "Adding." : subscribeLabel}
+            {isPending ? "Adding…" : subscribeLabel}
           </Button>
         )}
       </div>

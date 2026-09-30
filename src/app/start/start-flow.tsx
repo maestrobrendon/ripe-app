@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
+import { press, spring } from "@/lib/motion/tokens";
 import { GOALS } from "@/lib/assistant";
 import { PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS, formatNaira } from "@/lib/format";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
@@ -11,6 +13,7 @@ import { SITE_NAME } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/ui/password-field";
 import { StepIndicator } from "@/components/step-indicator";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { createAccountFromOnboarding } from "./actions";
 import { Icon } from "@/components/ui/icon";
 
@@ -60,7 +63,12 @@ export function StartFlow({
   next: string | null;
 }) {
   // Land back on the account screen if validation bounced us here.
-  const [step, setStep] = useState(error ? LAST_STEP : 0);
+  const [[step, direction], setStepState] = useState<[number, 1 | -1]>([error ? LAST_STEP : 0, 1]);
+  const setStep = (updater: number | ((s: number) => number)) =>
+    setStepState(([s]) => {
+      const next = typeof updater === "function" ? (updater as (s: number) => number)(s) : updater;
+      return [next, next >= s ? 1 : -1];
+    });
   const [data, setData] = useState<Data>({
     goal: null,
     produce: [],
@@ -153,7 +161,21 @@ export function StartFlow({
         </div>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 overflow-hidden">
+      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+      <motion.div
+        key={step}
+        custom={direction}
+        variants={{
+          enter: (d: number) => ({ x: 40 * d, opacity: 0 }),
+          center: { x: 0, opacity: 1 },
+          exit: (d: number) => ({ x: -40 * d, opacity: 0 }),
+        }}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={spring.smooth}
+      >
         {step === 0 && (
           <div>
             <h1 className="text-heading">Let&rsquo;s get you set up</h1>
@@ -172,6 +194,7 @@ export function StartFlow({
               {GOALS.map((g) => (
                 <OptionCard
                   key={g.slug}
+                  groupId="goal"
                   emoji={GOAL_EMOJI[g.slug]}
                   title={g.label}
                   sub={g.description}
@@ -236,6 +259,7 @@ export function StartFlow({
               ).map(([value, label, emoji]) => (
                 <OptionCard
                   key={value}
+                  groupId="dietary"
                   emoji={emoji}
                   title={label}
                   selected={data.dietary === value}
@@ -259,7 +283,7 @@ export function StartFlow({
         {step === 5 && (
           <div className="py-16 text-center">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-border border-t-carbon" />
-            <p className="mt-4 text-sm text-muted">Saving your answers</p>
+            <p className="mt-4 text-sm text-muted">Saving your answers…</p>
           </div>
         )}
 
@@ -344,6 +368,7 @@ export function StartFlow({
               {SHOPPING_WINDOW_DAYS.map((d) => (
                 <OptionCard
                   key={d.day}
+                  groupId="window-day"
                   emoji="📦"
                   title={d.label}
                   sub={d.cutoffCopy}
@@ -415,6 +440,8 @@ export function StartFlow({
             </p>
           </Screen>
         )}
+      </motion.div>
+      </AnimatePresence>
       </div>
 
       {step < LAST_STEP && step !== 5 && (
@@ -450,27 +477,40 @@ function OptionCard({
   sub,
   selected,
   onClick,
+  groupId,
 }: {
   emoji: string;
   title: string;
   sub?: string;
   selected: boolean;
   onClick: () => void;
+  /** Options in the same question share this, so the selection ring slides between them. */
+  groupId?: string;
 }) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
+      whileTap={{ scale: press.scaleLarge }}
+      transition={spring.snappy}
+      className={`relative flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
         selected ? "border-border bg-lavender" : "border-border bg-paper-white hover:bg-sky-wash"
       }`}
     >
-      <span className="text-2xl leading-none">{emoji}</span>
-      <span className="min-w-0">
+      {selected && groupId && (
+        <motion.span
+          layoutId={`${groupId}-ring`}
+          transition={spring.indicator}
+          className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-carbon"
+          aria-hidden
+        />
+      )}
+      <span className="relative text-2xl leading-none">{emoji}</span>
+      <span className="relative min-w-0">
         <span className="block text-sm font-medium">{title}</span>
         {sub && <span className="mt-0.5 block text-xs text-muted">{sub}</span>}
       </span>
-    </button>
+    </motion.button>
   );
 }
 
@@ -489,24 +529,28 @@ function Counter({
     <div className="flex items-center justify-between rounded-xl border border-border p-4">
       <span className="text-sm font-medium">{label}</span>
       <div className="flex items-center gap-3">
-        <button
+        <motion.button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
+          whileTap={{ scale: press.scale }}
+          transition={spring.snappy}
           aria-label={`Fewer ${label.toLowerCase()}`}
           className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-lg disabled:opacity-30"
         >
           <Icon name="minus" size={16} />
-        </button>
-        <span className="w-5 text-center text-sm font-semibold">{value}</span>
-        <button
+        </motion.button>
+        <RollingNumber value={value} className="w-5 text-center text-sm font-semibold" />
+        <motion.button
           type="button"
           onClick={() => onChange(Math.min(12, value + 1))}
+          whileTap={{ scale: press.scale }}
+          transition={spring.snappy}
           aria-label={`More ${label.toLowerCase()}`}
           className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-lg"
         >
           <Icon name="plus" size={16} />
-        </button>
+        </motion.button>
       </div>
     </div>
   );

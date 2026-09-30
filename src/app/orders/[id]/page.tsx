@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { timingSafeEqual } from "crypto";
+import { Check } from "@phosphor-icons/react/dist/ssr";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { ProductImage } from "@/components/product-image";
@@ -49,22 +50,28 @@ export default async function OrderPage({
       </p>
 
       <div className="mt-8 rounded-card border border-border bg-surface p-6">
-        <ol className="flex items-center justify-between">
+        <ol className="flex items-start justify-between">
           {ORDER_STATUS_STEPS.map((status, i) => (
             <li key={status} className="relative flex flex-1 flex-col items-center text-center">
+              {/* Connector sits between this circle's centre and the next one's,
+                  vertically centred on the circle (top: half its height) — not
+                  layered over the circles themselves. */}
+              {i < ORDER_STATUS_STEPS.length - 1 && (
+                <span
+                  aria-hidden
+                  className={`absolute top-4 left-1/2 h-px w-full ${i < currentIndex ? "bg-carbon" : "bg-border"}`}
+                />
+              )}
               <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
-                  i <= currentIndex ? "bg-carbon text-white" : "border border-border text-muted"
+                className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+                  i <= currentIndex ? "bg-carbon text-white" : "border border-border bg-surface text-muted"
                 }`}
               >
-                {i <= currentIndex ? "✓" : i + 1}
+                {i <= currentIndex ? <Check size={14} weight="bold" aria-hidden /> : i + 1}
               </span>
               <span className={`mt-2 text-xs ${i <= currentIndex ? "font-medium" : "text-muted"}`}>
                 {ORDER_STATUS_LABEL[status]}
               </span>
-              {i < ORDER_STATUS_STEPS.length - 1 && (
-                <span className={`absolute mt-4 h-px w-full ${i < currentIndex ? "bg-carbon" : "bg-border"}`} />
-              )}
             </li>
           ))}
         </ol>

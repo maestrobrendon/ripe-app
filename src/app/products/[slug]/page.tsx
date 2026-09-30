@@ -9,6 +9,7 @@ import { ProductAccordion } from "@/components/product-accordion";
 import { BrandStoryBand } from "@/components/brand-story-band";
 import { CompleteYourBasket, type CrossSellProduct } from "@/components/complete-your-basket";
 import { ProductImage } from "@/components/product-image";
+import { flavourFor } from "@/lib/flavour";
 
 export default async function ProductPage({
   params,
@@ -45,6 +46,8 @@ export default async function ProductPage({
     ...toAddable(p),
     ratingAvg: p.ratingAvg,
     ratingCount: p.ratingCount,
+    category: p.category,
+    tags: p.tags,
   }));
 
   return (
@@ -61,6 +64,7 @@ export default async function ProductPage({
               publicId={product.cloudinaryPublicId}
               alt={product.name}
               emoji={product.imageEmoji}
+              flavour={flavourFor(product.category, product.tags)}
               rounded="rounded-3xl"
               sizes="(min-width: 1024px) 480px, 90vw"
               className="aspect-square w-full border border-border"

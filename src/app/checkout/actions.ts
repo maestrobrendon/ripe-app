@@ -113,6 +113,15 @@ export async function placeOrder(input: CheckoutInput) {
     },
   });
 
+  // A free-trial basket gets exactly one order, ever; this is that moment.
+  // A subscriber basket recurs indefinitely and never sets this.
+  if (basket?.isFreeTrial) {
+    await prisma.basket.update({
+      where: { id: basket.id },
+      data: { trialDeliveredAt: deliveryDate },
+    });
+  }
+
   const activeCart = await getOrCreateCart();
   await clearCart(activeCart.id);
 

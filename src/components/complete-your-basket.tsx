@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { ProductImage } from "@/components/product-image";
+import { flyToCart } from "@/components/ui/fly-to-cart";
+import { press, spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
+import { flavourFor } from "@/lib/flavour";
+import type { ProductCategory } from "@/generated/prisma/enums";
 
 export type CrossSellProduct = AddableProduct & {
   ratingAvg: number | null;
   ratingCount: number;
+  category: ProductCategory;
+  tags: string[];
 };
 
 function Stars({ avg }: { avg: number }) {
@@ -33,6 +40,7 @@ function Card({ product }: { product: CrossSellProduct }) {
           publicId={product.cloudinaryPublicId}
           alt={product.name}
           emoji={product.imageEmoji}
+          flavour={flavourFor(product.category, product.tags)}
           className="h-24 w-full sm:h-28"
           emojiClassName="text-4xl sm:text-5xl"
           sizes="(min-width: 640px) 224px, 160px"
@@ -62,12 +70,17 @@ function Card({ product }: { product: CrossSellProduct }) {
             Choose options
           </Link>
         ) : (
-          <button
-            onClick={() => cart.setQuantity(product, (cart.items.find((i) => i.productId === product.id)?.quantity ?? 0) + product.minOrderQty)}
+          <motion.button
+            whileTap={{ scale: press.scale }}
+            transition={spring.snappy}
+            onClick={(e) => {
+              flyToCart(e.currentTarget, product.imageEmoji);
+              cart.setQuantity(product, (cart.items.find((i) => i.productId === product.id)?.quantity ?? 0) + product.minOrderQty);
+            }}
             className="w-full rounded-full border border-carbon px-4 py-2 text-xs font-medium uppercase tracking-wide text-carbon hover:bg-sky-wash"
           >
             {inCart ? "Add another" : "Add to cart"}
-          </button>
+          </motion.button>
         )}
       </div>
     </div>

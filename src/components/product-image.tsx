@@ -39,6 +39,7 @@ export function ProductImage({
   className = "",
   emojiClassName = "text-6xl",
   aspectRatio = "1:1",
+  flavour = "bg-sky-wash",
 }: {
   publicId: string | null | undefined;
   alt: string;
@@ -49,13 +50,15 @@ export function ProductImage({
   emojiClassName?: string;
   /** Cloudinary crop ratio. Match it to the container's own aspect. */
   aspectRatio?: string;
+  /** Category sticker wash behind the emoji/photo, e.g. from `flavourFor()`. */
+  flavour?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const showPhoto = Boolean(publicId) && !failed;
 
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden bg-sky-wash ${rounded} ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden ${flavour} ${rounded} ${className}`}
     >
       {showPhoto ? (
         <Image

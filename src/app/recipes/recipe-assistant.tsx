@@ -17,7 +17,7 @@ type AssistantReply =
   | { type: "fallback"; message: string };
 
 const OPENING =
-  "Tell me what you have, or what you're cooking for. I'm [ASSISTANT_LABEL], and I only know about food and recipes here.";
+  "Tell me what you have, or what you're cooking for. I'm Kachi, and I only know about food and recipes here.";
 
 export function RecipeAssistant({
   defaultServings,
@@ -94,7 +94,7 @@ export function RecipeAssistant({
 
   return (
     <div className="rounded-card-lg border border-border bg-surface p-5 sm:p-8">
-      <h3 className="text-heading">Ask [ASSISTANT_LABEL]</h3>
+      <h3 className="text-heading">Ask Kachi</h3>
       <p className="mt-1 text-muted">Food and recipes only, built from what we stock.</p>
 
       <div className="mt-5 space-y-3">

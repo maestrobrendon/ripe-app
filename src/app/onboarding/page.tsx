@@ -28,7 +28,24 @@ export default async function OnboardingPage({
         These fine-tune what Ideas suggests. Household size, produce preferences and your
         basket day live on your account page.
       </p>
-      <OnboardingFlow products={products} next={safeNext} />
+      <OnboardingFlow
+        products={products}
+        next={safeNext}
+        initial={
+          user.preferences
+            ? {
+                primaryGoal: user.preferences.primaryGoal ?? undefined,
+                householdType: user.preferences.householdType ?? undefined,
+                weeklyBudgetBand: user.preferences.weeklyBudgetBand ?? undefined,
+                cookTimeAvailable: user.preferences.cookTimeAvailable ?? undefined,
+                dietaryNotes: user.preferences.dietaryNotes ?? undefined,
+                favoriteProductIds: user.preferences.favoriteProductIds,
+                mealFormatPreference: user.preferences.mealFormatPreference,
+                shoppingStyle: user.preferences.shoppingStyle ?? undefined,
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

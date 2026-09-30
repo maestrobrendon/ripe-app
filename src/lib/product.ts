@@ -25,5 +25,7 @@ export function toCardData(p: Product): ProductCardData {
     ...toAddable(p),
     inSeason: p.inSeason,
     description: p.description,
+    category: p.category,
+    tags: p.tags,
   };
 }

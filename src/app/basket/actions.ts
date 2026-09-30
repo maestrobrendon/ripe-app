@@ -104,6 +104,34 @@ export async function checkoutStandingBasket(basketId?: string) {
   redirect(`/checkout?source=basket&basketId=${basket.id}`);
 }
 
+/**
+ * "Buy these once": copies a delivered trial basket's items into the cart
+ * without touching the basket itself or going straight to checkout, so the
+ * customer lands on the cart screen able to add or remove things first.
+ */
+export async function copyBasketToCart(basketId: string) {
+  const user = await requireUser();
+  const basket = await prisma.basket.findFirst({
+    where: { id: basketId, userId: user.id },
+    include: { items: true },
+  });
+  if (!basket || basket.items.length === 0) redirect("/basket");
+
+  const cart = await getOrCreateCart();
+  for (const item of basket.items) {
+    const existing = await prisma.cartItem.findUnique({
+      where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
+    });
+    await prisma.cartItem.upsert({
+      where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
+      update: { quantity: (existing?.quantity ?? 0) + item.quantity },
+      create: { cartId: cart.id, productId: item.productId, quantity: item.quantity },
+    });
+  }
+
+  redirect("/cart");
+}
+
 export async function setBasketItemQuantity(basketId: string | undefined, productId: string, quantity: number) {
   const user = await requireUser();
   const basket = await resolveBasket(user, basketId);

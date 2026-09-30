@@ -4,10 +4,10 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { CurrentUser } from "@/lib/session";
-import { MEAL_PLAN_DAYS, type MealPlanDay, type MealPlanDayEntry } from "@/lib/meal-plan-types";
+import { MEAL_PLAN_DAYS, parseDays, type MealPlanDay, type MealPlanDayEntry } from "@/lib/meal-plan-types";
 
-export { MEAL_PLAN_DAYS, parseDays } from "@/lib/meal-plan-types";
-export type { MealPlanDay, MealPlanDayEntry } from "@/lib/meal-plan-types";
+export { MEAL_PLAN_DAYS, MEAL_SLOTS, MEAL_SLOT_LABEL, parseDays, parseElsewhereGot } from "@/lib/meal-plan-types";
+export type { MealPlanDay, MealPlanDayEntry, MealSlotKey, MealRef } from "@/lib/meal-plan-types";
 
 /** The Monday (UTC) of the current week, used as the plan's stable key. */
 export function currentWeekStart(now: Date = new Date()): Date {
@@ -44,6 +44,10 @@ async function candidateRecipes(primaryGoal: string | null | undefined) {
  * creates the plan under a subscriber's own account the first time they load
  * the builder for a given week. Defaults to the current week; the Meal
  * Planner's week-strip navigation passes an explicit one.
+ *
+ * When the account has "use this timetable every week" on, a new week clones
+ * the most recent prior week's timetable (same recipes/own meals in the same
+ * slots) instead of picking fresh suggestions — that's the whole feature.
  */
 export async function getOrCreateWeeklyPlan(user: CurrentUser, weekStartDate: Date = currentWeekStart()) {
   const existing = await prisma.weeklyMealPlan.findUnique({
@@ -51,13 +55,28 @@ export async function getOrCreateWeeklyPlan(user: CurrentUser, weekStartDate: Da
   });
   if (existing) return existing;
 
+  if (user.mealPlanRepeats) {
+    const previous = await prisma.weeklyMealPlan.findFirst({
+      where: { userId: user.id, weekStartDate: { lt: weekStartDate } },
+      orderBy: { weekStartDate: "desc" },
+    });
+    if (previous) {
+      const days = parseDays(previous.days).map((d) => ({ ...d, status: "PLANNED" as const }));
+      return prisma.weeklyMealPlan.create({
+        data: { userId: user.id, weekStartDate, days: days as object as never },
+      });
+    }
+  }
+
   const pool = await candidateRecipes(user.preferences?.primaryGoal);
-  const days: MealPlanDayEntry[] = MEAL_PLAN_DAYS.map((day) => ({
-    day,
-    recipeId: pickRecipeFor(day, pool),
-    suggestion: null,
-    status: "PLANNED",
-  }));
+  const days: MealPlanDayEntry[] = MEAL_PLAN_DAYS.map((day) => {
+    const recipeId = pickRecipeFor(day, pool);
+    return {
+      day,
+      slots: { breakfast: null, lunch: null, dinner: recipeId ? { kind: "recipe", recipeId } : null },
+      status: "PLANNED",
+    };
+  });
 
   return prisma.weeklyMealPlan.create({
     data: { userId: user.id, weekStartDate, days: days as object as never },

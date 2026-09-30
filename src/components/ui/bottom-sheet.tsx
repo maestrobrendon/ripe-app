@@ -14,11 +14,14 @@ export function BottomSheet({
   onClose,
   title,
   children,
+  desktopDialog = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  /** From lg up, open as a centred dialog instead of a full-width sheet. */
+  desktopDialog?: boolean;
 }) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -61,7 +64,11 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="absolute inset-x-0 bottom-0 flex max-h-[85svh] flex-col overflow-hidden rounded-t-card-lg border-t border-border bg-surface"
+        className={`absolute inset-x-0 bottom-0 flex max-h-[85svh] flex-col overflow-hidden rounded-t-card-lg border-t border-border bg-surface ${
+          desktopDialog
+            ? "lg:inset-x-auto lg:bottom-auto lg:left-1/2 lg:top-1/2 lg:w-full lg:max-w-md lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-card-lg lg:border"
+            : ""
+        }`}
         style={{
           transform: `translateY(${dragY}px)`,
           transition: isDragging ? "none" : "transform 200ms ease-out",

@@ -1,4 +1,14 @@
 import { STREAK_MILESTONES, type StreakView } from "@/lib/streak-config";
+import { CountUp } from "@/components/motion/count-up";
+import { StreakRing } from "@/components/motion/streak-ring";
+
+/** Fraction of the way from the previous milestone to the next one, for the ring. */
+function ringProgress(view: StreakView): number {
+  if (view.nextMilestoneWeeks == null) return 1;
+  const prev = [...STREAK_MILESTONES].reverse().find((m) => m.weeks <= view.currentStreakWeeks)?.weeks ?? 0;
+  const span = view.nextMilestoneWeeks - prev;
+  return span > 0 ? (view.currentStreakWeeks - prev) / span : 1;
+}
 
 function weeksLabel(n: number): string {
   return `${n}-week streak`;
@@ -29,18 +39,21 @@ export function StreakBadge({ view }: { view: StreakView }) {
 export function StreakCard({ view }: { view: StreakView }) {
   const line = nextRewardLine(view);
   return (
-    <div className="rounded-card border border-border bg-surface p-4">
-      <p className="text-xs text-muted">Weekly streak</p>
-      <p className="text-2xl font-semibold">
-        {view.currentStreakWeeks} {view.currentStreakWeeks === 1 ? "week" : "weeks"}
-      </p>
-      <p className="text-xs text-muted">
-        {view.currentStreakWeeks === 0
-          ? "A completed order each week builds your streak. Skips do not break it."
-          : line
-          ? line
-          : `Longest run: ${view.longestStreakWeeks} weeks`}
-      </p>
+    <div className="flex items-center gap-4 rounded-card border border-border bg-surface p-4">
+      <StreakRing progress={ringProgress(view)} label={`${view.currentStreakWeeks} week streak`} />
+      <div className="min-w-0">
+        <p className="text-xs text-muted">Weekly streak</p>
+        <p className="text-2xl font-semibold">
+          <CountUp value={view.currentStreakWeeks} format="weeks" />
+        </p>
+        <p className="text-xs text-muted">
+          {view.currentStreakWeeks === 0
+            ? "A completed order each week builds your streak. Skips do not break it."
+            : line
+            ? line
+            : `Longest run: ${view.longestStreakWeeks} weeks`}
+        </p>
+      </div>
     </div>
   );
 }

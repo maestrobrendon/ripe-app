@@ -14,7 +14,14 @@ export async function listThreadsForUser(userId: string) {
   return prisma.assistantThread.findMany({
     where: { userId },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, source: true, contextRef: true, updatedAt: true },
+    select: {
+      id: true,
+      title: true,
+      source: true,
+      contextRef: true,
+      updatedAt: true,
+      _count: { select: { messages: { where: { role: { in: ["USER", "ASSISTANT"] } } } } },
+    },
   });
 }
 

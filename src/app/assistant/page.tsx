@@ -1,19 +1,27 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { AssistantChat } from "./assistant-chat";
+import { getUserBaskets } from "@/lib/basket";
+import { basketDisplayNames } from "@/lib/kachi-types";
+import { KachiChat } from "./assistant-chat";
 
 export const metadata = { title: "Kachi. Basket" };
 
 /**
- * Its own top-level tab, full screen on every breakpoint (per the Mobile Nav
- * and AI Agent addendum, Section 1 and the follow-up build note) — the only
- * surface in the app where a conversation can mutate a basket or cart. See
- * src/lib/assistant-tools.ts for the tool functions and their authorization
- * checks, and src/app/api/assistant/route.ts for the model wiring.
+ * Kachi: opens in "Just chatting" every time (nothing can change), and only
+ * acts on a basket or the cart once the customer picks one with the mode
+ * pill. See src/app/api/assistant/route.ts for how each mode is scoped.
  */
 export default async function AssistantPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/assistant");
 
-  return <AssistantChat />;
+  const baskets = await getUserBaskets(user.id);
+  const names = basketDisplayNames(baskets);
+
+  return (
+    <KachiChat
+      firstName={user.name.trim().split(/\s+/)[0] || "there"}
+      baskets={baskets.map((b) => ({ id: b.id, name: names.get(b.id) ?? "Your basket" }))}
+    />
+  );
 }

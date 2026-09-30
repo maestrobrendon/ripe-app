@@ -8,7 +8,6 @@ import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { Icon } from "@/components/ui/icon";
-import { HomeCartTabs } from "@/components/home-cart-tabs";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { GetIdeasChat } from "@/components/get-ideas-chat";
 
@@ -21,11 +20,12 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10 sm:px-6">
-      {/* "/" rather than "/basket" directly: a guest can reach this cart with
-          no account, and "/" already sends a signed-in visitor to "/basket"
-          on its own without forcing a login redirect on a guest here. */}
-      <HomeCartTabs homeHref="/" />
-
+      {signedIn && (
+        <Link href="/basket" className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted">
+          <Icon name="caretDown" size={14} className="rotate-90" />
+          Basket
+        </Link>
+      )}
       <h1 className="text-2xl font-semibold sm:text-3xl">Your cart</h1>
 
       {cart.items.length === 0 ? (

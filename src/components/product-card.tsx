@@ -8,13 +8,17 @@ import { DestinationOverrideChevron, addToDestination } from "@/components/desti
 import { setBasketItemQuantity } from "@/app/basket/actions";
 import { ProductImage } from "@/components/product-image";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { flyToCart } from "@/components/ui/fly-to-cart";
 import { formatNaira } from "@/lib/format";
-import { Icon } from "@/components/ui/icon";
+import { flavourFor } from "@/lib/flavour";
+import type { ProductCategory } from "@/generated/prisma/enums";
 
 export type ProductCardData = AddableProduct & {
   inSeason: boolean;
   description: string | null;
+  category: ProductCategory;
+  tags: string[];
 };
 
 export function ProductCard({ product }: { product: ProductCardData }) {
@@ -93,6 +97,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           publicId={product.cloudinaryPublicId}
           alt={product.name}
           emoji={product.imageEmoji}
+          flavour={flavourFor(product.category, product.tags)}
           className="h-28 w-full sm:h-32"
           emojiClassName="text-5xl sm:text-6xl"
           sizes="(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw"
@@ -127,42 +132,18 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </span>
       </div>
 
-      <div className="mt-auto">
-        {quantity === 0 ? (
-          <div className="flex items-center gap-1.5">
-            <Button
-              disabled={isLoading}
-              onClick={() => change(product.minOrderQty)}
-              size="sm"
-              className="tap-target w-full"
-            >
-              + Add
-            </Button>
-            <DestinationOverrideChevron onPick={addOverride} />
-          </div>
-        ) : (
-          <div className="flex items-center justify-between rounded-full border border-carbon px-1 py-1">
-            <button
-              disabled={isLoading}
-              onClick={() => change(quantity - product.stepQty)}
-              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-carbon"
-              aria-label={`Reduce ${product.name}`}
-            >
-              <Icon name="minus" size={16} />
-            </button>
-            <span className="text-xs font-medium sm:text-sm">
-              {quantity} {goingToBasket ? `in ${dest.destination.type === "basket" ? dest.destination.label : "basket"}` : "in cart"}
-            </span>
-            <button
-              disabled={isLoading}
-              onClick={() => change(quantity + product.stepQty)}
-              className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-carbon"
-              aria-label={`Add ${product.name}`}
-            >
-              <Icon name="plus" size={16} />
-            </button>
-          </div>
-        )}
+      <div className="mt-auto flex items-center gap-1.5">
+        <QuantityStepper
+          quantity={quantity}
+          min={product.minOrderQty}
+          step={product.stepQty}
+          label={product.name}
+          loading={isLoading}
+          suffix={goingToBasket ? `in ${dest.destination.type === "basket" ? dest.destination.label : "basket"}` : "in cart"}
+          onAddFrom={(el) => flyToCart(el, product.imageEmoji)}
+          onChange={change}
+        />
+        <DestinationOverrideChevron onPick={addOverride} />
       </div>
     </Card>
   );

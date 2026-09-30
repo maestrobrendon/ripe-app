@@ -95,7 +95,10 @@ export function CoachWidget() {
   return (
     <>
       {open && (
-        <div className="fixed inset-x-4 bottom-24 z-50 flex max-h-[70svh] flex-col overflow-hidden rounded-card-lg border border-border bg-surface sm:inset-x-auto sm:right-5 sm:w-96">
+        <div
+          className="fixed inset-x-4 z-(--z-overlay) flex max-h-[70svh] flex-col overflow-hidden rounded-card-lg border border-border bg-surface sm:inset-x-auto sm:right-5 sm:w-96"
+          style={{ bottom: "calc(var(--mobile-nav-h) + 4.5rem)" }}
+        >
           {/* Progress header: level, points, and the bar to the next level */}
           <div className="shrink-0 bg-carbon p-4 text-white">
             <div className="flex items-start justify-between gap-3">
@@ -258,8 +261,8 @@ export function CoachWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close the Basket coach" : "Open the Basket coach"}
-        className="fixed right-5 z-40 flex items-center gap-2 rounded-full bg-carbon px-4 py-3 text-sm font-semibold text-white transition hover:bg-carbon/85"
-        style={{ bottom: "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem))" }}
+        className="fixed right-5 z-(--z-dock) flex items-center gap-2 rounded-full bg-carbon px-4 py-3 text-sm font-semibold text-white transition hover:bg-carbon/85"
+        style={{ bottom: "calc(var(--mobile-nav-h) + max(1.25rem, env(safe-area-inset-bottom) + 0.75rem))" }}
       >
         <Icon name={open ? "close" : "reward"} size={20} />
         <span className="hidden sm:inline">{open ? "Close" : "Ask the coach"}</span>

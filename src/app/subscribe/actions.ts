@@ -20,7 +20,7 @@ export async function startSubscription(formData: FormData) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { subscriptionTierId: tier.id, deliveryDay },
+    data: { subscriptionTierId: tier.id, deliveryDay, subscribedAt: new Date() },
   });
 
   const existing = await prisma.basket.findFirst({ where: { userId: user.id, isStanding: true } });
@@ -45,7 +45,7 @@ export async function changeTier(slug: string) {
 export async function cancelSubscription() {
   const user = await getCurrentUser();
   if (!user) return;
-  await prisma.user.update({ where: { id: user.id }, data: { subscriptionTierId: null } });
+  await prisma.user.update({ where: { id: user.id }, data: { subscriptionTierId: null, subscribedAt: null } });
   revalidatePath("/subscribe");
   revalidatePath("/account");
 }

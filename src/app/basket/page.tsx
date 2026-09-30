@@ -1,16 +1,23 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { resolveActiveBasket, getBasketView, getUserBaskets, prefillStandingBasket } from "@/lib/basket";
+import {
+  resolveActiveBasket,
+  getBasketView,
+  getUserBaskets,
+  getBasketItemCount,
+  prefillStandingBasket,
+} from "@/lib/basket";
+import { readCart } from "@/lib/cart";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
 import { computeGoalFit, getQuickAddItems, getFlaggedSwaps } from "@/lib/basket-hub";
 import { recomputeStreak } from "@/lib/streak";
+import { SHOPPING_WINDOW_DAY_LABEL } from "@/lib/shopping-window";
 import { markBasketIntroSeen } from "./actions";
-import { SubscriberGate } from "@/components/ui/subscriber-gate";
-import { HomeCartTabs } from "@/components/home-cart-tabs";
-import { MemberStatusCard } from "./member-status-card";
-import { BasketSwitcher } from "./basket-switcher";
+import { BasketHero } from "./basket-hero";
+import type { SheetBasket } from "./baskets-sheet";
 import { BasketWorkspace } from "./basket-workspace";
+import { TodayPicks } from "./today-picks";
 import { BottomBar } from "./bottom-bar";
 
 export default async function BasketPage({
@@ -28,7 +35,7 @@ export default async function BasketPage({
   const basket = await resolveActiveBasket(user.id, requestedBasketId, { isSubscriber, deliveryDay });
   await prefillStandingBasket(user.id, basket.id);
 
-  const [view, allProducts, streak, lastOrder, allBaskets] = await Promise.all([
+  const [view, allProducts, streak, lastOrder, allBaskets, cart] = await Promise.all([
     getBasketView(basket.id),
     prisma.product.findMany(),
     recomputeStreak(user.id),
@@ -38,7 +45,8 @@ export default async function BasketPage({
       select: { id: true },
     }),
     // Only a subscriber can have more than one, so this is skipped otherwise.
-    isSubscriber ? getUserBaskets(user.id) : Promise.resolve([]),
+    isSubscriber ? getUserBaskets(user.id) : Promise.resolve([basket]),
+    readCart(),
   ]);
 
   // The window lock is a subscriber-basket mechanic; a free-trial basket never
@@ -46,20 +54,30 @@ export default async function BasketPage({
   const windowRow = !basket.isFreeTrial ? await getOrCreateCurrentWindow(basket.id) : null;
   const state = windowRow ? windowState(windowRow) : { locked: false, skipped: false, hoursLeft: 0, msLeft: 0 };
 
+  // Set once, at the moment this basket's one and only order was placed
+  // (see checkout/actions.ts). Never set for a subscriber basket.
+  const trialDelivered = Boolean(basket.trialDeliveredAt);
+
   const basketItems = view?.basket.items ?? [];
   const basketProductIds = basketItems.map((i) => i.productId);
+  const cartProductIds = cart.items.map((i) => i.productId);
   const isMemberPriced = basket.pricingMode === "MEMBER";
+  const basketName = basket.goalTag || "Your basket";
 
   const flagged = getFlaggedSwaps(
     basketItems.map((i) => ({ productId: i.productId, product: i.product })),
     allProducts,
   );
 
-  const quickAdd = await getQuickAddItems(
-    user.id,
-    user.preferences?.favoriteProductIds ?? [],
-    basketProductIds,
-  );
+  const [quickAdd, todayPicks] = await Promise.all([
+    getQuickAddItems(user.id, user.preferences?.favoriteProductIds ?? [], basketProductIds),
+    getQuickAddItems(
+      user.id,
+      user.preferences?.favoriteProductIds ?? [],
+      [...basketProductIds, ...cartProductIds],
+      6,
+    ),
+  ]);
 
   const goalFit = computeGoalFit(
     basketItems.map((i) => i.product.category),
@@ -88,12 +106,30 @@ export default async function BasketPage({
   const showIntro = !user.basketIntroSeen;
   if (showIntro) await markBasketIntroSeen();
 
-  return (
-    <div className="min-h-[calc(100svh-1px)] bg-soft-mist">
-      {/* Bottom padding clears the fixed checkout bar so it never overlaps the last item. */}
-      <div className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:px-6 sm:py-10">
-        <HomeCartTabs homeHref={`/basket?b=${basket.id}`} />
+  const sheetBaskets: SheetBasket[] = await Promise.all(
+    allBaskets.map(async (bk) => {
+      const itemCount = bk.id === basket.id ? basketItems.length : await getBasketItemCount(bk.id);
+      const name = bk.goalTag || "Your basket";
+      const bkTrialDelivered = Boolean(bk.trialDeliveredAt);
+      const subtitle = bkTrialDelivered
+        ? "Trial delivered"
+        : bk.isFreeTrial
+        ? "Free trial, comes once"
+        : bk.shoppingWindowDay
+        ? `Every ${SHOPPING_WINDOW_DAY_LABEL[bk.shoppingWindowDay]}, ${itemCount} item${itemCount === 1 ? "" : "s"}`
+        : `${itemCount} item${itemCount === 1 ? "" : "s"}`;
+      return { id: bk.id, name, subtitle, locked: bkTrialDelivered };
+    }),
+  );
 
+  return (
+    <div className="min-h-[calc(100svh-1px)] bg-background">
+      {/* The layout's <main> already reserves --dock-clearance for every
+          signed-in page (zeroed on desktop, where the dock is a left rail —
+          see layout.tsx). This only adds the extra room for the fixed
+          checkout bar itself, which stacks above that clearance on mobile
+          and sits flush on desktop — see bottom-bar.tsx. */}
+      <div className="mx-auto max-w-5xl px-4 pb-20 pt-4 sm:px-6 sm:pt-6 lg:pb-24">
         {showIntro && (
           <p className="mb-4 text-sm text-muted">
             Your basket is saved and pre-filled to start. Edit it however you like. Nothing is charged
@@ -101,32 +137,15 @@ export default async function BasketPage({
           </p>
         )}
 
-        {isSubscriber && allBaskets.length > 1 && (
-          <BasketSwitcher
-            baskets={allBaskets.map((bk, i) => ({ id: bk.id, label: `Basket ${i + 1}` }))}
-            activeId={basket.id}
-          />
-        )}
-        {!isSubscriber && (
-          <SubscriberGate
-            className="mb-4"
-            title="Multiple baskets"
-            body="Your free basket is standard pricing, one only. Subscribe to hold several baskets at member pricing."
-          />
-        )}
-
-        <MemberStatusCard
+        <BasketHero
           basketId={basket.id}
-          firstName={user.name.trim().split(/\s+/)[0] || "There"}
+          basketName={basketName}
           shipDay={basket.shoppingWindowDay}
-          runningValue={runningValue}
           isMemberPriced={isMemberPriced}
-          isFreeTrial={basket.isFreeTrial}
-          savings={view?.savings ?? 0}
-          potentialSavings={view?.savings ?? 0}
-          streak={streak}
-          signature={signature}
-          locked={state.locked || state.skipped}
+          trialDelivered={trialDelivered}
+          deliveredOn={basket.trialDeliveredAt}
+          baskets={sheetBaskets}
+          isSubscriber={isSubscriber}
           autoOpenDayPicker={pickDay === "1"}
         />
 
@@ -139,14 +158,14 @@ export default async function BasketPage({
         <div className="mt-6">
           <BasketWorkspace
             basketId={basket.id}
+            basketName={basketName}
             items={lines}
             isMemberPriced={isMemberPriced}
             isFreeTrial={basket.isFreeTrial}
+            trialDelivered={trialDelivered}
             locked={state.locked}
             skipped={state.skipped}
             streak={streak}
-            memberSubtotal={view?.memberSubtotal ?? 0}
-            standardSubtotal={view?.standardSubtotal ?? 0}
             savings={view?.savings ?? 0}
             goalFit={goalFit}
             quickAdd={quickAdd.map((p) => ({
@@ -161,6 +180,37 @@ export default async function BasketPage({
             signature={signature}
           />
         </div>
+
+        <div className="my-7 -mx-4 h-2 bg-soft-mist sm:mx-0 sm:rounded-full" />
+
+        <div className="flex items-baseline justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">Buy something today</h2>
+            <p className="text-xs text-muted">Goes in your cart. Delivered once.</p>
+          </div>
+          {cart.itemCount > 0 && (
+            <a href="/cart" className="text-sm font-semibold text-carbon">
+              See cart ({cart.itemCount})
+            </a>
+          )}
+        </div>
+        <div className="mt-2">
+          <TodayPicks
+            picks={todayPicks.map((p) => ({
+              id: p.id,
+              slug: p.slug,
+              name: p.name,
+              unit: p.unit,
+              orderUnit: p.orderUnit,
+              minOrderQty: p.minOrderQty,
+              stepQty: p.stepQty,
+              imageEmoji: p.imageEmoji,
+              cloudinaryPublicId: p.cloudinaryPublicId,
+              memberPrice: p.memberPrice,
+              standardPrice: p.standardPrice,
+            }))}
+          />
+        </div>
       </div>
 
       <BottomBar
@@ -170,6 +220,7 @@ export default async function BasketPage({
         hasItems={lines.length > 0}
         skipped={state.skipped}
         locked={state.locked}
+        hidden={trialDelivered}
       />
     </div>
   );

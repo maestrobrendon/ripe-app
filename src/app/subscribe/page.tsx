@@ -4,11 +4,10 @@ import { getCurrentUser } from "@/lib/session";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { startSubscription } from "./actions";
 import { TierControls } from "./tier-controls";
+import { DeliveryDayField } from "./delivery-day-field";
 import { Card } from "@/components/ui/card";
 import { LinkButton, Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-
-const DAYS = ["MONDAY", "WEDNESDAY", "FRIDAY"] as const;
 
 export default async function SubscribePage({
   searchParams,
@@ -63,7 +62,11 @@ export default async function SubscribePage({
           const isMid = i === 1;
           const isCurrent = tier.slug === currentSlug;
           return (
-            <Card key={tier.id} tone={isMid ? "tint" : "surface"} className="flex flex-col">
+            <Card
+              key={tier.id}
+              tone={isMid ? "tint" : "surface"}
+              className={`flex flex-col ${isMid ? "sm:scale-[1.02] sm:shadow-sm" : ""}`}
+            >
               {isMid && (
                 <span className="mb-3 inline-block w-fit rounded-full bg-carbon px-3 py-1 text-xs font-medium text-white">
                   Most popular
@@ -97,11 +100,7 @@ export default async function SubscribePage({
               ) : (
                 <form action={startSubscription} className="mt-6 space-y-2">
                   <input type="hidden" name="tier" value={tier.slug} />
-                  <select name="deliveryDay" className="w-full rounded-input border border-border px-3 py-2 text-sm">
-                    {DAYS.map((d) => (
-                      <option key={d} value={d}>Deliver {DELIVERY_DAY_LABEL[d]}</option>
-                    ))}
-                  </select>
+                  <DeliveryDayField groupId={`delivery-day-${tier.slug}`} />
                   <Button variant={isMid ? "primary" : "secondary"} className="w-full">
                     {currentSlug ? `Switch to ${tier.name}` : `Start ${tier.name}`}
                   </Button>

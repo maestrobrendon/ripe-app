@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Icon } from "@/components/ui/icon";
+import { CaretDown } from "@phosphor-icons/react/dist/ssr";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useDestination, type Destination } from "@/components/destination-provider";
 import { useCart } from "@/components/cart-provider";
@@ -93,9 +94,9 @@ export function DestinationOverrideChevron({ onPick }: { onPick: (destination: D
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Choose where this goes"
-        className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-sm text-muted hover:bg-sky-wash"
+        className="tap-target flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-muted hover:bg-sky-wash"
       >
-        ⌄
+        <CaretDown size={16} weight="bold" aria-hidden />
       </button>
       <BottomSheet open={open} onClose={() => setOpen(false)} title="Add to">
         <div className="space-y-1">

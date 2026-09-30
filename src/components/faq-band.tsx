@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Icon } from "@/components/ui/icon";
+import { AnimatePresence, motion } from "motion/react";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { formatNaira } from "@/lib/format";
 import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
+import { spring } from "@/lib/motion/tokens";
 
 const FAQS = [
   {
@@ -55,22 +60,48 @@ const FAQS = [
 ];
 
 export function FaqBand() {
+  const [open, setOpen] = useState<number | null>(null);
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
       <h2 className="text-heading-lg">Before you order</h2>
 
       <div className="mt-10 max-w-3xl border-t border-border">
-        {FAQS.map((f) => (
-          <details key={f.q} className="group border-b border-border py-5">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-semibold">
-              {f.q}
-              <span className="shrink-0 text-muted transition-transform group-open:rotate-45">
-                <Icon name="plus" size={22} />
-              </span>
-            </summary>
-            <p className="mt-3 max-w-2xl text-base text-muted">{f.a}</p>
-          </details>
-        ))}
+        {FAQS.map((f, i) => {
+          const isOpen = open === i;
+          return (
+            <div key={f.q} className="border-b border-border">
+              <button
+                type="button"
+                onClick={() => setOpen(isOpen ? null : i)}
+                aria-expanded={isOpen}
+                className="flex w-full items-center justify-between gap-6 py-5 text-left text-lg font-semibold"
+              >
+                {f.q}
+                <motion.span
+                  animate={{ rotate: isOpen ? 45 : 0 }}
+                  transition={spring.snappy}
+                  className="shrink-0 text-muted"
+                >
+                  <Plus size={22} aria-hidden />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={spring.smooth}
+                    className="overflow-hidden"
+                  >
+                    <p className="max-w-2xl pb-5 text-base text-muted">{f.a}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

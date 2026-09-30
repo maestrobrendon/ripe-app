@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import { GOALS } from "@/lib/assistant";
 import { BUDGET_BANDS } from "@/lib/budget";
 import {
@@ -12,12 +13,38 @@ import {
 } from "@/lib/format";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { saveOnboarding, type OnboardingInput } from "./actions";
+import { Button } from "@/components/ui/button";
+import { press, spring } from "@/lib/motion/tokens";
 
 type Product = { id: string; name: string; imageEmoji: string };
 
 const STEPS = ["Goal", "Household", "Budget & time", "Dietary notes", "Favorites", "Meal formats", "How you shop"];
 
 const empty: OnboardingInput = { favoriteProductIds: [], mealFormatPreference: [] };
+
+function Chip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: press.scale }}
+      transition={spring.snappy}
+      className={`rounded-full px-3 py-1 text-sm transition-colors ${
+        selected ? "bg-carbon text-white" : "border border-border"
+      }`}
+    >
+      {children}
+    </motion.button>
+  );
+}
 
 function Radio({
   name,
@@ -43,11 +70,21 @@ function Radio({
   );
 }
 
-export function OnboardingFlow({ products, next }: { products: Product[]; next: string }) {
+export function OnboardingFlow({
+  products,
+  next,
+  initial,
+}: {
+  products: Product[];
+  next: string;
+  /** Starts from the customer's saved preferences, the same record Account edits. */
+  initial?: OnboardingInput;
+}) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const [[step, direction], setStepState] = useState<[number, 1 | -1]>([0, 1]);
+  const goTo = (next: number) => setStepState([next, next > step ? 1 : -1]);
   const [isPending, startTransition] = useTransition();
-  const [data, setData] = useState<OnboardingInput>(empty);
+  const [data, setData] = useState<OnboardingInput>(initial ?? empty);
 
   const set = <K extends keyof OnboardingInput>(k: K, v: OnboardingInput[K]) =>
     setData((d) => ({ ...d, [k]: v }));
@@ -83,7 +120,21 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
         Step {step + 1} of {STEPS.length}: {STEPS[step]}
       </p>
 
-      <div className="mt-4 rounded-card border border-border bg-surface p-5">
+      <div className="mt-4 overflow-hidden rounded-card border border-border bg-surface p-5">
+      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+      <motion.div
+        key={step}
+        custom={direction}
+        variants={{
+          enter: (d: number) => ({ x: 40 * d, opacity: 0 }),
+          center: { x: 0, opacity: 1 },
+          exit: (d: number) => ({ x: -40 * d, opacity: 0 }),
+        }}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={spring.smooth}
+      >
         {step === 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium">What is your main goal right now?</p>
@@ -136,13 +187,13 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
             <p className="font-medium">Anything we should know?</p>
             <div className="flex flex-wrap gap-2">
               {["Vegetarian", "No restrictions"].map((tag) => (
-                <button
+                <Chip
                   key={tag}
+                  selected={data.dietaryNotes === tag}
                   onClick={() => set("dietaryNotes", data.dietaryNotes === tag ? undefined : tag)}
-                  className={`rounded-full px-3 py-1 ${data.dietaryNotes === tag ? "bg-carbon text-white" : "border border-border"}`}
                 >
                   {tag}
-                </button>
+                </Chip>
               ))}
             </div>
             <textarea
@@ -160,15 +211,9 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
             <p className="text-sm font-medium">Pick a few favorites</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {products.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => toggle("favoriteProductIds", p.id)}
-                  className={`rounded-full px-3 py-1 text-sm ${
-                    data.favoriteProductIds.includes(p.id) ? "bg-carbon text-white" : "border border-border"
-                  }`}
-                >
+                <Chip key={p.id} selected={data.favoriteProductIds.includes(p.id)} onClick={() => toggle("favoriteProductIds", p.id)}>
                   {p.imageEmoji} {p.name}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
@@ -179,15 +224,9 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
             <p className="text-sm font-medium">Any meal formats you lean on? (optional)</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {Object.entries(MEAL_FORMAT_LABEL).map(([value, label]) => (
-                <button
-                  key={value}
-                  onClick={() => toggle("mealFormatPreference", value)}
-                  className={`rounded-full px-3 py-1 text-sm ${
-                    data.mealFormatPreference.includes(value) ? "bg-carbon text-white" : "border border-border"
-                  }`}
-                >
+                <Chip key={value} selected={data.mealFormatPreference.includes(value)} onClick={() => toggle("mealFormatPreference", value)}>
                   {label}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
@@ -203,6 +242,8 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
             )}
           </div>
         )}
+      </motion.div>
+      </AnimatePresence>
       </div>
 
       <div className="mt-5 flex items-center justify-between">
@@ -211,28 +252,18 @@ export function OnboardingFlow({ products, next }: { products: Product[]; next: 
         </button>
         <div className="flex gap-2">
           {step > 0 && (
-            <button
-              onClick={() => setStep((s) => s - 1)}
-              className="rounded-full border border-border px-5 py-2 text-sm font-medium"
-            >
+            <Button variant="secondary" size="md" onClick={() => goTo(step - 1)}>
               Back
-            </button>
+            </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              className="rounded-full bg-carbon px-5 py-2 text-sm font-medium text-white hover:bg-carbon/85"
-            >
+            <Button size="md" onClick={() => goTo(step + 1)}>
               Next
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={() => finish(data)}
-              disabled={isPending}
-              className="rounded-full bg-carbon px-5 py-2 text-sm font-medium text-white hover:bg-carbon/85 disabled:opacity-60"
-            >
-              {isPending ? "Saving." : "Finish"}
-            </button>
+            <Button size="md" onClick={() => finish(data)} disabled={isPending}>
+              {isPending ? "Saving…" : "Finish"}
+            </Button>
           )}
         </div>
       </div>

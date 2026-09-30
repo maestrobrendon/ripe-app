@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { IdeasPanel } from "./ideas-panel";
 
 /**
@@ -16,12 +16,14 @@ export function IdeasSheetTrigger({
   locked = false,
   className,
   label = "Get ideas",
+  icon = "reward",
 }: {
   basketId?: string;
   signature?: string;
   locked?: boolean;
   className?: string;
-  label?: string;
+  label?: React.ReactNode;
+  icon?: IconName;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -34,7 +36,7 @@ export function IdeasSheetTrigger({
           "tap-target inline-flex items-center gap-1.5 rounded-full bg-carbon px-4 py-2 text-sm font-semibold text-white hover:bg-carbon/85"
         }
       >
-        <Icon name="reward" size={16} strokeWidth={2} />
+        <Icon name={icon} size={16} strokeWidth={2} />
         {label}
       </button>
 

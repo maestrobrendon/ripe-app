@@ -197,3 +197,263 @@ body {
     min-width: 40px;
   }
 }
+
+/* Global press-squish backstop ("respond to the hand, instantly"). Motion
+   components get a real spring via whileTap; this CSS rule is the floor so
+   every remaining plain <button> in the app still gives feedback on press
+   without needing to be individually converted. Motion's whileTap wins
+   wherever both apply (inline transform beats this rule). Scoped to
+   <button> only — scaling inline text links looks broken when they wrap. */
+button:not(:disabled) {
+  transition: transform 120ms var(--ease-out, ease-out);
+}
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   RIPE 2.0 · SEMANTIC LAYER (added on top of the palette above, nothing
+   removed). Gives new/rebuilt components role-based names (bg-action,
+   text-fg, sticker…) instead of raw colour names, so a future brand refresh
+   is a one-file edit here rather than a hunt across components. Existing
+   classes (bg-carbon, text-carbon, border-border, bg-sky-wash…) keep working
+   unchanged — this is an additive vocabulary, not a migration.
+   ========================================================================== */
+
+:root {
+  --scrim: rgba(0, 0, 0, 0.4);
+
+  /* Motion durations — CSS hover/colour states only. Springs live in
+     src/lib/motion/tokens.ts for anything Motion/GSAP touches. */
+  --dur-instant: 80ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 360ms;
+  --dur-slower: 520ms;
+  --dur-story: 900ms;
+
+  /* Stacking. Use z-(--z-dock) etc.; never raw numbers in new code. */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 30;
+  --z-header: 40;
+  --z-dock: 45;
+  --z-overlay: 50;
+  --z-sheet: 60;
+  --z-dialog: 70;
+  --z-toast: 80;
+  --z-flight: 90;
+
+  /* Floating dock geometry, shared by the dock and the page clearance it needs. */
+  --dock-height: 4rem;
+  --dock-inset: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
+  --dock-clearance: calc(var(--dock-height) + var(--dock-inset) + 1.5rem);
+
+  --gutter: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+  --space-section: clamp(4rem, 2.8rem + 5vw, 8rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 120ms;
+    --dur-slow: 120ms;
+    --dur-slower: 160ms;
+    --dur-story: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes ripe-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@keyframes ripe-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes ripe-dot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+@theme inline {
+  /* Role-named colour aliases over the same primitives. */
+  --color-canvas: var(--paper-white);
+  --color-surface: var(--paper-white);
+  --color-surface-raised: var(--paper-white);
+  --color-sunken: var(--soft-mist);
+  --color-fill: var(--soft-mist);
+  --color-band-sky: var(--sky-wash);
+  --color-band-paper: var(--paper-white);
+  --color-band-concrete: var(--concrete-gray);
+  --color-surface-sticker: var(--lavender);
+  --color-inverse: var(--carbon);
+  --color-scrim: rgb(0 0 0 / 0.4);
+
+  --color-sticker-blue: var(--electric-blue);
+  --color-sticker-mint: var(--mint-pop);
+  --color-sticker-lavender: var(--lavender);
+  --color-sticker-ember: var(--ember);
+  --color-sticker-sun: var(--sunburst);
+  --color-sticker-violet: var(--voltage-violet);
+
+  --color-fg: var(--carbon);
+  --color-fg-secondary: var(--carbon);
+  --color-fg-subtle: var(--carbon);
+  --color-fg-disabled: rgb(0 0 0 / 0.45);
+  --color-fg-on-inverse: var(--paper-white);
+  --color-fg-on-action: var(--paper-white);
+  --color-fg-on-violet: var(--paper-white);
+
+  --color-line: var(--carbon);
+
+  --color-action: var(--carbon);
+  --color-action-secondary: var(--paper-white);
+  --color-action-secondary-hover: var(--soft-mist);
+  --color-quiet-hover: var(--soft-mist);
+
+  --color-dock: var(--paper-white);
+  --color-dock-active: var(--carbon);
+  --color-fg-on-dock-active: var(--paper-white);
+
+  --color-danger: var(--ember);
+  --color-warning: var(--sunburst);
+  --color-info: var(--electric-blue);
+  --color-success: var(--carbon);
+
+  --color-savings: var(--lavender);
+  --color-offseason: var(--ember);
+  --color-badge-count: var(--ember);
+
+  --color-flavour-fruit: var(--sunburst);
+  --color-flavour-vegetable: var(--mint-pop);
+  --color-flavour-box: var(--lavender);
+  --color-flavour-seasonal: var(--ember);
+  --color-flavour-cuts: var(--electric-blue);
+
+  --color-focus: var(--carbon);
+
+  /* Radius roles (nesting rule: inner = outer − padding between them). */
+  --radius-badge: 9999px;
+  --radius-chip: 9999px;
+  --radius-button: 9999px;
+  --radius-tile: 18px;
+  --radius-panel: 40px;
+  --radius-sheet: 32px;
+  --radius-dialog: 32px;
+  --radius-dock: 9999px;
+
+  --font-text: var(--font-ui);
+
+  /* Aeonik steps not already covered by the hand-written classes above. */
+  --text-heading-xl: 40px;
+  --text-heading-xl--line-height: 1.2;
+  --text-heading-xl--letter-spacing: -0.04em;
+  --text-heading-xl--font-weight: 500;
+
+  --text-heading-md: 28px;
+  --text-heading-md--line-height: 1.2;
+  --text-heading-md--letter-spacing: -0.036em;
+  --text-heading-md--font-weight: 500;
+
+  --text-subheading: 24px;
+  --text-subheading--line-height: 1.33;
+  --text-subheading--letter-spacing: -0.031em;
+  --text-subheading--font-weight: 500;
+
+  --text-title: 20px;
+  --text-title--line-height: 1.4;
+  --text-title--letter-spacing: -0.033em;
+  --text-title--font-weight: 600;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.71;
+  --text-body-sm--letter-spacing: -0.031em;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.67;
+  --text-caption--letter-spacing: -0.031em;
+
+  --ease-juicy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  --container-content: 72rem;
+  --container-wide: 84rem;
+  --container-dock: 26rem;
+}
+
+/* The hand-cut sticker outline: 1px solid carbon on every interactive
+   element and decorative sticker fill. */
+.sticker {
+  border: 1px solid var(--carbon);
+}
+
+.container-page {
+  margin-inline: auto;
+  max-width: var(--container-content);
+  padding-inline: var(--gutter);
+}
+
+.section-y {
+  padding-block: var(--space-section);
+}
+
+/* Bottom clearance so page content never sits under the floating dock. */
+.pb-dock {
+  padding-bottom: var(--dock-clearance);
+}
+/* The dock is a bottom pill only below lg; above that it's a left rail with
+   nothing to clear at the bottom, so pages using pb-dock shouldn't keep
+   reserving space there. */
+@media (min-width: 1024px) {
+  .pb-dock {
+    padding-bottom: 0;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .squircle {
+    corner-shape: squircle;
+  }
+}
+
+.skeleton {
+  background: var(--soft-mist);
+  animation: ripe-pulse 1.6s ease-in-out infinite;
+}
+
+.rail {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--gutter);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.rail > * {
+  scroll-snap-align: start;
+}
+
+.marquee-track {
+  animation: ripe-marquee 24s linear infinite;
+}
+.marquee-track:hover,
+.marquee-track:focus-within {
+  animation-play-state: paused;
+}

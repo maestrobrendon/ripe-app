@@ -130,6 +130,14 @@ model User {
   // Subscription is an optional upgrade on top of an account. Null for non-members.
   subscriptionTierId  String?
   subscriptionTier    SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
+  // When the current membership started; the monthly renewal date is derived
+  // from it. Null for non-members and for members from before it existed.
+  subscribedAt        DateTime?
+  // Test-mode payment method. Only a display brand, the last four digits and
+  // the expiry are ever stored, never a full card number.
+  paymentCardBrand    String?
+  paymentCardLast4    String?
+  paymentCardExpiry   String?
   deliveryDay         DeliveryDay?
   // Basket-order shipping day, chosen during onboarding. Null until then.
   shoppingWindowDay   ShoppingWindowDay?
@@ -143,6 +151,10 @@ model User {
   // This flips permanently on creation; it never resets, even if that basket
   // is later deleted.
   hasCreatedFreeTrialBasket Boolean     @default(false)
+  // Member-only: when on, a new week's meal plan is seeded by cloning the
+  // previous week's timetable instead of fresh recipe suggestions. Off by
+  // default, and meaningless for a non-subscriber, who has no weekly plan.
+  mealPlanRepeats     Boolean           @default(false)
   preferences         UserPreferences?
   streak              StreakStatus?
   sessions            Session[]
@@ -154,6 +166,7 @@ model User {
   windows             ShoppingWindow[]
   savedRecipes        SavedRecipe[]
   weeklyMealPlans     WeeklyMealPlan[]
+  ownMeals            OwnMeal[]
   producePlans        ProducePlan[]
   assistantThreads    AssistantThread[]
 }
@@ -304,21 +317,52 @@ enum MealPlanDayStatus {
 }
 
 // One row per member per week. `days` holds exactly 7 entries shaped like
-// { day: ShoppingWindowDay-style label, recipeId: string | null, suggestion:
-// { title, ingredientProductIds } | null, status: MealPlanDayStatus }, kept
-// as JSON because a day can point at a real Recipe or a plain generated
-// suggestion with no catalogue row of its own.
+// { day: ShoppingWindowDay-style label, slots: { breakfast, lunch, dinner },
+// status: MealPlanDayStatus }, where each slot is null or
+// { kind: "recipe", recipeId } | { kind: "own", ownMealId }. Kept as JSON
+// because a slot can point at a real Recipe or a customer's own OwnMeal.
+// `elsewhereGot` holds the free-text "get elsewhere" terms this week's
+// shopping list has ticked off, so the checklist survives a reload.
 model WeeklyMealPlan {
   id            String   @id @default(cuid())
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   weekStartDate DateTime
   days          Json
+  elsewhereGot  Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@unique([userId, weekStartDate])
   @@index([userId])
+}
+
+// A customer's own typed meal (not from our Recipe catalogue), used on the
+// Meal Plan timetable. `ingredients` is free text exactly as typed; matching
+// it against the product catalog to decide "we sell this" vs "get elsewhere"
+// happens at read time, never stored, so a later catalog change is reflected
+// immediately rather than needing a backfill.
+model OwnMeal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  ingredients String[]
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A demand signal, not a customer record: every free-text ingredient that
+// showed up on a shopping list under "Get these elsewhere" (i.e. didn't match
+// anything in the product catalog) bumps this row so the team can see what to
+// consider stocking. Keyed by the normalized term, not by user.
+model UnstockedIngredientRequest {
+  id               String   @id @default(cuid())
+  term             String   @unique
+  requestCount     Int      @default(1)
+  firstRequestedAt DateTime @default(now())
+  lastRequestedAt  DateTime @default(now())
 }
 
 // A saved Produce Planner result (Recipes addendum, Section 2c). Free
@@ -432,6 +476,11 @@ model Basket {
   // Set once at creation and never recomputed from live subscriber status.
   isFreeTrial    Boolean            @default(false)
   pricingMode    PricingMode        @default(STANDARD)
+  // Set once, at the moment a free-trial basket's order is placed (its one and
+  // only checkout). Null until then. Never set for a subscriber basket, which
+  // recurs indefinitely and has no single "used up" moment. Drives the
+  // read-only "trial finished" view on the basket home screen.
+  trialDeliveredAt DateTime?
   // Optional template tag from a "New basket" goal template (Gym week,
   // Family, Plant-based, Weight management), display-only.
   goalTag        String?
