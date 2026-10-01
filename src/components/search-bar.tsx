@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
+import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
+import { spring } from "@/lib/motion/tokens";
 
 type Result = { slug: string; name: string; unit: string; imageEmoji: string; price: number };
 
@@ -64,46 +67,57 @@ export function SearchBar({
 
   return (
     <div ref={boxRef} className={`relative ${compact ? "w-full" : "w-full max-w-sm"}`}>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} className="relative">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+          <Icon name="search" size={18} />
+        </span>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => results.length && setOpen(true)}
           autoFocus={autoFocus}
-          placeholder="Search produce"
+          placeholder="Search produce, boxes, recipes"
           aria-label="Search produce"
-          className="w-full rounded-full border border-border bg-surface px-4 py-2 text-sm"
+          className="w-full rounded-full border border-border bg-surface py-2.5 pl-11 pr-4 text-sm"
         />
       </form>
 
-      {open && results.length > 0 && (
-        <ul className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
-          {results.map((r) => (
-            <li key={r.slug}>
-              <Link
-                href={`/products/${r.slug}`}
-                onClick={() => {
-                  setOpen(false);
-                  onNavigate?.();
-                }}
-                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-ripe-green-light"
+      <AnimatePresence>
+        {open && results.length > 0 && (
+          <motion.ul
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={spring.snappy}
+            className="absolute z-(--z-overlay) mt-2 w-full origin-top overflow-hidden rounded-card border border-border bg-surface"
+          >
+            {results.map((r) => (
+              <li key={r.slug}>
+                <Link
+                  href={`/products/${r.slug}`}
+                  onClick={() => {
+                    setOpen(false);
+                    onNavigate?.();
+                  }}
+                  className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-sky-wash"
+                >
+                  <span className="text-xl">{r.imageEmoji}</span>
+                  <span className="flex-1">{r.name}</span>
+                  <span className="text-xs text-muted">{formatNaira(r.price)}</span>
+                </Link>
+              </li>
+            ))}
+            <li>
+              <button
+                onClick={submit}
+                className="w-full px-4 py-2 text-left text-xs font-medium text-carbon hover:bg-sky-wash"
               >
-                <span className="text-xl">{r.imageEmoji}</span>
-                <span className="flex-1">{r.name}</span>
-                <span className="text-xs text-muted">{formatNaira(r.price)}</span>
-              </Link>
+                See all results for &ldquo;{q.trim()}&rdquo;
+              </button>
             </li>
-          ))}
-          <li>
-            <button
-              onClick={submit}
-              className="w-full px-4 py-2 text-left text-xs font-medium text-ripe-green hover:bg-ripe-green-light"
-            >
-              See all results for &ldquo;{q.trim()}&rdquo;
-            </button>
-          </li>
-        </ul>
-      )}
+          </motion.ul>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

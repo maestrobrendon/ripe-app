@@ -92,7 +92,10 @@ export type AssistantContext = {
   favorites?: string[];
   /** Free-text dietary notes, used to drop obvious mismatches from add-ons. */
   dietaryNotes?: string;
-  householdSize?: number;
+  /** Onboarding household type: myself | partner | family-kids | housemates | mixed. */
+  householdType?: string;
+  /** Onboarding cook-time band: none | unpredictable | under-20 | under-30 | up-to-hour. */
+  cookTimeAvailable?: string;
 };
 
 function filterByDiet(slugs: string[], dietaryNotes?: string): string[] {

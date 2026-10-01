@@ -1,17 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { currentWeekStart } from "@/lib/weeks";
 import { GOAL_LABEL } from "@/lib/format";
 import type { Product, ProductCategory } from "@/generated/prisma/client";
-
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-function weekStartOf(d: Date): Date {
-  const day = d.getDay();
-  const monday = new Date(d);
-  monday.setHours(0, 0, 0, 0);
-  monday.setDate(d.getDate() - ((day + 6) % 7));
-  return monday;
-}
 
 /**
  * Cumulative Naira saved vs standard pricing across every past order line.
@@ -26,43 +15,6 @@ export async function computeCumulativeSavings(userId: string): Promise<number> 
     (sum, i) => sum + Math.max(0, i.product.standardPrice - i.unitPrice) * i.quantity,
     0,
   );
-}
-
-/**
- * Consecutive past weeks with a shopping window that was not skipped, counting
- * back from last week. Persists the result to UserStreak for the longest-streak
- * record, and returns the current view.
- */
-export async function recomputeStreak(userId: string) {
-  const thisWeek = currentWeekStart();
-  const windows = await prisma.shoppingWindow.findMany({
-    where: { userId, opensAt: { lt: thisWeek } },
-    orderBy: { opensAt: "desc" },
-  });
-
-  let streak = 0;
-  let expected = new Date(thisWeek.getTime() - WEEK_MS);
-  let lastCompleted: Date | null = null;
-
-  for (const w of windows) {
-    const wWeek = weekStartOf(w.opensAt);
-    if (wWeek.getTime() !== expected.getTime()) break; // a week was missed entirely
-    if (w.status === "SKIPPED") break;
-    streak += 1;
-    if (!lastCompleted) lastCompleted = wWeek;
-    expected = new Date(expected.getTime() - WEEK_MS);
-  }
-
-  const prev = await prisma.userStreak.findUnique({ where: { userId } });
-  const longest = Math.max(prev?.longestStreak ?? 0, streak);
-
-  const record = await prisma.userStreak.upsert({
-    where: { userId },
-    update: { currentStreak: streak, longestStreak: longest, lastCompletedWeek: lastCompleted },
-    create: { userId, currentStreak: streak, longestStreak: longest, lastCompletedWeek: lastCompleted },
-  });
-
-  return record;
 }
 
 const CATEGORY_FRUIT: ProductCategory[] = ["FRUIT", "SEASONAL"];

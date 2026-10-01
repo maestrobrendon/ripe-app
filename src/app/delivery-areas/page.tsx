@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { DELIVERY_DAY_LABEL } from "@/lib/format";
 
-export const metadata = { title: "Delivery areas. Ripe" };
+export const metadata = { title: "Delivery areas. Basket" };
 
 export default async function DeliveryAreasPage() {
   const zones = await prisma.deliveryZone.findMany({ orderBy: { sortOrder: "asc" } });
@@ -16,7 +16,7 @@ export default async function DeliveryAreasPage() {
       </p>
 
       <h2 className="mt-8 text-lg font-medium">Areas we cover now</h2>
-      <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-surface">
+      <ul className="mt-3 divide-y divide-border rounded-card border border-border bg-surface">
         {served.map((z) => (
           <li key={z.id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

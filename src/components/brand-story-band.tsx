@@ -20,9 +20,9 @@ const STEPS = [
 export function BrandStoryBand() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <div className="grid overflow-hidden rounded-3xl bg-ripe-green text-white md:grid-cols-[1fr_1.1fr]">
+      <div className="grid overflow-hidden rounded-3xl bg-carbon text-white md:grid-cols-[1fr_1.1fr]">
         <div className="p-8 sm:p-10">
-          <p className="text-xs font-medium uppercase tracking-wide text-white/60">The Ripe standard</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-white/60">The Basket standard</p>
           <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">
             Better produce, from selection to your door.
           </h2>
@@ -31,11 +31,11 @@ export function BrandStoryBand() {
             greengrocer, made faster, easier, and more dependable.
           </p>
         </div>
-        <div className="space-y-3 bg-ripe-green-light/10 p-6 sm:p-8">
+        <div className="space-y-3 bg-sky-wash p-6 sm:p-8">
           {STEPS.map((s) => (
-            <div key={s.n} className="rounded-2xl bg-white/5 p-5">
+            <div key={s.n} className="rounded-card bg-white/5 p-5">
               <div className="flex items-start gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ripe-terracotta text-xs font-semibold text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lavender text-xs font-semibold text-carbon">
                   {s.n}
                 </span>
                 <div>

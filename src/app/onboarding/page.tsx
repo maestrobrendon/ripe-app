@@ -23,12 +23,29 @@ export default async function OnboardingPage({
 
   return (
     <div className="mx-auto max-w-lg px-4 py-14 sm:px-6">
-      <h1 className="text-3xl font-semibold">A few quick questions</h1>
+      <h1 className="text-3xl font-semibold">Your preferences</h1>
       <p className="mt-2 text-sm text-muted">
-        So the trained assistant can suggest things you will actually eat. You can skip this and fill it
-        in later from your account.
+        These fine-tune what Ideas suggests. Household size, produce preferences and your
+        basket day live on your account page.
       </p>
-      <OnboardingFlow products={products} next={safeNext} />
+      <OnboardingFlow
+        products={products}
+        next={safeNext}
+        initial={
+          user.preferences
+            ? {
+                primaryGoal: user.preferences.primaryGoal ?? undefined,
+                householdType: user.preferences.householdType ?? undefined,
+                weeklyBudgetBand: user.preferences.weeklyBudgetBand ?? undefined,
+                cookTimeAvailable: user.preferences.cookTimeAvailable ?? undefined,
+                dietaryNotes: user.preferences.dietaryNotes ?? undefined,
+                favoriteProductIds: user.preferences.favoriteProductIds,
+                mealFormatPreference: user.preferences.mealFormatPreference,
+                shoppingStyle: user.preferences.shoppingStyle ?? undefined,
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

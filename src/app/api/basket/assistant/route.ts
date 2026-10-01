@@ -1,45 +1,62 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { getStandingBasketView } from "@/lib/basket";
+import { getActiveBasketReadOnly, getBasketView, getOwnedBasket } from "@/lib/basket";
+import { resolveStarterBasket } from "@/lib/starter-basket";
 import { buildHubSuggestion } from "@/lib/basket-assistant";
 
-const EMPTY = { recipe: null, add: null, gap: null };
+export type IdeasResponse =
+  | { kind: "signed-out" }
+  | { kind: "starter"; picks: Awaited<ReturnType<typeof resolveStarterBasket>> }
+  | ({ kind: "suggestions" } & ReturnType<typeof buildHubSuggestion>);
 
-export async function GET() {
+/**
+ * Ideas is available to every signed-in member, not just subscribers: the
+ * empty-basket starter set in particular is most useful to someone who has
+ * not subscribed yet.
+ */
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user?.subscriptionTierId) return NextResponse.json(EMPTY);
+  if (!user) return NextResponse.json<IdeasResponse>({ kind: "signed-out" });
 
-  const [view, products, recipes] = await Promise.all([
-    getStandingBasketView(user.id),
-    prisma.product.findMany(),
-    prisma.recipe.findMany(),
-  ]);
+  const requestedId = request.nextUrl.searchParams.get("basketId");
+  const basket = requestedId
+    ? await getOwnedBasket(user.id, requestedId)
+    : await getActiveBasketReadOnly(user.id);
+  const view = basket ? await getBasketView(basket.id) : null;
+  const basketItems = view?.basket.items ?? [];
+
+  if (basketItems.length === 0) {
+    const picks = await resolveStarterBasket(user.id);
+    return NextResponse.json<IdeasResponse>({ kind: "starter", picks });
+  }
+
+  const [products, recipes] = await Promise.all([prisma.product.findMany(), prisma.recipe.findMany()]);
 
   const byId = new Map(products.map((p) => [p.id, p]));
   const favoriteSlugs = (user.preferences?.favoriteProductIds ?? [])
     .map((id) => byId.get(id)?.slug)
     .filter((s): s is string => Boolean(s));
 
-  const basket =
-    view?.basket.items.map((i) => ({
-      slug: i.product.slug,
-      name: i.product.name,
-      category: i.product.category,
-      inSeason: i.product.inSeason,
-    })) ?? [];
+  const basketForSuggestion = basketItems.map((i) => ({
+    slug: i.product.slug,
+    name: i.product.name,
+    category: i.product.category,
+    inSeason: i.product.inSeason,
+  }));
 
   const suggestion = buildHubSuggestion({
-    basket,
+    basket: basketForSuggestion,
     goal: user.preferences?.primaryGoal ?? null,
     context: {
       favorites: favoriteSlugs,
       dietaryNotes: user.preferences?.dietaryNotes ?? undefined,
-      householdSize: user.preferences?.householdSize ?? undefined,
+      householdType: user.preferences?.householdType ?? undefined,
+      cookTimeAvailable: user.preferences?.cookTimeAvailable ?? undefined,
     },
     products,
     recipes,
   });
 
-  return NextResponse.json(suggestion);
+  return NextResponse.json<IdeasResponse>({ kind: "suggestions", ...suggestion });
 }

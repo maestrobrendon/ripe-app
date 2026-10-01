@@ -41,6 +41,46 @@ export const SHOPPING_STYLE_LABEL: Record<string, string> = {
   "not-sure": "Not sure yet",
 };
 
+export const HOUSEHOLD_TYPE_LABEL: Record<string, string> = {
+  myself: "Just myself",
+  partner: "Partner or spouse",
+  "family-kids": "Family with kids",
+  housemates: "Housemates",
+  mixed: "A mix of people",
+};
+
+export const COOK_TIME_LABEL: Record<string, string> = {
+  none: "No time to cook",
+  unpredictable: "Unpredictable",
+  "under-20": "Under 20 minutes",
+  "under-30": "Under 30 minutes",
+  "up-to-hour": "Up to an hour",
+};
+
+export const PRODUCE_PREFERENCE_LABEL: Record<string, string> = {
+  fruits: "Fruits",
+  vegetables: "Vegetables",
+  "leafy-greens": "Leafy greens",
+  "root-veg": "Root veg",
+  herbs: "Herbs and spices",
+};
+
+// Order shown in onboarding. "everything" is the master toggle, handled separately.
+export const PRODUCE_PREFERENCE_OPTIONS = [
+  "fruits",
+  "vegetables",
+  "leafy-greens",
+  "root-veg",
+  "herbs",
+] as const;
+
+export const MEAL_FORMAT_LABEL: Record<string, string> = {
+  "weeknight-dinners": "Quick weeknight dinners",
+  "cook-ahead": "Cook-ahead",
+  "packed-lunches": "Packed lunches",
+  "prep-breakfasts": "Preppable breakfasts",
+};
+
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   RECEIVED: "Received",
   SOURCED: "Sourced",

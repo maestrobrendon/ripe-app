@@ -1,68 +1,7 @@
-import Link from "next/link";
-import { safeNextPath } from "@/lib/safe-redirect";
-import { createAccount } from "./actions";
+import { redirect } from "next/navigation";
 
-export default async function SignupPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; next?: string }>;
-}) {
-  const { error, next: nextRaw } = await searchParams;
-  const next = safeNextPath(nextRaw, "");
-
-  return (
-    <div className="mx-auto max-w-md px-4 py-14 sm:px-6">
-      <h1 className="text-3xl font-semibold">Create your account</h1>
-      <p className="mt-3 text-sm text-muted">
-        An account saves your addresses, order history and preferences, and lets the trained assistant
-        suggest things you will actually eat. It is free and separate from any subscription.
-      </p>
-
-      {error === "failed" && (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
-          We could not create an account with those details. If you already have one,{" "}
-          <Link href="/login" className="underline">sign in</Link> instead.
-        </p>
-      )}
-      {error === "missing" && (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
-          Enter your name, an email or phone, and a password of at least 8 characters.
-        </p>
-      )}
-      {error === "throttled" && (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
-          Too many attempts from this network. Please wait a while and try again.
-        </p>
-      )}
-
-      <form action={createAccount} className="mt-8 space-y-4">
-        {next && <input type="hidden" name="next" value={next} />}
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Full name</span>
-          <input name="name" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Email or phone</span>
-          <input name="contact" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder="you@example.com or 080..." />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Password</span>
-          <input name="password" type="password" required minLength={8} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
-        </label>
-        <button
-          type="submit"
-          className="w-full rounded-full bg-ripe-green px-6 py-3 text-sm font-medium text-white hover:bg-ripe-green-dark"
-        >
-          Create account
-        </button>
-      </form>
-
-      <p className="mt-6 text-sm text-muted">
-        Already have an account?{" "}
-        <Link href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-ripe-green underline">
-          Sign in
-        </Link>
-      </p>
-    </div>
-  );
+// Account creation now runs through the guided flow. /signup is kept only as a
+// stable entry point (typed URLs, old links) that forwards into it.
+export default function SignupPage() {
+  redirect("/start");
 }

@@ -14,6 +14,7 @@ export function toAddable(p: Product): AddableProduct {
     minOrderQty: p.minOrderQty,
     stepQty: p.stepQty,
     imageEmoji: p.imageEmoji,
+    cloudinaryPublicId: p.cloudinaryPublicId,
     memberPrice: p.memberPrice,
     standardPrice: p.standardPrice,
   };
@@ -24,5 +25,7 @@ export function toCardData(p: Product): ProductCardData {
     ...toAddable(p),
     inSeason: p.inSeason,
     description: p.description,
+    category: p.category,
+    tags: p.tags,
   };
 }

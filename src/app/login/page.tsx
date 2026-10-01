@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { PasswordField } from "@/components/ui/password-field";
 import { signIn } from "./actions";
 
 export default async function LoginPage({
@@ -15,11 +16,11 @@ export default async function LoginPage({
       <h1 className="text-3xl font-semibold">Sign in</h1>
 
       {error === "throttled" ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
           Too many sign-in attempts. Please wait a few minutes and try again.
         </p>
       ) : error ? (
-        <p className="mt-4 rounded-lg border border-ripe-terracotta bg-ripe-terracotta-light p-3 text-sm text-ripe-terracotta-dark">
+        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
           That email or phone and password did not match.
         </p>
       ) : null}
@@ -28,15 +29,21 @@ export default async function LoginPage({
         {next && <input type="hidden" name="next" value={next} />}
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Email or phone</span>
-          <input name="contact" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+          <input name="contact" required className="w-full rounded-input border border-border px-3 py-2 text-sm" />
         </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Password</span>
-          <input name="password" type="password" required className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
-        </label>
+        <PasswordField
+          name="password"
+          label="Password"
+          required
+          labelExtra={
+            <Link href="/forgot-password" className="text-xs font-normal text-carbon underline">
+              Forgot password?
+            </Link>
+          }
+        />
         <button
           type="submit"
-          className="w-full rounded-full bg-ripe-green px-6 py-3 text-sm font-medium text-white hover:bg-ripe-green-dark"
+          className="w-full rounded-full bg-carbon px-6 py-3 text-sm font-medium text-white hover:bg-carbon/85"
         >
           Sign in
         </button>
@@ -44,7 +51,7 @@ export default async function LoginPage({
 
       <p className="mt-6 text-sm text-muted">
         New here?{" "}
-        <Link href={`/signup${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-ripe-green underline">
+        <Link href="/start" className="text-carbon underline">
           Create an account
         </Link>
       </p>

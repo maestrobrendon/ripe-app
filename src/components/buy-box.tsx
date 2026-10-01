@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { useDestination } from "@/components/destination-provider";
+import { DestinationPill, DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
 import { formatNaira } from "@/lib/format";
 import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { addToStandingBasket } from "@/app/basket/actions";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { flyToCart } from "@/components/ui/fly-to-cart";
 
 type Mode = "one-time" | "subscribe";
 
@@ -20,6 +26,7 @@ export function BuyBox({
   isSubscriber: boolean;
 }) {
   const cart = useCart();
+  const dest = useDestination();
   const [qty, setQty] = useState(product.minOrderQty);
   const [mode, setMode] = useState<Mode>("one-time");
   const [frequency, setFrequency] = useState<1 | 2>(1);
@@ -34,22 +41,55 @@ export function BuyBox({
   const headlinePrice = hasMemberSaving ? product.memberPrice : product.standardPrice;
 
   const step = product.stepQty;
-  const dec = () => setQty((q) => Math.max(product.minOrderQty, q - step));
-  const inc = () => setQty((q) => q + step);
+  const ctaRef = useRef<HTMLButtonElement>(null);
 
-  const addOneTime = () => {
+  const addOneTime = async () => {
+    if (ctaRef.current) flyToCart(ctaRef.current, product.imageEmoji);
+    if (dest.signedIn && dest.destination.type === "basket") {
+      await addToDestination(dest.destination, product.id, qty);
+      dest.announceAdd({
+        productId: product.id,
+        productName: name,
+        quantity: qty,
+        destination: dest.destination,
+        destinationLabel: dest.destination.label,
+      });
+      return;
+    }
     const existing = cart.items.find((i) => i.productId === product.id)?.quantity ?? 0;
-    cart.setQuantity(product, existing + qty);
+    await cart.setQuantity(product, existing + qty);
+    if (dest.signedIn) {
+      dest.announceAdd({
+        productId: product.id,
+        productName: name,
+        quantity: existing + qty,
+        destination: { type: "cart" },
+        destinationLabel: "Cart",
+      });
+    }
+  };
+
+  const addOverride = async (destination: Parameters<typeof addToDestination>[0]) => {
+    await addToDestination(destination, product.id, qty);
+    if (destination.type === "cart") await cart.refresh();
+    dest.announceAdd({
+      productId: product.id,
+      productName: name,
+      quantity: qty,
+      destination,
+      destinationLabel: destination.type === "cart" ? "Cart" : destination.label,
+    });
   };
 
   const subscribeLabel = !isSubscriber ? "Subscribe to add" : "Add to standing basket";
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-      <p className="text-xs font-medium uppercase tracking-wide text-ripe-green">
-        Freshly selected · Ripe quality checked
+    <Card>
+      <DestinationPill />
+      <p className="text-xs font-medium uppercase tracking-wide text-carbon">
+        Freshly selected · Basket quality checked
       </p>
-      <h1 className="mt-2 text-3xl font-semibold leading-tight">{name}</h1>
+      <h1 className="text-heading-lg mt-2">{name}</h1>
 
       <div className="mt-3 flex flex-wrap items-baseline gap-2">
         {hasMemberSaving && (
@@ -57,7 +97,7 @@ export function BuyBox({
         )}
         <span className="text-2xl font-semibold">{formatNaira(headlinePrice)}</span>
         {hasMemberSaving && (
-          <span className="rounded-full bg-ripe-green-light px-2 py-0.5 text-xs font-medium text-ripe-green">
+          <span className="rounded-full bg-sky-wash px-2 py-0.5 text-xs font-medium text-carbon">
             member price
           </span>
         )}
@@ -76,40 +116,42 @@ export function BuyBox({
       {/* Quantity */}
       <div className="mt-4">
         <p className="mb-1 text-xs font-medium text-muted">Quantity</p>
-        <div className="flex w-fit items-center gap-1 rounded-full border border-border px-1">
-          <button onClick={dec} className="h-9 w-9 rounded-full text-lg" aria-label="Reduce quantity">
-            −
-          </button>
-          <span className="w-10 text-center text-sm">{qty}</span>
-          <button onClick={inc} className="h-9 w-9 rounded-full text-lg" aria-label="Increase quantity">
-            +
-          </button>
-        </div>
+        <QuantityStepper
+          variant="hero"
+          alwaysStepper
+          quantity={qty}
+          min={product.minOrderQty}
+          step={step}
+          label={name}
+          onChange={setQty}
+          className="w-fit"
+        />
       </div>
 
       {/* CTA */}
       <div className="mt-4">
         {mode === "one-time" ? (
-          <button
-            onClick={addOneTime}
-            className="w-full rounded-full bg-ripe-green px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-ripe-green-dark"
-          >
-            Add to cart
-          </button>
+          <div className="flex items-center gap-1.5">
+            <Button ref={ctaRef} onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
+              {dest.signedIn && dest.destination.type === "basket" ? `Add to ${dest.destination.label}` : "Add to cart"}
+            </Button>
+            <DestinationOverrideChevron onPick={addOverride} />
+          </div>
         ) : (
-          <button
+          <Button
             onClick={() => startTransition(() => addToStandingBasket(product.id, qty, frequency))}
             disabled={isPending}
-            className="w-full rounded-full bg-ripe-green px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-ripe-green-dark disabled:opacity-60"
+            size="lg"
+            className="w-full uppercase tracking-wide"
           >
-            {isPending ? "Adding." : subscribeLabel}
-          </button>
+            {isPending ? "Adding…" : subscribeLabel}
+          </Button>
         )}
       </div>
 
       {/* Stock */}
       <p className="mt-3 flex items-center gap-2 text-sm">
-        <span className={`h-2.5 w-2.5 rounded-full ${inSeason ? "bg-ripe-green" : "bg-ripe-terracotta"}`} />
+        <span className={`h-2.5 w-2.5 rounded-full border border-carbon ${inSeason ? "bg-mint-pop" : "bg-ember"}`} />
         {inSeason ? "In stock" : "Limited this season"}
       </p>
 
@@ -124,7 +166,7 @@ export function BuyBox({
 
       {/* Purchase mode */}
       <div className="mt-5 overflow-hidden rounded-xl border border-border text-sm">
-        <label className="flex cursor-pointer items-center gap-2 border-b border-border p-3 has-[:checked]:bg-ripe-green-light">
+        <label className="flex cursor-pointer items-center gap-2 border-b border-border p-3 has-[:checked]:bg-lavender">
           <input
             type="radio"
             name="mode"
@@ -133,7 +175,7 @@ export function BuyBox({
           />
           One-time purchase
         </label>
-        <div className="p-3 has-[:checked]:bg-ripe-green-light">
+        <div className="p-3 has-[:checked]:bg-lavender">
           <label className="flex cursor-pointer items-center justify-between gap-2">
             <span className="flex items-center gap-2">
               <input
@@ -170,6 +212,6 @@ export function BuyBox({
         </div>
       </div>
       <p className="mt-2 text-xs text-muted">Auto-renews. Skip or cancel anytime.</p>
-    </div>
+    </Card>
   );
 }

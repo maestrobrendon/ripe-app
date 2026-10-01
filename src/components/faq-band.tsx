@@ -1,6 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { formatNaira } from "@/lib/format";
 import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
+import { spring } from "@/lib/motion/tokens";
 
 const FAQS = [
   {
@@ -39,39 +45,63 @@ const FAQS = [
   {
     q: "What if something is not fresh?",
     a: (
+      // FOUNDER REVIEW: this used to promise an unconditional refund/replacement,
+      // a real liability for fresh produce. Conditioned on the item still being
+      // reportable and inspectable; confirm the qualifying window and process
+      // before this goes live. See the addendum, Section 11.
       <>
-        Every order is quality checked before it leaves us. If something is not right, tell us within 24
-        hours on WhatsApp or by email and we will replace it or refund it.
+        Every order is quality checked before it leaves us. If an item arrives damaged or not fresh, tell
+        us within 24 hours on WhatsApp or by email with a photo of what you received, and we will look
+        into it. Depending on what we find, that can mean a replacement, a credit, or a refund for that
+        item. It does not cover produce that spoils after a normal amount of time in your kitchen.
       </>
     ),
   },
 ];
 
 export function FaqBand() {
-  return (
-    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <div className="grid gap-8 rounded-3xl bg-ripe-green p-8 text-white sm:p-12 md:grid-cols-[1fr_1.4fr]">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-white/60">Good to know</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Before you order.</h2>
-          <p className="mt-4 max-w-xs text-sm text-white/70">
-            The essentials on delivery, quality, and ordering from Ripe.
-          </p>
-        </div>
+  const [open, setOpen] = useState<number | null>(null);
 
-        <div className="divide-y divide-white/15 border-y border-white/15">
-          {FAQS.map((f) => (
-            <details key={f.q} className="group py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+      <h2 className="text-heading-lg">Before you order</h2>
+
+      <div className="mt-10 max-w-3xl border-t border-border">
+        {FAQS.map((f, i) => {
+          const isOpen = open === i;
+          return (
+            <div key={f.q} className="border-b border-border">
+              <button
+                type="button"
+                onClick={() => setOpen(isOpen ? null : i)}
+                aria-expanded={isOpen}
+                className="flex w-full items-center justify-between gap-6 py-5 text-left text-lg font-semibold"
+              >
                 {f.q}
-                <span className="shrink-0 text-lg text-white/60 transition-transform group-open:rotate-45">
-                  +
-                </span>
-              </summary>
-              <p className="mt-2 max-w-lg text-sm text-white/70">{f.a}</p>
-            </details>
-          ))}
-        </div>
+                <motion.span
+                  animate={{ rotate: isOpen ? 45 : 0 }}
+                  transition={spring.snappy}
+                  className="shrink-0 text-muted"
+                >
+                  <Plus size={22} aria-hidden />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={spring.smooth}
+                    className="overflow-hidden"
+                  >
+                    <p className="max-w-2xl pb-5 text-base text-muted">{f.a}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

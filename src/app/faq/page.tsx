@@ -1,4 +1,4 @@
-export const metadata = { title: "FAQ. Ripe" };
+export const metadata = { title: "FAQ. Basket" };
 
 const FAQS = [
   {
@@ -18,8 +18,8 @@ const FAQS = [
     a: "Prices are grounded in what the same produce costs at a Lagos supermarket. Sourcing locally from trusted farmers, and cutting out middlemen, is what makes member pricing possible.",
   },
   {
-    q: "What is the trained assistant?",
-    a: "A guide inside the Recipes section that reads your cart or a stated goal and suggests what to make and what to add. It gives food ideas, not medical or nutritional advice.",
+    q: "What is Ideas?",
+    a: "A guide in your basket, and inside Recipes, that reads your basket or a stated goal and suggests what to make and what to add. It gives food ideas, not medical or nutritional advice.",
   },
   {
     q: "How is payment handled?",

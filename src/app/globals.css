@@ -1,46 +1,459 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf6ee;
-  --surface: #ffffff;
-  --foreground: #1f2a1f;
-  --muted: #6b6459;
-  --border: #e6ddc9;
+  /* Palette — inflatable sticker universe on pastel paper. Fills are flat and
+     solid; dimension is meant to come from artwork, never from gradients or
+     shadows, so there are no elevation tokens here by design. */
+  --carbon: #000000;
+  --paper-white: #ffffff;
+  --sky-wash: #dceeff;
+  --concrete-gray: #cccccc;
+  --soft-mist: #e9e9e9;
+  --electric-blue: #4da2ff;
+  --mint-pop: #55db9c;
+  --lavender: #e9ccff;
+  --ember: #fb4903;
+  --sunburst: #ffd731;
+  --voltage-violet: #5c4ade;
 
-  --ripe-green: #1f4d3a;
-  --ripe-green-dark: #16362a;
-  --ripe-green-light: #e7f0e9;
-  --ripe-terracotta: #c96a3c;
-  --ripe-terracotta-dark: #a8552d;
-  --ripe-terracotta-light: #f6e3d6;
-  --ripe-cream: #faf6ee;
+  /* Semantic roles over that palette. Ink and outlines are strictly carbon;
+     canvas and cards are both paper white, because a card is separated from
+     the page by its 1px black outline rather than by a different fill. */
+  --background: var(--paper-white);
+  --surface: var(--paper-white);
+  --foreground: var(--carbon);
+  --border: var(--carbon);
+  /* Secondary text is carbon held back rather than a grey of its own: the
+     palette has no muted ink, and a real grey would read as off-system. */
+  --muted: rgba(0, 0, 0, 0.62);
+
+  /* Shape scale — pill controls, soft-radius cards. Untouched by the colour
+     and type overhaul; only the palette and the faces changed. */
+  --radius-control: 9999px;
+  --radius-input: 12px;
+  --radius-card: 24px;
+  --radius-card-lg: 36px;
+
+  /* The global mobile tab bar's own content height (excluding the safe-area
+     inset it adds on top of this). Any other fixed bottom bar stacks above it
+     by offsetting `bottom` by this variable, so the two never overlap and
+     only the bottom-most one needs to account for the safe area. Zero on
+     desktop, where the tab bar doesn't render. */
+  --mobile-nav-h: 60px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --mobile-nav-h: 0px;
+  }
 }
 
 @theme inline {
+  --color-carbon: var(--carbon);
+  --color-paper-white: var(--paper-white);
+  --color-sky-wash: var(--sky-wash);
+  --color-concrete-gray: var(--concrete-gray);
+  --color-soft-mist: var(--soft-mist);
+  --color-electric-blue: var(--electric-blue);
+  --color-mint-pop: var(--mint-pop);
+  --color-lavender: var(--lavender);
+  --color-ember: var(--ember);
+  --color-sunburst: var(--sunburst);
+  --color-voltage-violet: var(--voltage-violet);
+
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
 
-  --color-ripe-green: var(--ripe-green);
-  --color-ripe-green-dark: var(--ripe-green-dark);
-  --color-ripe-green-light: var(--ripe-green-light);
-  --color-ripe-terracotta: var(--ripe-terracotta);
-  --color-ripe-terracotta-dark: var(--ripe-terracotta-dark);
-  --color-ripe-terracotta-light: var(--ripe-terracotta-light);
-  --color-ripe-cream: var(--ripe-cream);
+  /* Two faces, two jobs. The display face stands in for Ozik; Dr Kabel is a
+     locally installed single-weight display face, self-hosted rather than
+     pulled from Google Fonts. The UI face stands in for Aeonik and uses
+     Inter, the type spec's own first fallback. */
+  --font-display: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
+  --font-ui: var(--font-inter), Arial, Helvetica, sans-serif;
 
-  --font-sans: var(--font-fraunces), Georgia, serif;
-  --font-body: var(--font-inter), Arial, Helvetica, sans-serif;
+  --radius-control: var(--radius-control);
+  --radius-input: var(--radius-input);
+  --radius-card: var(--radius-card);
+  --radius-card-lg: var(--radius-card-lg);
+}
+
+/* Safety net, not a fix in itself: nothing here should ever need to grow
+   wider than the viewport, but on a phone a single unbroken long word (a
+   product or recipe title) or a stray fixed width is enough to add a
+   page-wide horizontal scrollbar that swallows vertical touch scrolling.
+   This guarantees that failure mode stays contained to the offending
+   element instead of the whole page. */
+html {
+  overflow-x: hidden;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-fraunces), Georgia, serif;
+/* Headings deliberately inherit the UI face. The display face is a separate
+   instrument reserved for the two display steps below, never for anything
+   that behaves like UI — including an h1 that happens to be small. */
+
+/* Display — two or three words, uppercase, set as a physical object. The spec
+   floors these at 56px; the clamp dips below that on phones only, where 56px
+   of caps cannot fit a line at all. */
+.text-display-2xl,
+.text-display-xl {
+  font-family: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
+  /* Dr Kabel ships a single weight and is already display-heavy, so the
+     spec's 700 is expressed by the face itself rather than by a weight. */
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.text-display-2xl {
+  /* A 7.5vw mid-value doesn't cross the 3.25rem floor until ~693px wide, so
+     every phone from a 320px SE to a 428px Pro Max rendered the identical
+     52px size. 11vw makes the floor a real floor for the narrowest phones
+     only, and everything above scales with the viewport. */
+  font-size: clamp(2.25rem, 11vw, 5rem);
+  /* The spec's 0.9 was tuned for Ozik's letterforms. Dr Kabel's rounder
+     ascenders/descenders collide at that height, so this is loosened until
+     stacked lines clear each other instead of overlapping. */
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.text-display-xl {
+  font-size: clamp(2rem, 9vw, 3.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.014em;
+}
+
+/* Wordmark: the one place the display face appears in sentence case, at UI
+   scale rather than headline scale — it's a logo, not a headline. */
+.logo-wordmark {
+  font-family: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* UI steps. Tracking tightens as size grows, which is what keeps a large
+   heading feeling technical instead of like oversized body copy. */
+.text-heading-lg {
+  font-size: clamp(1.75rem, 3.5vw, 2rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.text-heading {
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.33;
+  letter-spacing: -0.02em;
+}
+
+.text-body-lg {
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.56;
+  letter-spacing: -0.014em;
+}
+
+/* Weight 600 follows the spec's weight roles, where 600 is the sub-heading
+   weight; the scale table's 500 is the label reading of the same step. */
+.text-label-lg {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.33;
+  letter-spacing: -0.014em;
+}
+
+/* Mobile carousels: native swipe with snap points, scrollbar hidden. */
+.snap-row {
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 1rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
+.snap-row > * {
+  scroll-snap-align: start;
+}
+
+/* Comfortable minimum touch target on phones, without changing visual size. */
+@media (max-width: 640px) {
+  .tap-target {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+/* Global press-squish backstop ("respond to the hand, instantly"). Motion
+   components get a real spring via whileTap; this CSS rule is the floor so
+   every remaining plain <button> in the app still gives feedback on press
+   without needing to be individually converted. Motion's whileTap wins
+   wherever both apply (inline transform beats this rule). Scoped to
+   <button> only — scaling inline text links looks broken when they wrap. */
+button:not(:disabled) {
+  transition: transform 120ms var(--ease-out, ease-out);
+}
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   RIPE 2.0 · SEMANTIC LAYER (added on top of the palette above, nothing
+   removed). Gives new/rebuilt components role-based names (bg-action,
+   text-fg, sticker…) instead of raw colour names, so a future brand refresh
+   is a one-file edit here rather than a hunt across components. Existing
+   classes (bg-carbon, text-carbon, border-border, bg-sky-wash…) keep working
+   unchanged — this is an additive vocabulary, not a migration.
+   ========================================================================== */
+
+:root {
+  --scrim: rgba(0, 0, 0, 0.4);
+
+  /* Motion durations — CSS hover/colour states only. Springs live in
+     src/lib/motion/tokens.ts for anything Motion/GSAP touches. */
+  --dur-instant: 80ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 360ms;
+  --dur-slower: 520ms;
+  --dur-story: 900ms;
+
+  /* Stacking. Use z-(--z-dock) etc.; never raw numbers in new code. */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 30;
+  --z-header: 40;
+  --z-dock: 45;
+  --z-overlay: 50;
+  --z-sheet: 60;
+  --z-dialog: 70;
+  --z-toast: 80;
+  --z-flight: 90;
+
+  /* Floating dock geometry, shared by the dock and the page clearance it needs. */
+  --dock-height: 4rem;
+  --dock-inset: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
+  --dock-clearance: calc(var(--dock-height) + var(--dock-inset) + 1.5rem);
+
+  --gutter: clamp(1rem, 0.6rem + 1.6vw, 2rem);
+  --space-section: clamp(4rem, 2.8rem + 5vw, 8rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 120ms;
+    --dur-slow: 120ms;
+    --dur-slower: 160ms;
+    --dur-story: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes ripe-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@keyframes ripe-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes ripe-dot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+@theme inline {
+  /* Role-named colour aliases over the same primitives. */
+  --color-canvas: var(--paper-white);
+  --color-surface: var(--paper-white);
+  --color-surface-raised: var(--paper-white);
+  --color-sunken: var(--soft-mist);
+  --color-fill: var(--soft-mist);
+  --color-band-sky: var(--sky-wash);
+  --color-band-paper: var(--paper-white);
+  --color-band-concrete: var(--concrete-gray);
+  --color-surface-sticker: var(--lavender);
+  --color-inverse: var(--carbon);
+  --color-scrim: rgb(0 0 0 / 0.4);
+
+  --color-sticker-blue: var(--electric-blue);
+  --color-sticker-mint: var(--mint-pop);
+  --color-sticker-lavender: var(--lavender);
+  --color-sticker-ember: var(--ember);
+  --color-sticker-sun: var(--sunburst);
+  --color-sticker-violet: var(--voltage-violet);
+
+  --color-fg: var(--carbon);
+  --color-fg-secondary: var(--carbon);
+  --color-fg-subtle: var(--carbon);
+  --color-fg-disabled: rgb(0 0 0 / 0.45);
+  --color-fg-on-inverse: var(--paper-white);
+  --color-fg-on-action: var(--paper-white);
+  --color-fg-on-violet: var(--paper-white);
+
+  --color-line: var(--carbon);
+
+  --color-action: var(--carbon);
+  --color-action-secondary: var(--paper-white);
+  --color-action-secondary-hover: var(--soft-mist);
+  --color-quiet-hover: var(--soft-mist);
+
+  --color-dock: var(--paper-white);
+  --color-dock-active: var(--carbon);
+  --color-fg-on-dock-active: var(--paper-white);
+
+  --color-danger: var(--ember);
+  --color-warning: var(--sunburst);
+  --color-info: var(--electric-blue);
+  --color-success: var(--carbon);
+
+  --color-savings: var(--lavender);
+  --color-offseason: var(--ember);
+  --color-badge-count: var(--ember);
+
+  --color-flavour-fruit: var(--sunburst);
+  --color-flavour-vegetable: var(--mint-pop);
+  --color-flavour-box: var(--lavender);
+  --color-flavour-seasonal: var(--ember);
+  --color-flavour-cuts: var(--electric-blue);
+
+  --color-focus: var(--carbon);
+
+  /* Radius roles (nesting rule: inner = outer − padding between them). */
+  --radius-badge: 9999px;
+  --radius-chip: 9999px;
+  --radius-button: 9999px;
+  --radius-tile: 18px;
+  --radius-panel: 40px;
+  --radius-sheet: 32px;
+  --radius-dialog: 32px;
+  --radius-dock: 9999px;
+
+  --font-text: var(--font-ui);
+
+  /* Aeonik steps not already covered by the hand-written classes above. */
+  --text-heading-xl: 40px;
+  --text-heading-xl--line-height: 1.2;
+  --text-heading-xl--letter-spacing: -0.04em;
+  --text-heading-xl--font-weight: 500;
+
+  --text-heading-md: 28px;
+  --text-heading-md--line-height: 1.2;
+  --text-heading-md--letter-spacing: -0.036em;
+  --text-heading-md--font-weight: 500;
+
+  --text-subheading: 24px;
+  --text-subheading--line-height: 1.33;
+  --text-subheading--letter-spacing: -0.031em;
+  --text-subheading--font-weight: 500;
+
+  --text-title: 20px;
+  --text-title--line-height: 1.4;
+  --text-title--letter-spacing: -0.033em;
+  --text-title--font-weight: 600;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.71;
+  --text-body-sm--letter-spacing: -0.031em;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.67;
+  --text-caption--letter-spacing: -0.031em;
+
+  --ease-juicy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  --container-content: 72rem;
+  --container-wide: 84rem;
+  --container-dock: 26rem;
+}
+
+/* The hand-cut sticker outline: 1px solid carbon on every interactive
+   element and decorative sticker fill. */
+.sticker {
+  border: 1px solid var(--carbon);
+}
+
+.container-page {
+  margin-inline: auto;
+  max-width: var(--container-content);
+  padding-inline: var(--gutter);
+}
+
+.section-y {
+  padding-block: var(--space-section);
+}
+
+/* Bottom clearance so page content never sits under the floating dock. */
+.pb-dock {
+  padding-bottom: var(--dock-clearance);
+}
+/* The dock is a bottom pill only below lg; above that it's a left rail with
+   nothing to clear at the bottom, so pages using pb-dock shouldn't keep
+   reserving space there. */
+@media (min-width: 1024px) {
+  .pb-dock {
+    padding-bottom: 0;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .squircle {
+    corner-shape: squircle;
+  }
+}
+
+.skeleton {
+  background: var(--soft-mist);
+  animation: ripe-pulse 1.6s ease-in-out infinite;
+}
+
+.rail {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--gutter);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.rail > * {
+  scroll-snap-align: start;
+}
+
+.marquee-track {
+  animation: ripe-marquee 24s linear infinite;
+}
+.marquee-track:hover,
+.marquee-track:focus-within {
+  animation-play-state: paused;
 }
