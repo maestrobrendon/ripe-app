@@ -52,7 +52,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="en" className={`${fontVariables} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+      {/* Guests have no bottom menu, so nothing fixed to the bottom of the
+          screen needs to clear one: --mobile-nav-h is zero for them. */}
+      <body className="flex min-h-full flex-col" style={user ? undefined : ({ "--mobile-nav-h": "0px" } as React.CSSProperties)}>
         <MotionProvider>
           <ZoneProvider initialZoneName={zone?.name ?? null}>
             <CartProvider initial={cart}>
@@ -63,9 +65,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 {/* A signed-in visitor always gets the floating dock below,
                     whose real footprint is --dock-clearance (pb-dock zeroes
                     it on desktop, where the dock is a left rail instead of a
-                    bottom bar); a guest gets the flush tab bar's fixed
-                    --mobile-nav-h instead — see globals.css. */}
-                <main className={user ? "flex-1 pb-dock" : "flex-1"} style={user ? undefined : { paddingBottom: "var(--mobile-nav-h)" }}>
+                    bottom bar). A guest has no bottom menu to clear. */}
+                <main className={user ? "flex-1 pb-dock" : "flex-1"}>
                   {children}
                 </main>
                 {/* Signed-in users get every former footer link from Account →
