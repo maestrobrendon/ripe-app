@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
@@ -25,6 +26,19 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The new homepage (see src/proxy.ts) draws its own navigation and footer.
+  if ((await headers()).get("x-basket-bare") === "1") {
+    return (
+      // hn-page lets sticky sections work (see home-next.css); the pre-paint
+      // script adds hn-js to <html>, hence suppressHydrationWarning.
+      <html lang="en" className={`${fontVariables} hn-page antialiased`} suppressHydrationWarning>
+        <body>
+          <MotionProvider>{children}</MotionProvider>
+        </body>
+      </html>
+    );
+  }
+
   const [user, cart, zone] = await Promise.all([getCurrentUser(), readCart(), getActiveZone()]);
 
   let destinationBaskets: DestinationBasket[] = [];

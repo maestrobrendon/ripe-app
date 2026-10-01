@@ -1,0 +1,147 @@
+/* ==========================================================================
+   The new homepage. Everything here is prefixed hn- so it cannot leak into
+   the rest of the app. Colours are the app's tokens only.
+   ========================================================================== */
+
+/* Lenis smooth scroll (from lenis/dist/lenis.css). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* globals.css sets overflow-x: hidden on both html and body. That makes body
+   its own scroll container, which silently breaks every position: sticky
+   section on this page. Clip on html only, and leave body alone. */
+html.hn-page {
+  overflow-x: clip;
+}
+html.hn-page body {
+  overflow: visible;
+  max-width: none;
+}
+
+.hn {
+  --hn-nav: 84px;
+  background: var(--paper-white);
+  color: var(--carbon);
+  overflow-x: clip;
+}
+
+/* The display face for every headline on this page. */
+.hn-display {
+  font-family: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.98;
+}
+
+/* Hand-drawn highlighter behind a word. Grows in when .is-on is added. */
+.hn-mark {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+.hn-mark::after {
+  content: "";
+  position: absolute;
+  left: -0.06em;
+  right: -0.06em;
+  bottom: -0.04em;
+  height: 0.2em;
+  background: var(--hn-mark, var(--mint-pop));
+  z-index: -1;
+  border-radius: 0.08em;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+}
+.hn-mark.is-on::after,
+.hn-reduced .hn-mark::after {
+  transform: scaleX(1);
+}
+/* A full sticker label instead of an underline, for light text on carbon:
+   the label fills, and the words turn carbon so they stay readable on it. */
+.hn-mark-full {
+  padding-inline: 0.12em;
+  transition: color 0.4s ease 0.35s;
+}
+.hn-mark-full::after {
+  left: 0;
+  right: 0;
+  top: 0.02em;
+  bottom: -0.04em;
+  height: auto;
+  border-radius: 0.14em;
+}
+.hn-mark-full.is-on,
+.hn-reduced .hn-mark-full {
+  color: var(--carbon);
+}
+
+/* Ticker under the hero. */
+.hn-ticker {
+  animation: ripe-marquee 36s linear infinite;
+}
+
+/* The live dot on the tracking screen. */
+@keyframes hn-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.hn-ping {
+  animation: hn-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Grain over full-bleed photographs, so they sit with the flat palette. */
+.hn-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.55'/></svg>");
+}
+
+/* The hero's intro pieces start hidden only when JavaScript is running and
+   motion is allowed (html.hn-js is set before paint), so they never flash
+   before the timeline takes them. The failsafe shows them regardless after
+   three seconds, in case the timeline never runs. */
+.hn-js [data-intro] {
+  visibility: hidden;
+  animation: hn-failsafe 0s linear 3s forwards;
+}
+@keyframes hn-failsafe {
+  to {
+    visibility: visible;
+  }
+}
+
+/* Reduced motion: the page reads top to bottom with nothing hidden. */
+.hn-reduced [data-hn-hide] {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hn-ticker {
+    animation: none;
+  }
+}
