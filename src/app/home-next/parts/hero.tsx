@@ -107,13 +107,12 @@ export function Hero({
       <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] items-center gap-6 pb-12 sm:w-[min(1180px,calc(100%-48px))] lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-16">
         <div>
           <h1 data-intro className="hn-hero-title hn-display text-[clamp(2.5rem,5vw,5rem)]">
-            You plan the <br className="hidden sm:block" />
-            workout. <br />
-            Nobody plans <br className="hidden sm:block" />
-            <span className="hn-mark">the fruit.</span>
+            Whatever the <br />
+            goal, there&rsquo;s a <br />
+            <span className="hn-mark">basket.</span>
           </h1>
           <p data-intro data-hero-fade className="mt-6 max-w-[34rem] text-[clamp(1.0625rem,1.4vw,1.3rem)] leading-normal text-carbon/80">
-            Basket does. A box of fresh fruit and vegetables that turns up on your day, every week. Set it once. Change it whenever you like.
+            A box of fresh fruit and vegetables that turns up on your day, every week. Set it once. Change it whenever you like.
           </p>
           <div id="hero-cta" data-intro data-hero-fade className="mt-8 flex flex-wrap gap-3">
             {signedIn ? (
@@ -124,11 +123,7 @@ export function Hero({
               <MagneticLink href="/start" arrow>
                 Try a basket free
               </MagneticLink>
-            )}
-            <MagneticLink href="#how" variant="ghost">
-              See how it works
-            </MagneticLink>
-          </div>
+            )}          </div>
           <p data-intro data-hero-fade className="mt-4 text-[13px] text-muted">
             Free to set up. No card, no membership. You pay for the produce when you check out.
           </p>

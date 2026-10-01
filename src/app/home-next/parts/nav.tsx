@@ -69,7 +69,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
             </Link>
           )}
           <MagneticLink href={signedIn ? "/basket" : "/start"} size="md" variant={tight && dark ? "light" : "dark"}>
-            {signedIn ? "Open your basket" : "Try a basket free"}
+            {signedIn ? "Open your basket" : "Get Started"}
           </MagneticLink>
         </div>
       </div>
