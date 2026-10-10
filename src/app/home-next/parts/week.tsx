@@ -5,7 +5,6 @@ import {
   AnimatePresence,
   motion,
   useMotionValueEvent,
-  useReducedMotion,
   useScroll,
   useTransform,
   type MotionValue,
@@ -13,6 +12,7 @@ import {
 import { Barbell, Leaf, Car, Fire, Basket, CalendarCheck, Sparkle } from "@phosphor-icons/react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
+import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
 
 const DAYS = [
   { day: "Monday", short: "M", line: "New week. This time you mean it.", Icon: Sparkle, wash: "bg-sunburst" },

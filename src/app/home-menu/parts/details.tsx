@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useInView } from "motion/react";
+import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
 import { spring } from "@/lib/motion/tokens";
 import { Reveal } from "../../home-next/parts/runtime";
 import { Check, Eyebrow } from "./shared";

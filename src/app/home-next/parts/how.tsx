@@ -5,13 +5,13 @@ import {
   AnimatePresence,
   motion,
   useMotionValueEvent,
-  useReducedMotion,
   useScroll,
   useTransform,
   type MotionValue,
 } from "motion/react";
 import { CaretDown, Check, Moped, HouseLine, Basket as BasketIcon } from "@phosphor-icons/react";
 import { spring } from "@/lib/motion/tokens";
+import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
 import { ProduceSticker } from "./produce";
 import { scrollToY } from "./runtime";
 import type { ShowcaseGoal } from "../types";
