@@ -39,6 +39,53 @@
   line-height: 0.96;
 }
 
+/* The hero sits on the illustration's own flat sky field. --k scales the
+   1536px-wide source scene to the screen; the layers hang from the corners,
+   so on phones and tablets the padding opens a band above and below the copy
+   for them (556 and 565 are the tallest top and bottom layers in source px). */
+.hm-hero {
+  --hm-field: #d1eafd;
+  --k: 1.25;
+  background: var(--hm-field);
+  padding-top: calc(556 * 100vw / 1536 * var(--k) + 8px);
+  padding-bottom: calc(565 * 100vw / 1536 * var(--k) + 8px);
+}
+.hm-hero-art {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  pointer-events: none;
+  user-select: none;
+  --s: calc(100cqw / 1536 * var(--k));
+  --push: 0px;
+}
+.hm-layer {
+  position: absolute;
+}
+.hm-layer img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (min-width: 640px) {
+  .hm-hero {
+    --k: 0.85;
+  }
+}
+/* Desktop: the scene fits the hero like a contained 3:2 frame, and pushes
+   outward a little more as the screen narrows so the flanks never reach the
+   headline. */
+@media (min-width: 1024px) {
+  .hm-hero {
+    padding-top: 9rem;
+    padding-bottom: 6rem;
+  }
+  .hm-hero-art {
+    --s: calc(min(100cqw, 150cqh) / 1536);
+    --push: clamp(0px, (1440px - 100cqw) * 0.4, 180px);
+  }
+}
+
 /* Section headlines: the UI face, tight, sentence case. */
 .hm-h2 {
   font-size: clamp(2rem, 4.2vw, 3.25rem);
