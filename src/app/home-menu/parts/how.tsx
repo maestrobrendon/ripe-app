@@ -31,7 +31,9 @@ function useStage(steps: number, key: string, gap = 900) {
 
 function Step({ n, title, body, children }: { n: number; title: string; body: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col">
+    // min-w-0: a grid item is otherwise as wide as its longest line (a
+    // recipe name, the delivery row), which pushed the panels off a phone.
+    <div className="flex min-w-0 flex-col">
       <div className="hm-panel relative h-[300px] overflow-hidden p-5">{children}</div>
       <div className="mt-5 flex gap-3.5 pr-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-carbon text-[13px] font-bold text-paper-white">{n}</span>

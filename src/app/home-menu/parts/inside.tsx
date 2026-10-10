@@ -59,9 +59,11 @@ export function Inside({ products }: { products: Record<string, MenuProduct> }) 
           <div className="hm-inside-photo relative aspect-[4/5] overflow-hidden rounded-[32px]">
             <Image src={recipe.image} alt={recipe.alt} fill sizes="(min-width: 1024px) 480px, 90vw" className="object-cover" />
           </div>
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
+          {/* On phones the page gutter is only 16px, so a pin may hang at most
+              8px past the photo's box, not its share of the width. */}
+          <div className="pointer-events-none absolute inset-0 [--pin-min:-8px] sm:[--pin-min:-100vw]" aria-hidden>
             {basket.slice(0, PINS.length).map((p, i) => (
-              <div key={p.slug} className="hm-pin absolute" style={PINS[i]}>
+              <div key={p.slug} className="hm-pin absolute" style={{ ...PINS[i], left: `max(${PINS[i].left}, var(--pin-min))` }}>
                 <div className="shadow-[0_12px_24px_-12px_rgb(0_0_0/0.35)] rounded-full">
                   <IngredientChip product={p} />
                 </div>

@@ -46,8 +46,12 @@
 .hm-hero {
   --hm-field: #d1eafd;
   --k: 1.25;
+  /* Below lg the nav is a solid bar in the field colour (see nav.tsx), so
+     the top band starts under it rather than behind the logo and button,
+     and the band's cut edges tuck under the bar. Matches the nav's height. */
+  --nav: 64px;
   background: var(--hm-field);
-  padding-top: calc(556 * 100vw / 1536 * var(--k) + 8px);
+  padding-top: calc(556 * 100vw / 1536 * var(--k) + var(--nav) + 8px);
   padding-bottom: calc(565 * 100vw / 1536 * var(--k) + 8px);
 }
 .hm-hero-art {
@@ -83,6 +87,7 @@
 @media (min-width: 640px) {
   .hm-hero {
     --k: 0.85;
+    --nav: 72px;
   }
 }
 /* Desktop: the scene fits the hero like a contained 3:2 frame, and pushes
@@ -90,6 +95,7 @@
    headline. */
 @media (min-width: 1024px) {
   .hm-hero {
+    --nav: 0px;
     padding-top: 9rem;
     padding-bottom: 6rem;
   }

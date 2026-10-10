@@ -24,7 +24,9 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-(--z-header) transition-[background-color,box-shadow] duration-(--dur-slow) ${
-        scrolled ? "bg-paper-white/90 shadow-[0_1px_0_var(--hm-line)] backdrop-blur-md" : "bg-transparent"
+        // At the top it's the hero's sky colour on phones and tablets, a bar
+        // the illustration tucks under (see .hm-hero), and clear on desktop.
+        scrolled ? "bg-paper-white/90 shadow-[0_1px_0_var(--hm-line)] backdrop-blur-md" : "bg-[#d1eafd] lg:bg-transparent"
       }`}
     >
       <div className="hm-wrap flex h-16 items-center justify-between gap-4 sm:h-18">

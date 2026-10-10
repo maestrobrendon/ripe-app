@@ -92,7 +92,7 @@ function place(l: Layer): CSSProperties {
     "--o": l.origin ?? "50% 50%",
     width: `calc(${l.w} * var(--s))`,
     [left ? "left" : "right"]: `calc(${left ? l.x : SRC_W - l.x - l.w} * var(--s) - var(--push)${bleed(left ? "l" : "r")})`,
-    [top ? "top" : "bottom"]: `calc(${top ? l.y : SRC_H - l.y - l.h} * var(--s)${bleed(top ? "t" : "b")})`,
+    [top ? "top" : "bottom"]: `calc(${top ? `${l.y} * var(--s) + var(--nav)` : `${SRC_H - l.y - l.h} * var(--s)`}${bleed(top ? "t" : "b")})`,
   } as CSSProperties;
 }
 
