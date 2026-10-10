@@ -21,11 +21,15 @@ export type KachiListItem = {
 
 export type KachiOrder = { id: string; status: OrderStatus; deliveryDate: string };
 
+/** A recipe from the library, with how much of it Basket can supply. */
+export type KachiRecipe = { slug: string; title: string; summary: string; fromBasket: number };
+
 export type KachiCard =
   | { type: "act"; scope: KachiScope; changes: KachiChange[] }
   | { type: "list"; scope: KachiScope; items: KachiListItem[] }
   | { type: "ask"; request: string }
-  | { type: "order"; order: KachiOrder };
+  | { type: "order"; order: KachiOrder }
+  | { type: "recipes"; recipes: KachiRecipe[] };
 
 export type KachiReply = {
   reply: string;
@@ -33,6 +37,8 @@ export type KachiReply = {
   title?: string;
   cards?: KachiCard[];
   error?: string;
+  /** The turn failed (busy or broken) and sending it again may work. */
+  retry?: boolean;
 };
 
 /** Display names for a customer's baskets, oldest first: the goal tag if set, else a number when there are several. */

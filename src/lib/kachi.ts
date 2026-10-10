@@ -10,6 +10,7 @@ import {
   type KachiListItem,
   type KachiMode,
   type KachiOrder,
+  type KachiRecipe,
   type KachiScope,
 } from "@/lib/kachi-types";
 
@@ -97,6 +98,70 @@ export async function buildListItems(
   return lines;
 }
 
+/**
+ * What is in a basket or cart right now, as prompt lines. Handing the model
+ * the contents up front saves it a lookup call on most turns, which matters
+ * on Gemini's per-minute quota.
+ */
+export async function contentsContext(contents: Map<string, number>) {
+  if (contents.size === 0) return "Empty.";
+  const products = await prisma.product.findMany({
+    where: { id: { in: [...contents.keys()] } },
+    select: { id: true, name: true, unit: true },
+  });
+  return products.map((p) => `${p.id} :: ${p.name}, ${contents.get(p.id)} x ${p.unit}`).join("\n");
+}
+
+/** The active basket's contents for chat mode, where Kachi can look but not touch. */
+export async function activeBasketContext(userId: string) {
+  const basket = await prisma.basket.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" }, select: { id: true } });
+  if (!basket) return { basketId: null, lines: "This customer has no basket yet." };
+  const rows = await prisma.basketItem.findMany({ where: { basketId: basket.id } });
+  return { basketId: basket.id, lines: await contentsContext(new Map(rows.map((r) => [r.productId, r.quantity]))) };
+}
+
+/** The recipe library as prompt lines. It is small enough to hand over whole. */
+export async function recipeLibrary() {
+  const [recipes, products] = await Promise.all([
+    prisma.recipe.findMany({ select: { slug: true, title: true, summary: true, goalTags: true, ingredientProductIds: true } }),
+    prisma.product.findMany({ select: { id: true, name: true } }),
+  ]);
+  const names = new Map(products.map((p) => [p.id, p.name]));
+  const lines = recipes
+    .map((r) => {
+      const goals = r.goalTags.map((g) => GOAL_LABEL[g] ?? g).join(", ");
+      const uses = r.ingredientProductIds.map((id) => `${names.get(id) ?? "?"} (${id})`).join(", ");
+      return `[[${r.slug}]] ${r.title}: ${r.summary} Goals: ${goals}. Basket ingredients: ${uses}.`;
+    })
+    .join("\n");
+  return { lines: lines || "No recipes yet.", bySlug: new Map(recipes.map((r) => [r.slug, r])) };
+}
+
+/**
+ * Pulls the [[slug]] recipe markers out of a reply and turns them into
+ * recipe cards. Markers keep recipe suggestions to the one model call that
+ * writes the reply, rather than a separate lookup tool.
+ */
+export function extractRecipes(
+  text: string,
+  bySlug: Map<string, { slug: string; title: string; summary: string; ingredientProductIds: string[] }>,
+): { text: string; recipes: KachiRecipe[] } {
+  const recipes: KachiRecipe[] = [];
+  const cleaned = text
+    .replace(/[ \t]*\[\[([a-z0-9-]+)\]\]/g, (_, slug: string) => {
+      const r = bySlug.get(slug);
+      if (r && !recipes.some((x) => x.slug === slug)) {
+        recipes.push({ slug: r.slug, title: r.title, summary: r.summary, fromBasket: r.ingredientProductIds.length });
+      }
+      return "";
+    })
+    .replace(/[ \t]+([.,;:!?])/g, "$1")
+    .replace(/[ \t]+$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { text: cleaned, recipes: recipes.slice(0, 3) };
+}
+
 export async function recentOrders(userId: string, take = 3) {
   return prisma.order.findMany({
     where: { userId },
@@ -113,79 +178,99 @@ export function toKachiOrder(o: { id: string; status: KachiOrder["status"]; deli
 export const ORDER_INTENT = /\b(order|orders|deliver|delivery|delivered|arriv)/i;
 export const CHANGE_INTENT = /^\s*(please\s+)?(add|put|remove|take out|delete|drop|fill my basket|fill my cart)\b/i;
 
-/** The customer's food preferences (Account > Food preferences), as prompt context. */
+/** The customer's food preferences (Account > Food preferences) and delivery zone, as prompt context. */
 export function aboutCustomer(user: CurrentUser) {
   const people = user.householdAdults + user.householdKids;
   const goal = user.preferences?.primaryGoal ? GOAL_LABEL[user.preferences.primaryGoal] ?? user.preferences.primaryGoal : null;
   const likes = (user.preferences?.producePreferences ?? []).map((p) => PRODUCE_PREFERENCE_LABEL[p] ?? p);
+  const zone = user.deliveryZone;
+  const days = (zone?.deliveryDays ?? []).map((d) => d.charAt(0) + d.slice(1).toLowerCase());
   return [
     `Household: ${user.householdAdults} ${user.householdAdults === 1 ? "adult" : "adults"}, ${user.householdKids} ${user.householdKids === 1 ? "child" : "children"} (${people} people). Size amounts for this many people unless told otherwise.`,
     goal ? `What they want most: ${goal}.` : null,
     likes.length ? `What they usually buy: ${likes.join(", ")}.` : null,
+    zone
+      ? `Delivery zone: ${zone.name} (${zone.area}). Delivery days: ${days.join(", ") || "not set"}.`
+      : "No delivery address on the account yet. They can add one in Account.",
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-const STYLE_RULES = `Write in plain, warm, short sentences. Never use em dashes; use commas or full stops instead. Never call yourself "AI", a "bot", or a "chatbot". You are Kachi.`;
+type Orders = { id: string; status: string; deliveryDate: Date }[];
 
-function ordersContext(orders: { id: string; status: string; deliveryDate: Date }[]) {
+const VOICE = `You are Kachi, the meal planner inside Basket, a Lagos service that turns a food goal into recipes and the fresh produce to cook them.
+
+Write in plain, warm, short sentences, Nigerian kitchens in mind. Keep most replies under 80 words. Use a short numbered list only when listing options or steps. Never use em dashes; use commas or full stops instead. Never call yourself "AI", a "bot", or a "chatbot". You are Kachi. You give food guidance, not medical advice; for anything medical, their doctor comes first.`;
+
+const RECIPE_RULES = `Recipes: when a recipe from the library below fits, suggest it by writing its marker exactly as shown, for example [[efo-riro]], right after its name. The app turns each marker into a card the customer can open. Suggest at most three. Only use markers from the library; for anything else, describe it in words.`;
+
+function ordersContext(orders: Orders) {
   if (orders.length === 0) return "This customer has no orders yet.";
   return orders
     .map((o) => `${o.id} :: ${o.status.toLowerCase().replace(/_/g, " ")}, delivery ${o.deliveryDate.toDateString()}`)
     .join("\n");
 }
 
-/** Just chatting: food talk only, no tools, nothing can change. */
-export function chatSystemPrompt(
-  firstName: string,
-  profile: string,
-  orders: { id: string; status: string; deliveryDate: Date }[],
-) {
-  return `You are Kachi, the food companion inside Basket, a fruit and vegetable delivery service in Lagos. You are chatting with ${firstName}.
+/** Just chatting: Kachi can see the active basket but change nothing. */
+export function chatSystemPrompt(c: { firstName: string; profile: string; orders: Orders; basketLines: string; recipeLines: string }) {
+  return `${VOICE}
 
-${STYLE_RULES}
+You are chatting with ${c.firstName}. Help with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal, and questions about their basket and orders.
 
-About ${firstName}:
-${profile}
+About ${c.firstName}:
+${c.profile}
 
-Help with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal. Keep answers practical and short, Nigerian kitchens in mind. This is food guidance, not medical advice.
+In this mode you can see their basket but cannot change anything. If they ask you to add, remove, swap or change something in their basket or cart, reply with one short sentence saying you can do it, and end the reply with the marker [[where]]. The app then asks them where it should go. Never say a change was made.
 
-In this mode you cannot change anything in their basket or cart. If they ask you to add, remove or change something, tell them to pick a basket or the cart with the button above the message box, and do not pretend it was done.
+${RECIPE_RULES}
 
-Their recent orders (id :: status, delivery date):
-${ordersContext(orders)}`;
+Their current basket (id :: name, quantity x unit):
+${c.basketLines}
+
+Recent orders (id :: status, delivery date):
+${ordersContext(c.orders)}
+
+Recipe library:
+${c.recipeLines}`;
 }
 
 /** Basket or cart mode: tools scoped to exactly one destination. */
-export function actingSystemPrompt(
-  firstName: string,
-  profile: string,
-  scope: KachiScope,
-  catalogueLines: string,
-  orders: { id: string; status: string; deliveryDate: Date }[],
-) {
-  const where = scope.kind === "basket" ? `their basket "${scope.name}"` : "their cart (a one-time purchase)";
-  return `You are Kachi, Basket's ordering helper, working on ${where} for ${firstName}.
+export function actingSystemPrompt(c: {
+  firstName: string;
+  profile: string;
+  scope: KachiScope;
+  catalogueLines: string;
+  orders: Orders;
+  contentsLines: string;
+  recipeLines: string;
+}) {
+  const where = c.scope.kind === "basket" ? `their basket "${c.scope.name}"` : "their cart (a one-time purchase)";
+  return `${VOICE}
 
-${STYLE_RULES}
+You are working on ${where} for ${c.firstName}. You can read and change ${where}, and nothing else. Use the tools to make real changes; never say something was changed unless a tool did it.
 
-About ${firstName}:
-${profile}
-
-You can read and change ${where}, and nothing else. Use the tools to make real changes; do not just describe what you would do.
+About ${c.firstName}:
+${c.profile}
 
 Rules for changes:
 - To add ONE product, call the add tool once.
-- To add SEVERAL products (for example "fill my basket for a gym week" or a shopping list), call propose_items once with the whole list. Do not add them yourself. The customer approves the list with a button, so say something like "Here is what I would add. Nothing gets added until you say so."
+- To add SEVERAL products (a shopping list, "fill my basket for a gym week", or the ingredients for a recipe), call propose_items once with the whole list, sized for the household. Do not add them yourself. The customer approves the list with a button.
 - Removing or changing a quantity is fine to do directly.
-- After a change, confirm it in one short sentence. The app shows a card with an Undo button, so do not repeat the item list.
+- "Remove the X" means remove all of it. "Remove one X" means lower the quantity by one.
+- If a product they ask for is not in the catalogue, say so and offer the closest match.
 
-Always pass exact product ids from the catalogue below. Never invent ids.
+${RECIPE_RULES}
+
+What is in ${where} right now (id :: name, quantity x unit):
+${c.contentsLines}
 
 Recent orders (id :: status, delivery date):
-${ordersContext(orders)}
+${ordersContext(c.orders)}
+
+Recipe library:
+${c.recipeLines}
 
 Product catalogue (id :: name (unit, min order, step)):
-${catalogueLines}`;
+${c.catalogueLines}`;
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/components/cart-provider";
+import { KachiMark } from "@/components/kachi-mark";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Icon } from "@/components/ui/icon";
 import { ProductImage } from "@/components/product-image";
@@ -14,20 +16,29 @@ import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKach
 
 type BasketOption = { id: string; name: string };
 type CardState = KachiCard & { undone?: boolean; done?: string; busy?: boolean; stale?: boolean };
-type Msg = { id: string; role: "me" | "kachi"; text: string; cards: CardState[]; typing?: boolean; replies?: string[] };
+type Msg = {
+  id: string;
+  role: "me" | "kachi";
+  text: string;
+  cards: CardState[];
+  typing?: boolean;
+  replies?: string[];
+  /** The message to send again when this reply was a failure. */
+  retry?: string;
+};
 type ThreadSummary = { id: string; title: string; updatedAt: Date; messageCount: number };
 
 const STARTERS = {
   chat: [
-    ["🥭", "What goes well with pawpaw?"],
+    ["🍲", "What can I cook with my basket?"],
     ["💪", "What should I eat after the gym?"],
-    ["🍳", "Quick breakfast ideas"],
+    ["🥗", "A light dinner for tonight"],
     ["🥬", "How do I keep ugu fresh?"],
   ],
   act: [
     ["🍌", "Add 3 bananas"],
-    ["🍲", "What can I cook with my basket?"],
     ["🧺", "Fill my basket for a gym week"],
+    ["🍲", "What can I cook with my basket?"],
     ["🚚", "Where is my order?"],
   ],
 } as const;
@@ -120,10 +131,11 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
     router.refresh();
   };
 
-  const callKachi = async (text: string, opts: { replay?: boolean; mode?: KachiMode } = {}) => {
-    const typingId = newId();
+  const callKachi = async (text: string, opts: { replay?: boolean; mode?: KachiMode; replaceId?: string } = {}) => {
+    const typingId = opts.replaceId ?? newId();
     setBusy(true);
-    setMessages((ms) => [...ms, { id: typingId, role: "kachi", text: "", cards: [], typing: true }]);
+    const typing: Msg = { id: typingId, role: "kachi", text: "", cards: [], typing: true };
+    setMessages((ms) => (opts.replaceId ? ms.map((m) => (m.id === typingId ? typing : m)) : [...ms, typing]));
     let data: KachiReply;
     try {
       const res = await fetch("/api/assistant", {
@@ -131,9 +143,9 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, threadId, mode: opts.mode ?? mode, replay: opts.replay ?? false }),
       });
-      data = await res.json().catch(() => ({ reply: "I couldn't get that done just now. Try again in a moment." }));
+      data = await res.json().catch(() => ({ reply: "I couldn't get that done just now. Try again in a moment.", retry: true }));
     } catch {
-      data = { reply: "I couldn't reach the server. Try again in a moment." };
+      data = { reply: "I couldn't reach the server. Check your connection and try again.", retry: true };
     }
     const cards = (data.cards ?? []) as CardState[];
     const changed = cards.some((c) => c.type === "act");
@@ -146,6 +158,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
               text: data.reply || data.error || "Sorry, I lost my train of thought. Try again?",
               cards,
               replies: changed ? AFTER_CHANGE_REPLIES : undefined,
+              retry: data.retry ? text : undefined,
             }
           : m,
       ),
@@ -164,7 +177,13 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
     void callKachi(text);
   };
 
-  const pickDestination = (msgId: string, cardIdx: number, request: string, target: KachiMode, name: string) => {
+  // The failed reply turns back into "typing"; the message is already stored, so it's a replay.
+  const retry = (msgId: string, text: string) => {
+    if (busy) return;
+    void callKachi(text, { replay: true, replaceId: msgId });
+  };
+
+  const pickDestination =(msgId: string, cardIdx: number, request: string, target: KachiMode, name: string) => {
     patchCard(msgId, cardIdx, { done: `Switched to ${name}.` });
     setMode(target);
     void callKachi(request, { replay: true, mode: target });
@@ -288,11 +307,12 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
         <main ref={threadRef} aria-live="polite" className="flex-1 overflow-y-auto px-5 pb-4 pt-5">
           {messages.length === 0 ? (
             <div className="flex min-h-full flex-col items-center justify-center py-3 text-center">
+              <KachiMark className="mb-4 h-14 w-14" />
               <h1 className="text-[32px] font-extrabold leading-tight tracking-tight">Hi {firstName}</h1>
-              <p className="mt-2 max-w-[300px] text-base leading-snug text-muted">
+              <p className="mt-2 max-w-75 text-base leading-snug text-muted">
                 {acting
-                  ? `I can add, remove and change things in ${modeWhere}.`
-                  : "Ask me anything about food. What to cook, what to buy, how to store it."}
+                  ? `Tell me what you need and I'll add, swap or plan it in ${modeWhere}.`
+                  : "Ask me what to cook, what to buy, or what's in your basket."}
               </p>
               <div className="mt-7 grid w-full grid-cols-2 gap-2.5">
                 {starters.map(([emoji, text], i) => (
@@ -344,9 +364,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
                   className="mb-4.5"
                 >
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-[9px] bg-lavender text-[13px] font-extrabold text-carbon" aria-hidden>
-                      K
-                    </span>
+                    <KachiMark className="h-7 w-7" />
                     <b className="text-[15px] font-semibold">Kachi</b>
                   </div>
 
@@ -355,22 +373,37 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
                       {[0, 1, 2].map((d) => (
                         <motion.i
                           key={d}
-                          className="block h-1.75 w-1.75 rounded-full bg-border"
-                          animate={{ y: [0, -4, 0] }}
+                          className="block h-1.75 w-1.75 rounded-full bg-muted"
+                          animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }}
                           transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }}
                         />
                       ))}
                     </div>
+                  ) : m.retry ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <p className="text-base leading-relaxed text-muted">{m.text}</p>
+                      {mi === messages.length - 1 && (
+                        <motion.button
+                          whileTap={{ scale: press.scale }}
+                          disabled={busy}
+                          onClick={() => retry(m.id, m.retry!)}
+                          className="inline-flex h-9.5 items-center gap-1.5 rounded-full bg-carbon px-4 text-sm font-semibold text-white disabled:opacity-50"
+                        >
+                          <Icon name="recurring" size={15} weight="bold" />
+                          Try again
+                        </motion.button>
+                      )}
+                    </div>
                   ) : (
                     <>
                       <RichText text={m.text} />
-                      <div className="mt-1.5 flex gap-1">
+                      <div className="mt-1 flex gap-1">
                         <button
                           onClick={() => copy(m.text)}
                           aria-label="Copy"
-                          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-muted active:bg-soft-mist"
+                          className="-ml-2 flex h-9 w-9 items-center justify-center rounded-[10px] text-muted active:bg-soft-mist"
                         >
-                          <Icon name="copy" size={17} />
+                          <Icon name="copy" size={16} />
                         </button>
                       </div>
                     </>
@@ -386,6 +419,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
                       onApprove={() => c.type === "list" && approve(m.id, ci, c)}
                       onSkip={() => patchCard(m.id, ci, { done: "Skipped. Nothing was added." })}
                       onPick={(target, name) => c.type === "ask" && pickDestination(m.id, ci, c.request, target, name)}
+                      onSend={(text) => send(text)}
                     />
                   ))}
 
@@ -439,7 +473,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Kachi anything about food"
+              placeholder={acting ? `Add, swap or plan for ${modeWhere}` : "Ask Kachi about food or your basket"}
               aria-label="Message Kachi"
               className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
             />
@@ -476,7 +510,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
         <ModeOption
           icon="assistant"
           title="Just chat"
-          sub="Talk about food. Nothing changes."
+          sub="Ask about food and your basket. Nothing changes."
           selected={mode.kind === "chat"}
           onClick={() => {
             setMode({ kind: "chat" });
@@ -584,6 +618,7 @@ function KachiCardView({
   onApprove,
   onSkip,
   onPick,
+  onSend,
 }: {
   card: CardState;
   baskets: BasketOption[];
@@ -592,8 +627,39 @@ function KachiCardView({
   onApprove: () => void;
   onSkip: () => void;
   onPick: (target: KachiMode, name: string) => void;
+  onSend: (text: string) => void;
 }) {
   const shell = "mt-2.5 overflow-hidden rounded-2xl border border-border";
+
+  if (card.type === "recipes") {
+    return (
+      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
+        {card.recipes.map((r, idx) => (
+          <div key={r.slug} className={`px-3.5 py-3 ${idx ? "border-t border-border" : ""}`}>
+            <Link href={`/recipes/${r.slug}`} className="group flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-soft-mist">
+                <Icon name="recipes" size={20} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <b className="block text-[15px] font-semibold leading-snug group-hover:underline">{r.title}</b>
+                <small className="mt-0.5 line-clamp-2 block text-[13px] leading-snug text-muted">{r.summary}</small>
+              </span>
+              <Icon name="caretRight" size={16} className="mt-3 flex-none text-muted" />
+            </Link>
+            {!card.stale && r.fromBasket > 0 && (
+              <button
+                onClick={() => onSend(`Add the ingredients for ${r.title}`)}
+                className="ml-13 mt-2 inline-flex h-8.5 items-center gap-1.5 rounded-full bg-soft-mist px-3 text-[13px] font-semibold active:bg-border"
+              >
+                <Icon name="plus" size={14} weight="bold" />
+                Add the {r.fromBasket} ingredients
+              </button>
+            )}
+          </div>
+        ))}
+      </motion.div>
+    );
+  }
 
   if (card.type === "act") {
     const where = scopeName(card.scope);
