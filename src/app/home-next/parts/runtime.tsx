@@ -19,6 +19,12 @@ export function scrollToId(id: string) {
   else el.scrollIntoView({ behavior: "auto", block: "start" });
 }
 
+/** Holds the page still under an open dialog, and lets it go again. */
+export function setScrollLocked(locked: boolean) {
+  if (locked) lenis?.stop();
+  else lenis?.start();
+}
+
 /** Scrolls to an absolute page position, smoothly when Lenis is running. */
 export function scrollToY(y: number) {
   if (lenis) lenis.scrollTo(y, { duration: 1 });
@@ -140,6 +146,8 @@ const VARIANT = {
   dark: "bg-carbon text-paper-white",
   ghost: "bg-transparent text-carbon border border-carbon",
   light: "bg-paper-white text-carbon border border-carbon",
+  /** Borderless, on the leaf tint. For the /home-menu draft's quieter buttons. */
+  soft: "bg-[#e8ede3] text-carbon hover:bg-[#dfe6d8]",
 } as const;
 
 const SIZE = {

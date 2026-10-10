@@ -1,0 +1,114 @@
+/* ==========================================================================
+   The recipe-led homepage draft. Prefixed hm- so nothing leaks into the app.
+   It sits on the hn- runtime (smooth scroll, sticky fix) from home-next.css.
+
+   One loud thing: the hero headline in the display face. Everything else is
+   the UI face, sentence case, quiet, with soft tinted panels instead of the
+   app's black outlines, so the food photography does the talking.
+   ========================================================================== */
+
+.hm {
+  /* The panel colour: a pale leaf tint, the page's only surface besides white. */
+  --hm-tint: #f3f5f0;
+  --hm-tint-2: #e8ede3;
+  --hm-line: rgb(0 0 0 / 0.08);
+  --hm-ink-2: rgb(0 0 0 / 0.62);
+  --hm-ink-3: rgb(0 0 0 / 0.45);
+  /* The two roles every ingredient has on this page. */
+  --hm-basket: var(--mint-pop);
+  --hm-basket-ink: #0f7a48;
+  --hm-elsewhere: var(--ember);
+}
+
+.hm-wrap {
+  width: min(1080px, calc(100% - 32px));
+  margin-inline: auto;
+}
+@media (min-width: 640px) {
+  .hm-wrap {
+    width: min(1080px, calc(100% - 48px));
+  }
+}
+
+/* The hero headline: the only display-face moment on the page. */
+.hm-display {
+  font-family: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.012em;
+  line-height: 0.96;
+}
+
+/* Section headlines: the UI face, tight, sentence case. */
+.hm-h2 {
+  font-size: clamp(2rem, 4.2vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.hm-h3 {
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.hm-lede {
+  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
+  line-height: 1.55;
+  letter-spacing: -0.012em;
+  color: var(--hm-ink-2);
+  text-wrap: pretty;
+}
+
+.hm-panel {
+  background: var(--hm-tint);
+  border-radius: 28px;
+}
+
+/* Keyboard focus that is visible on white, tint and photos alike. */
+.hm :where(a, button, [role="tab"], [role="radio"]):focus-visible {
+  outline: 2.5px solid var(--carbon);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+/* Kachi's typing dots. */
+@keyframes hm-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+.hm-typing i {
+  animation: hm-dot 1.1s ease-in-out infinite;
+}
+.hm-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.hm-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* The menu photos ease in a touch on hover, on devices that hover. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .hm-photo img {
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hm-photo:hover img {
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-typing i {
+    animation: none;
+    opacity: 0.6;
+  }
+}

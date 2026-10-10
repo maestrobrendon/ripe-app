@@ -6,9 +6,11 @@ import { NextResponse, type NextRequest } from "next/server";
  * nothing changes. /home-next also works directly, for local development.
  *
  * Both get a header the root layout reads to drop the site chrome (banner,
- * header, footer, tab bar), because the new page draws its own.
+ * header, footer, tab bar), because the new page draws its own. /home-menu,
+ * the recipe-led draft, gets the same bare chrome at its own path.
  */
 const PREVIEW_PATH = "/home-next";
+const BARE_PATHS = new Set([PREVIEW_PATH, "/home-menu"]);
 const BARE_HEADER = "x-basket-bare";
 
 export function proxy(request: NextRequest) {
@@ -24,12 +26,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.rewrite(url, { request: { headers } });
   }
 
-  if (pathname === PREVIEW_PATH) {
+  if (BARE_PATHS.has(pathname)) {
     headers.set(BARE_HEADER, "1");
   }
   return NextResponse.next({ request: { headers } });
 }
 
 export const config = {
-  matcher: ["/", "/home-next"],
+  matcher: ["/", "/home-next", "/home-menu"],
 };
