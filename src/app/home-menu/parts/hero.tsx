@@ -71,7 +71,9 @@ function Side({ side }: { side: "left" | "right" }) {
                 width={l.w}
                 height={l.h}
                 sizes={sizes(l)}
-                preload={l.preload}
+                // All of them are in the first screen: lazy loading would hold
+                // the small ones back until after the intro has played.
+                {...(l.preload ? { preload: true } : { loading: "eager" as const })}
                 draggable={false}
               />
             </div>
