@@ -58,9 +58,22 @@
   user-select: none;
   --s: calc(100cqw / 1536 * var(--k));
   --push: 0px;
+  /* How far a layer's cut edge sits past the hero's edge (see hero.tsx). */
+  --bleed: calc(36 * var(--s));
 }
 .hm-layer {
   position: absolute;
+}
+/* Every wrapper of a layer turns about the same point (--o, set per layer:
+   a plate's centre, the hand's wrist). The innermost one moves all the time,
+   so it gets its own compositing layer. */
+.hm-layer,
+.hm-tilt,
+.hm-float {
+  transform-origin: var(--o, 50% 50%);
+}
+.hm-float {
+  will-change: transform;
 }
 .hm-layer img {
   display: block;
