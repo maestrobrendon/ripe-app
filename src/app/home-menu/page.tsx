@@ -8,6 +8,11 @@ import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
 import { HomeMenu } from "./home-menu";
 import { MENU_SLUGS } from "./recipes";
 import type { MenuData, MenuProduct } from "./types";
+
+/*
+ * This is the homepage. src/app/page.tsx renders it at "/", and src/proxy.ts
+ * sends /home-menu there so the page lives at one address.
+ */
 import "../home-next/home-next.css";
 import "./home-menu.css";
 
@@ -15,8 +20,6 @@ export const metadata: Metadata = {
   title: "Basket. Tell us your goal, we'll handle the food.",
   description:
     "A weekly plan, recipes worth cooking and the fresh produce to make them, delivered across Lagos on your day.",
-  // A draft of the next homepage. Kept out of search until it replaces the live one.
-  robots: { index: false, follow: false },
 };
 
 export default async function HomeMenuPage() {
