@@ -10,7 +10,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * "test." host, for comparison.
  */
 const PREVIEW_PATH = "/home-next";
-const BARE_PATHS = new Set(["/", PREVIEW_PATH]);
+// Sign-up and its welcome screen are focused flows with their own top bar.
+const BARE_PATHS = new Set(["/", PREVIEW_PATH, "/start", "/welcome"]);
 const BARE_HEADER = "x-basket-bare";
 
 export function proxy(request: NextRequest) {
@@ -39,5 +40,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/home-next", "/home-menu"],
+  matcher: ["/", "/home-next", "/home-menu", "/start", "/welcome"],
 };

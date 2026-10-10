@@ -253,7 +253,7 @@ export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal;
           </div>
         </div>
         <div className="mt-6 flex justify-center">
-          <MagneticLink href={signedIn ? "/assistant" : "/start"} variant="soft" arrow>
+          <MagneticLink href={signedIn ? "/assistant" : `/start?goal=${goal}`} variant="soft" arrow>
             {signedIn ? "Ask Kachi" : "Tell Kachi your goal"}
           </MagneticLink>
         </div>

@@ -7,12 +7,10 @@ import { createSession } from "@/lib/session";
 import { hashPassword, normalizeContact } from "@/lib/auth";
 import { ZONE_COOKIE } from "@/lib/zone";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { GOALS } from "@/lib/assistant";
-import { PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
-import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import { buildStarterPicks, getStarterCandidates } from "@/lib/starter-basket";
 import { createUserBasket } from "@/lib/basket";
-import type { ShoppingWindowDay } from "@/generated/prisma/enums";
+import type { DeliveryDay } from "@/generated/prisma/enums";
+import { MENU, MENU_GOALS } from "../home-menu/recipes";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -22,56 +20,53 @@ const DIETARY_NOTE: Record<string, string | null> = {
   vegan: "Vegan",
 };
 
-function clampCount(raw: string, min: number, max: number): number {
+export type StartState = { error: "missing" | "failed" | "throttled" | null };
+
+function clampCount(raw: unknown, min: number, max: number): number {
   const n = Math.floor(Number(raw));
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, n));
 }
 
-export async function createAccountFromOnboarding(formData: FormData) {
+function parseJson<T>(raw: unknown, fallback: T): T {
+  try {
+    return JSON.parse(String(raw ?? "")) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * The last screen of /start. Returns an error for the form to show (so every
+ * answer on the screens before it survives a typo) and redirects on success.
+ */
+export async function createAccountFromOnboarding(_prev: StartState, formData: FormData): Promise<StartState> {
   const name = String(formData.get("name") ?? "").trim().slice(0, 120);
   const contact = String(formData.get("contact") ?? "").trim().slice(0, 254);
   const password = String(formData.get("password") ?? "");
 
   const ip = await clientIp();
-  if (!rateLimit(`signup:ip:${ip}`, 5, HOUR).ok) {
-    redirect("/start?error=throttled");
-  }
+  if (!rateLimit(`signup:ip:${ip}`, 5, HOUR).ok) return { error: "throttled" };
+  if (!name || !contact || password.length < 8 || password.length > 200) return { error: "missing" };
 
-  if (!name || !contact || password.length < 8 || password.length > 200) {
-    redirect("/start?error=missing");
-  }
-
-  // Quiz answers.
-  const goalSlug = GOALS.some((g) => g.slug === formData.get("goal"))
-    ? String(formData.get("goal"))
-    : null;
-
-  let producePreferences: string[] = [];
-  try {
-    const parsed = JSON.parse(String(formData.get("producePreferences") ?? "[]"));
-    if (Array.isArray(parsed)) {
-      producePreferences = parsed
-        .filter((p): p is string => typeof p === "string")
-        .filter((p) => p === "everything" || PRODUCE_PREFERENCE_OPTIONS.includes(p as never));
-    }
-  } catch {
-    producePreferences = [];
-  }
-
-  const adults = clampCount(String(formData.get("adults") ?? "1"), 1, 12);
-  const kids = clampCount(String(formData.get("kids") ?? "0"), 0, 12);
+  // The goal comes in as the homepage's id ("lighter"); the account keeps the slug.
+  const goalSlug = MENU_GOALS.find((g) => g.id === formData.get("goal"))?.starterSlug ?? null;
+  const adults = clampCount(formData.get("adults"), 1, 12);
+  const kids = clampCount(formData.get("kids"), 0, 12);
 
   const dietaryChoice = String(formData.get("dietary") ?? "none");
   const dietaryDetail = String(formData.get("dietaryDetail") ?? "").trim().slice(0, 400);
   const dietaryNotes =
-    dietaryChoice === "allergies"
-      ? dietaryDetail || "Allergies or dislikes"
-      : DIETARY_NOTE[dietaryChoice] ?? null;
+    dietaryChoice === "allergies" ? dietaryDetail || "Allergies or dislikes" : (DIETARY_NOTE[dietaryChoice] ?? null);
 
-  const windowDay = SHOPPING_WINDOW_DAYS.some((d) => d.day === formData.get("windowDay"))
-    ? (String(formData.get("windowDay")) as ShoppingWindowDay)
-    : null;
+  // A served zone and one of its own delivery days. Someone in an area we
+  // don't reach yet still gets an account and their week, with no zone set.
+  const zoneSlug = String(formData.get("zone") ?? "") || (await cookies()).get(ZONE_COOKIE)?.value || "";
+  const found = zoneSlug ? await prisma.deliveryZone.findUnique({ where: { slug: zoneSlug } }) : null;
+  const zone = found?.isServed ? found : null;
+  const requestedDay = String(formData.get("deliveryDay") ?? "") as DeliveryDay;
+  const deliveryDay: DeliveryDay =
+    zone && zone.deliveryDays.includes(requestedDay) ? requestedDay : (zone?.deliveryDays[0] ?? "WEDNESDAY");
 
   const { email, phone } = normalizeContact(contact);
 
@@ -81,13 +76,7 @@ export async function createAccountFromOnboarding(formData: FormData) {
   const existing = await prisma.user.findFirst({
     where: { OR: [email ? { email } : {}, phone ? { phone } : {}].filter((c) => Object.keys(c).length) },
   });
-  if (existing) {
-    redirect("/start?error=failed");
-  }
-
-  const store = await cookies();
-  const zoneSlug = store.get(ZONE_COOKIE)?.value;
-  const zone = zoneSlug ? await prisma.deliveryZone.findUnique({ where: { slug: zoneSlug } }) : null;
+  if (existing) return { error: "failed" };
 
   let userId: string;
   try {
@@ -98,53 +87,39 @@ export async function createAccountFromOnboarding(formData: FormData) {
         phone: phone ?? null,
         passwordHash,
         deliveryZoneId: zone?.id ?? null,
+        deliveryDay,
         householdAdults: adults,
         householdKids: kids,
-        shoppingWindowDay: windowDay,
         onboardingCompleted: true,
-        preferences: {
-          create: {
-            primaryGoal: goalSlug,
-            producePreferences,
-            dietaryNotes,
-          },
-        },
+        preferences: { create: { primaryGoal: goalSlug, producePreferences: [], dietaryNotes } },
       },
     });
     userId = user.id;
   } catch {
-    redirect("/start?error=failed");
+    return { error: "failed" };
   }
 
-  // The onboarding preview screen lets the member edit the suggested picks
-  // before the account exists, so honour that edited list rather than
-  // recomputing it blind. Falls back to a fresh recompute if it's missing or
-  // malformed (e.g. JS-disabled submission).
-  let picks: { productId: string; quantity: number }[] = [];
-  try {
-    const parsed = JSON.parse(String(formData.get("starterPicks") ?? "[]"));
-    if (Array.isArray(parsed)) {
-      picks = parsed.filter(
-        (p): p is { productId: string; quantity: number } =>
-          p && typeof p.productId === "string" && Number.isFinite(p.quantity) && p.quantity > 0,
-      );
-    }
-  } catch {
-    picks = [];
-  }
+  // The basket the customer built from their recipes on the preview screen.
+  // Falls back to the goal's starter basket if it's missing or malformed.
+  let picks = parseJson<unknown[]>(formData.get("items"), [])
+    .filter(
+      (p): p is { productId: string; quantity: number } =>
+        Boolean(p) &&
+        typeof (p as { productId?: unknown }).productId === "string" &&
+        Number.isFinite((p as { quantity?: unknown }).quantity) &&
+        (p as { quantity: number }).quantity > 0,
+    )
+    .slice(0, 60)
+    .map((p) => ({ productId: p.productId, quantity: Math.min(50, Math.round(p.quantity)) }));
   if (picks.length === 0) {
-    const candidates = await getStarterCandidates();
-    picks = buildStarterPicks({ goalSlug, producePreferences, adults, kids }, candidates);
+    picks = buildStarterPicks({ goalSlug, producePreferences: [], adults, kids }, await getStarterCandidates());
   }
 
   // This is the member's first basket: the free trial, permanently priced at
   // standard rates regardless of any subscription taken out afterward.
   try {
     if (picks.length > 0) {
-      const basket = await createUserBasket(userId, { isSubscriber: false, deliveryDay: "WEDNESDAY" });
-      if (windowDay) {
-        await prisma.basket.update({ where: { id: basket.id }, data: { shoppingWindowDay: windowDay } });
-      }
+      const basket = await createUserBasket(userId, { isSubscriber: false, deliveryDay });
       await prisma.basketItem.createMany({
         data: picks.map((p) => ({ basketId: basket.id, productId: p.productId, quantity: p.quantity })),
         skipDuplicates: true,
@@ -155,6 +130,11 @@ export async function createAccountFromOnboarding(formData: FormData) {
   }
 
   await createSession(userId);
+
+  // The welcome screen shows the week they picked; recipe slugs are not personal.
+  const picked = parseJson<unknown[]>(formData.get("recipes"), [])
+    .filter((s): s is string => typeof s === "string" && MENU.some((r) => r.slug === s))
+    .slice(0, 8);
   const next = String(formData.get("next") ?? "");
-  redirect(next.startsWith("/") ? next : "/welcome");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`);
 }

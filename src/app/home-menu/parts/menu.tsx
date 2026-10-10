@@ -250,7 +250,7 @@ function RecipeSheet({ recipe, products, signedIn, onClose }: { recipe: MenuReci
                   <p className="flex items-center gap-2 text-[14px] text-[var(--hm-ink-2)]">
                     <Check className="h-4 w-4 text-[#0f7a48]" /> Kachi can put this in your plan.
                   </p>
-                  <MagneticLink href={signedIn ? "/recipes" : "/start"} size="md" arrow>
+                  <MagneticLink href={signedIn ? "/recipes" : `/start?goal=${recipe.goal}&recipe=${recipe.slug}`} size="md" arrow>
                     {signedIn ? "Add to my plan" : "Start with this recipe"}
                   </MagneticLink>
                 </div>

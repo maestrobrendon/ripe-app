@@ -164,7 +164,7 @@ export function Price({
               </AnimatePresence>
             </div>
 
-            <MagneticLink href={signedIn ? "/basket" : "/start"} className="mt-6 w-full" arrow>
+            <MagneticLink href={signedIn ? "/basket" : `/start?goal=${goal}`} className="mt-6 w-full" arrow>
               {signedIn ? "Open your basket" : "Build my basket"}
             </MagneticLink>
             <p className="mt-3 text-center text-[13px] text-[var(--hm-ink-3)]">

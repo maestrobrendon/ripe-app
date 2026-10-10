@@ -1,20 +1,47 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getStarterCandidates } from "@/lib/starter-basket";
+import { FRESH_CUTS_TAG } from "@/lib/product";
+import { ZONE_COOKIE } from "@/lib/zone";
+import { FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
+import { MENU, MENU_GOALS, type MenuGoal } from "../home-menu/recipes";
 import { StartFlow } from "./start-flow";
 
-export const metadata = { title: "Get started" };
+// Sign-up is a bare page (see src/proxy.ts) in the homepage's own look.
+import "../home-menu/home-menu.css";
 
-export default async function StartPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; next?: string }>;
-}) {
-  const { error, next } = await searchParams;
+export const metadata = { title: "Get started. Basket" };
+
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ next?: string; goal?: string; recipe?: string }> }) {
+  const { next, goal, recipe } = await searchParams;
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
   const user = await getCurrentUser();
-  if (user) redirect(next && next.startsWith("/") ? next : "/account");
+  if (user) redirect(safeNext ?? "/basket");
 
-  const candidates = await getStarterCandidates();
+  const [candidates, freshCuts, zones, store] = await Promise.all([
+    getStarterCandidates(),
+    prisma.product.findMany({ where: { tags: { has: FRESH_CUTS_TAG } }, select: { slug: true } }),
+    prisma.deliveryZone.findMany({
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { slug: true, name: true, area: true, isServed: true, deliveryDays: true },
+    }),
+    cookies(),
+  ]);
+  // Fresh Cuts is archived, so pre-cut items never land in a first basket.
+  const cut = new Set(freshCuts.map((p) => p.slug));
+  const initialGoal = MENU_GOALS.some((g) => g.id === goal) ? (goal as MenuGoal) : null;
 
-  return <StartFlow candidates={candidates} error={error ?? null} next={next && next.startsWith("/") ? next : null} />;
+  return (
+    <StartFlow
+      candidates={candidates.filter((c) => !cut.has(c.slug))}
+      zones={zones}
+      initialZone={store.get(ZONE_COOKIE)?.value ?? null}
+      initialGoal={initialGoal}
+      initialRecipe={MENU.some((r) => r.slug === recipe) ? recipe! : null}
+      freeDeliveryThreshold={FREE_DELIVERY_THRESHOLD}
+      next={safeNext}
+    />
+  );
 }

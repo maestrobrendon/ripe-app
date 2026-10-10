@@ -1,557 +1,758 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useActionState, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { press, spring } from "@/lib/motion/tokens";
-import { GOALS } from "@/lib/assistant";
-import { PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS, formatNaira } from "@/lib/format";
-import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
-import { buildStarterPicks, type StarterCandidate, type StarterPick } from "@/lib/starter-basket-core";
+import { DELIVERY_DAY_LABEL, formatNaira } from "@/lib/format";
+import { quoteDelivery } from "@/lib/pricing";
+import type { StarterCandidate } from "@/lib/starter-basket-core";
+import type { DeliveryDay } from "@/generated/prisma/enums";
+import { KachiMark } from "@/components/kachi-mark";
 import { ProductImage } from "@/components/product-image";
-import { SITE_NAME } from "@/lib/site";
-import { Button } from "@/components/ui/button";
-import { PasswordField } from "@/components/ui/password-field";
-import { StepIndicator } from "@/components/step-indicator";
 import { RollingNumber } from "@/components/ui/rolling-number";
-import { createAccountFromOnboarding } from "./actions";
 import { Icon } from "@/components/ui/icon";
+import { MENU, MENU_GOALS, type MenuGoal, type MenuRecipe } from "../home-menu/recipes";
+import { shortName } from "../home-menu/parts/shared";
+import { buildRecipeBasket, snapQuantity } from "./recipe-basket";
+import { createAccountFromOnboarding, type StartState } from "./actions";
 
+type Zone = { slug: string; name: string; area: string; isServed: boolean; deliveryDays: DeliveryDay[] };
 type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
-type WindowDay = "THURSDAY" | "FRIDAY" | "SATURDAY";
 
-type Data = {
-  goal: string | null;
-  produce: string[];
-  adults: number;
-  kids: number;
-  dietary: Dietary;
-  dietaryDetail: string;
-  windowDay: WindowDay | null;
+/**
+ * Sign-up, as the homepage promises it: tell Kachi your goal, get a week of
+ * recipes and the basket to cook them, pick your day. Six short screens, one
+ * question each, with the answer that unlocks the next one always in reach
+ * of a thumb at the bottom. The account comes last, after the customer has
+ * seen what they are getting.
+ */
+const STEPS = ["goal", "table", "recipes", "basket", "delivery", "account"] as const;
+type Step = (typeof STEPS)[number];
+
+const DIETARY: [Dietary, string][] = [
+  ["none", "No restrictions"],
+  ["vegetarian", "Vegetarian"],
+  ["vegan", "Vegan"],
+  ["allergies", "Allergies or dislikes"],
+];
+
+const DAY_INDEX: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
+
+/** The first delivery on that weekday at least two days out, so the night-before cutoff has passed for nobody. */
+function firstDelivery(day: DeliveryDay) {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  while (d.getDay() !== DAY_INDEX[day]) d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+const goalLabel = (g: MenuGoal | null) => MENU_GOALS.find((x) => x.id === g)?.label ?? "";
+/** The goal as it reads mid-sentence: "three for eating lighter". */
+const GOAL_PHRASE: Record<MenuGoal, string> = {
+  lighter: "eating lighter",
+  training: "training",
+  family: "feeding the family",
+  everyday: "eating better",
 };
-
-const GOAL_EMOJI: Record<string, string> = {
-  "post-workout-recovery": "🏃",
-  "family-household": "🏡",
-  "general-wellness": "🌱",
-  "weight-management": "🥗",
-};
-
-const PRODUCE_EMOJI: Record<string, string> = {
-  fruits: "🍎",
-  vegetables: "🥕",
-  "leafy-greens": "🥬",
-  "root-veg": "🥔",
-  herbs: "🌿",
-};
-
-// Steps, in order: 0 interstitial, 1-4 questions, 5 saving beat, 6 basket
-// preview, 7 the fifth question (ship day), 8 account creation. Only the five
-// real questions get a "Step N of 5" counter; the interstitial, the saving
-// beat, the preview and the account screen are not questions.
-const LAST_STEP = 8;
-const QUESTION_NUMBER: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4, 7: 5 };
-const TOTAL_QUESTIONS = 5;
 
 export function StartFlow({
   candidates,
-  error,
+  zones,
+  initialZone,
+  initialGoal,
+  initialRecipe,
+  freeDeliveryThreshold,
   next,
 }: {
   candidates: StarterCandidate[];
-  error: string | null;
+  zones: Zone[];
+  initialZone: string | null;
+  initialGoal: MenuGoal | null;
+  /** A recipe the visitor chose on the homepage, kept in their first week. */
+  initialRecipe: string | null;
+  freeDeliveryThreshold: number;
   next: string | null;
 }) {
-  // Land back on the account screen if validation bounced us here.
-  const [[step, direction], setStepState] = useState<[number, 1 | -1]>([error ? LAST_STEP : 0, 1]);
-  const setStep = (updater: number | ((s: number) => number)) =>
-    setStepState(([s]) => {
-      const next = typeof updater === "function" ? (updater as (s: number) => number)(s) : updater;
-      return [next, next >= s ? 1 : -1];
-    });
-  const [data, setData] = useState<Data>({
-    goal: null,
-    produce: [],
-    adults: 1,
-    kids: 0,
-    dietary: "none",
-    dietaryDetail: "",
-    windowDay: null,
-  });
+  const [[index, direction], setIndex] = useState<[number, 1 | -1]>([0, 1]);
+  const step: Step = STEPS[index];
+  const go = (to: number) => {
+    setIndex(([from]) => [to, to >= from ? 1 : -1]);
+    window.scrollTo({ top: 0 });
+  };
 
-  const set = <K extends keyof Data>(k: K, v: Data[K]) => setData((d) => ({ ...d, [k]: v }));
-
-  const allProduce = data.produce.length === PRODUCE_PREFERENCE_OPTIONS.length;
-  const toggleProduce = (slug: string) =>
-    set("produce", data.produce.includes(slug) ? data.produce.filter((p) => p !== slug) : [...data.produce, slug]);
-  const toggleAllProduce = () =>
-    set("produce", allProduce ? [] : [...PRODUCE_PREFERENCE_OPTIONS]);
-
-  const suggestedPicks = useMemo(
-    () =>
-      buildStarterPicks(
-        { goalSlug: data.goal, producePreferences: data.produce, adults: data.adults, kids: data.kids },
-        candidates,
-      ),
-    [data.goal, data.produce, data.adults, data.kids, candidates],
+  const [goal, setGoal] = useState<MenuGoal | null>(initialGoal);
+  // Arriving from "Feed the family" on the homepage starts the table at four, like picking it here.
+  const [adults, setAdults] = useState(initialGoal === "family" ? 2 : 1);
+  const [kids, setKids] = useState(initialGoal === "family" ? 2 : 0);
+  const tableTouched = useRef(false);
+  const [dietary, setDietary] = useState<Dietary>("none");
+  const [dietaryDetail, setDietaryDetail] = useState("");
+  // null: the goal's own three recipes, until the customer changes the set.
+  const [picked, setPicked] = useState<string[] | null>(() =>
+    initialRecipe ? [...new Set([initialRecipe, ...MENU.filter((r) => r.goal === initialGoal).map((r) => r.slug)])] : null,
   );
+  // Quantity overrides by product id; 0 means taken out.
+  const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const served = zones.filter((z) => z.isServed);
+  const soon = zones.filter((z) => !z.isServed);
+  const [zone, setZone] = useState<string | null>(served.some((z) => z.slug === initialZone) ? initialZone : null);
+  const [notListed, setNotListed] = useState(false);
+  const [day, setDay] = useState<DeliveryDay | null>(served.find((z) => z.slug === initialZone)?.deliveryDays[0] ?? null);
 
-  // The system's suggestion is a starting point, not a lock: seeded once from
-  // the algorithmic picks, then edited freely with its own add/remove state.
-  const [customPicks, setCustomPicks] = useState<StarterPick[] | null>(null);
-  const picks = customPicks ?? suggestedPicks;
-  const previewValue = picks.reduce((sum, p) => sum + p.standardPrice * p.quantity, 0);
-  const removePick = (productId: string) =>
-    setCustomPicks((picks ?? suggestedPicks).filter((p) => p.productId !== productId));
-  const addCandidate = (c: StarterCandidate) =>
-    setCustomPicks([
-      ...(customPicks ?? suggestedPicks),
-      {
-        productId: c.id,
-        slug: c.slug,
-        name: c.name,
-        quantity: c.minOrderQty,
-        imageEmoji: c.imageEmoji,
-        cloudinaryPublicId: c.cloudinaryPublicId,
-        memberPrice: c.memberPrice,
-        standardPrice: c.standardPrice,
-      },
-    ]);
-  const pickedIds = new Set(picks.map((p) => p.productId));
-  const moreToAdd = candidates.filter((c) => !pickedIds.has(c.id)).slice(0, 8);
+  const recipeSlugs = picked ?? MENU.filter((r) => r.goal === goal).map((r) => r.slug);
+  const recipes = MENU.filter((r) => recipeSlugs.includes(r.slug));
+  const built = buildRecipeBasket(recipes, adults, kids, candidates);
+  const lines = built.lines.map((l) => ({ ...l, quantity: overrides[l.productId] ?? l.quantity }));
+  const kept = lines.filter((l) => l.quantity > 0);
+  const produce = kept.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
+  const delivery = quoteDelivery(produce, false);
+  const people = adults + kids;
+  const chosenZone = served.find((z) => z.slug === zone) ?? null;
 
-  // Screen 5: brief "saving" beat, then auto-advance.
-  useEffect(() => {
-    if (step !== 5) return;
-    const t = setTimeout(() => setStep(6), 1200);
-    return () => clearTimeout(t);
-  }, [step]);
+  const pickGoal = (g: MenuGoal) => {
+    if (g !== goal) {
+      setPicked(null);
+      setOverrides({});
+      // A family usually means more than one at the table; a starting guess they can change.
+      if (g === "family" && !tableTouched.current) {
+        setAdults(2);
+        setKids(2);
+      }
+    }
+    setGoal(g);
+  };
+  const toggleRecipe = (slug: string) => {
+    setPicked(recipeSlugs.includes(slug) ? recipeSlugs.filter((s) => s !== slug) : [...recipeSlugs, slug]);
+  };
+  const setLine = (productId: string, quantity: number) => setOverrides((o) => ({ ...o, [productId]: quantity }));
 
-  const canNext =
-    step === 0 ||
-    (step === 1 && data.goal) ||
-    (step === 2 && data.produce.length > 0) ||
-    step === 3 ||
-    (step === 4 && (data.dietary !== "allergies" || data.dietaryDetail.trim().length > 0)) ||
-    step === 6 ||
-    (step === 7 && data.windowDay);
+  const ready: Record<Step, boolean> = {
+    goal: Boolean(goal),
+    table: dietary !== "allergies" || dietaryDetail.trim().length > 0,
+    recipes: recipes.length > 0,
+    basket: kept.length > 0,
+    delivery: notListed || Boolean(chosenZone && day),
+    account: true,
+  };
 
-  const goNext = () => setStep((s) => Math.min(LAST_STEP, s === 4 ? 5 : s + 1));
-  const back = () => setStep((s) => Math.max(0, s === 6 ? 4 : s - 1));
+  const [state, formAction, pending] = useActionState<StartState, FormData>(createAccountFromOnboarding, { error: null });
+  // Held here because React resets a form's fields after its action runs,
+  // and a bounced sign-up shouldn't make anyone retype their name.
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
 
-  const questionNumber = QUESTION_NUMBER[step];
+  const cta: Record<Step, ReactNode> = {
+    goal: "Continue",
+    table: `Continue for ${people} ${people === 1 ? "person" : "people"}`,
+    recipes: recipes.length ? `Continue with ${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}` : "Pick a recipe",
+    basket: (
+      <>
+        Looks good, <RollingNumber value={produce + delivery.fee} format={formatNaira} />
+      </>
+    ),
+    delivery: "Continue",
+    account: pending ? "Saving your week…" : "Create my account",
+  };
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
-      <div className="flex items-center justify-between">
-        <Link href="/" className="text-heading tracking-tight text-carbon">
-          {SITE_NAME}
-        </Link>
-        <Link href="/login" className="text-xs text-muted underline">
-          Sign in
-        </Link>
-      </div>
-
-      {questionNumber && (
-        <div className="mt-6">
-          <StepIndicator
-            steps={Array.from({ length: TOTAL_QUESTIONS }, (_, i) => `${i + 1}`)}
-            currentStep={questionNumber}
-          />
-        </div>
-      )}
-
-      <div className="mt-8 overflow-hidden">
-      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-      <motion.div
-        key={step}
-        custom={direction}
-        variants={{
-          enter: (d: number) => ({ x: 40 * d, opacity: 0 }),
-          center: { x: 0, opacity: 1 },
-          exit: (d: number) => ({ x: -40 * d, opacity: 0 }),
-        }}
-        initial="enter"
-        animate="center"
-        exit="exit"
-        transition={spring.smooth}
-      >
-        {step === 0 && (
-          <div>
-            <h1 className="text-heading">Let&rsquo;s get you set up</h1>
-            <p className="mt-3 text-base text-muted">
-              First, a few quick questions so your baskets and suggestions actually fit you, then
-              you&rsquo;re in. Takes about a minute.
-            </p>
-          </div>
-        )}
-
-        {step === 1 && (
-          <Screen why="This is the one answer Ideas leans on when it suggests things.">
-            <h1 className="text-heading">What are you hoping to get out of shopping with Basket?</h1>
-            <p className="mt-2 text-sm text-muted">Pick the one that fits best. You can change it later.</p>
-            <div className="mt-6 grid gap-3">
-              {GOALS.map((g) => (
-                <OptionCard
-                  key={g.slug}
-                  groupId="goal"
-                  emoji={GOAL_EMOJI[g.slug]}
-                  title={g.label}
-                  sub={g.description}
-                  selected={data.goal === g.slug}
-                  onClick={() => set("goal", g.slug)}
-                />
-              ))}
-            </div>
-          </Screen>
-        )}
-
-        {step === 2 && (
-          <Screen why="So your basket leans towards what you actually reach for.">
-            <h1 className="text-heading">What do you usually reach for?</h1>
-            <p className="mt-2 text-sm text-muted">Choose as many as you like.</p>
-            <button
-              type="button"
-              onClick={toggleAllProduce}
-              className={`mt-6 flex w-full items-center gap-3 rounded-xl border p-3 text-left text-sm ${
-                allProduce ? "border-border bg-lavender" : "border-border bg-paper-white"
-              }`}
-            >
-              <span className="text-xl">🧺</span>
-              <span className="font-medium">A bit of everything</span>
-            </button>
-            <div className="mt-3 grid gap-3">
-              {PRODUCE_PREFERENCE_OPTIONS.map((slug) => (
-                <OptionCard
-                  key={slug}
-                  emoji={PRODUCE_EMOJI[slug]}
-                  title={PRODUCE_PREFERENCE_LABEL[slug]}
-                  selected={data.produce.includes(slug)}
-                  onClick={() => toggleProduce(slug)}
-                />
-              ))}
-            </div>
-          </Screen>
-        )}
-
-        {step === 3 && (
-          <Screen why="This sizes the quantities we suggest, nothing else.">
-            <h1 className="text-heading">Who are you shopping for?</h1>
-            <p className="mt-2 text-sm text-muted">So basket quantities are about right for your table.</p>
-            <div className="mt-6 space-y-3">
-              <Counter label="Adults" value={data.adults} min={1} onChange={(v) => set("adults", v)} />
-              <Counter label="Kids" value={data.kids} min={0} onChange={(v) => set("kids", v)} />
-            </div>
-          </Screen>
-        )}
-
-        {step === 4 && (
-          <Screen why="So we can keep suggestions clear of anything you avoid.">
-            <h1 className="text-heading">Anything we should know?</h1>
-            <div className="mt-6 grid gap-3">
-              {(
-                [
-                  ["none", "No restrictions", "🍽️"],
-                  ["vegetarian", "Vegetarian", "🥦"],
-                  ["vegan", "Vegan", "🌱"],
-                  ["allergies", "Allergies or dislikes", "⚠️"],
-                ] as const
-              ).map(([value, label, emoji]) => (
-                <OptionCard
-                  key={value}
-                  groupId="dietary"
-                  emoji={emoji}
-                  title={label}
-                  selected={data.dietary === value}
-                  onClick={() => set("dietary", value)}
-                />
-              ))}
-            </div>
-            {data.dietary === "allergies" && (
-              <textarea
-                rows={2}
-                autoFocus
-                value={data.dietaryDetail}
-                onChange={(e) => set("dietaryDetail", e.target.value)}
-                placeholder="What should we keep out of your basket?"
-                className="mt-3 w-full rounded-input border border-border px-3 py-2 text-sm"
-              />
-            )}
-          </Screen>
-        )}
-
-        {step === 5 && (
-          <div className="py-16 text-center">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-border border-t-carbon" />
-            <p className="mt-4 text-sm text-muted">Saving your answers…</p>
-          </div>
-        )}
-
-        {step === 6 && (
-          <Screen why="This is a starting point. Add or remove anything before your account is made.">
-            <h1 className="text-heading">Here is a first basket to start from</h1>
-            <p className="mt-2 text-sm text-muted">
-              Built from what you told us. Remove what you don&rsquo;t want, add what&rsquo;s missing.
-            </p>
-            {picks.length > 0 ? (
-              <ul className="mt-6 space-y-3">
-                {picks.map((p) => (
-                  <li key={p.productId} className="flex items-center gap-3">
-                    <ProductImage
-                      publicId={p.cloudinaryPublicId}
-                      alt={p.name}
-                      emoji={p.imageEmoji}
-                      className="h-12 w-12 shrink-0"
-                      rounded="rounded-xl"
-                      emojiClassName="text-2xl"
-                      sizes="48px"
-                    />
-                    <span className="min-w-0 flex-1 text-sm font-medium">{p.name}</span>
-                    <span className="shrink-0 text-sm text-muted">× {p.quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => removePick(p.productId)}
-                      aria-label={`Remove ${p.name}`}
-                      className="tap-target flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted hover:bg-sky-wash hover:text-carbon"
-                    >
-                      <Icon name="close" size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-6 text-sm text-muted">Nothing in here yet. Add something below.</p>
-            )}
-
-            {moreToAdd.length > 0 && (
-              <div className="mt-5 border-t border-border pt-4">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Add something else</p>
-                <div className="flex flex-wrap gap-2">
-                  {moreToAdd.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => addCandidate(c)}
-                      className="flex items-center gap-1.5 rounded-full border border-border py-1.5 pl-1.5 pr-3 text-xs font-medium hover:bg-sky-wash"
-                    >
-                      <ProductImage
-                        publicId={c.cloudinaryPublicId}
-                        alt={c.name}
-                        emoji={c.imageEmoji}
-                        className="h-6 w-6"
-                        rounded="rounded-full"
-                        emojiClassName="text-sm"
-                        sizes="24px"
-                      />
-                      {c.name} +
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-5 flex justify-between border-t border-border pt-4 text-sm font-semibold">
-              <span>Rough weekly value</span>
-              <span>{formatNaira(previewValue)}</span>
-            </div>
-          </Screen>
-        )}
-
-        {step === 7 && (
-          <Screen why="Pick the day. Nothing is charged and no clock starts.">
-            <h1 className="text-heading">Which day would your basket ship?</h1>
-            <p className="mt-2 text-sm text-muted">
-              This just sets the day your basket would go out if you check out. It does not commit you to
-              anything and it does not start a countdown. You pay when you decide to, not before.
-            </p>
-            <div className="mt-6 grid gap-3">
-              {SHOPPING_WINDOW_DAYS.map((d) => (
-                <OptionCard
-                  key={d.day}
-                  groupId="window-day"
-                  emoji="📦"
-                  title={d.label}
-                  sub={d.cutoffCopy}
-                  selected={data.windowDay === d.day}
-                  onClick={() => set("windowDay", d.day)}
-                />
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-muted">
-              Cutoff times are placeholders until we confirm delivery operations.
-            </p>
-          </Screen>
-        )}
-
-        {step === 8 && (
-          <Screen why="Email and password only. No address, no card.">
-            <h1 className="text-heading">Create your account</h1>
-            <p className="mt-2 text-sm text-muted">
-              Your basket and answers are saved to this account. It is free and separate from any
-              subscription.
-            </p>
-
-            {error && (
-              <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
-                {error === "failed"
-                  ? "We could not create an account with those details. If you already have one, sign in instead."
-                  : error === "missing"
-                  ? "Enter your name, an email or phone, and a password of at least 8 characters."
-                  : "Too many attempts from this network. Please wait a while and try again."}
-              </p>
-            )}
-
-            <form action={createAccountFromOnboarding} className="mt-6 space-y-4">
-              <input type="hidden" name="goal" value={data.goal ?? ""} />
-              <input type="hidden" name="producePreferences" value={JSON.stringify(data.produce)} />
-              <input type="hidden" name="adults" value={data.adults} />
-              <input type="hidden" name="kids" value={data.kids} />
-              <input type="hidden" name="dietary" value={data.dietary} />
-              <input type="hidden" name="dietaryDetail" value={data.dietaryDetail} />
-              <input type="hidden" name="windowDay" value={data.windowDay ?? ""} />
-              <input
-                type="hidden"
-                name="starterPicks"
-                value={JSON.stringify(picks.map((p) => ({ productId: p.productId, quantity: p.quantity })))}
-              />
-              {next && <input type="hidden" name="next" value={next} />}
-
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium">Full name</span>
-                <input name="name" required className="w-full rounded-input border border-border px-3 py-2 text-sm" />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium">Email or phone</span>
-                <input
-                  name="contact"
-                  required
-                  placeholder="you@example.com or 080..."
-                  className="w-full rounded-input border border-border px-3 py-2 text-sm"
-                />
-              </label>
-              <PasswordField name="password" label="Password" required minLength={8} />
-              <Button type="submit" size="lg" className="w-full">
-                Create account
-              </Button>
-            </form>
-            <p className="mt-4 text-sm text-muted">
-              Already have an account?{" "}
-              <Link href="/login" className="text-carbon underline">Sign in</Link>
-            </p>
-          </Screen>
-        )}
-      </motion.div>
-      </AnimatePresence>
-      </div>
-
-      {step < LAST_STEP && step !== 5 && (
-        <div className="mt-8 flex items-center justify-between">
-          {step > 0 ? (
-            <Button onClick={back} variant="secondary" size="sm" className="tap-target">
-              Back
-            </Button>
+    <div className="hm min-h-svh bg-paper-white text-carbon">
+      {/* Top bar: a way back, and how far along you are. */}
+      <header className="sticky top-0 z-30 bg-paper-white/92 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
+          {index === 0 ? (
+            <Link href="/" className="logo-wordmark text-[22px] leading-none" aria-label="Basket, home">
+              Basket
+            </Link>
           ) : (
-            <span />
+            <motion.button
+              type="button"
+              onClick={() => go(index - 1)}
+              whileTap={{ scale: press.scale }}
+              aria-label="Back"
+              className="-ml-2 grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-(--hm-tint)"
+            >
+              <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12.5 4.5 7 10l5.5 5.5" />
+              </svg>
+            </motion.button>
           )}
-          <Button onClick={goNext} disabled={!canNext} size="sm" className="tap-target">
-            {step === 0 ? "Let's go" : step === 6 ? "Looks good" : step === 7 ? "Continue" : "Next"}
-          </Button>
+          <div className="flex flex-1 gap-1.5" role="progressbar" aria-label="Sign-up progress" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={index + 1}>
+            {STEPS.map((s, i) => (
+              <span key={s} className="h-1.5 flex-1 overflow-hidden rounded-full bg-(--hm-tint-2)">
+                <motion.span
+                  className="block h-full origin-left rounded-full bg-carbon"
+                  initial={false}
+                  animate={{ scaleX: i <= index ? 1 : 0 }}
+                  transition={spring.smooth}
+                />
+              </span>
+            ))}
+          </div>
+          <span className="w-9 shrink-0 text-right text-[13px] font-medium text-(--hm-ink-3) tabular-nums">
+            {index + 1}/{STEPS.length}
+          </span>
         </div>
-      )}
+      </header>
+
+      <main className="mx-auto w-[min(560px,calc(100%-32px))] pt-4 pb-36">
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <motion.section
+            key={step}
+            custom={direction}
+            variants={{
+              enter: (d: number) => ({ x: 32 * d, opacity: 0 }),
+              center: { x: 0, opacity: 1 },
+              exit: (d: number) => ({ x: -32 * d, opacity: 0 }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={spring.smooth}
+          >
+            {step === "goal" && (
+              <>
+                <Kachi>Hi, I&apos;m Kachi. Tell me what you&apos;re working toward and I&apos;ll plan your first week around it.</Kachi>
+                <Title>What are you working toward?</Title>
+                <LayoutGroup id="start-goal">
+                  <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Your goal">
+                    {MENU_GOALS.map((g) => {
+                      const cover = MENU.find((r) => r.goal === g.id);
+                      const on = goal === g.id;
+                      return (
+                        <motion.button
+                          key={g.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => pickGoal(g.id)}
+                          whileTap={{ scale: press.scaleLarge }}
+                          transition={spring.snappy}
+                          className={`relative flex items-center gap-4 rounded-[24px] p-3 pr-4 text-left transition-colors ${on ? "bg-paper-white" : "bg-(--hm-tint) hover:bg-(--hm-tint-2)"}`}
+                        >
+                          {on && (
+                            <motion.span layoutId="goal-ring" transition={spring.indicator} className="pointer-events-none absolute inset-0 rounded-[24px] ring-2 ring-carbon" aria-hidden />
+                          )}
+                          {cover && (
+                            <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px]">
+                              <Image src={cover.image} alt="" fill sizes="64px" className="object-cover" />
+                            </span>
+                          )}
+                          <span className="relative min-w-0 flex-1">
+                            <b className="block text-[17px] font-semibold tracking-[-0.02em]">{g.label}</b>
+                            <span className="mt-0.5 block text-[14px] leading-snug text-(--hm-ink-2)">&ldquo;{g.prompt}&rdquo;</span>
+                          </span>
+                          <Tick on={on} />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </LayoutGroup>
+                <p className="mt-6 text-center text-[14px] text-(--hm-ink-2)">
+                  Already have an account?{" "}
+                  <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-semibold text-carbon underline underline-offset-2">
+                    Sign in
+                  </Link>
+                </p>
+              </>
+            )}
+
+            {step === "table" && (
+              <>
+                <Kachi>I&apos;ll size every recipe for your table, and keep out anything you avoid.</Kachi>
+                <Title>Who are you cooking for?</Title>
+                <div className="mt-6 grid gap-2.5">
+                  <Stepper
+                    label="Adults"
+                    value={adults}
+                    min={1}
+                    max={12}
+                    onChange={(v) => {
+                      tableTouched.current = true;
+                      setAdults(v);
+                    }}
+                  />
+                  <Stepper
+                    label="Children"
+                    value={kids}
+                    min={0}
+                    max={12}
+                    onChange={(v) => {
+                      tableTouched.current = true;
+                      setKids(v);
+                    }}
+                  />
+                </div>
+
+                <h2 className="mt-9 text-[17px] font-semibold tracking-[-0.02em]">Anything you avoid?</h2>
+                <LayoutGroup id="start-diet">
+                  <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Dietary needs">
+                    {DIETARY.map(([value, label]) => (
+                      <Chip key={value} on={dietary === value} onClick={() => setDietary(value)} layoutId="diet-pill">
+                        {label}
+                      </Chip>
+                    ))}
+                  </div>
+                </LayoutGroup>
+                <AnimatePresence initial={false}>
+                  {dietary === "allergies" && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={spring.smooth} className="overflow-hidden">
+                      <textarea
+                        rows={2}
+                        autoFocus
+                        value={dietaryDetail}
+                        onChange={(e) => setDietaryDetail(e.target.value)}
+                        placeholder="Peanuts, okra, anything spicy…"
+                        aria-label="What should we keep out of your basket?"
+                        className="mt-3 w-full resize-none rounded-[18px] bg-(--hm-tint) px-4 py-3.5 text-[16px] outline-none placeholder:text-(--hm-ink-3) focus:ring-2 focus:ring-carbon"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+
+            {step === "recipes" && (
+              <>
+                <Kachi>
+                  {initialRecipe
+                    ? `I've kept the recipe you picked and added a few for ${goal ? GOAL_PHRASE[goal] : "your goal"}. Add or swap any of them.`
+                    : `I've started you with three for ${goal ? GOAL_PHRASE[goal] : "your goal"}. Add or swap any of them.`}
+                </Kachi>
+                <Title>Pick your first week</Title>
+                <RecipeGrid label={`For ${goal ? GOAL_PHRASE[goal] : "your goal"}`} recipes={MENU.filter((r) => r.goal === goal)} picked={recipeSlugs} onToggle={toggleRecipe} candidates={candidates} />
+                <RecipeGrid label="More from this week's menu" recipes={MENU.filter((r) => r.goal !== goal)} picked={recipeSlugs} onToggle={toggleRecipe} candidates={candidates} />
+              </>
+            )}
+
+            {step === "basket" && (
+              <>
+                <Kachi>
+                  Everything Basket sends for {recipes.length === 1 ? "your recipe" : `your ${recipes.length} recipes`}, sized for {people}. Change anything you like.
+                </Kachi>
+                <Title>Your first basket</Title>
+
+                <div className="hm-panel mt-6 p-5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <RollingNumber value={produce + delivery.fee} format={formatNaira} className="text-[34px] leading-none font-semibold tracking-[-0.045em]" />
+                    <span className="text-[14px] text-(--hm-ink-2)">for the week</span>
+                  </div>
+                  <div className="mt-4 space-y-2 text-[14px]">
+                    <div className="flex justify-between">
+                      <span className="text-(--hm-ink-2)">Produce, {kept.length} items</span>
+                      <RollingNumber value={produce} format={formatNaira} />
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-(--hm-ink-2)">Delivery</span>
+                      {delivery.isFree ? (
+                        <span className="rounded-full bg-mint-pop px-2.5 py-0.5 text-[13px] font-semibold">Free</span>
+                      ) : (
+                        <span>{formatNaira(delivery.fee)}</span>
+                      )}
+                    </div>
+                  </div>
+                  {!delivery.isFree && (
+                    <p className="mt-3 text-[13px] text-(--hm-ink-2)">
+                      Free delivery from {formatNaira(freeDeliveryThreshold)}, {formatNaira(delivery.toFreeDelivery)} away.
+                    </p>
+                  )}
+                </div>
+
+                <ul className="mt-5">
+                  {lines.map((l) => {
+                    const out = l.quantity === 0;
+                    return (
+                      <motion.li key={l.productId} layout="position" transition={spring.smooth} className="flex items-center gap-3 border-b border-(--hm-line) py-3 last:border-0">
+                        <ProductImage
+                          publicId={l.cloudinaryPublicId}
+                          alt=""
+                          emoji={l.imageEmoji}
+                          sizes="48px"
+                          rounded="rounded-[14px]"
+                          flavour="bg-(--hm-tint)"
+                          emojiClassName="text-2xl"
+                          className={`h-12 w-12 shrink-0 transition-opacity ${out ? "opacity-35" : ""}`}
+                        />
+                        <span className={`min-w-0 flex-1 transition-opacity ${out ? "opacity-45" : ""}`}>
+                          <b className="block truncate text-[15px] font-semibold">{shortName(l.name)}</b>
+                          <small className="block truncate text-[13px] text-(--hm-ink-3)">
+                            {l.usedBy.length > 1 ? `In ${l.usedBy.length} recipes` : l.usedBy[0]}
+                          </small>
+                        </span>
+                        {out ? (
+                          <button type="button" onClick={() => setLine(l.productId, l.minOrderQty)} className="h-9 rounded-full bg-(--hm-tint) px-3.5 text-[13px] font-semibold">
+                            Add back
+                          </button>
+                        ) : (
+                          <QtyStepper
+                            label={shortName(l.name)}
+                            value={l.quantity}
+                            onLess={() => setLine(l.productId, l.quantity <= l.minOrderQty ? 0 : l.quantity - l.stepQty)}
+                            onMore={() => setLine(l.productId, snapQuantity(l.quantity + l.stepQty, l.minOrderQty, l.stepQty))}
+                          />
+                        )}
+                      </motion.li>
+                    );
+                  })}
+                </ul>
+
+                {built.elsewhere.length > 0 && (
+                  <div className="mt-6">
+                    <h2 className="text-[15px] font-semibold">Grab these elsewhere</h2>
+                    <p className="mt-1 text-[13px] text-(--hm-ink-2)">Proteins, grains and dairy we don&apos;t sell, so your list is short.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {built.elsewhere.map((e) => (
+                        <span key={e} className="inline-flex h-8 items-center rounded-full border border-dashed border-ember px-3 text-[13px] font-medium">
+                          {e}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {step === "delivery" && (
+              <>
+                <Kachi>Last thing before your account: where and when should it arrive?</Kachi>
+                <Title>Where should we deliver?</Title>
+                <LayoutGroup id="start-zone">
+                  <div className="mt-6 grid gap-2.5" role="radiogroup" aria-label="Delivery area">
+                    {served.map((z) => {
+                      const on = zone === z.slug && !notListed;
+                      return (
+                        <div key={z.slug} className={`relative rounded-[20px] transition-colors ${on ? "bg-paper-white" : "bg-(--hm-tint) hover:bg-(--hm-tint-2)"}`}>
+                          {on && <motion.span layoutId="zone-ring" transition={spring.indicator} className="pointer-events-none absolute inset-0 rounded-[20px] ring-2 ring-carbon" aria-hidden />}
+                          <motion.button
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => {
+                              setNotListed(false);
+                              setZone(z.slug);
+                              if (!day || !z.deliveryDays.includes(day)) setDay(z.deliveryDays[0] ?? null);
+                            }}
+                            whileTap={{ scale: press.scaleLarge }}
+                            transition={spring.snappy}
+                            className="relative flex w-full items-center gap-3 px-4 py-3.5 text-left"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <b className="block text-[16px] font-semibold">{z.name}</b>
+                              <span className="block truncate text-[13px] text-(--hm-ink-2)">{z.area}</span>
+                            </span>
+                            <span className="shrink-0 text-[13px] text-(--hm-ink-3)">
+                              {z.deliveryDays.map((d) => (DELIVERY_DAY_LABEL[d] ?? d).slice(0, 3)).join(", ")}
+                            </span>
+                          </motion.button>
+                          <AnimatePresence initial={false}>
+                            {on && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={spring.smooth}
+                                className="relative overflow-hidden"
+                              >
+                                <div className="px-4 pb-4">
+                                  <p className="text-[14px] font-medium">Which day suits you?</p>
+                                  <LayoutGroup id={`start-day-${z.slug}`}>
+                                    <div className="mt-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Delivery day">
+                                      {z.deliveryDays.map((d) => (
+                                        <Chip key={d} on={day === d} onClick={() => setDay(d)} layoutId="day-pill">
+                                          {DELIVERY_DAY_LABEL[d] ?? d}
+                                        </Chip>
+                                      ))}
+                                    </div>
+                                  </LayoutGroup>
+                                  {day && (
+                                    <p className="mt-3 text-[13px] leading-relaxed text-(--hm-ink-2)">
+                                      First one could arrive <b className="font-semibold text-carbon">{firstDelivery(day)}</b>, 9am to 5pm. Change it until the night before, or skip a week.
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={notListed}
+                      onClick={() => setNotListed(true)}
+                      className={`rounded-[20px] px-4 py-3.5 text-left text-[15px] font-medium transition-colors ${notListed ? "bg-paper-white ring-2 ring-carbon" : "text-(--hm-ink-2) hover:bg-(--hm-tint)"}`}
+                    >
+                      My area isn&apos;t listed
+                    </button>
+                  </div>
+                </LayoutGroup>
+
+                <AnimatePresence initial={false}>
+                  {notListed && (
+                    <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring.smooth} className="hm-panel mt-5 p-4 text-[14px] leading-relaxed">
+                      We don&apos;t deliver there yet{soon.length ? ` (next up: ${soon.map((z) => z.name).join(", ")})` : ""}. Make your account anyway: your recipes and basket stay saved, and you can set your area the day we arrive.
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+
+            {step === "account" && (
+              <>
+                <Kachi>Your week is ready. Make a free account to keep it.</Kachi>
+                <Title>Save your week</Title>
+
+                <dl className="hm-panel mt-6 divide-y divide-(--hm-line) px-5 text-[14px]">
+                  <Row term="Goal">{goalLabel(goal)}</Row>
+                  <Row term="Recipes">
+                    {recipes.length} for {people} {people === 1 ? "person" : "people"}
+                  </Row>
+                  <Row term="Basket">
+                    {kept.length} items, {formatNaira(produce + delivery.fee)}
+                  </Row>
+                  <Row term="Delivery">{chosenZone && day && !notListed ? `${chosenZone.name}, ${DELIVERY_DAY_LABEL[day]}s` : "Not in your area yet"}</Row>
+                </dl>
+
+                {state.error && (
+                  <p role="alert" className="mt-5 rounded-[18px] bg-ember/12 p-4 text-[14px] leading-relaxed">
+                    {state.error === "failed" ? (
+                      <>
+                        There&apos;s already an account with those details.{" "}
+                        <Link href="/login" className="font-semibold underline underline-offset-2">
+                          Sign in instead
+                        </Link>
+                        , or use another email or phone.
+                      </>
+                    ) : state.error === "missing"
+                      ? "Add your name, an email or phone number, and a password of at least 8 characters."
+                      : "Too many sign-ups from this network. Wait a little and try again."}
+                  </p>
+                )}
+
+                <form id="start-account" action={formAction} className="mt-6 space-y-3">
+                  <input type="hidden" name="goal" value={goal ?? ""} />
+                  <input type="hidden" name="adults" value={adults} />
+                  <input type="hidden" name="kids" value={kids} />
+                  <input type="hidden" name="dietary" value={dietary} />
+                  <input type="hidden" name="dietaryDetail" value={dietaryDetail} />
+                  <input type="hidden" name="zone" value={notListed ? "" : (zone ?? "")} />
+                  <input type="hidden" name="deliveryDay" value={day ?? ""} />
+                  <input type="hidden" name="recipes" value={JSON.stringify(recipeSlugs)} />
+                  <input type="hidden" name="items" value={JSON.stringify(kept.map((l) => ({ productId: l.productId, quantity: l.quantity })))} />
+                  {next && <input type="hidden" name="next" value={next} />}
+
+                  <Field label="Your name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+                  <Field
+                    label="Email or phone"
+                    name="contact"
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder="you@example.com or 080…"
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
+                  />
+                  <PasswordInput />
+                </form>
+                <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-3)">
+                  Free to join. Nothing is charged until you check out a basket. By creating an account you agree to our{" "}
+                  <Link href="/terms" className="underline underline-offset-2">
+                    terms
+                  </Link>
+                  .
+                </p>
+              </>
+            )}
+          </motion.section>
+        </AnimatePresence>
+      </main>
+
+      {/* The next move, always under the thumb. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 bg-linear-to-t from-paper-white from-70% to-paper-white/0 pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
+        <div className="mx-auto w-[min(560px,calc(100%-32px))]">
+          <motion.button
+            type={step === "account" ? "submit" : "button"}
+            form={step === "account" ? "start-account" : undefined}
+            disabled={!ready[step] || pending}
+            onClick={step === "account" ? undefined : () => go(index + 1)}
+            whileTap={{ scale: press.scale }}
+            transition={spring.snappy}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-opacity disabled:opacity-30"
+          >
+            {cta[step]}
+          </motion.button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Screen({ why, children }: { why: string; children: React.ReactNode }) {
+/* -------------------------------------------------------------------------- */
+
+function Kachi({ children }: { children: ReactNode }) {
   return (
-    <div>
-      {children}
-      <p className="mt-6 rounded-xl bg-sky-wash p-3 text-xs text-carbon">{why}</p>
+    <div className="mt-2 flex items-start gap-2.5">
+      <KachiMark className="mt-0.5 h-8 w-8" />
+      <p className="rounded-[18px] rounded-tl-md bg-(--hm-tint) px-4 py-2.5 text-[15px] leading-snug">{children}</p>
     </div>
   );
 }
 
-function OptionCard({
-  emoji,
-  title,
-  sub,
-  selected,
-  onClick,
-  groupId,
-}: {
-  emoji: string;
-  title: string;
-  sub?: string;
-  selected: boolean;
-  onClick: () => void;
-  /** Options in the same question share this, so the selection ring slides between them. */
-  groupId?: string;
-}) {
+function Title({ children }: { children: ReactNode }) {
+  return <h1 className="mt-6 text-[clamp(1.75rem,6vw,2.25rem)] leading-[1.06] font-semibold tracking-[-0.04em] text-balance">{children}</h1>;
+}
+
+function Tick({ on }: { on: boolean }) {
   return (
-    <motion.button
+    <span className={`relative grid h-6 w-6 shrink-0 place-items-center rounded-full transition-colors ${on ? "bg-carbon text-paper-white" : "bg-paper-white shadow-[inset_0_0_0_1.5px_rgb(0_0_0/0.18)]"}`} aria-hidden>
+      <AnimatePresence initial={false}>
+        {on && (
+          <motion.span key="t" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={spring.juicy}>
+            <Icon name="checkPlain" size={14} weight="bold" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
+function Chip({ on, onClick, layoutId, children }: { on: boolean; onClick: () => void; layoutId: string; children: ReactNode }) {
+  return (
+    <button
       type="button"
+      role="radio"
+      aria-checked={on}
       onClick={onClick}
-      whileTap={{ scale: press.scaleLarge }}
-      transition={spring.snappy}
-      className={`relative flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
-        selected ? "border-border bg-lavender" : "border-border bg-paper-white hover:bg-sky-wash"
-      }`}
+      className={`relative h-11 rounded-full px-4.5 text-[15px] font-semibold transition-colors ${on ? "text-paper-white" : "bg-(--hm-tint) text-carbon/75 hover:text-carbon"}`}
     >
-      {selected && groupId && (
-        <motion.span
-          layoutId={`${groupId}-ring`}
-          transition={spring.indicator}
-          className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-carbon"
-          aria-hidden
-        />
-      )}
-      <span className="relative text-2xl leading-none">{emoji}</span>
-      <span className="relative min-w-0">
-        <span className="block text-sm font-medium">{title}</span>
-        {sub && <span className="mt-0.5 block text-xs text-muted">{sub}</span>}
-      </span>
-    </motion.button>
+      {on && <motion.span layoutId={layoutId} transition={spring.indicator} className="absolute inset-0 rounded-full bg-carbon" />}
+      <span className="relative">{children}</span>
+    </button>
   );
 }
 
-function Counter({
+function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
+  const btn = "grid h-10 w-10 place-items-center rounded-full bg-paper-white text-lg leading-none font-semibold disabled:opacity-35";
+  return (
+    <div className="flex h-16 items-center justify-between rounded-[20px] bg-(--hm-tint) pr-3 pl-5">
+      <span className="text-[16px] font-medium">{label}</span>
+      <div className="flex items-center gap-3">
+        <motion.button whileTap={{ scale: press.scale }} type="button" aria-label={`Fewer ${label.toLowerCase()}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))} className={btn}>
+          −
+        </motion.button>
+        <RollingNumber value={value} className="min-w-6 justify-center text-center text-[17px] font-semibold" />
+        <motion.button whileTap={{ scale: press.scale }} type="button" aria-label={`More ${label.toLowerCase()}`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))} className={btn}>
+          +
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+function QtyStepper({ label, value, onLess, onMore }: { label: string; value: number; onLess: () => void; onMore: () => void }) {
+  const btn = "grid h-8 w-8 place-items-center rounded-full text-base leading-none font-semibold";
+  return (
+    <div className="flex shrink-0 items-center gap-1 rounded-full bg-(--hm-tint) p-0.5">
+      <motion.button whileTap={{ scale: press.scale }} type="button" aria-label={`Less ${label}`} onClick={onLess} className={btn}>
+        −
+      </motion.button>
+      <RollingNumber value={value} className="min-w-5 justify-center text-center text-[14px] font-semibold" />
+      <motion.button whileTap={{ scale: press.scale }} type="button" aria-label={`More ${label}`} onClick={onMore} className={`${btn} bg-paper-white`}>
+        +
+      </motion.button>
+    </div>
+  );
+}
+
+function RecipeGrid({
   label,
-  value,
-  min,
-  onChange,
+  recipes,
+  picked,
+  onToggle,
+  candidates,
 }: {
   label: string;
-  value: number;
-  min: number;
-  onChange: (v: number) => void;
+  recipes: MenuRecipe[];
+  picked: string[];
+  onToggle: (slug: string) => void;
+  candidates: StarterCandidate[];
 }) {
+  const stocked = new Set(candidates.map((c) => c.slug));
+  if (recipes.length === 0) return null;
   return (
-    <div className="flex items-center justify-between rounded-xl border border-border p-4">
-      <span className="text-sm font-medium">{label}</span>
-      <div className="flex items-center gap-3">
-        <motion.button
-          type="button"
-          onClick={() => onChange(Math.max(min, value - 1))}
-          disabled={value <= min}
-          whileTap={{ scale: press.scale }}
-          transition={spring.snappy}
-          aria-label={`Fewer ${label.toLowerCase()}`}
-          className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-lg disabled:opacity-30"
-        >
-          <Icon name="minus" size={16} />
-        </motion.button>
-        <RollingNumber value={value} className="w-5 text-center text-sm font-semibold" />
-        <motion.button
-          type="button"
-          onClick={() => onChange(Math.min(12, value + 1))}
-          whileTap={{ scale: press.scale }}
-          transition={spring.snappy}
-          aria-label={`More ${label.toLowerCase()}`}
-          className="tap-target flex h-8 w-8 items-center justify-center rounded-full border border-border text-lg"
-        >
-          <Icon name="plus" size={16} />
-        </motion.button>
+    <div className="mt-7">
+      <h2 className="text-[15px] font-semibold text-(--hm-ink-2)">{label}</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        {recipes.map((r) => {
+          const on = picked.includes(r.slug);
+          const fromBasket = r.basket.filter((s) => stocked.has(s)).length;
+          const total = r.basket.length + r.elsewhere.length;
+          return (
+            <motion.button
+              key={r.slug}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onToggle(r.slug)}
+              whileTap={{ scale: press.scaleLarge }}
+              transition={spring.snappy}
+              className="group text-left"
+            >
+              <span className={`relative block aspect-4/3 overflow-hidden rounded-[20px] ring-offset-2 transition-shadow ${on ? "ring-2 ring-carbon" : ""}`}>
+                <Image src={r.image} alt={r.alt} fill sizes="(min-width: 600px) 270px, 45vw" className={`object-cover transition-[filter] ${on ? "" : "saturate-[0.85]"}`} />
+                <span className="absolute top-2 left-2 rounded-full bg-paper-white/92 px-2 py-0.5 text-[12px] font-semibold">{r.minutes} min</span>
+                <span className="absolute top-2 right-2">
+                  <Tick on={on} />
+                </span>
+              </span>
+              <b className="mt-2 block text-[14px] leading-snug font-semibold">{r.title}</b>
+              <span className="mt-0.5 block text-[12px] text-(--hm-ink-3)">
+                {fromBasket} of {total} from Basket
+              </span>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
+  );
+}
+
+function Row({ term, children }: { term: string; children: ReactNode }) {
+  return (
+    <div className="flex justify-between gap-4 py-3">
+      <dt className="text-(--hm-ink-2)">{term}</dt>
+      <dd className="text-right font-semibold">{children}</dd>
+    </div>
+  );
+}
+
+const INPUT =
+  "h-14 w-full rounded-[18px] bg-(--hm-tint) px-4 text-[16px] outline-none transition-shadow placeholder:text-(--hm-ink-3) focus:bg-paper-white focus:ring-2 focus:ring-carbon";
+
+function Field({ label, name, ...rest }: { label: string; name: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[14px] font-medium">{label}</span>
+      <input name={name} required className={INPUT} {...rest} />
+    </label>
+  );
+}
+
+function PasswordInput() {
+  const [show, setShow] = useState(false);
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[14px] font-medium">Password</span>
+      <span className="relative block">
+        <input name="password" type={show ? "text" : "password"} required minLength={8} autoComplete="new-password" placeholder="At least 8 characters" className={`${INPUT} pr-20`} />
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="absolute top-1/2 right-2 h-10 -translate-y-1/2 rounded-full px-3 text-[13px] font-semibold text-(--hm-ink-2) hover:text-carbon"
+        >
+          {show ? "Hide" : "Show"}
+        </button>
+      </span>
+    </label>
   );
 }
