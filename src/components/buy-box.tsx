@@ -131,7 +131,7 @@ export function BuyBox({
       <div className="mt-4">
         {mode === "one-time" ? (
           <div className="flex items-center gap-1.5">
-            <Button ref={ctaRef} onClick={addOneTime} size="lg" className="w-full uppercase tracking-wide">
+            <Button ref={ctaRef} onClick={addOneTime} disabled={product.soldOut} size="lg" className="w-full uppercase tracking-wide">
               {dest.signedIn && dest.destination.type === "basket" ? `Add to ${dest.destination.label}` : "Add to cart"}
             </Button>
             <DestinationOverrideChevron onPick={addOverride} />
@@ -139,7 +139,7 @@ export function BuyBox({
         ) : (
           <Button
             onClick={() => startTransition(() => addToStandingBasket(product.id, qty, frequency))}
-            disabled={isPending}
+            disabled={isPending || product.soldOut}
             size="lg"
             className="w-full uppercase tracking-wide"
           >
@@ -150,8 +150,8 @@ export function BuyBox({
 
       {/* Stock */}
       <p className="mt-3 flex items-center gap-2 text-sm">
-        <span className={`h-2.5 w-2.5 rounded-full border border-carbon ${inSeason ? "bg-mint-pop" : "bg-ember"}`} />
-        {inSeason ? "In stock" : "Limited this season"}
+        <span className={`h-2.5 w-2.5 rounded-full border border-carbon ${product.soldOut ? "bg-carbon/30" : inSeason ? "bg-mint-pop" : "bg-ember"}`} />
+        {product.soldOut ? "Out of stock right now. Check back soon." : inSeason ? "In stock" : "Limited this season"}
       </p>
 
       {/* Trust badges, numbers from the delivery-fee config */}

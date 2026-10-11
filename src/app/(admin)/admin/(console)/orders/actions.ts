@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { staffAction, auditStaff, type ActionResult } from "@/lib/admin/guard";
-import { can, type Role } from "@/lib/admin/permissions";
-import { canRefundFrom, canTransition, STATUS_LABEL } from "@/lib/order-status";
-import { sendOrderStatusEmail, sendRefundEmail } from "@/lib/customer-emails";
+import { canRefundFrom, STATUS_LABEL } from "@/lib/order-status";
+import { sendRefundEmail } from "@/lib/customer-emails";
+import { changeOrderStatus, ORDER_CONFLICT } from "@/lib/admin/order-ops";
 import type { OrderStatus } from "@/generated/prisma/enums";
 
 /*
@@ -17,7 +17,7 @@ import type { OrderStatus } from "@/generated/prisma/enums";
  */
 
 const id = z.string().min(1).max(40);
-const CONFLICT = { ok: false as const, code: "CONFLICT" as const, error: "Someone else just changed this order. Reload to see the latest, then try again." };
+const CONFLICT = ORDER_CONFLICT;
 
 function done(orderId: string) {
   revalidatePath(`/orders/${orderId}`);
@@ -30,45 +30,9 @@ export async function setOrderStatus(input: { orderId: string; to: string; versi
       .object({ orderId: id, to: z.enum(Object.keys(STATUS_LABEL) as [OrderStatus, ...OrderStatus[]]), version: z.number().int().min(0), note: z.string().trim().max(500).optional() })
       .safeParse(input);
     if (!parsed.success) return { ok: false, code: "INVALID", error: "That change isn't valid." };
-    const { orderId, to, version, note } = parsed.data;
-
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) return { ok: false, code: "INVALID", error: "That order doesn't exist." };
-    if (order.version !== version) return CONFLICT;
-    const role = ctx.staff.role as Role;
-    if (!canTransition(order.status, to, (p) => can(role, p))) {
-      await auditStaff(ctx, { action: "security.forbidden", targetType: "Order", targetId: orderId, summary: `Tried ${order.status} → ${to}` });
-      return { ok: false, code: "FORBIDDEN", error: `Your role can't move an order from ${STATUS_LABEL[order.status]} to ${STATUS_LABEL[to]}.` };
-    }
-    if (to === "CANCELLED" && !note) return { ok: false, code: "INVALID", error: "Say why the order is being cancelled. The customer sees this." };
-
-    const now = new Date();
-    const updated = await prisma.$transaction(async (tx) => {
-      const { count } = await tx.order.updateMany({
-        where: { id: orderId, version, status: order.status },
-        data: {
-          status: to,
-          version: { increment: 1 },
-          ...(to === "DELIVERED" && { deliveredAt: now }),
-          ...(to === "CANCELLED" && { cancelledAt: now, cancelReason: note }),
-        },
-      });
-      if (count === 0) return false;
-      await tx.orderEvent.create({ data: { orderId, kind: "STATUS", fromStatus: order.status, toStatus: to, note: note || null, staffId: ctx.staff.id, actorName: ctx.staff.name } });
-      return true;
-    });
-    if (!updated) return CONFLICT;
-
-    await auditStaff(ctx, {
-      action: "orders.status_changed",
-      targetType: "Order",
-      targetId: orderId,
-      summary: `#${orderId.slice(-8).toUpperCase()}: ${STATUS_LABEL[order.status]} → ${STATUS_LABEL[to]}`,
-      diff: { status: [order.status, to], ...(note && { note }) },
-    });
-    await sendOrderStatusEmail(order, to, note);
-    done(orderId);
-    return { ok: true, data: undefined };
+    const r = await changeOrderStatus(ctx, parsed.data);
+    if (r.ok) done(parsed.data.orderId);
+    return r;
   });
 }
 

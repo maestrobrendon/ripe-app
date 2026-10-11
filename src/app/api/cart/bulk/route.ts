@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { OFFERED, snapQuantity } from "@/lib/product";
+import { BUYABLE, snapQuantity } from "@/lib/product";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateCart, cartViewForCart } from "@/lib/cart";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const products = await prisma.product.findMany({
-    where: { id: { in: wanted.map((w) => w.productId) }, ...OFFERED },
+    where: { id: { in: wanted.map((w) => w.productId) }, ...BUYABLE },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
   const cart = await getOrCreateCart();

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireStaffPage } from "@/lib/admin/guard";
+import { formatOrderQty } from "@/lib/stock-core";
 import { dayDate, orderRef } from "../../../../_ui/format";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "../../../../_ui/print-button";
 
 export const metadata: Metadata = { title: "Packing slip" };
 
@@ -13,7 +14,7 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const order = await prisma.order.findUnique({
     where: { id: id.slice(0, 40) },
-    include: { items: { include: { product: { select: { name: true, unit: true } } } } },
+    include: { items: { include: { product: { select: { name: true, soldAs: true, referenceWeightG: true } } } } },
   });
   if (!order) notFound();
   const items = [...order.items].sort((a, b) => a.product.name.localeCompare(b.product.name));
@@ -58,10 +59,7 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
                 <span className="block h-5 w-5 rounded border-2 border-carbon/60" />
               </td>
               <td className="py-2.5 font-medium">{i.product.name}</td>
-              <td className="py-2.5 text-right text-[16px] font-semibold tabular-nums">
-                {i.quantity}
-                {i.product.unit === "WEIGHT" ? " g" : ""}
-              </td>
+              <td className="py-2.5 text-right text-[16px] font-semibold tabular-nums">{formatOrderQty(i.quantity, i.product)}</td>
             </tr>
           ))}
         </tbody>

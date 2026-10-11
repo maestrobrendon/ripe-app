@@ -32,7 +32,8 @@ function adminCsp(nonce: string): string {
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https://res.cloudinary.com",
     "font-src 'self'",
-    `connect-src 'self'${dev ? " ws: wss:" : ""}`,
+    // Product photos upload straight to Cloudinary with a server-signed request.
+    `connect-src 'self' https://api.cloudinary.com${dev ? " ws: wss:" : ""}`,
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",

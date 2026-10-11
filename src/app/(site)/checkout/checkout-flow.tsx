@@ -11,11 +11,13 @@ import { RollingNumber } from "@/components/ui/rolling-number";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
+import { nextDeliveryDate } from "@/lib/delivery-dates";
 import { placeOrder, type CheckoutInput } from "./actions";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const STEPS = ["Address", "Delivery window", "Payment", "Review"];
 const DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
+const hourLabel = (h: number) => (h === 0 ? "midnight" : h === 12 ? "noon" : h < 12 ? `${h}am` : `${h - 12}pm`);
 
 export function CheckoutFlow({
   zones,
@@ -24,7 +26,7 @@ export function CheckoutFlow({
   basketId,
   shoppingWindowLabel,
 }: {
-  zones: { slug: string; name: string; area: string }[];
+  zones: { slug: string; name: string; area: string; deliveryFee: number; deliveryDays: DeliveryDay[]; cutoffHour: number }[];
   defaults: {
     name: string;
     phone: string;
@@ -58,7 +60,11 @@ export function CheckoutFlow({
   const set = <K extends keyof CheckoutInput>(key: K, value: CheckoutInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const delivery = quoteDelivery(cart.subtotal, cart.isSubscriber);
+  const zone = zones.find((z) => z.slug === form.zoneSlug) ?? null;
+  // Only the days this area gets; if the chosen day isn't one, the first that is.
+  const days = DAYS.filter((d) => !zone || zone.deliveryDays.includes(d));
+  const deliveryDay = days.includes(form.deliveryDay) ? form.deliveryDay : (days[0] ?? form.deliveryDay);
+  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, zone?.deliveryFee ?? cart.deliveryFee);
   const total = cart.subtotal + delivery.fee;
 
   const addressValid = form.name && form.phone && form.address && form.zoneSlug;
@@ -67,7 +73,7 @@ export function CheckoutFlow({
     setError(null);
     startTransition(async () => {
       try {
-        await placeOrder(form);
+        await placeOrder({ ...form, deliveryDay });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong.");
       }
@@ -136,11 +142,14 @@ export function CheckoutFlow({
                   </p>
                 ) : (
                   <>
-                    <p className="text-sm text-muted">We deliver on these days in your zone. Pick the one that works.</p>
+                    <p className="text-sm text-muted">
+                      We deliver on these days in {zone?.name ?? "your zone"}. Orders close at {hourLabel(zone?.cutoffHour ?? 18)} the day before.
+                    </p>
                     <div className="space-y-2">
-                      {DAYS.map((d) => (
-                        <RadioCard key={d} selected={form.deliveryDay === d} onSelect={() => set("deliveryDay", d)} groupId="delivery-day">
-                          {DELIVERY_DAY_LABEL[d]} · 9am to 5pm
+                      {days.map((d) => (
+                        <RadioCard key={d} selected={deliveryDay === d} onSelect={() => set("deliveryDay", d)} groupId="delivery-day">
+                          {DELIVERY_DAY_LABEL[d]}{" "}
+                          {nextDeliveryDate(d, zone?.cutoffHour ?? 18).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} · 9am to 5pm
                         </RadioCard>
                       ))}
                     </div>

@@ -71,7 +71,8 @@ export function BasketEstimator({ candidates }: { candidates: StarterCandidate[]
   const standardTotal = picks.reduce((sum, p) => sum + p.standardPrice * p.quantity, 0);
   const memberTotal = picks.reduce((sum, p) => sum + p.memberPrice * p.quantity, 0);
   const subtotal = isMember ? memberTotal : standardTotal;
-  const delivery = quoteDelivery(subtotal, isMember);
+  // Free delivery is a Member Plus perk; this estimate is for Member.
+  const delivery = quoteDelivery(subtotal, false);
   const saving = standardTotal - memberTotal;
   const itemCount = picks.reduce((sum, p) => sum + p.quantity, 0);
 

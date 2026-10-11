@@ -21,7 +21,7 @@ export default async function OverviewPage() {
 
   // Aggregates only: nothing here identifies a customer, so every role with
   // dashboard access (including Analyst) can see it.
-  const [ordersToday, revenueToday, openOrders, customers, members, offered, waitlist, planRequests] = await Promise.all([
+  const [ordersToday, revenueToday, openOrders, customers, members, offered, waitlist, planRequests, lowStock, toPack] = await Promise.all([
     prisma.order.count({ where: { createdAt: { gte: today } } }),
     prisma.order.aggregate({ where: { createdAt: { gte: today }, paidAt: { not: null } }, _sum: { total: true } }),
     prisma.order.count({ where: { status: { in: OPEN_STATUSES } } }),
@@ -30,6 +30,8 @@ export default async function OverviewPage() {
     prisma.product.count({ where: OFFERED }),
     prisma.waitlistSignup.count(),
     prisma.planRequest.count({ where: { status: "PENDING" } }),
+    prisma.product.count({ where: { ...OFFERED, reorderPoint: { not: null }, stockOnHand: { lte: prisma.product.fields.reorderPoint } } }),
+    prisma.order.count({ where: { status: { in: ["CONFIRMED", "PICKING"] } } }),
   ]);
 
   const stats: { label: string; value: string; note: string; href?: string }[] = [
@@ -41,6 +43,8 @@ export default async function OverviewPage() {
     { label: "Products on sale", value: String(offered), note: "Excludes discontinued lines" },
     { label: "Waitlist", value: String(waitlist), note: "Asked for an area we don't serve yet" },
     { label: "Plan requests", value: String(planRequests), note: "Waiting for payment to be confirmed", href: "/subscriptions" },
+    { label: "To pack", value: String(toPack), note: "Confirmed or being picked", href: "/fulfilment" },
+    { label: "Low on stock", value: String(lowStock), note: "At or under the reorder point", href: "/inventory" },
   ];
 
   return (

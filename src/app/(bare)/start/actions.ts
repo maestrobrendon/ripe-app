@@ -12,7 +12,7 @@ import { createUserBasket } from "@/lib/basket";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { appOrigin } from "@/lib/site";
 import { sendSignupAttemptEmail } from "@/lib/email";
-import { OFFERED } from "@/lib/product";
+import { BUYABLE } from "@/lib/product";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import { MENU, MENU_GOALS } from "../home-menu/recipes";
 
@@ -123,7 +123,7 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   // Only products we still sell, whatever the form claimed.
   if (picks.length > 0) {
     const sold = new Set(
-      (await prisma.product.findMany({ where: { id: { in: picks.map((p) => p.productId) }, ...OFFERED }, select: { id: true } })).map((p) => p.id),
+      (await prisma.product.findMany({ where: { id: { in: picks.map((p) => p.productId) }, ...BUYABLE }, select: { id: true } })).map((p) => p.id),
     );
     picks = picks.filter((p) => sold.has(p.productId));
   }

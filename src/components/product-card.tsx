@@ -111,7 +111,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <h3 className="line-clamp-2 min-h-10 min-w-0 text-sm font-medium leading-snug break-words sm:min-h-11 sm:text-base">
           <Link href={href} className="hover:underline">{product.name}</Link>
         </h3>
-        {!product.inSeason && (
+        {product.soldOut ? (
+          <span className="shrink-0 rounded-full bg-soft-mist px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">Out of stock</span>
+        ) : !product.inSeason && (
           <span className="shrink-0 rounded-full bg-ember/12 px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">
             Off-season
           </span>
@@ -132,6 +134,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </span>
       </div>
 
+      {product.soldOut && quantity === 0 ? (
+        <p className="mt-auto flex h-9 items-center text-xs text-muted">Back soon</p>
+      ) : (
       <div className="mt-auto flex items-center gap-1.5">
         <QuantityStepper
           quantity={quantity}
@@ -145,6 +150,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         />
         <DestinationOverrideChevron onPick={addOverride} />
       </div>
+      )}
     </Card>
   );
 }

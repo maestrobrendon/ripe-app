@@ -15,7 +15,7 @@ export default function CartPage() {
   const cart = useCart();
   const { signedIn } = useDestination();
   const [ideasOpen, setIdeasOpen] = useState(false);
-  const delivery = quoteDelivery(cart.subtotal, cart.isSubscriber);
+  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, cart.deliveryFee);
   const total = cart.subtotal + delivery.fee;
 
   return (

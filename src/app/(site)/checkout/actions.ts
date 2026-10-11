@@ -5,22 +5,13 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
-import { quoteDelivery } from "@/lib/pricing";
+import { hasFreeDelivery, quoteDelivery } from "@/lib/pricing";
+import { nextDeliveryDate } from "@/lib/delivery-dates";
+import { isBuyable } from "@/lib/product";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { nextShoppingWindowDate } from "@/lib/shopping-window";
 import { sendOrderConfirmation } from "@/lib/customer-emails";
 import type { DeliveryDay } from "@/generated/prisma/enums";
-
-const DOW: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
-
-function nextDeliveryDate(day: DeliveryDay): Date {
-  const now = new Date();
-  const diff = (DOW[day] - now.getDay() + 7) % 7 || 7;
-  const result = new Date(now);
-  result.setDate(now.getDate() + diff);
-  result.setHours(0, 0, 0, 0);
-  return result;
-}
 
 export type CheckoutInput = {
   name: string;
@@ -53,6 +44,11 @@ export async function placeOrder(input: CheckoutInput) {
     throw new Error("Please fill in your name, phone, address and zone.");
   }
 
+  // Anything that went out of stock after it was added can't be ordered.
+  const stock = await prisma.product.findMany({ where: { id: { in: cart.items.map((i) => i.productId) } }, select: { name: true, tags: true, availability: true } });
+  const gone = stock.filter((p) => !isBuyable(p)).map((p) => p.name);
+  if (gone.length) throw new Error(`${gone.join(", ")} ${gone.length === 1 ? "is" : "are"} out of stock now. Remove ${gone.length === 1 ? "it" : "them"} from your cart to continue.`);
+
   const zone = await prisma.deliveryZone.findUnique({ where: { slug: input.zoneSlug } });
   if (!zone || !zone.isServed) throw new Error("We don't deliver to that area yet.");
 
@@ -77,7 +73,8 @@ export async function placeOrder(input: CheckoutInput) {
   // priced off live subscriber status and can disagree with a basket's own
   // locked pricing mode.
   const subtotal = snapshot.reduce((sum, s) => sum + s.unitPrice * s.quantity, 0);
-  const delivery = quoteDelivery(subtotal, isMemberPriced);
+  // The area sets the fee; only plans that include delivery (Member Plus) skip it.
+  const delivery = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zone.deliveryFee);
   const total = subtotal + delivery.fee;
 
   const accessToken = randomBytes(24).toString("base64url");
@@ -90,7 +87,7 @@ export async function placeOrder(input: CheckoutInput) {
 
   const deliveryDate = basket
     ? nextShoppingWindowDate(basket.shoppingWindowDay)
-    : nextDeliveryDate(input.deliveryDay);
+    : nextDeliveryDate(input.deliveryDay, zone.cutoffHour);
 
   const order = await prisma.order.create({
     data: {

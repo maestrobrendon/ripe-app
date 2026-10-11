@@ -6,6 +6,7 @@ import { requireStaffPage } from "@/lib/admin/guard";
 import { can, type Role } from "@/lib/admin/permissions";
 import { maskEmail, maskPhone } from "@/lib/admin/pii";
 import { canRefundFrom, canTransition, nextStatuses, STATUS_LABEL } from "@/lib/order-status";
+import { formatOrderQty } from "@/lib/stock-core";
 import { Badge, Card, PageHeader } from "../../../_ui/kit";
 import { dayDate, naira, orderRef, statusTone, when } from "../../../_ui/format";
 import { OrderActions, OrderNotes, RevealContact } from "./order-panels";
@@ -19,7 +20,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const order = await prisma.order.findUnique({
     where: { id: id.slice(0, 40) },
     include: {
-      items: { include: { product: { select: { name: true, unit: true, slug: true } } }, orderBy: { id: "asc" } },
+      items: { include: { product: { select: { name: true, unit: true, slug: true, soldAs: true, referenceWeightG: true } } }, orderBy: { id: "asc" } },
       events: { orderBy: { at: "asc" } },
       credits: { orderBy: { createdAt: "asc" } },
       user: { select: { id: true, subscriptionTier: { select: { name: true } } } },
@@ -79,10 +80,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 {order.items.map((i) => (
                   <tr key={i.id}>
                     <td className="px-5 py-2.5 font-medium">{i.product.name}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">
-                      {i.quantity}
-                      {i.product.unit === "WEIGHT" ? " g" : ""}
-                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{formatOrderQty(i.quantity, i.product)}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums">{naira(i.unitPrice)}</td>
                     <td className="px-5 py-2.5 text-right tabular-nums">{naira(i.unitPrice * i.quantity)}</td>
                   </tr>

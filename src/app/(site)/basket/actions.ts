@@ -1,6 +1,6 @@
 "use server";
 
-import { OFFERED, isOffered, snapQuantity } from "@/lib/product";
+import { BUYABLE, isOffered, isBuyable, snapQuantity } from "@/lib/product";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -44,6 +44,7 @@ export async function addToStandingBasket(
 
   const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
   if (!isOffered(product)) throw new Error("We don't sell that any more.");
+  if (!isBuyable(product)) throw new Error(`${product.name} is out of stock right now.`);
   const basket = await resolveBasket(user, undefined);
 
   await prisma.basket.update({
@@ -139,6 +140,7 @@ export async function setBasketItemQuantity(basketId: string | undefined, produc
     await prisma.basketItem.deleteMany({ where: { basketId: basket.id, productId } });
   } else {
     if (!isOffered(product)) throw new Error("We don't sell that any more.");
+    if (!isBuyable(product)) throw new Error(`${product.name} is out of stock right now.`);
     const snapped = snapQuantity(quantity, product);
     await prisma.basketItem.upsert({
       where: { basketId_productId: { basketId: basket.id, productId } },
@@ -172,7 +174,7 @@ export async function setWindowSkipped(basketId: string | undefined, skipped: bo
 
 async function addProductAtMin(basketId: string, productId: string) {
   const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
-  if (!isOffered(product)) return;
+  if (!isBuyable(product)) return;
   const existing = await prisma.basketItem.findUnique({
     where: { basketId_productId: { basketId, productId } },
   });
@@ -222,7 +224,7 @@ export async function applyStarterPicks(
 
   // The picks come from the browser: keep only products we sell, at quantities they allow.
   const wanted = picks.slice(0, 60);
-  const products = await prisma.product.findMany({ where: { id: { in: wanted.map((p) => p.productId) }, ...OFFERED } });
+  const products = await prisma.product.findMany({ where: { id: { in: wanted.map((p) => p.productId) }, ...BUYABLE } });
   const byId = new Map(products.map((p) => [p.id, p]));
   const data = wanted.flatMap((p) => {
     const product = byId.get(p.productId);

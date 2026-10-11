@@ -34,7 +34,12 @@ export async function POST(request: Request) {
   }
 
   const cart = await getOrCreateCart();
-  await setCartItemQuantity(cart.id, productId, quantity);
+  try {
+    await setCartItemQuantity(cart.id, productId, quantity);
+  } catch (err) {
+    // Discontinued or out of stock: say so, rather than a bare server error.
+    return NextResponse.json({ error: err instanceof Error ? err.message : "That can't be added right now." }, { status: 409 });
+  }
 
   return NextResponse.json(await cartViewForCart(cart.id));
 }

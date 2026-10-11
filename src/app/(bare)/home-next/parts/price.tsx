@@ -105,7 +105,8 @@ export function Price({
     [adults, kids, candidates],
   );
   const produce = picks.reduce((s, p) => s + (member ? p.memberPrice : p.standardPrice) * p.quantity, 0);
-  const delivery = quoteDelivery(produce, member);
+  // Free delivery is a Member Plus perk, not Member.
+  const delivery = quoteDelivery(produce, false);
   const membershipWeekly = member && memberFee ? Math.round((memberFee * 12) / 52) : 0;
   const total = produce + delivery.fee + membershipWeekly;
 

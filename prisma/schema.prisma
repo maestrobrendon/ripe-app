@@ -90,6 +90,30 @@ enum OrderStatus {
   REFUNDED
 }
 
+// What staff choose for a product. AVAILABLE and LIMITED sell normally;
+// OUT_OF_STOCK shows but can't be bought; HIDDEN takes it off the site.
+enum Availability {
+  AVAILABLE
+  LIMITED
+  OUT_OF_STOCK
+  HIDDEN
+}
+
+enum StockMovementKind {
+  RECEIVE
+  SALE
+  RETURN
+  WASTE
+  ADJUST
+  COUNT
+}
+
+enum DeliveryRunStatus {
+  PLANNING
+  OUT
+  DONE
+}
+
 enum OrderEventKind {
   STATUS
   NOTE
@@ -141,6 +165,10 @@ model DeliveryZone {
   centerLng    Float?
   radiusKm     Float?
   sortOrder    Int           @default(0)
+  // What delivery costs in this area, below the free-delivery threshold.
+  deliveryFee  Int           @default(2000)
+  // Orders for a delivery day close at this hour (Lagos time) the day before.
+  cutoffHour   Int           @default(18)
   users        User[]
   orders       Order[]
 }
@@ -275,9 +303,10 @@ model Product {
   orderUnit          OrderUnit       @default(PIECE)
   minOrderQty        Int             @default(1)
   stepQty            Int             @default(1)
-  // How the quantity field is denominated. WEIGHT products carry their
-  // quantity in grams; memberPrice/standardPrice then price referenceWeightG
-  // grams, not one raw gram, and the line total scales from that reference.
+  // How the quantity field is denominated. A WEIGHT product's cart and
+  // order quantity counts packs of referenceWeightG ("per 250g": 2 is 500g),
+  // and its prices are per pack. Stock (stockOnHand) counts grams; see
+  // orderToStock in src/lib/stock-core.ts for the one conversion.
   // The DB default exists only so this column could be added to existing
   // rows; the seed/backfill sets an explicit, correct value on every product.
   soldAs             SoldAs          @default(SINGLE)
@@ -311,6 +340,24 @@ model Product {
   // Cloudinary public id (e.g. "Fruits_Veggie/pineapple"). Null falls back to the emoji tile.
   cloudinaryPublicId String?
   featured           Boolean         @default(false)
+  // Staff control; inSeason is kept in step with it for the customer site.
+  availability       Availability    @default(AVAILABLE)
+  // Stock in the product's own quantity unit (grams for WEIGHT, else pieces,
+  // sets or bunches). Only ever changed with a StockMovement in the same
+  // transaction; may go negative when packing outruns recorded stock.
+  stockOnHand        Int             @default(0)
+  // At or below this, the product shows as low stock. Null: not tracked.
+  reorderPoint       Int?
+  // What one priced unit costs us (same basis as standardPrice).
+  costPrice          Int?
+  supplierId         String?
+  supplier           Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  // Optimistic concurrency for staff edits (see Order.version).
+  version            Int             @default(0)
+  updatedAt          DateTime        @default(now()) @updatedAt
+  movements          StockMovement[]
+  batches            StockBatch[]
+  priceChanges       PriceChange[]
   cartItems          CartItem[]
   basketItems        BasketItem[]
   orderItems         OrderItem[]
@@ -587,6 +634,13 @@ model Order {
   // The basket this order came from, if any.
   basketId       String?
   basket         Basket?        @relation(fields: [basketId], references: [id], onDelete: SetNull)
+  // The delivery run carrying this order, and its stop number on it.
+  deliveryRunId  String?
+  deliveryRun    DeliveryRun?   @relation(fields: [deliveryRunId], references: [id], onDelete: SetNull)
+  runSequence    Int?
+  // Set when stock was taken for this order (at packing), so it's taken once
+  // and given back once if the order is cancelled afterwards.
+  stockTakenAt   DateTime?
   // Staff-only working note; never shown to the customer.
   internalNote   String?
   cancelReason   String?
@@ -628,6 +682,111 @@ model OrderEvent {
 /**
  * Staff notes on a customer, for whoever helps them next.
  */
+/**
+ * The stock ledger. Every change to Product.stockOnHand is one row here, in
+ * the same transaction, with who did it and why. Never updated or deleted.
+ */
+model StockMovement {
+  id           String            @id @default(cuid())
+  productId    String
+  product      Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind         StockMovementKind
+  // Signed change, in the product's quantity unit.
+  quantity     Int
+  balanceAfter Int
+  reason       String?
+  orderId      String?
+  batchId      String?
+  supplierId   String?
+  unitCost     Int?
+  staffId      String?
+  staffName    String
+  at           DateTime          @default(now())
+
+  @@index([productId, at])
+  @@index([kind, at])
+  @@index([orderId])
+}
+
+/**
+ * One delivery from a supplier, tracked to its best-before date (used first-expiring-first).
+ */
+model StockBatch {
+  id         String    @id @default(cuid())
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  received   Int
+  remaining  Int
+  unitCost   Int?
+  receivedAt DateTime  @default(now())
+  bestBefore DateTime?
+
+  @@index([productId, remaining])
+  @@index([bestBefore])
+}
+
+model Supplier {
+  id        String       @id @default(cuid())
+  name      String
+  phone     String?
+  market    String?
+  notes     String?
+  active    Boolean      @default(true)
+  products  Product[]
+  batches   StockBatch[]
+  createdAt DateTime     @default(now())
+}
+
+/**
+ * Every price change, for the history on the product page.
+ */
+model PriceChange {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  field     String
+  fromValue Int?
+  toValue   Int?
+  reason    String?
+  staffId   String?
+  staffName String
+  at        DateTime @default(now())
+
+  @@index([productId, at])
+}
+
+model Rider {
+  id        String        @id @default(cuid())
+  name      String
+  phone     String
+  notes     String?
+  active    Boolean       @default(true)
+  runs      DeliveryRun[]
+  createdAt DateTime      @default(now())
+}
+
+/**
+ * A rider's trip on one day: an ordered list of stops (orders).
+ */
+model DeliveryRun {
+  id        String            @id @default(cuid())
+  // Lagos midnight of the delivery day.
+  day       DateTime
+  name      String
+  riderId   String?
+  rider     Rider?            @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  status    DeliveryRunStatus @default(PLANNING)
+  notes     String?
+  orders    Order[]
+  startedAt DateTime?
+  doneAt    DateTime?
+  createdAt DateTime          @default(now())
+
+  @@index([day])
+}
+
 model CustomerNote {
   id        String   @id @default(cuid())
   userId    String
