@@ -4,18 +4,13 @@ import { getStaffContext } from "@/lib/admin/session";
 import { auditStaff } from "@/lib/admin/guard";
 import { can, type Role } from "@/lib/admin/permissions";
 import { committedByProduct } from "@/lib/stock";
+import { csvCell as cell } from "@/lib/admin/csv";
 
 /*
  * Stock as a CSV, for counting sheets and spreadsheets. Same gate as the
  * stock page, same-origin only, audited. Weighed produce is in kg. Cells that
  * a spreadsheet would run as a formula are neutralised.
  */
-
-function cell(v: string | number | null): string {
-  let s = v === null ? "" : String(v);
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 export async function GET(req: NextRequest) {
   const site = req.headers.get("sec-fetch-site");

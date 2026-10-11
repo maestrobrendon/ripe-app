@@ -77,6 +77,7 @@ export default async function AccountPage() {
       }
       cheapestPlan={cheapestTier?.monthlyFee ?? null}
       orders={orderRows}
+      kachiReview={Boolean(user.kachiReviewConsentAt)}
       whatsappHref={`https://wa.me/${(await getSiteSettings()).support.whatsapp}`}
     />
   );

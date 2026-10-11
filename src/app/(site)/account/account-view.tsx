@@ -18,6 +18,7 @@ import {
   removeCard,
   signOut,
   signOutEverywhere,
+  setKachiReviewConsent,
   type SaveResult,
 } from "./actions";
 
@@ -50,6 +51,7 @@ type Props = {
   cheapestPlan: number | null;
   orders: OrderRow[];
   whatsappHref: string;
+  kachiReview: boolean;
 };
 
 const FIELD =
@@ -221,6 +223,10 @@ export function AccountView(props: Props) {
             />
           </Group>
 
+          <Group title="Privacy">
+            <KachiReviewRow on={props.kachiReview} />
+          </Group>
+
           <Group title="Help">
             <Row icon="whatsapp" title="Chat with us on WhatsApp" sub="Usually replies in minutes" href={props.whatsappHref} external />
             <Row icon="help" title="Questions and answers" href="/faq" />
@@ -294,6 +300,33 @@ export function AccountView(props: Props) {
         </button>
       </BottomSheet>
     </div>
+  );
+}
+
+/** A plain on/off: may the Basket team read my Kachi chats to improve her? */
+function KachiReviewRow({ on }: { on: boolean }) {
+  const [value, setValue] = useState(on);
+  const [pending, start] = useTransition();
+  const toggle = () =>
+    start(async () => {
+      const next = !value;
+      setValue(next);
+      const r = await setKachiReviewConsent(next);
+      if (!r.ok) setValue(!next);
+    });
+  return (
+    <button type="button" role="switch" aria-checked={value} disabled={pending} onClick={toggle} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-soft-mist">
+        <Icon name="shield" size={19} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <b className="block text-base font-semibold">Help improve Kachi</b>
+        <small className="block text-[13px] text-muted">Let the Basket team read your chats with Kachi to make her better. Off unless you turn it on.</small>
+      </span>
+      <span aria-hidden className={`relative h-7 w-12 flex-none rounded-full transition-colors ${value ? "bg-carbon" : "bg-soft-mist"}`}>
+        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-[left] ${value ? "left-6" : "left-1"}`} />
+      </span>
+    </button>
   );
 }
 

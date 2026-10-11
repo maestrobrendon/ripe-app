@@ -62,7 +62,9 @@ const SECTIONS: LegalSection[] = [
             yourself, and the items you tick off as bought elsewhere.
           </li>
           <li>
-            <strong>Your conversations with Kachi:</strong> the messages you send her and her replies.
+            <strong>Your conversations with Kachi:</strong> the messages you send her and her replies. Our
+            team only reads them if you turn on &ldquo;Help improve Kachi&rdquo; in your account, and you can
+            turn it off at any time.
           </li>
           <li>
             <strong>Messages to us:</strong> anything you send us by email or WhatsApp, and your email if

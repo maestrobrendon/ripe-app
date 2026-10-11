@@ -10,6 +10,7 @@ import { sendContactChangedEmail } from "@/lib/email";
 import { setZoneCookie } from "@/lib/zone";
 import { GOALS } from "@/lib/assistant";
 import { PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
+import { audit } from "@/lib/admin/audit";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -136,6 +137,19 @@ export async function removeCard(): Promise<SaveResult> {
 export async function signOut() {
   await destroySession();
   redirect("/");
+}
+
+/**
+ * Whether the Basket team may read this customer's Kachi chats to improve
+ * her. Off unless they turn it on; turning it off hides every chat from
+ * staff at once. Recorded in the audit log by id only.
+ */
+export async function setKachiReviewConsent(on: boolean): Promise<SaveResult> {
+  const user = await requireUser();
+  await prisma.user.update({ where: { id: user.id }, data: { kachiReviewConsentAt: on ? new Date() : null } });
+  await audit({ actorType: "CUSTOMER", actorId: user.id, action: on ? "privacy.kachi_review_on" : "privacy.kachi_review_off", targetType: "User", targetId: user.id }).catch(() => {});
+  revalidatePath("/account");
+  return { ok: true };
 }
 
 /** Sign out on every device: for a lost phone or a shared computer. */

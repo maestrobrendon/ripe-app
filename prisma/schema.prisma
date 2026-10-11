@@ -219,6 +219,9 @@ model User {
   suspendedReason           String?
   // Set when the customer's personal data was erased on request (NDPA).
   erasedAt                  DateTime?
+  // When the customer agreed that the Basket team may read their Kachi chats
+  // to improve her. Null: not agreed (the default); staff can't see them.
+  kachiReviewConsentAt      DateTime?
   createdAt                 DateTime             @default(now())
   notes                     CustomerNote[]
   credits                   CreditRecord[]

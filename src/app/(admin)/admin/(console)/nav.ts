@@ -21,7 +21,7 @@ export const NAV: NavItem[] = [
   { href: "/subscriptions", label: "Memberships", permission: "subscriptions.view", group: "People", ready: true },
   { href: "/zones", label: "Delivery areas", permission: "zones.view", group: "Settings", ready: true },
   { href: "/settings", label: "Site settings", permission: "settings.view", group: "Settings", ready: true },
-  { href: "/insights", label: "Insights", permission: "insights.view", group: "Settings", ready: false, phase: "Phase 6" },
+  { href: "/insights", label: "Insights", permission: "insights.view", group: "Settings", ready: true },
   { href: "/staff", label: "Staff", permission: "staff.view", group: "Security", ready: true },
   { href: "/audit", label: "Audit log", permission: "security.audit_view", group: "Security", ready: true },
   { href: "/security", label: "My security", permission: null, group: "Security", ready: true },
