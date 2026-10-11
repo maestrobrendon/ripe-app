@@ -185,9 +185,12 @@ export function extractRecipes(
       }
       // The model sometimes writes the marker in place of the dish's name
       // ("1. [[slug]], crunchy…"). Then the name goes back in; when the name
-      // is already right before it, the marker just disappears.
-      const before = whole.slice(Math.max(0, offset - r.title.length - 12), offset).toLowerCase();
-      return before.includes(r.title.toLowerCase()) ? "" : `${space}${r.title}`;
+      // is already right beside it, before or after, the marker just goes.
+      const title = r.title.toLowerCase();
+      const end = offset + _.length;
+      const before = whole.slice(Math.max(0, offset - title.length - 12), offset).toLowerCase();
+      const after = whole.slice(end, end + title.length + 12).toLowerCase();
+      return before.includes(title) || after.includes(title) ? "" : `${space}${r.title}`;
     })
     .replace(/[ \t]+([.,;:!?])/g, "$1")
     .replace(/[ \t]+$/gm, "")
