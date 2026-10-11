@@ -1,11 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
-/** Thrown when a non-subscriber who already has their one free basket tries to create another. */
+/**
+ * How many baskets a plan may hold at once: pay as you go gets its one free
+ * trial basket, Member gets three, Member Plus ("premium") has no limit.
+ * null means unlimited. A member on a plan this doesn't know gets Member's.
+ */
+export const MEMBER_BASKET_LIMIT = 3;
+export function basketLimitFor(isSubscriber: boolean, tierSlug: string | null | undefined): number | null {
+  if (!isSubscriber) return 1;
+  if (tierSlug === "premium") return null;
+  return MEMBER_BASKET_LIMIT;
+}
+
+/** Thrown when someone already holds as many baskets as their plan allows. */
 export class BasketCapReachedError extends Error {
-  constructor() {
-    super("You've used your free basket. Subscribe to create more baskets and unlock member pricing.");
+  /** "trial": the one free basket is used. "member": Member's limit is reached. */
+  readonly reason: "trial" | "member";
+  constructor(reason: "trial" | "member") {
+    super(
+      reason === "trial"
+        ? "You've used your free basket. Become a member to create more baskets and unlock member pricing."
+        : `Member plans hold up to ${MEMBER_BASKET_LIMIT} baskets. Member Plus has no limit.`,
+    );
     this.name = "BasketCapReachedError";
+    this.reason = reason;
   }
 }
 
@@ -15,18 +34,19 @@ export async function getUserBaskets(userId: string) {
 }
 
 /**
- * Creates a basket for the user, enforcing the free-trial cap server-side: a
- * non-subscriber gets exactly one, ever, permanently priced at standard rates
- * regardless of any subscription they take out afterward. Subscribers can
- * create as many as they like, each priced at member rates from creation.
+ * Creates a basket for the user, enforcing the plan's cap server-side (see
+ * basketLimitFor). A non-subscriber's one basket is permanently priced at
+ * standard rates regardless of any subscription taken out afterward; a
+ * member's baskets are priced at member rates from creation.
  */
 export async function createUserBasket(
   userId: string,
-  { isSubscriber, deliveryDay }: { isSubscriber: boolean; deliveryDay: DeliveryDay },
+  { isSubscriber, tierSlug, deliveryDay }: { isSubscriber: boolean; tierSlug?: string | null; deliveryDay: DeliveryDay },
 ) {
-  if (!isSubscriber) {
+  const limit = basketLimitFor(isSubscriber, tierSlug);
+  if (limit !== null) {
     const existingCount = await prisma.basket.count({ where: { userId } });
-    if (existingCount >= 1) throw new BasketCapReachedError();
+    if (existingCount >= limit) throw new BasketCapReachedError(isSubscriber ? "member" : "trial");
   }
 
   const basket = await prisma.basket.create({

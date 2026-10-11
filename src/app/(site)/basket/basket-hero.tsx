@@ -25,6 +25,7 @@ export function BasketHero({
   deliveredOn,
   baskets,
   isSubscriber,
+  basketLimit,
   autoOpenDayPicker = false,
 }: {
   basketId: string;
@@ -36,6 +37,8 @@ export function BasketHero({
   deliveredOn: Date | null;
   baskets: SheetBasket[];
   isSubscriber: boolean;
+  /** How many baskets the plan allows; null for no limit. */
+  basketLimit: number | null;
   autoOpenDayPicker?: boolean;
 }) {
   const router = useRouter();
@@ -126,6 +129,7 @@ export function BasketHero({
         baskets={baskets}
         activeId={basketId}
         isSubscriber={isSubscriber}
+        basketLimit={basketLimit}
       />
     </section>
   );

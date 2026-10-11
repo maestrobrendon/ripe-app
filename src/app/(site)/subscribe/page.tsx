@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { OFFERED } from "@/lib/product";
+import { MEMBER_BASKET_LIMIT } from "@/lib/basket";
 import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { startSubscription } from "./actions";
 import { DeliveryDayField } from "./delivery-day-field";
@@ -40,7 +41,7 @@ function comparison(avgSaving: number): { label: string; cells: [Cell, Cell, Cel
     { label: "Standing weekly basket", cells: [false, true, true] },
     { label: "Weekly meal plan", cells: [false, true, true] },
     { label: "Recipes add only what you're missing", cells: [false, true, true] },
-    { label: "Baskets", cells: ["One trial basket", "As many as you need", "As many as you need"] },
+    { label: "Baskets", cells: ["One trial basket", `Up to ${MEMBER_BASKET_LIMIT}`, "Unlimited"] },
     { label: "Early access to seasonal produce", cells: [false, false, true] },
     { label: "Priority support on WhatsApp", cells: [false, false, true] },
   ];
@@ -92,7 +93,15 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
       {reason === "free-basket-used" && (
         <div className="hm-wrap mt-8">
           <p className="rounded-[20px] border-[1.5px] border-dashed border-ember px-5 py-4 text-center text-[15px]">
-            Your free basket is a one-time trial at standard prices. Become a member to keep more than one basket and pay member prices.
+            Your free basket is a one-time trial at standard prices. Become a member for up to 3 baskets (unlimited on Member Plus) and member prices.
+          </p>
+        </div>
+      )}
+
+      {reason === "basket-limit" && (
+        <div className="hm-wrap mt-8">
+          <p className="rounded-[20px] border-[1.5px] border-dashed border-ember px-5 py-4 text-center text-[15px]">
+            You have {MEMBER_BASKET_LIMIT} baskets, the most a Member plan holds. Member Plus has no limit.
           </p>
         </div>
       )}

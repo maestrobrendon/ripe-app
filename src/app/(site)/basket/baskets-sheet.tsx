@@ -15,10 +15,10 @@ export type SheetBasket = {
 };
 
 /**
- * The sheet opened from tapping the basket name in the hero. Subscribers can
- * hold several baskets and start another from here; a non-subscriber has
- * exactly one (the free trial), so "New basket" routes to Subscribe instead
- * of creating a second one.
+ * The sheet opened from tapping the basket name in the hero. Members start
+ * another basket from here, up to their plan's limit (three on Member, none on
+ * Member Plus); at the limit, or on the one free trial basket, "New basket"
+ * routes to Pricing instead.
  */
 export function BasketsSheet({
   open,
@@ -26,22 +26,27 @@ export function BasketsSheet({
   baskets,
   activeId,
   isSubscriber,
+  basketLimit,
 }: {
   open: boolean;
   onClose: () => void;
   baskets: SheetBasket[];
   activeId: string;
   isSubscriber: boolean;
+  basketLimit: number | null;
 }) {
+  const atLimit = basketLimit !== null && baskets.length >= basketLimit;
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   return (
     <BottomSheet open={open} onClose={onClose} title="Your baskets">
       <p className="mb-3 text-sm text-muted">
-        {isSubscriber
-          ? "Each basket comes on its own day, every week."
-          : "Free accounts get one trial basket."}
+        {!isSubscriber
+          ? "Free accounts get one trial basket."
+          : basketLimit === null
+            ? "Each basket comes on its own day, every week. No limit on Member Plus."
+            : `Each basket comes on its own day, every week. ${baskets.length} of ${basketLimit} on Member.`}
       </p>
 
       <div className="space-y-2">
@@ -69,7 +74,7 @@ export function BasketsSheet({
           </button>
         ))}
 
-        {isSubscriber ? (
+        {isSubscriber && !atLimit ? (
           <button
             disabled={isPending}
             onClick={() => startTransition(() => createBasket())}
@@ -85,13 +90,15 @@ export function BasketsSheet({
           </button>
         ) : (
           <Link
-            href="/subscribe?reason=free-basket-used"
+            href={isSubscriber ? "/subscribe?reason=basket-limit" : "/subscribe?reason=free-basket-used"}
             onClick={onClose}
             className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-border p-4 text-left"
           >
             <span>
               <b className="block text-base font-semibold text-muted">New basket</b>
-              <small className="block text-sm text-muted">Available with a membership</small>
+              <small className="block text-sm text-muted">
+                {isSubscriber ? "Member Plus has no basket limit" : "Available with a membership"}
+              </small>
             </span>
           </Link>
         )}

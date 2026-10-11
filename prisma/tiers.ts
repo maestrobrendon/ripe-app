@@ -14,7 +14,7 @@ export const tiers = [
       "A standing weekly basket: change it until the night before, skip any week",
       "A weekly meal plan built from the recipe menu",
       "Recipes add only what your basket is missing, in one tap",
-      "More than one basket, for different days or goals",
+      "Up to 3 baskets, for different days or goals",
     ],
   },
   {
@@ -26,6 +26,7 @@ export const tiers = [
     perks: [
       "Everything in Member",
       "Free delivery on every basket",
+      "Unlimited baskets",
       "Early access to seasonal produce, like agbalumo and mango season",
       "Priority support on WhatsApp",
     ],

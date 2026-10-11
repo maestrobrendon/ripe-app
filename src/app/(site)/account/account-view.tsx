@@ -698,7 +698,7 @@ function MembershipSheet({
       <ul className="mb-1.5">
         {[
           "Baskets that come every week, on your day",
-          "As many baskets as you want",
+          "Up to 3 baskets, or unlimited on Member Plus",
           "Lower prices on everything",
           "Keep your food timetable every week",
         ].map((perk) => (

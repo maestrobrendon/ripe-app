@@ -260,20 +260,21 @@ export async function restoreLastWeek(basketId?: string) {
 }
 
 /**
- * Starts a new basket. Subscribers can hold several; a non-subscriber who
- * already has one is routed to Subscribe instead of a second free basket.
+ * Starts a new basket, up to the plan's limit (lib/basket.ts). At the cap,
+ * pricing explains why: a used free basket, or Member's three.
  */
 export async function createBasket() {
   const user = await requireUser();
   try {
     const basket = await createUserBasket(user.id, {
       isSubscriber: Boolean(user.subscriptionTierId),
+      tierSlug: user.subscriptionTier?.slug,
       deliveryDay: user.deliveryDay ?? "WEDNESDAY",
     });
     redirect(`/basket?b=${basket.id}`);
   } catch (err) {
     if (err instanceof BasketCapReachedError) {
-      redirect("/subscribe?reason=free-basket-used");
+      redirect(err.reason === "trial" ? "/subscribe?reason=free-basket-used" : "/subscribe?reason=basket-limit");
     }
     throw err;
   }

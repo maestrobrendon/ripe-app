@@ -7,6 +7,7 @@ import {
   getUserBaskets,
   getBasketItemCount,
   prefillStandingBasket,
+  basketLimitFor,
 } from "@/lib/basket";
 import { readCart } from "@/lib/cart";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
@@ -147,6 +148,7 @@ export default async function BasketPage({
           deliveredOn={basket.trialDeliveredAt}
           baskets={sheetBaskets}
           isSubscriber={isSubscriber}
+          basketLimit={basketLimitFor(isSubscriber, user.subscriptionTier?.slug)}
           autoOpenDayPicker={pickDay === "1"}
         />
 
