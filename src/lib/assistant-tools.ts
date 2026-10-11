@@ -11,6 +11,7 @@
 // free-trial pricing lock, and quantity snapping all apply identically here.
 
 import { prisma } from "@/lib/prisma";
+import { customerStatusLabel } from "@/lib/order-status";
 import {
   getOwnedBasket,
   getUserBaskets,
@@ -181,6 +182,8 @@ export async function toolGetOrderStatus(user: CurrentUser, args: { order_id: st
     return {
       orderId: order.id,
       status: order.status,
+      // What the customer sees on their order page; use these words with them.
+      statusLabel: customerStatusLabel(order.status),
       deliveryDate: order.deliveryDate.toISOString(),
       total: order.total,
       paid: Boolean(order.paidAt),

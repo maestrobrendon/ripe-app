@@ -35,6 +35,9 @@ export async function signIn(formData: FormData) {
     redirect(`/login?error=1${nextParam}`);
   }
 
+  // Only said after a correct password, so it reveals nothing to a guesser.
+  if (user.suspendedAt || user.erasedAt) redirect("/login?error=suspended");
+
   await createSession(user.id);
   redirect(safeNext || (user.onboardingCompleted ? "/account" : "/onboarding"));
 }

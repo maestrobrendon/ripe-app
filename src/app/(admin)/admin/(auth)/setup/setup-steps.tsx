@@ -8,7 +8,9 @@ import { Alert, Button, Field, Input } from "../../_ui/kit";
 
 /** Two steps: a second factor, then recovery codes saved somewhere safe. */
 export function SetupSteps({ owner, factorDone, hasPasskey }: { owner: boolean; factorDone: boolean; hasPasskey: boolean }) {
-  const [done, setDone] = useState(factorDone);
+  // Which second factor is in place; seeded from the server so a reload shows the truth.
+  const [method, setMethod] = useState<"passkey" | "totp" | null>(hasPasskey ? "passkey" : factorDone ? "totp" : null);
+  const done = method !== null;
   const [error, setError] = useState<string | null>(null);
   const [totp, setTotp] = useState<{ qrSvg: string; secret: string } | null>(null);
   const [code, setCode] = useState("");
@@ -24,7 +26,7 @@ export function SetupSteps({ owner, factorDone, hasPasskey }: { owner: boolean; 
         const options = await setupPasskeyOptions();
         const response = await startRegistration({ optionsJSON: options });
         const result = await setupPasskeyVerify(response, guessDeviceName());
-        if (result.ok) setDone(true);
+        if (result.ok) setMethod("passkey");
         else setError(result.error ?? "That didn't work.");
       } catch {
         setError("The passkey prompt was closed or isn't supported on this device.");
@@ -40,7 +42,7 @@ export function SetupSteps({ owner, factorDone, hasPasskey }: { owner: boolean; 
   const confirmTotp = () =>
     start(async () => {
       const r = await setupTotpConfirm(code);
-      if (r.ok) setDone(true);
+      if (r.ok) setMethod("totp");
       else setError(r.error ?? "That didn't work.");
     });
 
@@ -67,7 +69,7 @@ export function SetupSteps({ owner, factorDone, hasPasskey }: { owner: boolean; 
           <p className="text-[13px] font-semibold text-carbon/55">Step 1</p>
           <p className="text-[15px] font-semibold">{owner ? "Add a passkey" : "Add a second factor"}</p>
           {done ? (
-            <Alert tone="success">{hasPasskey || !totp ? "Passkey saved." : "Authenticator app connected."}</Alert>
+            <Alert tone="success">{method === "passkey" ? "Passkey saved." : "Authenticator app connected."}</Alert>
           ) : (
             <div className="mt-3 space-y-3">
               <Button onClick={addPasskey} disabled={pending} className="w-full">

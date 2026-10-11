@@ -81,16 +81,4 @@ export const MEAL_FORMAT_LABEL: Record<string, string> = {
   "prep-breakfasts": "Preppable breakfasts",
 };
 
-export const ORDER_STATUS_LABEL: Record<string, string> = {
-  RECEIVED: "Received",
-  SOURCED: "Sourced",
-  OUT_FOR_DELIVERY: "Out for delivery",
-  DELIVERED: "Delivered",
-};
-
-export const ORDER_STATUS_STEPS = [
-  "RECEIVED",
-  "SOURCED",
-  "OUT_FOR_DELIVERY",
-  "DELIVERED",
-] as const;
+// Order status labels live in src/lib/order-status.ts.

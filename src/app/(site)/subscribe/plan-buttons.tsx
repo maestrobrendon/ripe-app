@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { changeTier, cancelSubscription } from "./actions";
+import { changeTier, cancelSubscription, withdrawPlanRequest } from "./actions";
 
 /** For a current member: move to another plan in place. */
 export function SwitchPlanButton({ slug, name, className }: { slug: string; name: string; className: string }) {
@@ -24,6 +24,21 @@ export function CancelMembershipButton() {
       className="text-[14px] font-semibold text-[var(--hm-ink-2)] underline decoration-carbon/25 underline-offset-4 hover:text-carbon disabled:opacity-60"
     >
       {isPending ? "Cancelling…" : "Cancel membership"}
+    </button>
+  );
+}
+
+/** For someone waiting on a plan request: take it back. */
+export function WithdrawRequestButton() {
+  const [isPending, startTransition] = useTransition();
+  return (
+    <button
+      type="button"
+      disabled={isPending}
+      onClick={() => startTransition(() => withdrawPlanRequest())}
+      className="text-[14px] font-semibold text-[var(--hm-ink-2)] underline decoration-carbon/25 underline-offset-4 hover:text-carbon disabled:opacity-60"
+    >
+      {isPending ? "Withdrawing…" : "Withdraw request"}
     </button>
   );
 }

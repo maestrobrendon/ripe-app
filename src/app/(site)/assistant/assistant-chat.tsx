@@ -10,6 +10,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Icon } from "@/components/ui/icon";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
+import { CUSTOMER_STEPS, customerStatusLabel, customerStep } from "@/lib/order-status";
 import { press, spring } from "@/lib/motion/tokens";
 import type { KachiCard, KachiMode, KachiReply, KachiScope } from "@/lib/kachi-types";
 import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges } from "./thread-actions";
@@ -57,8 +58,6 @@ function timeGreeting(hour: number | null) {
 const noSubscribe = () => () => {};
 
 const AFTER_CHANGE_REPLIES = ["What can I cook with this?", "Check my order"];
-const ORDER_STEP_LABELS = ["Received", "Picked", "On the way", "Delivered"];
-const ORDER_STEPS = ["RECEIVED", "SOURCED", "OUT_FOR_DELIVERY", "DELIVERED"];
 
 let seq = 0;
 const newId = () => `m${Date.now()}-${seq++}`;
@@ -818,17 +817,17 @@ function KachiCardView({
     );
   }
 
-  const step = ORDER_STEPS.indexOf(card.order.status);
+  const step = customerStep(card.order.status) ?? -1;
   const day = new Date(card.order.deliveryDate).toLocaleDateString("en-GB", { weekday: "long" });
   return (
     <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
       <div className="p-3.5">
         <h4 className="text-[15px] font-semibold">
-          {card.order.status === "DELIVERED" ? `Delivered ${day}` : `Arriving ${day}`}
+          {card.order.status === "DELIVERED" ? `Delivered ${day}` : step < 0 || card.order.status === "FAILED_DELIVERY" ? customerStatusLabel(card.order.status) : `Arriving ${day}`}
         </h4>
         <small className="text-[13px] text-muted">Order #{card.order.id.slice(-8).toUpperCase()}</small>
         <div className="mt-3 flex gap-1.5">
-          {ORDER_STEPS.map((s, i) => (
+          {CUSTOMER_STEPS.map((s, i) => (
             <motion.i
               key={s}
               className={`block h-1.5 flex-1 rounded-full ${i <= step ? "bg-carbon" : "bg-soft-mist"}`}
@@ -840,7 +839,7 @@ function KachiCardView({
           ))}
         </div>
         <div className="mt-1.5 flex justify-between text-xs text-muted">
-          {ORDER_STEP_LABELS.map((l) => (
+          {CUSTOMER_STEPS.map((l) => (
             <span key={l}>{l}</span>
           ))}
         </div>

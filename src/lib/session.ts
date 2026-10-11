@@ -92,6 +92,8 @@ export async function getCurrentUser() {
   });
 
   if (!session || session.expiresAt.getTime() <= Date.now()) return null;
+  // Suspended (or erased) by staff: every existing session stops working at once.
+  if (session.user.suspendedAt || session.user.erasedAt) return null;
   return session.user;
 }
 

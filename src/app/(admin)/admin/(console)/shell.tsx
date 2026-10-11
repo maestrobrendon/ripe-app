@@ -67,14 +67,14 @@ export function Shell({ items, name, roleLabel, idleMs, children }: { items: Nav
   );
 
   return (
-    <div className="lg:grid lg:min-h-svh lg:grid-cols-[248px_1fr]">
-      <aside className="hidden border-r border-black/6 bg-paper-white px-3 py-5 lg:block">
+    <div className="lg:grid lg:min-h-svh lg:grid-cols-[248px_1fr] print:block">
+      <aside className="hidden print:hidden! border-r border-black/6 bg-paper-white px-3 py-5 lg:block">
         <AdminMark className="mb-7 px-2" />
         {nav}
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-black/6 bg-paper-white/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex print:hidden h-14 items-center gap-3 border-b border-black/6 bg-paper-white/90 px-4 backdrop-blur sm:px-6">
           <button type="button" className="grid h-9 w-9 place-items-center rounded-lg hover:bg-soft-mist/70 lg:hidden" aria-label="Menu" onClick={() => setMenuOpen((o) => !o)}>
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
               <path d="M3.5 6h13M3.5 10h13M3.5 14h13" />
@@ -104,7 +104,7 @@ export function Shell({ items, name, roleLabel, idleMs, children }: { items: Nav
 
         {menuOpen && <div className="border-b border-black/6 bg-paper-white px-3 py-4 lg:hidden">{nav}</div>}
 
-        <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">{children}</main>
       </div>
 
       {paletteOpen && <Palette items={items.filter((i) => i.ready)} onClose={() => setPaletteOpen(false)} />}

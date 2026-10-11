@@ -2,14 +2,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { SUPPORT_WHATSAPP } from "@/lib/site";
+import { customerStatusLabel, OPEN_STATUSES } from "@/lib/order-status";
 import { AccountView, type OrderRow } from "./account-view";
 
-const STATUS_LABEL = {
-  RECEIVED: "Received",
-  SOURCED: "Picked",
-  OUT_FOR_DELIVERY: "On the way",
-  DELIVERED: "Delivered",
-} as const;
 
 function shortDate(d: Date) {
   const weekday = d.toLocaleDateString("en-GB", { weekday: "short" });
@@ -43,14 +38,14 @@ export default async function AccountPage() {
 
   const orderRows: OrderRow[] = orders.map((o) => {
     const kind = o.orderType === "ONE_OFF" ? "cart" : "basket";
-    const live = o.status !== "DELIVERED";
+    const live = OPEN_STATUSES.includes(o.status);
     return {
       id: o.id,
       kind,
       name: kind === "basket" ? "Basket order" : `Cart order, ${o._count.items} ${o._count.items === 1 ? "item" : "items"}`,
-      when: `${live ? "Arrives" : "Delivered"} ${shortDate(o.deliveryDate)}`,
+      when: `${live ? "Arrives" : o.status === "DELIVERED" ? "Delivered" : "Was due"} ${shortDate(o.deliveryDate)}`,
       total: o.total,
-      status: STATUS_LABEL[o.status],
+      status: customerStatusLabel(o.status),
       live,
     };
   });

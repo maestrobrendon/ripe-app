@@ -8,7 +8,8 @@ import { MEMBER_BASKET_LIMIT } from "@/lib/basket";
 import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { startSubscription } from "./actions";
 import { DeliveryDayField } from "./delivery-day-field";
-import { CancelMembershipButton, SwitchPlanButton } from "./plan-buttons";
+import { CancelMembershipButton, SwitchPlanButton, WithdrawRequestButton } from "./plan-buttons";
+import { pendingPlanRequest } from "@/lib/plans";
 import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
@@ -56,8 +57,8 @@ const FAQ = [
   { q: "Which plan is right for me?", a: "Member covers almost everyone. Member Plus is for people who want first pick of seasonal produce and faster help when something needs sorting." },
 ];
 
-export default async function SubscribePage({ searchParams }: { searchParams: Promise<{ reason?: string }> }) {
-  const [tiers, user, { reason }, samples, all] = await Promise.all([
+export default async function SubscribePage({ searchParams }: { searchParams: Promise<{ reason?: string; requested?: string }> }) {
+  const [tiers, user, { reason, requested }, samples, all] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     getCurrentUser(),
     searchParams,
@@ -66,6 +67,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
   ]);
 
   const currentSlug = user?.subscriptionTier?.slug ?? null;
+  const pending = user ? await pendingPlanRequest(user.id) : null;
   const discounted = all.filter((p) => p.memberPrice < p.standardPrice);
   const saving = discounted.length ? discounted.reduce((s, p) => s + (1 - p.memberPrice / p.standardPrice), 0) / discounted.length : 0;
   const avgSaving = Math.round(saving * 100);
@@ -103,6 +105,18 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
           <p className="rounded-[20px] border-[1.5px] border-dashed border-ember px-5 py-4 text-center text-[15px]">
             You have {MEMBER_BASKET_LIMIT} baskets, the most a Member plan holds. Member Plus has no limit.
           </p>
+        </div>
+      )}
+
+      {pending && (
+        <div className="hm-wrap mt-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-sunburst/25 px-5 py-4">
+            <p className="max-w-2xl text-[15px]">
+              {requested ? "Request sent. " : ""}You asked to join <b className="font-semibold">{pending.tier.name}</b>. We&apos;ll email payment details within one
+              working day, and your plan starts once payment is confirmed. Nothing is charged automatically.
+            </p>
+            <WithdrawRequestButton />
+          </div>
         </div>
       )}
 
@@ -179,6 +193,8 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                 <div className="mt-7">
                   {isCurrent ? (
                     <p className={`${solid} ${featured ? "bg-paper-white/12" : "bg-[var(--hm-tint)]"}`}>Your plan</p>
+                  ) : pending?.tierId === tier.id ? (
+                    <p className={`${solid} ${featured ? "bg-paper-white/12" : "bg-[var(--hm-tint)]"}`}>Requested</p>
                   ) : !user ? (
                     <Link href={joinHref} className={`${solid} ${button}`}>
                       Join as {tier.name === "Member" ? "a member" : tier.name}
@@ -190,7 +206,10 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                       <input type="hidden" name="tier" value={tier.slug} />
                       <p className={`text-[13px] font-semibold ${featured ? "text-paper-white/70" : "text-[var(--hm-ink-2)]"}`}>Your delivery day</p>
                       <DeliveryDayField groupId={`delivery-day-${tier.slug}`} />
-                      <button className={`${solid} ${featured ? "bg-paper-white text-carbon" : "bg-carbon text-paper-white"}`}>Start {tier.name}</button>
+                      <button className={`${solid} ${featured ? "bg-paper-white text-carbon" : "bg-carbon text-paper-white"}`}>Join {tier.name}</button>
+                      <p className={`text-center text-[12px] ${featured ? "text-paper-white/60" : "text-[var(--hm-ink-2)]"}`}>
+                        We&apos;ll confirm payment by email before your plan starts.
+                      </p>
                     </form>
                   )}
                 </div>

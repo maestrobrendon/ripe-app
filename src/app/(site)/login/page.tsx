@@ -19,6 +19,10 @@ export default async function LoginPage({
         <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
           Too many sign-in attempts. Please wait a few minutes and try again.
         </p>
+      ) : error === "suspended" ? (
+        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
+          This account is paused. Message us on WhatsApp and we&apos;ll help you sort it out.
+        </p>
       ) : error ? (
         <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
           That email or phone and password did not match.

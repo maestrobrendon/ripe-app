@@ -5,7 +5,9 @@ import { Check } from "@phosphor-icons/react/dist/ssr";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { ProductImage } from "@/components/product-image";
-import { formatNaira, ORDER_STATUS_LABEL, ORDER_STATUS_STEPS } from "@/lib/format";
+import { formatNaira } from "@/lib/format";
+import { CUSTOMER_STEPS, customerStep } from "@/lib/order-status";
+import { SUPPORT_WHATSAPP } from "@/lib/site";
 
 function tokenMatches(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -34,29 +36,47 @@ export default async function OrderPage({
   // Same response as "not found" so the endpoint does not confirm the order exists.
   if (!ownsIt && !hasValidToken) notFound();
 
-  const currentIndex = ORDER_STATUS_STEPS.indexOf(order.status);
+  const currentIndex = customerStep(order.status) ?? -1;
+  const stopped = order.status === "CANCELLED" || order.status === "REFUNDED";
+  const isBasket = order.orderType === "SUBSCRIPTION" || order.orderType === "BASKET";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       <p className="text-sm text-muted">Order #{order.id.slice(-8)}</p>
       <h1 className="mt-1 text-3xl font-semibold">
-        {order.orderType === "SUBSCRIPTION" || order.orderType === "BASKET"
-          ? "Basket order confirmed"
-          : "Order confirmed"}
+        {stopped ? (order.status === "REFUNDED" ? "Order refunded" : "Order cancelled") : isBasket ? "Basket order confirmed" : "Order confirmed"}
       </h1>
       <p className="mt-2 text-sm text-muted">
         Delivering {order.deliveryDate.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" })} to{" "}
         {order.address} ({order.zoneName})
       </p>
 
+      {stopped ? (
+        <div className="mt-8 rounded-card border border-border bg-surface p-6 text-sm">
+          <p className="font-medium">{order.status === "REFUNDED" ? "This order was refunded." : "This order was cancelled and won't be delivered."}</p>
+          {order.cancelReason && <p className="mt-1 text-muted">{order.cancelReason}</p>}
+          <p className="mt-3 text-muted">
+            Questions?{" "}
+            <a href={`https://wa.me/${SUPPORT_WHATSAPP}`} className="font-medium text-carbon underline">
+              Message us on WhatsApp
+            </a>
+            .
+          </p>
+        </div>
+      ) : (
       <div className="mt-8 rounded-card border border-border bg-surface p-6">
+        {order.status === "FAILED_DELIVERY" && (
+          <p className="mb-5 rounded-lg bg-soft-mist px-3 py-2 text-sm">
+            We couldn&apos;t complete your delivery. We&apos;ll be in touch to arrange another time.
+          </p>
+        )}
         <ol className="flex items-start justify-between">
-          {ORDER_STATUS_STEPS.map((status, i) => (
-            <li key={status} className="relative flex flex-1 flex-col items-center text-center">
+          {CUSTOMER_STEPS.map((label, i) => (
+            <li key={label} className="relative flex flex-1 flex-col items-center text-center">
               {/* Connector sits between this circle's centre and the next one's,
                   vertically centred on the circle (top: half its height) — not
                   layered over the circles themselves. */}
-              {i < ORDER_STATUS_STEPS.length - 1 && (
+              {i < CUSTOMER_STEPS.length - 1 && (
                 <span
                   aria-hidden
                   className={`absolute top-4 left-1/2 h-px w-full ${i < currentIndex ? "bg-carbon" : "bg-border"}`}
@@ -70,12 +90,13 @@ export default async function OrderPage({
                 {i <= currentIndex ? <Check size={14} weight="bold" aria-hidden /> : i + 1}
               </span>
               <span className={`mt-2 text-xs ${i <= currentIndex ? "font-medium" : "text-muted"}`}>
-                {ORDER_STATUS_LABEL[status]}
+                {label}
               </span>
             </li>
           ))}
         </ol>
       </div>
+      )}
 
       <div className="mt-8">
         <h2 className="mb-3 text-lg font-medium">Items</h2>

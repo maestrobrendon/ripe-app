@@ -76,11 +76,37 @@ enum ShoppingWindowDay {
   SATURDAY
 }
 
+// The order lifecycle. Allowed moves, and who may make each, live in one
+// place: src/lib/order-status.ts. Customers see these folded into four steps.
 enum OrderStatus {
   RECEIVED
-  SOURCED
+  CONFIRMED
+  PICKING
+  PACKED
   OUT_FOR_DELIVERY
   DELIVERED
+  FAILED_DELIVERY
+  CANCELLED
+  REFUNDED
+}
+
+enum OrderEventKind {
+  STATUS
+  NOTE
+  REFUND
+  EMAIL
+}
+
+enum CreditKind {
+  REFUND
+  CREDIT
+}
+
+enum PlanRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  WITHDRAWN
 }
 
 enum WindowStatus {
@@ -91,14 +117,15 @@ enum WindowStatus {
 }
 
 model SubscriptionTier {
-  id         String   @id @default(cuid())
-  slug       String   @unique
+  id         String        @id @default(cuid())
+  slug       String        @unique
   name       String
   monthlyFee Int
   tagline    String
   perks      String[]
   sortOrder  Int
   users      User[]
+  requests   PlanRequest[]
 }
 
 // A Lagos delivery zone. Boundaries start as a centre point plus a radius,
@@ -159,7 +186,15 @@ model User {
   streak                    StreakStatus?
   sessions                  Session[]
   passwordResetTokens       PasswordResetToken[]
+  // Set by staff. A suspended customer can't sign in and has no live sessions.
+  suspendedAt               DateTime?
+  suspendedReason           String?
+  // Set when the customer's personal data was erased on request (NDPA).
+  erasedAt                  DateTime?
   createdAt                 DateTime             @default(now())
+  notes                     CustomerNote[]
+  credits                   CreditRecord[]
+  planRequests              PlanRequest[]
   carts                     Cart[]
   baskets                   Basket[]
   orders                    Order[]
@@ -486,6 +521,7 @@ model Basket {
   goalTag           String?
   items             BasketItem[]
   windows           ShoppingWindow[]
+  orders            Order[]
   updatedAt         DateTime           @updatedAt
   createdAt         DateTime           @default(now())
 
@@ -522,16 +558,16 @@ model ShoppingWindow {
 }
 
 model Order {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   // High-entropy token so a guest can view their own order without an account.
   // Set explicitly in code on every new order; DB default only backfills old rows.
-  accessToken    String        @unique @default(dbgenerated("gen_random_uuid()"))
+  accessToken    String         @unique @default(dbgenerated("gen_random_uuid()"))
   userId         String?
-  user           User?         @relation(fields: [userId], references: [id])
+  user           User?          @relation(fields: [userId], references: [id])
   deliveryZoneId String?
-  deliveryZone   DeliveryZone? @relation(fields: [deliveryZoneId], references: [id])
+  deliveryZone   DeliveryZone?  @relation(fields: [deliveryZoneId], references: [id])
   orderType      OrderType
-  status         OrderStatus   @default(RECEIVED)
+  status         OrderStatus    @default(RECEIVED)
   // Contact and address snapshot so guest orders stand alone.
   customerName   String
   customerPhone  String
@@ -540,7 +576,7 @@ model Order {
   zoneName       String
   deliveryDate   DateTime
   subtotal       Int
-  deliveryFee    Int           @default(0)
+  deliveryFee    Int            @default(0)
   total          Int
   paymentMethod  String
   itemSnapshot   Json
@@ -548,7 +584,104 @@ model Order {
   // Set when the customer completes checkout. Nothing sets this on a schedule:
   // a basket is only ever charged by the customer's own checkout action.
   paidAt         DateTime?
-  createdAt      DateTime      @default(now())
+  // The basket this order came from, if any.
+  basketId       String?
+  basket         Basket?        @relation(fields: [basketId], references: [id], onDelete: SetNull)
+  // Staff-only working note; never shown to the customer.
+  internalNote   String?
+  cancelReason   String?
+  cancelledAt    DateTime?
+  deliveredAt    DateTime?
+  // Optimistic concurrency: every staff change bumps it and must name the
+  // version it saw, so two people can't silently overwrite each other.
+  version        Int            @default(0)
+  events         OrderEvent[]
+  credits        CreditRecord[]
+  updatedAt      DateTime       @default(now()) @updatedAt
+  createdAt      DateTime       @default(now())
+
+  @@index([status, deliveryDate])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+/**
+ * The order's timeline: status moves, notes, refunds and emails, oldest first.
+ */
+model OrderEvent {
+  id         String         @id @default(cuid())
+  orderId    String
+  order      Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind       OrderEventKind
+  fromStatus OrderStatus?
+  toStatus   OrderStatus?
+  note       String?
+  // Who did it: a staff member, the customer, or the system. Names are copied
+  // so the timeline still reads right after a staff account is removed.
+  staffId    String?
+  actorName  String
+  at         DateTime       @default(now())
+
+  @@index([orderId, at])
+}
+
+/**
+ * Staff notes on a customer, for whoever helps them next.
+ */
+model CustomerNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  staffId   String?
+  staffName String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/**
+ * Money given back or owed, recorded by Finance. There's no payment gateway
+ * yet, so this is the ledger of what was paid out by hand, and how.
+ */
+model CreditRecord {
+  id        String     @id @default(cuid())
+  kind      CreditKind
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderId   String?
+  order     Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  amount    Int
+  reason    String
+  method    String
+  staffId   String?
+  staffName String
+  createdAt DateTime   @default(now())
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+/**
+ * A customer asking to join or move up a paid plan. Until there's a payment
+ * gateway, Finance confirms payment and approves it in the admin; nothing a
+ * customer does on the site grants a paid plan by itself.
+ */
+model PlanRequest {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tierId      String
+  tier        SubscriptionTier  @relation(fields: [tierId], references: [id])
+  deliveryDay DeliveryDay?
+  status      PlanRequestStatus @default(PENDING)
+  decidedAt   DateTime?
+  decidedById String?
+  decidedNote String?
+  createdAt   DateTime          @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId])
 }
 
 model OrderItem {

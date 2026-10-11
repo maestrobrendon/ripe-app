@@ -8,6 +8,7 @@ import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
 import { quoteDelivery } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { nextShoppingWindowDate } from "@/lib/shopping-window";
+import { sendOrderConfirmation } from "@/lib/customer-emails";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const DOW: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
@@ -110,6 +111,8 @@ export async function placeOrder(input: CheckoutInput) {
       total,
       paymentMethod: input.paymentMethod === "card" ? "Card (test mode)" : "Bank transfer (test mode)",
       itemSnapshot: snapshot,
+      basketId: basket?.id ?? null,
+      events: { create: { kind: "STATUS", toStatus: "RECEIVED", actorName: "Customer", note: "Order placed" } },
       items: {
         create: snapshot.map((s) => ({
           productId: s.productId,
@@ -128,6 +131,8 @@ export async function placeOrder(input: CheckoutInput) {
       data: { trialDeliveredAt: deliveryDate },
     });
   }
+
+  await sendOrderConfirmation({ ...order, items: snapshot.map((s) => ({ name: s.name, quantity: s.quantity })) });
 
   const activeCart = await getOrCreateCart();
   await clearCart(activeCart.id);
