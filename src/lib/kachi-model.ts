@@ -19,10 +19,19 @@ const FALLBACK_MODEL_IDS = (process.env.ASSISTANT_FALLBACK_MODEL_IDS ?? "gemini-
   .map((m) => m.trim())
   .filter((m) => m && m !== MODEL_ID);
 
-/** A provider "too many requests" or quota error, from any layer of wrapping. */
+/** The provider is overloaded ("high demand", 503): another model usually isn't. */
+function isOverloaded(err: unknown) {
+  const detail = err instanceof Error ? err.message : String(err);
+  return /high demand|overloaded|unavailable|503/i.test(detail);
+}
+
+/**
+ * A provider "too many requests", quota or overload error, from any layer of
+ * wrapping: the turns where "I'm a little busy, try again" is the honest reply.
+ */
 export function isRateLimited(err: unknown) {
   const detail = err instanceof Error ? err.message : String(err);
-  return /429|rate.?limit|quota|resource.?exhausted/i.test(detail);
+  return /429|rate.?limit|quota|resource.?exhausted/i.test(detail) || isOverloaded(err);
 }
 
 /**
@@ -55,6 +64,8 @@ export async function generate(
     } catch (err) {
       if (!isRateLimited(err) || !(await canRetry())) throw err;
       lastErr = err;
+      // Overloaded: no wait to sit out, just try the next model.
+      if (isOverloaded(err)) continue;
       const wait = retryDelayMs(err);
       console.warn(JSON.stringify({ scope: "kachi-rate-limit", model: modelId, waitMs: wait }));
       if (wait > 15_000) {
