@@ -21,7 +21,15 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    // Not on the admin host: src/proxy.ts gives it a stricter set of its own.
+    const adminHost = process.env.ADMIN_HOST?.trim().toLowerCase();
+    return [
+      {
+        source: "/:path*",
+        ...(adminHost ? { missing: [{ type: "host" as const, value: adminHost.split(":")[0] }] } : {}),
+        headers: SECURITY_HEADERS,
+      },
+    ];
   },
   // The old storefront collections now live on one page, /shop, as filters.
   // Fresh Cuts is discontinued; its address lands on the full list.
