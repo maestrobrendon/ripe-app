@@ -14,7 +14,7 @@ import { BasketEstimator } from "@/components/basket-estimator";
 import { HeroIllustration } from "@/components/hero-illustration";
 import { SplitReveal } from "@/components/motion/split-reveal";
 import { getHeroBasketCandidates } from "@/lib/starter-basket";
-import { toCardData, FRESH_CUTS_TAG } from "@/lib/product";
+import { toCardData } from "@/lib/product";
 import type { Prisma } from "@/generated/prisma/client";
 import type { Metadata } from "next";
 
@@ -28,9 +28,8 @@ export const metadata: Metadata = {
 };
 
 const COLLECTIONS: { title: string; href: string; blurb: string; where: Prisma.ProductWhereInput }[] = [
-  { title: CATEGORY_LABEL.BOX_BUNDLE, href: "/boxes-baskets", blurb: "Pre-picked mixes for a week of meals.", where: { category: "BOX_BUNDLE" } },
-  { title: "Fresh Cuts", href: "/fresh-cuts", blurb: "Pre-cut and ready to eat.", where: { tags: { has: FRESH_CUTS_TAG } } },
-  { title: CATEGORY_LABEL.FRUIT, href: "/fruits", blurb: "Picked days before it reaches your door.", where: { category: "FRUIT" } },
+  { title: CATEGORY_LABEL.BOX_BUNDLE, href: "/shop?category=BOX_BUNDLE", blurb: "Pre-picked mixes for a week of meals.", where: { category: "BOX_BUNDLE" } },
+  { title: CATEGORY_LABEL.FRUIT, href: "/shop?category=FRUIT", blurb: "Picked days before it reaches your door.", where: { category: "FRUIT" } },
   { title: CATEGORY_LABEL.SEASONAL, href: "/shop?category=SEASONAL", blurb: "Only around for a few weeks.", where: { category: "SEASONAL" } },
 ];
 

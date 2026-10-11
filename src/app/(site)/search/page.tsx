@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ProductGrid } from "@/components/product-grid";
 import { CATEGORY_LABEL } from "@/lib/format";
 import type { Prisma, ProductCategory } from "@/generated/prisma/client";
+import { OFFERED } from "@/lib/product";
 
 const CATEGORIES = ["FRUIT", "VEGETABLE", "BOX_BUNDLE", "SEASONAL"] as const;
 
@@ -34,7 +35,7 @@ export default async function SearchPage({
   if (min || max) where.standardPrice = { gte: min, lte: max };
 
   const products = q || sp.category || sp.season || min || max
-    ? await prisma.product.findMany({ where, orderBy: { name: "asc" } })
+    ? await prisma.product.findMany({ where: { ...where, ...OFFERED }, orderBy: { name: "asc" } })
     : [];
 
   const buildHref = (patch: Record<string, string | undefined>) => {

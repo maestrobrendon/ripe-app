@@ -20,6 +20,7 @@ import {
 } from "@/lib/weekly-meal-plan";
 import type { MealPlanDayStatus } from "@/generated/prisma/enums";
 import type { Product, Recipe, OwnMeal } from "@/generated/prisma/client";
+import { OFFERED } from "@/lib/product";
 
 /** Every meal-plan action here is subscriber-only: the builder is fully
  * locked for a free account (Recipes-by-tier addendum, Section 1), so there
@@ -106,7 +107,7 @@ async function loadRefLookups(refs: MealRef[]) {
   const [recipes, ownMeals, products] = await Promise.all([
     prisma.recipe.findMany({ where: { id: { in: recipeIds } } }),
     prisma.ownMeal.findMany({ where: { id: { in: ownMealIds } } }),
-    prisma.product.findMany(),
+    prisma.product.findMany({ where: OFFERED }),
   ]);
   return {
     recipesById: new Map(recipes.map((r) => [r.id, r])),
@@ -121,7 +122,7 @@ export async function addOwnMeal(name: string, ingredients: string[]): Promise<{
   const cleanName = name.trim().slice(0, 120) || "My meal";
   const cleanIngredients = ingredients.map((i) => i.trim()).filter(Boolean).slice(0, 30);
 
-  const products = await prisma.product.findMany();
+  const products = await prisma.product.findMany({ where: OFFERED });
   for (const term of cleanIngredients) {
     if (!matchProductByName(term, products)) await logUnstockedIngredient(term);
   }

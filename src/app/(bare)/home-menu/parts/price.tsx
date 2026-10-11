@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
@@ -60,6 +61,16 @@ export function Price({
   const delivery = quoteDelivery(produce, isMember);
   const membershipWeekly = isMember && memberFee ? Math.round((memberFee * 12) / 52) : 0;
   const total = produce + delivery.fee + membershipWeekly;
+  // Three everyday items with both prices, so "member price" is concrete
+  // before anyone opens the full list.
+  const samples = useMemo(
+    () =>
+      candidates
+        .filter((c) => (c.category === "FRUIT" || c.category === "VEGETABLE") && c.inSeason && c.memberPrice < c.standardPrice)
+        .sort((a, b) => Number(b.featured) - Number(a.featured) || a.name.localeCompare(b.name))
+        .slice(0, 3),
+    [candidates],
+  );
 
   return (
     <section id="price" className="scroll-mt-20 py-16 sm:py-24">
@@ -83,6 +94,38 @@ export function Price({
                 {g.label}
               </button>
             ))}
+          </div>
+
+          <div className="mt-10 max-w-[30rem]">
+            <div className="flex items-baseline justify-between text-[13px] font-semibold text-[var(--hm-ink-2)]">
+              <span>Every item has two prices</span>
+              <span className="flex gap-6">
+                <span>Standard</span>
+                <span className="text-[var(--hm-basket-ink)]">Member</span>
+              </span>
+            </div>
+            <ul className="mt-2">
+              {samples.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 border-t border-[var(--hm-line)] py-2.5 text-[15px]">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <ProductImage publicId={p.cloudinaryPublicId} alt="" emoji={p.imageEmoji} sizes="28px" rounded="rounded-full" flavour="bg-[#f3f5f0]" emojiClassName="text-sm" className="h-7 w-7 shrink-0" />
+                    <span className="truncate">{shortName(p.name)}</span>
+                  </span>
+                  <span className="flex shrink-0 gap-6 tabular-nums">
+                    <span className="w-16 text-right">{formatNaira(p.standardPrice)}</span>
+                    <b className="w-16 text-right font-semibold text-[var(--hm-basket-ink)]">{formatNaira(p.memberPrice)}</b>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[14px] font-semibold">
+              <Link href="/shop" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+                See every price
+              </Link>
+              <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+                Compare membership plans
+              </Link>
+            </div>
           </div>
         </Reveal>
 

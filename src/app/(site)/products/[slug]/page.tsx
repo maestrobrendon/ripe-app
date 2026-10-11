@@ -10,6 +10,7 @@ import { BrandStoryBand } from "@/components/brand-story-band";
 import { CompleteYourBasket, type CrossSellProduct } from "@/components/complete-your-basket";
 import { ProductImage } from "@/components/product-image";
 import { flavourFor } from "@/lib/flavour";
+import { FRESH_CUTS_TAG, OFFERED } from "@/lib/product";
 
 export default async function ProductPage({
   params,
@@ -21,15 +22,15 @@ export default async function ProductPage({
     prisma.product.findUnique({ where: { slug } }),
     getCurrentUser(),
   ]);
-  if (!product) notFound();
+  if (!product || product.tags.includes(FRESH_CUTS_TAG)) notFound();
 
   const relatedIds = product.relatedProductIds;
   let related = relatedIds.length
-    ? await prisma.product.findMany({ where: { id: { in: relatedIds } } })
+    ? await prisma.product.findMany({ where: { id: { in: relatedIds }, ...OFFERED } })
     : [];
   if (related.length === 0) {
     related = await prisma.product.findMany({
-      where: { category: product.category, id: { not: product.id } },
+      where: { category: product.category, id: { not: product.id }, ...OFFERED },
       take: 4,
       orderBy: { name: "asc" },
     });

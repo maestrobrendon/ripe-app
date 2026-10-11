@@ -1,115 +1,321 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
+import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
+import { OFFERED } from "@/lib/product";
+import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { startSubscription } from "./actions";
-import { TierControls } from "./tier-controls";
 import { DeliveryDayField } from "./delivery-day-field";
-import { Card } from "@/components/ui/card";
-import { LinkButton, Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
+import { CancelMembershipButton, SwitchPlanButton } from "./plan-buttons";
+import "@/app/(bare)/home-menu/home-menu.css";
 
-export default async function SubscribePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ reason?: string }>;
-}) {
-  const [tiers, user, { reason }] = await Promise.all([
+export const metadata: Metadata = {
+  title: "Pricing. Basket",
+  description: "Pay as you go at standard prices, or become a member for lower prices, free delivery and a basket that plans itself.",
+};
+
+/** "Chilli Pepper (Ata Rodo)" reads as "Chilli Pepper" in a price table. */
+const shortName = (name: string) => name.replace(/\s*\(.*\)\s*$/, "");
+
+/** A few everyday items for the side-by-side, if the catalogue has them. */
+const SAMPLE_SLUGS = ["tomato", "banana", "onion", "avocado", "spinach", "pineapple"];
+
+type Cell = boolean | string;
+
+/**
+ * Who gets what, row by row. Columns: pay as you go, Member, Member Plus.
+ * Everything here is how the app behaves today, except the two Plus rows,
+ * which are service promises (see prisma/tiers.ts).
+ */
+function comparison(avgSaving: number): { label: string; cells: [Cell, Cell, Cell] }[] {
+  const member = avgSaving > 0 ? `About ${avgSaving}% less` : "Member";
+  return [
+    { label: "Every recipe, with amounts and steps", cells: [true, true, true] },
+    { label: "Shop the full produce list", cells: [true, true, true] },
+    { label: "Kachi, your food assistant", cells: [true, true, true] },
+    { label: "Prices", cells: ["Standard", member, member] },
+    { label: "Delivery", cells: [`${formatNaira(BASE_DELIVERY_FEE)}, free over ${formatNaira(FREE_DELIVERY_THRESHOLD)}`, "Free", "Free"] },
+    { label: "Standing weekly basket", cells: [false, true, true] },
+    { label: "Weekly meal plan", cells: [false, true, true] },
+    { label: "Recipes add only what you're missing", cells: [false, true, true] },
+    { label: "Baskets", cells: ["One trial basket", "As many as you need", "As many as you need"] },
+    { label: "Early access to seasonal produce", cells: [false, false, true] },
+    { label: "Priority support on WhatsApp", cells: [false, false, true] },
+  ];
+}
+
+const FAQ = [
+  { q: "Do I need a membership to order?", a: "No. Anyone can sign up, pick recipes and order at standard prices. Membership makes every basket cheaper and keeps one coming each week." },
+  { q: "When am I charged for food?", a: "Only when you check out a basket. Change it until the night before, or skip a week and nothing is charged." },
+  { q: "Can I switch plans or cancel?", a: "Yes, anytime, from this page or your account. Cancelling takes you back to paying as you go." },
+  { q: "Which plan is right for me?", a: "Member covers almost everyone. Member Plus is for people who want first pick of seasonal produce and faster help when something needs sorting." },
+];
+
+export default async function SubscribePage({ searchParams }: { searchParams: Promise<{ reason?: string }> }) {
+  const [tiers, user, { reason }, samples, all] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     getCurrentUser(),
     searchParams,
+    prisma.product.findMany({ where: { slug: { in: SAMPLE_SLUGS }, ...OFFERED } }),
+    prisma.product.findMany({ where: OFFERED, select: { standardPrice: true, memberPrice: true } }),
   ]);
 
   const currentSlug = user?.subscriptionTier?.slug ?? null;
+  const discounted = all.filter((p) => p.memberPrice < p.standardPrice);
+  const saving = discounted.length ? discounted.reduce((s, p) => s + (1 - p.memberPrice / p.standardPrice), 0) / discounted.length : 0;
+  const avgSaving = Math.round(saving * 100);
+  const rows = SAMPLE_SLUGS.map((s) => samples.find((p) => p.slug === s)).filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const featuredSlug = tiers[0]?.slug;
+
+  // A plan pays for itself once the member discount on a month's produce
+  // covers the fee. Rounded up to the next ₦500 so it never flatters.
+  const breakEven = (fee: number) => (saving > 0 ? Math.ceil(fee / saving / 500) * 500 : null);
+  const perWeek = (fee: number) => Math.round((fee * 12) / 52 / 10) * 10;
+
+  // Guests make an account first, then land straight back on the plans.
+  const joinHref = "/start?next=%2Fsubscribe%23plans";
+  const solid = "inline-flex h-12 w-full items-center justify-center rounded-full text-[15px] font-semibold transition-colors";
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-sm font-medium uppercase tracking-wide text-carbon">Optional upgrade</p>
-        <h1 className="text-heading-lg mt-2">
-          Subscribe for member pricing and a standing basket
-        </h1>
-        <p className="mt-4 text-sm text-muted">
-          You can shop Basket with no subscription at all. A subscription is an upgrade on top of your
-          account. It unlocks member pricing across the catalog, free delivery on your set days, combo
-          pricing on boxes, and a standing weekly basket you edit before you are charged.
-        </p>
-        <Link href="/shop" className="mt-4 inline-block text-sm font-medium text-carbon underline">
-          Or just start shopping
-        </Link>
-      </div>
+    <div className="hm">
+      <section className="bg-[var(--hm-tint)]">
+        <div className="hm-wrap py-12 text-center sm:py-16">
+          <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
+          <h1 className="hm-h2 mx-auto max-w-[20ch]">Pick how you pay. Change it anytime.</h1>
+          <p className="hm-lede mx-auto mt-4 max-w-2xl">
+            Everyone gets the recipes, the full produce list and Kachi. Members pay less on everything, get free delivery and a
+            basket that turns up every week.
+          </p>
+        </div>
+      </section>
 
       {reason === "free-basket-used" && (
-        <div className="mx-auto mt-8 max-w-2xl rounded-card border border-dashed border-border bg-surface p-4 text-center text-sm text-muted">
-          Your free basket is a one-time trial at standard pricing. Subscribe to hold more than one basket
-          and unlock member pricing.
+        <div className="hm-wrap mt-8">
+          <p className="rounded-[20px] border-[1.5px] border-dashed border-ember px-5 py-4 text-center text-[15px]">
+            Your free basket is a one-time trial at standard prices. Become a member to keep more than one basket and pay member prices.
+          </p>
         </div>
       )}
 
-      {currentSlug ? (
-        <Card tone="tint" className="mx-auto mt-10 max-w-md text-center">
-          <p className="text-sm text-muted">You are subscribed to</p>
-          <p className="text-2xl font-semibold">{user?.subscriptionTier?.name}</p>
-          <p className="mt-1 text-sm text-muted">
-            Delivering {user?.deliveryDay ? DELIVERY_DAY_LABEL[user.deliveryDay] : "on a day you choose"}
-          </p>
-          <TierControls tiers={tiers.map((t) => ({ slug: t.slug, name: t.name }))} currentSlug={currentSlug} />
-        </Card>
-      ) : null}
+      {currentSlug && (
+        <div className="hm-wrap mt-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-mint-pop/25 px-5 py-4">
+            <p className="text-[15px]">
+              You&apos;re on <b className="font-semibold">{user?.subscriptionTier?.name}</b>, delivering{" "}
+              {user?.deliveryDay ? DELIVERY_DAY_LABEL[user.deliveryDay] : "on a day you choose"}.
+            </p>
+            <CancelMembershipButton />
+          </div>
+        </div>
+      )}
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-3">
-        {tiers.map((tier, i) => {
-          const isMid = i === 1;
-          const isCurrent = tier.slug === currentSlug;
-          return (
-            <Card
-              key={tier.id}
-              tone={isMid ? "tint" : "surface"}
-              className={`flex flex-col ${isMid ? "sm:scale-[1.02] sm:shadow-sm" : ""}`}
-            >
-              {isMid && (
-                <span className="mb-3 inline-block w-fit rounded-full bg-carbon px-3 py-1 text-xs font-medium text-white">
-                  Most popular
-                </span>
-              )}
-              <h2 className="text-lg font-semibold">{tier.name}</h2>
-              <p className="mt-1 text-3xl font-semibold">
-                {formatNaira(tier.monthlyFee)}
-                <span className="text-sm font-normal text-muted">/mo</span>
-              </p>
-              <p className="mt-2 text-sm text-muted">{tier.tagline}</p>
-              <ul className="mt-5 flex-1 space-y-2 text-sm">
-                {tier.perks.map((perk) => (
-                  <li key={perk} className="flex gap-2">
-                    <span className="mt-0.5 shrink-0 text-carbon">
-                      <Icon name="check" size={16} />
-                    </span>
-                    <span>{perk}</span>
-                  </li>
-                ))}
-              </ul>
+      {/* The three ways to pay, side by side. Membership in the middle. */}
+      <section id="plans" className="hm-wrap mt-10 scroll-mt-24" aria-label="Plans">
+        <div className="grid items-stretch gap-4 lg:grid-cols-3">
+          <article className="flex flex-col rounded-[28px] bg-paper-white p-7 shadow-[0_0_0_1px_var(--hm-line)]">
+            <h2 className="text-[17px] font-semibold">Pay as you go</h2>
+            <p className="mt-3 text-[2.4rem] leading-none font-semibold tracking-[-0.045em]">₦0</p>
+            <p className="mt-1.5 text-[14px] text-[var(--hm-ink-2)]">No fee. Pay for food when you order it.</p>
+            <ul className="mt-6 flex-1 space-y-2.5 text-[15px]">
+              {[
+                "Every recipe and the full produce list",
+                "Standard prices, no minimum order",
+                `Delivery ${formatNaira(BASE_DELIVERY_FEE)}, free over ${formatNaira(FREE_DELIVERY_THRESHOLD)}`,
+                "One trial basket",
+              ].map((t) => (
+                <li key={t} className="flex gap-2.5">
+                  <Check className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--hm-ink-3)]" /> {t}
+                </li>
+              ))}
+            </ul>
+            {!user ? (
+              <Link href="/start" className={`${solid} mt-7 bg-[var(--hm-tint)] hover:bg-[var(--hm-tint-2)]`}>
+                Start with one basket
+              </Link>
+            ) : !currentSlug ? (
+              <p className={`${solid} mt-7 bg-[var(--hm-tint)] text-[var(--hm-ink-2)]`}>How you pay now</p>
+            ) : null}
+          </article>
 
-              {isCurrent ? (
-                <p className="mt-6 rounded-full border border-border px-4 py-2.5 text-center text-sm font-medium text-muted">
-                  Your current plan
+          {tiers.map((tier) => {
+            const featured = tier.slug === featuredSlug;
+            const isCurrent = tier.slug === currentSlug;
+            const pays = breakEven(tier.monthlyFee);
+            const button = featured ? "bg-paper-white text-carbon" : "bg-[var(--hm-tint)] hover:bg-[var(--hm-tint-2)]";
+            return (
+              <article
+                key={tier.id}
+                className={`relative flex flex-col rounded-[28px] p-7 ${featured ? "bg-carbon text-paper-white lg:-my-3 lg:py-10" : "bg-paper-white shadow-[0_0_0_1px_var(--hm-line)]"}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-[17px] font-semibold">{tier.name}</h2>
+                  {featured && <span className="rounded-full bg-mint-pop px-3 py-1 text-[12px] font-semibold text-carbon">Most popular</span>}
+                </div>
+                <p className="mt-3 text-[2.4rem] leading-none font-semibold tracking-[-0.045em] tabular-nums">
+                  {formatNaira(tier.monthlyFee)}
+                  <span className={`text-[15px] font-normal ${featured ? "text-paper-white/60" : "text-[var(--hm-ink-2)]"}`}> a month</span>
                 </p>
-              ) : !user ? (
-                <LinkButton href="/start" variant={isMid ? "primary" : "secondary"} className="mt-6">
-                  Create an account to subscribe
-                </LinkButton>
-              ) : (
-                <form action={startSubscription} className="mt-6 space-y-2">
-                  <input type="hidden" name="tier" value={tier.slug} />
-                  <DeliveryDayField groupId={`delivery-day-${tier.slug}`} />
-                  <Button variant={isMid ? "primary" : "secondary"} className="w-full">
-                    {currentSlug ? `Switch to ${tier.name}` : `Start ${tier.name}`}
-                  </Button>
-                </form>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+                <p className={`mt-1.5 text-[14px] ${featured ? "text-paper-white/70" : "text-[var(--hm-ink-2)]"}`}>
+                  About {formatNaira(perWeek(tier.monthlyFee))} a week.{pays ? ` Pays for itself from about ${formatNaira(pays)} of produce a month.` : ""}
+                </p>
+                <ul className="mt-6 flex-1 space-y-2.5 text-[15px]">
+                  {tier.perks.map((perk) => (
+                    <li key={perk} className="flex gap-2.5">
+                      <Check className={`mt-0.5 h-4.5 w-4.5 shrink-0 ${featured ? "text-mint-pop" : "text-[var(--hm-basket-ink)]"}`} />
+                      <span>{perk}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-7">
+                  {isCurrent ? (
+                    <p className={`${solid} ${featured ? "bg-paper-white/12" : "bg-[var(--hm-tint)]"}`}>Your plan</p>
+                  ) : !user ? (
+                    <Link href={joinHref} className={`${solid} ${button}`}>
+                      Join as {tier.name === "Member" ? "a member" : tier.name}
+                    </Link>
+                  ) : currentSlug ? (
+                    <SwitchPlanButton slug={tier.slug} name={tier.name} className={`${solid} ${button}`} />
+                  ) : (
+                    <form action={startSubscription} className={`space-y-2 ${featured ? "text-carbon" : ""}`}>
+                      <input type="hidden" name="tier" value={tier.slug} />
+                      <p className={`text-[13px] font-semibold ${featured ? "text-paper-white/70" : "text-[var(--hm-ink-2)]"}`}>Your delivery day</p>
+                      <DeliveryDayField groupId={`delivery-day-${tier.slug}`} />
+                      <button className={`${solid} ${featured ? "bg-paper-white text-carbon" : "bg-carbon text-paper-white"}`}>Start {tier.name}</button>
+                    </form>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* The same three columns, line by line, for anyone deciding. */}
+      <section className="hm-wrap mt-20" aria-labelledby="compare-plans">
+        <h2 id="compare-plans" className="hm-h3 text-[1.6rem]!">
+          Everything, side by side
+        </h2>
+        <div className="mt-5 overflow-hidden rounded-[24px] shadow-[0_0_0_1px_var(--hm-line)]">
+          <table className="w-full table-fixed text-left text-[14px] sm:text-[15px]">
+            <thead className="bg-[var(--hm-tint)] text-[12px] text-[var(--hm-ink-2)] sm:text-[13px]">
+              <tr>
+                <th scope="col" className="w-[34%] px-3 py-3 font-semibold sm:w-[40%] sm:px-5">
+                  <span className="sr-only">Feature</span>
+                </th>
+                <th scope="col" className="px-2 py-3 text-center font-semibold sm:px-4">
+                  Pay as you go
+                </th>
+                {tiers.map((t) => (
+                  <th key={t.id} scope="col" className="px-2 py-3 text-center font-semibold text-carbon sm:px-4">
+                    {t.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {comparison(avgSaving).map((row) => (
+                <tr key={row.label} className="border-t border-[var(--hm-line)]">
+                  <th scope="row" className="px-3 py-3.5 font-medium sm:px-5">
+                    {row.label}
+                  </th>
+                  {row.cells.slice(0, 1 + tiers.length).map((cell, i) => (
+                    <td key={i} className="px-2 py-3.5 text-center text-[13px] sm:px-4 sm:text-[14px]">
+                      {cell === true ? (
+                        <>
+                          <Check className="mx-auto h-5 w-5 text-[var(--hm-basket-ink)]" />
+                          <span className="sr-only">Included</span>
+                        </>
+                      ) : cell === false ? (
+                        <>
+                          <span aria-hidden className="text-[var(--hm-ink-3)]">–</span>
+                          <span className="sr-only">Not included</span>
+                        </>
+                      ) : (
+                        cell
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Real numbers from the catalogue, so "member price" means something. */}
+      {rows.length > 0 && (
+        <section className="hm-wrap mt-20" aria-labelledby="compare-prices">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 id="compare-prices" className="hm-h3 text-[1.6rem]!">
+              What member prices look like
+            </h2>
+            <Link href="/shop" className="text-[14px] font-semibold underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+              See every price
+            </Link>
+          </div>
+          <div className="mt-5 overflow-hidden rounded-[24px] shadow-[0_0_0_1px_var(--hm-line)]">
+            <table className="w-full text-left text-[15px]">
+              <thead className="bg-[var(--hm-tint)] text-[13px] text-[var(--hm-ink-2)]">
+                <tr>
+                  <th scope="col" className="px-5 py-3 font-semibold">
+                    Item
+                  </th>
+                  <th scope="col" className="px-5 py-3 text-right font-semibold">
+                    Standard
+                  </th>
+                  <th scope="col" className="px-5 py-3 text-right font-semibold">
+                    Member
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((p) => (
+                  <tr key={p.id} className="border-t border-[var(--hm-line)]">
+                    <th scope="row" className="px-5 py-3.5 font-medium">
+                      {shortName(p.name)} <span className="font-normal text-[var(--hm-ink-3)]">{p.unit}</span>
+                    </th>
+                    <td className="px-5 py-3.5 text-right tabular-nums">{formatNaira(p.standardPrice)}</td>
+                    <td className="px-5 py-3.5 text-right font-semibold text-[var(--hm-basket-ink)] tabular-nums">{formatNaira(p.memberPrice)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <section className="hm-wrap mt-20 pb-16 sm:pb-24" aria-labelledby="pricing-faq">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
+          <div>
+            <h2 id="pricing-faq" className="hm-h3 text-[1.6rem]!">
+              Questions about paying
+            </h2>
+            <p className="mt-2 text-[15px] text-[var(--hm-ink-2)]">
+              More in the{" "}
+              <Link href="/#faq" className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4">
+                full questions
+              </Link>
+              .
+            </p>
+          </div>
+          <div className="divide-y divide-[var(--hm-line)] border-y border-[var(--hm-line)]">
+            {FAQ.map((f) => (
+              <details key={f.q} className="group py-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-semibold">
+                  {f.q}
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--hm-tint)] transition-transform group-open:rotate-45" aria-hidden>
+                    +
+                  </span>
+                </summary>
+                <p className="mt-2 max-w-prose text-[15px] leading-relaxed text-[var(--hm-ink-2)]">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

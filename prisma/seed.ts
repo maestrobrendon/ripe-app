@@ -5,48 +5,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, ProductCategory, OrderUnit, DeliveryDay, SoldAs } from "../src/generated/prisma/client";
 import { dbConnectionString } from "../src/lib/db-url";
 import { hashPassword } from "../src/lib/auth";
+import { tiers } from "./tiers";
 
 const adapter = new PrismaPg({ connectionString: dbConnectionString() });
 const prisma = new PrismaClient({ adapter });
 
-const tiers = [
-  {
-    slug: "base",
-    name: "Base",
-    monthlyFee: 4500,
-    tagline: "Member pricing and a standing weekly basket.",
-    sortOrder: 1,
-    perks: [
-      "Member pricing on every product",
-      "Standing weekly basket you edit before you are charged",
-      "Skip or pause any week, penalty-free",
-    ],
-  },
-  {
-    slug: "mid",
-    name: "Mid",
-    monthlyFee: 6500,
-    tagline: "Everything in Base, plus free delivery and combo pricing.",
-    sortOrder: 2,
-    perks: [
-      "Everything in Base",
-      "Free delivery on your set delivery days",
-      "Combo pricing on boxes and baskets",
-    ],
-  },
-  {
-    slug: "premium",
-    name: "Premium",
-    monthlyFee: 8500,
-    tagline: "Everything in Mid, plus first access to seasonal produce.",
-    sortOrder: 3,
-    perks: [
-      "Everything in Mid",
-      "Early access to seasonal produce",
-      "Priority sourcing from partner farms",
-    ],
-  },
-];
 
 const zones: {
   slug: string;
@@ -1008,8 +971,8 @@ async function seedDevUser() {
     return;
   }
 
-  const [midTier, zone] = await Promise.all([
-    prisma.subscriptionTier.findUnique({ where: { slug: "mid" } }),
+  const [memberTier, zone] = await Promise.all([
+    prisma.subscriptionTier.findUnique({ where: { slug: "base" } }),
     prisma.deliveryZone.findUnique({ where: { slug: "lekki-phase-1" } }),
   ]);
 
@@ -1017,7 +980,7 @@ async function seedDevUser() {
     name: process.env.SEED_USER_NAME?.trim() || "Test Member",
     passwordHash: await hashPassword(password),
     deliveryZoneId: zone?.id ?? null,
-    subscriptionTierId: midTier?.id ?? null,
+    subscriptionTierId: memberTier?.id ?? null,
     deliveryDay: "WEDNESDAY" as DeliveryDay,
     onboardingCompleted: true,
   };

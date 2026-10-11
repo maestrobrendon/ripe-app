@@ -9,6 +9,7 @@ import {
 } from "@/lib/coach-answers";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import type { CoachProduct, CoachReply } from "../route";
+import { OFFERED } from "@/lib/product";
 
 const MINUTE = 60 * 1000;
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   const searchForms = [...new Set(terms.flatMap(wordForms))];
   const candidates = searchForms.length
     ? await prisma.product.findMany({
-        where: { OR: searchForms.map((t) => ({ name: { contains: t, mode: "insensitive" as const } })) },
+        where: { ...OFFERED, OR: searchForms.map((t) => ({ name: { contains: t, mode: "insensitive" as const } })) },
         select: {
           slug: true,
           name: true,

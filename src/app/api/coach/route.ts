@@ -6,6 +6,7 @@ import { recomputeStreak } from "@/lib/streak";
 import { computeCoachProgress } from "@/lib/coach";
 import { STREAK_MILESTONES, type StreakView } from "@/lib/streak-config";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
+import { OFFERED } from "@/lib/product";
 
 export type CoachProduct = {
   slug: string;
@@ -38,7 +39,7 @@ export async function GET() {
 
   const [inSeason, orders, streak, basketView] = await Promise.all([
     prisma.product.findMany({
-      where: { inSeason: true, featured: true, category: { in: ["FRUIT", "VEGETABLE", "SEASONAL"] } },
+      where: { inSeason: true, featured: true, category: { in: ["FRUIT", "VEGETABLE", "SEASONAL"] }, ...OFFERED },
       select: {
         slug: true,
         name: true,

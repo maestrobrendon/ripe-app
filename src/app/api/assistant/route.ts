@@ -48,6 +48,7 @@ import {
   ORDER_INTENT,
   CHANGE_INTENT,
 } from "@/lib/kachi";
+import { OFFERED } from "@/lib/product";
 import type { KachiCard, KachiMode, KachiScope } from "@/lib/kachi-types";
 
 // Verified at ai.google.dev on 2026-09-27 as the current fast/cheap model
@@ -223,6 +224,7 @@ export async function POST(request: Request) {
 
   const before = await snapshot(scope);
   const products = await prisma.product.findMany({
+    where: OFFERED,
     select: {
       id: true,
       name: true,
@@ -515,6 +517,7 @@ async function legacyReply(
 ) {
   const [products, baskets, activeBasket] = await Promise.all([
     prisma.product.findMany({
+      where: OFFERED,
       select: {
         id: true,
         name: true,

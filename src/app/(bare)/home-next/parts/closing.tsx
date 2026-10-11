@@ -247,6 +247,7 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
       ["WhatsApp us", `https://wa.me/${SUPPORT_WHATSAPP}`],
       ["Your account", "/account"],
       ["Terms", "/terms"],
+      ["Privacy", "/privacy"],
     ],
   },
 ];

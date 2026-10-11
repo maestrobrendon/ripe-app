@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { SmoothScroll } from "../home-next/parts/runtime";
-import { Nav } from "./parts/nav";
+import { MarketingNav } from "@/components/marketing/marketing-nav";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { Hero } from "./parts/hero";
 import { Menu } from "./parts/menu";
 import { How } from "./parts/how";
 import { Inside } from "./parts/inside";
 import { Details } from "./parts/details";
 import { Price } from "./parts/price";
-import { Faq, Closing, Footer } from "./parts/closing";
+import { Faq, Closing } from "./parts/closing";
 import type { MenuGoal } from "./recipes";
 import type { MenuData } from "./types";
 
@@ -27,7 +28,7 @@ export function HomeMenu({ data }: { data: MenuData }) {
   return (
     <SmoothScroll>
       <div className="hm">
-        <Nav signedIn={data.signedIn} />
+        <MarketingNav variant="home" signedIn={data.signedIn} />
         <main>
           <Hero signedIn={data.signedIn} onPickGoal={setGoal} />
           <Menu goal={goal} onGoal={setGoal} products={data.products} signedIn={data.signedIn} />
@@ -51,7 +52,7 @@ export function HomeMenu({ data }: { data: MenuData }) {
           />
           <Closing signedIn={data.signedIn} />
         </main>
-        <Footer />
+        <MarketingFooter />
       </div>
     </SmoothScroll>
   );

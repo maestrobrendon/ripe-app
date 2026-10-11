@@ -12,7 +12,7 @@ import { DestinationProvider, type DestinationBasket } from "@/components/destin
 import { DestinationToast } from "@/components/destination-pill";
 import { ZoneProvider } from "@/components/zone-gate";
 import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { CartDrawer } from "@/components/cart-drawer";
 import { AnnouncementBar } from "@/components/announcement-bar";
 import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
@@ -63,7 +63,7 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
                 {/* Signed-in users get every former footer link from Account →
                     Help and info instead; a footer under the bottom nav read like
                     a website, not the app (Basket vs. Cart addendum, Section 6). */}
-                {!user && <SiteFooter />}
+                {!user && <MarketingFooter />}
                 <CartDrawer />
                 <DestinationToast />
                 <PrimaryMobileNav signedIn={Boolean(user)} />

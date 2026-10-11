@@ -1,8 +1,15 @@
-import type { Product } from "@/generated/prisma/client";
+import type { Prisma, Product } from "@/generated/prisma/client";
 import type { AddableProduct } from "@/components/cart-provider";
 import type { ProductCardData } from "@/components/product-card";
 
 export const FRESH_CUTS_TAG = "fresh-cuts";
+
+/**
+ * What Basket still sells. Fresh Cuts (the pre-cut line) is discontinued:
+ * its rows stay for past orders, but every list, search and suggestion
+ * leaves them out. Spread it into a `where` alongside other conditions.
+ */
+export const OFFERED: Prisma.ProductWhereInput = { NOT: { tags: { has: FRESH_CUTS_TAG } } };
 
 export function toAddable(p: Product): AddableProduct {
   return {

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { GOAL_LABEL } from "@/lib/format";
 import type { Product, ProductCategory } from "@/generated/prisma/client";
+import { OFFERED } from "@/lib/product";
 
 /**
  * Cumulative Naira saved vs standard pricing across every past order line.
@@ -83,13 +84,14 @@ export async function getQuickAddItems(
   const finalIds = rankedIds.filter((id) => (seen.has(id) ? false : (seen.add(id), true)));
 
   let products = finalIds.length
-    ? await prisma.product.findMany({ where: { id: { in: finalIds }, inSeason: true } })
+    ? await prisma.product.findMany({ where: { id: { in: finalIds }, inSeason: true, ...OFFERED } })
     : [];
 
   // Deterministic seasonal fallback so the shelf is never empty for new members.
   if (products.length < limit) {
     const fill = await prisma.product.findMany({
       where: {
+        ...OFFERED,
         inSeason: true,
         featured: true,
         id: { notIn: [...exclude, ...products.map((p) => p.id)] },

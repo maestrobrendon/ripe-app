@@ -19,6 +19,7 @@ import type { SheetBasket } from "./baskets-sheet";
 import { BasketWorkspace } from "./basket-workspace";
 import { TodayPicks } from "./today-picks";
 import { BottomBar } from "./bottom-bar";
+import { OFFERED } from "@/lib/product";
 
 export default async function BasketPage({
   searchParams,
@@ -37,7 +38,7 @@ export default async function BasketPage({
 
   const [view, allProducts, streak, lastOrder, allBaskets, cart] = await Promise.all([
     getBasketView(basket.id),
-    prisma.product.findMany(),
+    prisma.product.findMany({ where: OFFERED }),
     recomputeStreak(user.id),
     prisma.order.findFirst({
       where: { userId: user.id },

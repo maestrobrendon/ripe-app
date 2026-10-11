@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
-import { SUPPORT_EMAIL, SUPPORT_WHATSAPP } from "@/lib/site";
+import { SUPPORT_WHATSAPP } from "@/lib/site";
 import { MagneticLink, Reveal } from "../../home-next/parts/runtime";
 import { AvocadoHalf, Bowl, Carrot, Chilli, LimeSlice, Mushroom, Sparkle, Tomato, INK } from "./art";
 import { Eyebrow } from "./shared";
@@ -196,79 +196,5 @@ export function Closing({ signedIn }: { signedIn: boolean }) {
         </div>
       </div>
     </section>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Footer                                                                     */
-/* -------------------------------------------------------------------------- */
-
-const COLUMNS: { title: string; links: [string, string][] }[] = [
-  {
-    title: "Basket",
-    links: [
-      ["Recipes", "/recipes"],
-      ["Fruits", "/fruits"],
-      ["Boxes and baskets", "/boxes-baskets"],
-      ["Membership", "/subscribe"],
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      ["About", "/about"],
-      ["Delivery areas", "/delivery-areas"],
-      ["Questions", "/faq"],
-      ["Terms", "/terms"],
-    ],
-  },
-  {
-    title: "Help",
-    links: [
-      ["WhatsApp us", `https://wa.me/${SUPPORT_WHATSAPP}`],
-      [SUPPORT_EMAIL, `mailto:${SUPPORT_EMAIL}`],
-      ["Your account", "/account"],
-    ],
-  },
-];
-
-export function Footer() {
-  return (
-    <footer className="border-t border-[var(--hm-line)] py-14">
-      <div className="hm-wrap grid gap-10 sm:grid-cols-[1.4fr_repeat(3,1fr)]">
-        <div>
-          <Link href="/" className="logo-wordmark text-[24px] leading-none">
-            Basket
-          </Link>
-          <p className="mt-3 max-w-[16rem] text-[14px] leading-relaxed text-[var(--hm-ink-3)]">Recipes and fresh produce for whatever you&apos;re working toward. Lagos.</p>
-        </div>
-        {COLUMNS.map((c) => (
-          <div key={c.title}>
-            <h3 className="text-[14px] font-semibold">{c.title}</h3>
-            <ul className="mt-3 space-y-2">
-              {c.links.map(([label, href]) => (
-                <li key={label} className="text-[14px] text-[var(--hm-ink-2)]">
-                  {href.startsWith("/") ? (
-                    <Link href={href} className="hover:text-carbon">
-                      {label}
-                    </Link>
-                  ) : (
-                    <a href={href} className="hover:text-carbon" {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                      {label}
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div className="hm-wrap mt-12 flex flex-wrap justify-between gap-2 text-[13px] text-[var(--hm-ink-3)]">
-        <span>© {new Date().getFullYear()} Basket</span>
-        <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="hover:text-carbon">
-          Food photography from Pexels
-        </a>
-      </div>
-    </footer>
   );
 }

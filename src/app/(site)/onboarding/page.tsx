@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { OnboardingFlow } from "./onboarding-flow";
+import { OFFERED } from "@/lib/product";
 
 export default async function OnboardingPage({
   searchParams,
@@ -16,7 +17,7 @@ export default async function OnboardingPage({
   const safeNext = safeNextPath(next, "/");
 
   const products = await prisma.product.findMany({
-    where: { category: { in: ["FRUIT", "VEGETABLE"] } },
+    where: { category: { in: ["FRUIT", "VEGETABLE"] }, ...OFFERED },
     orderBy: { name: "asc" },
     select: { id: true, name: true, imageEmoji: true },
   });

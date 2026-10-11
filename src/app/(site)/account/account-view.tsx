@@ -225,7 +225,8 @@ export function AccountView(props: Props) {
             <Row icon="help" title="Questions and answers" href="/faq" />
             <Row icon="map" title="Where we deliver" href="/delivery-areas" />
             <Row icon="leaf" title="About Basket" href="/about" />
-            <Row icon="doc" title="Terms and privacy" href="/terms" />
+            <Row icon="doc" title="Terms of service" href="/terms" />
+            <Row icon="shield" title="Privacy policy" href="/privacy" />
           </Group>
 
           <div className="lg:hidden">

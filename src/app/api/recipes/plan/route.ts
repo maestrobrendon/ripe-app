@@ -15,6 +15,7 @@ import {
   readGuestPlannerUseCount,
   nextGuestPlannerCookieValue,
 } from "@/lib/planner-cap";
+import { OFFERED } from "@/lib/product";
 
 export async function POST(request: Request) {
   const ip = await clientIp();
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  const products = await prisma.product.findMany();
+  const products = await prisma.product.findMany({ where: OFFERED });
   const servings =
     typeof body.servings === "number" && body.servings >= 1 && body.servings <= 20
       ? Math.trunc(body.servings)

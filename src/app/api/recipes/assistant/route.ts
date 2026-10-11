@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { respondToMessage } from "@/lib/recipe-assistant";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { OFFERED } from "@/lib/product";
 
 export async function POST(request: Request) {
   const ip = await clientIp();
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
       ? Math.trunc(body.servings)
       : null;
 
-  const products = await prisma.product.findMany();
+  const products = await prisma.product.findMany({ where: OFFERED });
   const reply = respondToMessage(message, servings, products);
   return NextResponse.json(reply);
 }
