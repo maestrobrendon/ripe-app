@@ -12,7 +12,11 @@
     "test:seed": "tsx --conditions=react-server prisma/scripts/reset-test-account.ts --seed",
     "postinstall": "prisma generate",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:migrate": "prisma migrate dev",
+    "db:status": "prisma migrate status",
+    "db:status:prod": "node prisma/scripts/with-prod.mjs migrate status",
+    "db:deploy:prod": "node prisma/scripts/with-prod.mjs migrate deploy"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.82",
