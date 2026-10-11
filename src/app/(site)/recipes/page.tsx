@@ -7,7 +7,6 @@ import { GOAL_LABEL, HOUSEHOLD_TYPE_LABEL } from "@/lib/format";
 import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { matchProductByName } from "@/lib/ingredient-match";
-import { RecipeAssistant } from "./recipe-assistant";
 import { RecipeLibrary, type LibraryRecipe } from "./recipe-library";
 import { ProduceListTab } from "./produce-list-tab";
 import { WeeklyMealPlanBuilder, MealPlanGate, type DayView, type MealOption, type RecipeOption } from "./weekly-meal-plan";
@@ -359,10 +358,6 @@ export default async function RecipesPage({
             signedIn={Boolean(user)}
             isSubscriber={isSubscriber}
           />
-          {/* The escape hatch for anything the two-question list doesn't
-              cover, same as the timetable's "or type your own": free-form,
-              conversational, still produce-only. */}
-          <RecipeAssistant defaultServings={defaultServings} servingsKnown={Boolean(user)} />
         </div>
       </div>
     </section>

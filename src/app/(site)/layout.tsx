@@ -17,6 +17,7 @@ import { CartDrawer } from "@/components/cart-drawer";
 import { AnnouncementBar } from "@/components/announcement-bar";
 import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
 import { MotionProvider } from "@/components/motion-provider";
+import { KachiBubble } from "@/components/kachi/kachi-bubble";
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -67,6 +68,7 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
                 <CartDrawer />
                 <DestinationToast />
                 <PrimaryMobileNav signedIn={Boolean(user)} />
+                <KachiBubble signedIn={Boolean(user)} firstName={user?.name.trim().split(/\s+/)[0] ?? null} />
               </DestinationProvider>
             </CartProvider>
           </ZoneProvider>

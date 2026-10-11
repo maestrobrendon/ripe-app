@@ -13,6 +13,7 @@ import {
   type KachiRecipe,
   type KachiScope,
 } from "@/lib/kachi-types";
+import { MENU, MENU_GOALS } from "@/app/(bare)/home-menu/recipes";
 
 /**
  * Resolves a requested mode into a scope the server trusts: a basket only if
@@ -122,16 +123,44 @@ export async function activeBasketContext(userId: string) {
 
 /** The recipe library as prompt lines. It is small enough to hand over whole. */
 export async function recipeLibrary() {
-  const [recipes, products] = await Promise.all([
+  const [stored, products] = await Promise.all([
     prisma.recipe.findMany({ select: { slug: true, title: true, summary: true, goalTags: true, ingredientProductIds: true } }),
-    prisma.product.findMany({ select: { id: true, name: true } }),
+    prisma.product.findMany({ select: { id: true, name: true, slug: true } }),
   ]);
   const names = new Map(products.map((p) => [p.id, p.name]));
+  const idBySlug = new Map(products.map((p) => [p.slug, p.id]));
+  // The photographed menu (what the homepage, sign-up and /recipes lead
+  // with) comes first, then the older library the meal plan uses. Both have
+  // a /recipes/[slug] page, so a card from either opens.
+  const menu = MENU.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    summary: r.hook,
+    goalLabel: MENU_GOALS.find((g) => g.id === r.goal)?.label ?? "",
+    minutes: r.minutes as number | null,
+    elsewhere: r.elsewhere,
+    ingredientProductIds: r.basket.map((s) => idBySlug.get(s)).filter((id): id is string => Boolean(id)),
+  }));
+  const recipes = [
+    ...menu,
+    ...stored
+      .filter((r) => !menu.some((m) => m.slug === r.slug))
+      .map((r) => ({
+        slug: r.slug,
+        title: r.title,
+        summary: r.summary,
+        goalLabel: r.goalTags.map((g) => GOAL_LABEL[g] ?? g).join(", "),
+        minutes: null,
+        elsewhere: [] as string[],
+        ingredientProductIds: r.ingredientProductIds,
+      })),
+  ];
   const lines = recipes
     .map((r) => {
-      const goals = r.goalTags.map((g) => GOAL_LABEL[g] ?? g).join(", ");
       const uses = r.ingredientProductIds.map((id) => `${names.get(id) ?? "?"} (${id})`).join(", ");
-      return `[[${r.slug}]] ${r.title}: ${r.summary} Goals: ${goals}. Basket ingredients: ${uses}.`;
+      const time = r.minutes ? ` ${r.minutes} min.` : "";
+      const other = r.elsewhere.length ? ` From elsewhere: ${r.elsewhere.join(", ")}.` : "";
+      return `[[${r.slug}]] ${r.title}: ${r.summary}${time} Goals: ${r.goalLabel}. Basket ingredients: ${uses}.${other}`;
     })
     .join("\n");
   return { lines: lines || "No recipes yet.", bySlug: new Map(recipes.map((r) => [r.slug, r])) };
@@ -199,11 +228,11 @@ export function aboutCustomer(user: CurrentUser) {
 
 type Orders = { id: string; status: string; deliveryDate: Date }[];
 
-const VOICE = `You are Kachi, the meal planner inside Basket, a Lagos service that turns a food goal into recipes and the fresh produce to cook them.
+export const VOICE = `You are Kachi, the meal planner inside Basket, a Lagos service that turns a food goal into recipes and the fresh produce to cook them.
 
 Write in plain, warm, short sentences, Nigerian kitchens in mind. Keep most replies under 80 words. Use a short numbered list only when listing options or steps. Never use em dashes; use commas or full stops instead. Never call yourself "AI", a "bot", or a "chatbot". You are Kachi. You give food guidance, not medical advice; for anything medical, their doctor comes first.`;
 
-const RECIPE_RULES = `Recipes: when a recipe from the library below fits, suggest it by writing its marker exactly as shown, for example [[efo-riro]], right after its name. The app turns each marker into a card the customer can open. Suggest at most three. Only use markers from the library; for anything else, describe it in words.`;
+export const RECIPE_RULES = `Recipes: when a recipe from the library below fits, suggest it by writing its marker exactly as shown, for example [[efo-riro]], right after its name. The app turns each marker into a card the customer can open. Suggest at most three. Only use markers from the library; for anything else, describe it in words.`;
 
 function ordersContext(orders: Orders) {
   if (orders.length === 0) return "This customer has no orders yet.";
@@ -213,14 +242,16 @@ function ordersContext(orders: Orders) {
 }
 
 /** Just chatting: Kachi can see the active basket but change nothing. */
-export function chatSystemPrompt(c: { firstName: string; profile: string; orders: Orders; basketLines: string; recipeLines: string }) {
+export function chatSystemPrompt(c: { firstName: string; profile: string; orders: Orders; basketLines: string; recipeLines: string; page?: string | null }) {
   return `${VOICE}
 
 You are chatting with ${c.firstName}. Help with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal, and questions about their basket and orders.
 
 About ${c.firstName}:
 ${c.profile}
-
+${c.page ? `
+They are looking at this page right now: ${c.page}. If their question is vague ("this", "it"), it is probably about that.
+` : ""}
 In this mode you can see their basket but cannot change anything. If they ask you to add, remove, swap or change something in their basket or cart, reply with one short sentence saying you can do it, and end the reply with the marker [[where]]. The app then asks them where it should go. Never say a change was made.
 
 ${RECIPE_RULES}

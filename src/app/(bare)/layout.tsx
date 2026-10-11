@@ -3,6 +3,7 @@ import "../globals.css";
 import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { MotionProvider } from "@/components/motion-provider";
+import { KachiBubble } from "@/components/kachi/kachi-bubble";
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -28,7 +29,12 @@ export default function BareRootLayout({ children }: { children: React.ReactNode
     // script adds hn-js to <html>, hence suppressHydrationWarning.
     <html lang="en" className={`${fontVariables} hn-page antialiased`} suppressHydrationWarning>
       <body>
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          {children}
+          {/* The homepage is for visitors (members are sent to /basket), and
+              sign-up hides the bubble itself, so this one is always a guest's. */}
+          <KachiBubble signedIn={false} />
+        </MotionProvider>
       </body>
     </html>
   );
