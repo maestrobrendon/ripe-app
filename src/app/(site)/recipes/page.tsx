@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -10,16 +11,24 @@ import { RecipeAssistant } from "./recipe-assistant";
 import { RecipeLibrary, type LibraryRecipe } from "./recipe-library";
 import { ProduceListTab } from "./produce-list-tab";
 import { WeeklyMealPlanBuilder, MealPlanGate, type DayView, type MealOption, type RecipeOption } from "./weekly-meal-plan";
-import { IdeasSheetTrigger } from "@/app/basket/ideas-sheet-trigger";
+import { IdeasSheetTrigger } from "@/app/(site)/basket/ideas-sheet-trigger";
 import { getActiveBasketReadOnly, getBasketView } from "@/lib/basket";
 import { getOrCreateWeeklyPlan, weekStartWithOffset, parseDays, MEAL_SLOTS } from "@/lib/weekly-meal-plan";
 import { SHOPPING_WINDOW_DAY_LABEL } from "@/lib/shopping-window";
 import type { ShoppingWindowDay } from "@/generated/prisma/enums";
+import { MENU, MENU_GOALS, type MenuGoal } from "@/app/(bare)/home-menu/recipes";
+import { Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
+import { MenuBrowser } from "./menu-browser";
+import { getMenuCards } from "./recipe-data";
+
+// The menu shares the homepage's look: soft tints, photo first.
+import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata = { title: "Recipes. Basket" };
 
-const HERO_IMAGE_ID = "basket-recipes-hero-salad";
 const PLANNER_IMAGE_ID = "basket-recipes-unpacking";
+// The guest hero's photo collage: one tall, two stacked.
+const HERO_RECIPES = ["chicken-shawarma-bowl", "mango-passion-smoothie-bowl", "garden-egg-shakshuka"];
 
 type Tab = "library" | "planner" | "produce";
 const TABS: { id: Tab; label: string }[] = [
@@ -31,11 +40,11 @@ const TABS: { id: Tab; label: string }[] = [
 export default async function RecipesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; goal?: string; ingredient?: string; saved?: string; week?: string }>;
+  searchParams: Promise<{ tab?: string; goal?: string; ingredient?: string; saved?: string; week?: string; for?: string }>;
 }) {
-  const { tab: tabParam, goal, ingredient, saved, week: weekParam } = await searchParams;
+  const { tab: tabParam, goal, ingredient, saved, week: weekParam, for: forParam } = await searchParams;
 
-  const [user, allProducts] = await Promise.all([getCurrentUser(), prisma.product.findMany()]);
+  const [user, allProducts, menuCards] = await Promise.all([getCurrentUser(), prisma.product.findMany(), getMenuCards()]);
   const bySlug = new Map(allProducts.map((p) => [p.slug, p]));
   const byId = new Map(allProducts.map((p) => [p.id, p]));
 
@@ -150,11 +159,68 @@ export default async function RecipesPage({
 
   const tabHref = (id: Tab) => (id === "library" ? "/recipes" : `/recipes?tab=${id}`);
 
+  // Search on the menu finds a recipe by any of its ingredients, not just its title.
+  const nameBySlug = new Map(allProducts.map((p) => [p.slug, p.name]));
+  const ingredientNames = Object.fromEntries(
+    MENU.map((r) => [r.slug, [...r.basket.map((s) => nameBySlug.get(s) ?? s.replace(/-/g, " ")), ...r.elsewhere]]),
+  );
+  const initialMenuGoal = MENU_GOALS.some((g) => g.id === forParam) ? (forParam as MenuGoal) : null;
+
+  const menuSection = (
+    <section className="hm" aria-labelledby="menu-title">
+      <div className="hm-wrap py-10 sm:py-14">
+        {tier !== "guest" && (
+          <div className="mb-8">
+            <h2 id="menu-title" className="hm-h3 text-[1.6rem]!">
+              This week&apos;s menu
+            </h2>
+            <p className="mt-1.5 text-[15px] text-[var(--hm-ink-2)]">Open a recipe for amounts, tools and steps, then add what it needs in one tap.</p>
+          </div>
+        )}
+        <MenuBrowser recipes={menuCards} ingredientNames={ingredientNames} initialGoal={initialMenuGoal} />
+      </div>
+    </section>
+  );
+
+  // The ask, once the browsing has made the case: pick a goal, start there.
+  const signUpBand = (
+    <section className="hm" aria-labelledby="band-title">
+      <div className="hm-wrap pb-16 sm:pb-24">
+        <div className="rounded-[32px] bg-carbon px-6 py-10 text-paper-white sm:px-10 sm:py-14">
+          <h2 id="band-title" className="hm-h2 max-w-[18ch]">
+            Pick your recipes. We bring the produce.
+          </h2>
+          <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-paper-white/75">
+            Tell us what you&apos;re eating for and we&apos;ll plan the week around it: the recipes, and the fresh produce for them, delivered on your day.
+          </p>
+          <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {MENU_GOALS.map((g) => (
+              <li key={g.id}>
+                <Link
+                  href={`/start?goal=${g.id}`}
+                  className="group flex h-full flex-col justify-between gap-6 rounded-[22px] bg-paper-white/8 p-5 transition-colors hover:bg-paper-white/14"
+                >
+                  <span className="text-[17px] font-semibold">{g.label}</span>
+                  <span className="flex items-center justify-between text-[13px] text-paper-white/70">
+                    {menuCards.filter((r) => r.goal === g.id).length} recipes
+                    <svg viewBox="0 0 20 20" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M4 10h12M11 5l5 5-5 5" />
+                    </svg>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+
   const librarySection = (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-heading-lg">Recipe library</h2>
+          <h2 className="text-heading-lg">Quick produce ideas</h2>
           <p className="mt-2 text-muted">
             {isFiltered
               ? `${recipes.length} of ${totalRecipes} recipes match.`
@@ -305,40 +371,28 @@ export default async function RecipesPage({
   return (
     <div>
       {tier === "guest" ? (
-        <section className="bg-sky-wash">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16">
+        <section className="hm bg-[var(--hm-tint)]" aria-labelledby="recipes-title">
+          <div className="hm-wrap grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr]">
             <div>
-              <h1 className="text-display-xl text-carbon">Cook what is in the bag</h1>
-              <p className="mt-5 max-w-lg text-base text-carbon/80 sm:text-lg">
-                Every recipe here is built from fruit and vegetables we actually stock, so the shopping
-                list is one tap, not a separate errand.
+              <Eyebrow>Recipes</Eyebrow>
+              <h1 id="recipes-title" className="hm-h2 max-w-[16ch]">
+                Food worth cooking, from what&apos;s fresh this week.
+              </h1>
+              <p className="hm-lede mt-4 max-w-2xl">
+                Bowls, wraps, salads and quick pans from around the world, rebuilt around Lagos produce. Every recipe shows what
+                comes in your basket, how much you need and how to cook it, step by step.
               </p>
-              <ul className="mt-7 space-y-3">
-                {[
-                  `${totalRecipes} recipes, all produce led`,
-                  "Ingredients link straight to the shop",
-                  "Food ideas, not medical advice",
-                ].map((point) => (
-                  <li key={point} className="flex items-center gap-3 text-carbon">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-carbon text-white">
-                      <Icon name="check" size={15} strokeWidth={2} />
-                    </span>
-                    <span className="text-base">{point}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
-
-            <ProductImage
-              publicId={HERO_IMAGE_ID}
-              alt="Tossing a salad of kale, tomatoes and cucumber beside a bag of produce"
-              emoji="🥗"
-              aspectRatio="4:3"
-              className="aspect-4/3 w-full"
-              rounded="rounded-card-lg"
-              emojiClassName="text-8xl"
-              sizes="(min-width: 1024px) 560px, 90vw"
-            />
+            <div className="hidden grid-cols-2 grid-rows-2 gap-3 lg:grid lg:h-[360px]" aria-hidden>
+              {HERO_RECIPES.map((slug, i) => {
+                const r = MENU.find((m) => m.slug === slug);
+                return r ? (
+                  <div key={slug} className={`relative overflow-hidden rounded-[24px] ${i === 0 ? "row-span-2" : ""}`}>
+                    <Image src={r.image} alt="" fill priority sizes="260px" className="object-cover" />
+                  </div>
+                ) : null;
+              })}
+            </div>
           </div>
         </section>
       ) : (
@@ -393,13 +447,18 @@ export default async function RecipesPage({
 
       {tier === "guest" ? (
         <>
-          {librarySection}
-          {plannerSection}
+          {menuSection}
+          {signUpBand}
           {produceSection}
         </>
       ) : (
         <>
-          {tab === "library" && librarySection}
+          {tab === "library" && (
+            <>
+              {menuSection}
+              {librarySection}
+            </>
+          )}
           {tab === "planner" && plannerSection}
           {tab === "produce" && produceSection}
         </>

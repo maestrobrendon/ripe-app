@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/session";
+import { requireUser, type CurrentUser } from "@/lib/session";
+import { MENU } from "@/app/(bare)/home-menu/recipes";
 import { getOrCreateActiveBasket } from "@/lib/basket";
 import { toolAddItemToBasket, toolAddItemsToBasket, toolAddItemsToCart } from "@/lib/assistant-tools";
 import { matchProductByName, normalizeTerm } from "@/lib/ingredient-match";
@@ -357,6 +358,44 @@ export async function addRecipeToMealPlan(recipeId: string): Promise<void> {
   revalidatePath("/recipes");
 }
 
+/** Adds whichever of these products the active basket doesn't already hold. */
+async function addMissingToBasket(user: CurrentUser, productIds: string[]): Promise<number> {
+  const basket = await getOrCreateActiveBasket(user.id, {
+    isSubscriber: true,
+    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
+  });
+  const existingIds = new Set(
+    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
+  );
+  const missing = productIds.filter((id) => !existingIds.has(id));
+  if (missing.length === 0) return 0;
+
+  const products = await prisma.product.findMany({ where: { id: { in: missing } } });
+  for (const product of products) {
+    await toolAddItemToBasket(user, {
+      basket_id: basket.id,
+      product_id: product.id,
+      quantity: product.minOrderQty,
+    });
+  }
+
+  revalidatePath("/basket");
+  revalidatePath("/recipes");
+  return products.length;
+}
+
+async function addAllToCart(user: CurrentUser, productIds: string[]): Promise<number> {
+  if (productIds.length === 0) return 0;
+  const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
+  await toolAddItemsToCart(user, {
+    items: products.map((p) => ({ product_id: p.id, quantity: p.minOrderQty })),
+  });
+
+  revalidatePath("/cart");
+  revalidatePath("/recipes");
+  return products.length;
+}
+
 /**
  * For a recipe card outside the weekly plan (Section 2's "individual recipe
  * cards"). Returns void, not a result object: it's bound as a plain <form
@@ -370,28 +409,7 @@ export async function sendRecipeIngredientsToBasket(recipeId: string): Promise<v
 
   const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
   if (!recipe) return;
-
-  const basket = await getOrCreateActiveBasket(user.id, {
-    isSubscriber: true,
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-  });
-  const existingIds = new Set(
-    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
-  );
-  const missing = recipe.ingredientProductIds.filter((id) => !existingIds.has(id));
-  if (missing.length === 0) return;
-
-  const products = await prisma.product.findMany({ where: { id: { in: missing } } });
-  for (const product of products) {
-    await toolAddItemToBasket(user, {
-      basket_id: basket.id,
-      product_id: product.id,
-      quantity: product.minOrderQty,
-    });
-  }
-
-  revalidatePath("/basket");
-  revalidatePath("/recipes");
+  await addMissingToBasket(user, recipe.ingredientProductIds);
 }
 
 /**
@@ -404,13 +422,24 @@ export async function sendRecipeIngredientsToCart(recipeId: string): Promise<voi
   const user = await requireUser();
 
   const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
-  if (!recipe || recipe.ingredientProductIds.length === 0) return;
+  if (!recipe) return;
+  await addAllToCart(user, recipe.ingredientProductIds);
+}
 
-  const products = await prisma.product.findMany({ where: { id: { in: recipe.ingredientProductIds } } });
-  await toolAddItemsToCart(user, {
-    items: products.map((p) => ({ product_id: p.id, quantity: p.minOrderQty })),
-  });
+/**
+ * The recipe page's button, for either kind of recipe it shows: a menu
+ * recipe (by its MENU slug) or a library one (by its Recipe slug). A
+ * subscriber's basket gets what it's missing; anyone else's cart gets the lot,
+ * the same split as the two actions above.
+ */
+export async function sendRecipeBySlug(slug: string): Promise<{ added: number; to: "basket" | "cart" }> {
+  const user = await requireUser();
 
-  revalidatePath("/cart");
-  revalidatePath("/recipes");
+  const menu = MENU.find((r) => r.slug === slug);
+  const productIds = menu
+    ? (await prisma.product.findMany({ where: { slug: { in: menu.basket } }, select: { id: true } })).map((p) => p.id)
+    : ((await prisma.recipe.findUnique({ where: { slug }, select: { ingredientProductIds: true } }))?.ingredientProductIds ?? []);
+
+  if (user.subscriptionTierId) return { added: await addMissingToBasket(user, productIds), to: "basket" };
+  return { added: await addAllToCart(user, productIds), to: "cart" };
 }

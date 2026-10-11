@@ -9,7 +9,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { formatNaira, GOAL_LABEL, PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
 import { GOALS } from "@/lib/assistant";
 import { press, spring } from "@/lib/motion/tokens";
-import { cancelSubscription } from "@/app/subscribe/actions";
+import { cancelSubscription } from "@/app/(site)/subscribe/actions";
 import {
   saveAddress,
   saveContact,

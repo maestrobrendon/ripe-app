@@ -10,7 +10,7 @@ import { MENU_SLUGS } from "./recipes";
 import type { MenuData, MenuProduct } from "./types";
 
 /*
- * This is the homepage. src/app/page.tsx renders it at "/", and src/proxy.ts
+ * This is the homepage. src/app/(bare)/page.tsx renders it at "/", and src/proxy.ts
  * sends /home-menu there so the page lives at one address.
  */
 import "../home-next/home-next.css";

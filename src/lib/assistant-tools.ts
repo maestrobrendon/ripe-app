@@ -18,7 +18,7 @@ import {
   createUserBasket,
   BasketCapReachedError,
 } from "@/lib/basket";
-import { setBasketItemQuantity } from "@/app/basket/actions";
+import { setBasketItemQuantity } from "@/app/(site)/basket/actions";
 import { getOrCreateCart, cartViewForCart, setCartItemQuantity } from "@/lib/cart";
 import type { CurrentUser } from "@/lib/session";
 

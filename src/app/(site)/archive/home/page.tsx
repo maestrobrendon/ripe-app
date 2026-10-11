@@ -20,7 +20,7 @@ import type { Metadata } from "next";
 
 /**
  * The previous homepage, archived on 2026-10-10 when the recipe-led design
- * (src/app/home-menu) became "/". Kept reachable for reference only.
+ * (src/app/(bare)/home-menu) became "/". Kept reachable for reference only.
  */
 export const metadata: Metadata = {
   title: "Archived homepage. Basket",

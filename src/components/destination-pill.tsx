@@ -6,7 +6,7 @@ import { CaretDown } from "@phosphor-icons/react/dist/ssr";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useDestination, type Destination } from "@/components/destination-provider";
 import { useCart } from "@/components/cart-provider";
-import { setBasketItemQuantity, createBasket } from "@/app/basket/actions";
+import { setBasketItemQuantity, createBasket } from "@/app/(site)/basket/actions";
 
 function labelFor(destination: Destination) {
   return destination.type === "cart" ? "Cart" : destination.label;

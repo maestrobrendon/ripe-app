@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { useDestination, type Destination } from "@/components/destination-provider";
 import { DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
-import { setBasketItemQuantity } from "@/app/basket/actions";
+import { setBasketItemQuantity } from "@/app/(site)/basket/actions";
 import { ProductImage } from "@/components/product-image";
 import { Card } from "@/components/ui/card";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";

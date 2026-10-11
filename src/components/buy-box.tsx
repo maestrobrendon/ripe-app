@@ -6,7 +6,7 @@ import { useDestination } from "@/components/destination-provider";
 import { DestinationPill, DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
 import { formatNaira } from "@/lib/format";
 import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
-import { addToStandingBasket } from "@/app/basket/actions";
+import { addToStandingBasket } from "@/app/(site)/basket/actions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";

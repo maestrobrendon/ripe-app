@@ -5,7 +5,7 @@ import HomeMenuPage, { metadata } from "./home-menu/page";
 export { metadata };
 
 /**
- * The homepage: the recipe-led design in src/app/home-menu. The previous one
+ * The homepage: the recipe-led design in src/app/(bare)/home-menu. The previous one
  * is archived at /archive/home.
  */
 export default async function HomePage() {

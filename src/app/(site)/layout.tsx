@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
-import "./globals.css";
+import "../globals.css";
 import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { getCurrentUser } from "@/lib/session";
@@ -25,20 +24,12 @@ export const metadata: Metadata = {
     "Shop fruits and vegetables sourced locally from trusted farmers, delivered across Lagos. Subscribe for member pricing and a standing weekly basket.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // The new homepage (see src/proxy.ts) draws its own navigation and footer.
-  if ((await headers()).get("x-basket-bare") === "1") {
-    return (
-      // hn-page lets sticky sections work (see home-next.css); the pre-paint
-      // script adds hn-js to <html>, hence suppressHydrationWarning.
-      <html lang="en" className={`${fontVariables} hn-page antialiased`} suppressHydrationWarning>
-        <body>
-          <MotionProvider>{children}</MotionProvider>
-        </body>
-      </html>
-    );
-  }
-
+/**
+ * Root layout for every page with the shop chrome. The homepage and sign-up
+ * draw their own, under (bare)/layout.tsx, which explains why the two are
+ * separate root layouts.
+ */
+export default async function SiteRootLayout({ children }: { children: React.ReactNode }) {
   const [user, cart, zone] = await Promise.all([getCurrentUser(), readCart(), getActiveZone()]);
 
   let destinationBaskets: DestinationBasket[] = [];
