@@ -105,6 +105,19 @@
   }
 }
 
+/* The hero headline is four hand-set lines. The type is sized to the
+   column, not the screen, so the widest line ("PLANNED AND", 7.66em in
+   the display face) always just fits: about 45px on a phone, up to 82px on
+   desktop. 7.9 leaves a little room for rounding; nowrap keeps the four
+   lines exactly as written even before the web font arrives. */
+.hm-hero-title-box {
+  container-type: inline-size;
+}
+.hm-hero-title {
+  font-size: min(5.1rem, calc(100cqi / 7.9));
+  white-space: nowrap;
+}
+
 /* Section headlines: the UI face, tight, sentence case. */
 .hm-h2 {
   font-size: clamp(2rem, 4.2vw, 3.25rem);

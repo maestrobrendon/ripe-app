@@ -270,11 +270,19 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
 
       <div className="relative mx-auto w-[min(1360px,calc(100%-32px))] lg:min-h-[640px]">
         <div className="relative z-20 mx-auto flex max-w-[620px] flex-col items-center text-center">
-          <h1 className="hm-hero-title hm-display text-[clamp(3.1rem,8.4vw,6rem)]">
-            Eat for
-            <br />
-            your goal.
-          </h1>
+          {/* Four hand-set lines, sized to the column (see .hm-hero-title):
+              no line ever wraps on its own, at any width. */}
+          <div className="hm-hero-title-box w-full">
+            <h1 className="hm-hero-title hm-display">
+              Your week
+              <br />
+              of meals,
+              <br />
+              planned and
+              <br />
+              delivered.
+            </h1>
+          </div>
 
           <p data-intro data-hero-fade className="hm-lede mt-6 max-w-[34rem]">
             Tell us what you&apos;re working toward. We&apos;ll give you the plan, the recipes and the fresh produce to make it happen, delivered on your day.

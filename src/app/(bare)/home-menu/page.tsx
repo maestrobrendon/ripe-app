@@ -16,7 +16,7 @@ import "../home-next/home-next.css";
 import "./home-menu.css";
 
 export const metadata: Metadata = {
-  title: "Basket. Tell us your goal, we'll handle the food.",
+  title: "Basket. Your week of meals, planned and delivered.",
   description:
     "A weekly plan, recipes worth cooking and the fresh produce to make them, delivered across Lagos on your day.",
 };
