@@ -16,7 +16,9 @@ const url =
     ? process.env.PROD_DATABASE_URL_UNPOOLED
     : (process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL);
 
-if (target === "dev" && url && /\/neondb(\?|$)/.test(url)) {
+// A local-machine guard. On Vercel the production database is the right one
+// (the build only runs `prisma generate`, which doesn't connect).
+if (target === "dev" && !process.env.VERCEL && url && /\/neondb(\?|$)/.test(url)) {
   throw new Error("DATABASE_URL_UNPOOLED points at the production database. Use PRISMA_TARGET=prod for production on purpose.");
 }
 
