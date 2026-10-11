@@ -91,8 +91,8 @@ const SECTIONS: LegalSection[] = [
           you pick your day. Orders placed after it go out on the next available day.
         </p>
         <p>
-          Delivery is charged per order and becomes free once your cart reaches the amount shown at
-          checkout. Subscribers get free delivery on their set days.
+          Delivery is charged per order. The fee depends on your delivery area and is shown before you
+          pay. Member Plus subscribers get free delivery.
         </p>
         <p>
           Please give us a complete address and a phone number the rider can reach. If no one is
@@ -126,8 +126,9 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          You never need a subscription to shop. It&rsquo;s an optional upgrade that adds member pricing,
-          free delivery, a standing weekly basket and a weekly meal plan. The perks and monthly fee of
+          You never need a subscription to shop. It&rsquo;s an optional upgrade that adds every recipe,
+          member pricing, a standing weekly basket and a weekly meal plan, and on Member Plus, free
+          delivery. The perks and monthly fee of
           each plan are on the <Link href="/subscribe">pricing page</Link>.
         </p>
         <ul>

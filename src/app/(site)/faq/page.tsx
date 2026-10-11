@@ -7,7 +7,7 @@ const FAQS = [
   },
   {
     q: "What does a subscription add?",
-    a: "Member prices on everything, free delivery on every basket, a standing weekly basket you can change until the night before, and a weekly meal plan built from the recipes. Member Plus adds early access to seasonal produce and priority support on WhatsApp.",
+    a: "Every recipe, member prices on everything, a standing weekly basket you can change until the night before, and a weekly meal plan built from the recipes. Member Plus adds free delivery, early access to seasonal produce and priority support on WhatsApp.",
   },
   {
     q: "Is there a minimum order?",

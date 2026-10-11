@@ -4,7 +4,6 @@ import { getCurrentUser } from "@/lib/session";
 import { getStarterCandidates } from "@/lib/starter-basket";
 import { FRESH_CUTS_TAG } from "@/lib/product";
 import { DELIVERY_DAY_LABEL } from "@/lib/format";
-import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
 import { HomeMenu } from "./home-menu";
 import { MENU_SLUGS } from "./recipes";
 import type { MenuData, MenuProduct } from "./types";
@@ -53,8 +52,6 @@ export default async function HomeMenuPage() {
     comingSoon: zones.filter((z) => !z.isServed).map((z) => z.name),
     deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Wednesday",
     memberFee: tier?.monthlyFee ?? null,
-    freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
-    deliveryFee: BASE_DELIVERY_FEE,
   };
 
   return (

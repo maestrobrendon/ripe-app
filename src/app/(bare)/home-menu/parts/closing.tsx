@@ -18,14 +18,10 @@ import { Eyebrow } from "./shared";
 export function Faq({
   zones,
   comingSoon,
-  deliveryFee,
-  freeDeliveryThreshold,
   memberFee,
 }: {
   zones: { name: string; days: string[] }[];
   comingSoon: string[];
-  deliveryFee: number;
-  freeDeliveryThreshold: number;
   memberFee: number | null;
 }) {
   const [open, setOpen] = useState<number | null>(0);
@@ -76,8 +72,8 @@ export function Faq({
       q: "Is there a minimum order?",
       a: (
         <>
-          No. Delivery is {formatNaira(deliveryFee)}, free once an order passes {formatNaira(freeDeliveryThreshold)}, and always free on member baskets.
-          {memberFee != null && <> Membership is {formatNaira(memberFee)} a month, makes every basket cheaper, and you can cancel anytime from your account.</>}
+          No. Delivery depends on your area: each one has its own fee, shown before you pay, and it&apos;s free on Member Plus.
+          {memberFee != null && <> Membership starts at {formatNaira(memberFee)}, paid once a month. It makes every basket cheaper, and you can cancel anytime from your account.</>}
         </>
       ),
     },

@@ -5,8 +5,6 @@
 // days are read from the same config the checkout uses, so an answer here
 // cannot drift from the real behaviour.
 
-import { formatNaira } from "@/lib/format";
-import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 
 export type CoachAnswer = {
@@ -30,9 +28,7 @@ export const COACH_ANSWERS: CoachAnswer[] = [
   {
     id: "delivery-cost",
     keywords: ["delivery fee", "delivery cost", "shipping cost", "how much is delivery", "free delivery", "cost of delivery"],
-    answer: `Delivery is ${formatNaira(BASE_DELIVERY_FEE)}, and free once your cart passes ${formatNaira(
-      FREE_DELIVERY_THRESHOLD,
-    )}. Members get free delivery on their day.`,
+    answer: "Delivery depends on your area: each delivery area has its own fee, shown before you pay. It's free on Member Plus.",
     link: { label: "See subscriptions", href: "/subscribe" },
   },
   {
@@ -66,7 +62,7 @@ export const COACH_ANSWERS: CoachAnswer[] = [
     id: "subscription",
     keywords: ["subscription", "subscribe", "membership", "member price", "member pricing", "monthly fee", "plan"],
     answer:
-      "A subscription is optional and sits on top of a free account. It unlocks member pricing across the catalogue, free delivery on your set days, and a standing basket you edit week to week.",
+      "A subscription is optional and sits on top of a free account. Member unlocks every recipe, member pricing across the catalogue and a standing basket you edit week to week. Member Plus adds free delivery.",
     link: { label: "Compare subscriptions", href: "/subscribe" },
   },
   {

@@ -20,6 +20,4 @@ export type MenuData = {
   deliveryDay: string;
   /** Cheapest membership, per month. Null if no tier is configured. */
   memberFee: number | null;
-  freeDeliveryThreshold: number;
-  deliveryFee: number;
 };

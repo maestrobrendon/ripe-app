@@ -40,14 +40,11 @@ export function HomeMenu({ data }: { data: MenuData }) {
             onGoal={setGoal}
             candidates={data.estimatorCandidates}
             memberFee={data.memberFee}
-            freeDeliveryThreshold={data.freeDeliveryThreshold}
             signedIn={data.signedIn}
           />
           <Faq
             zones={data.zones}
             comingSoon={data.comingSoon}
-            deliveryFee={data.deliveryFee}
-            freeDeliveryThreshold={data.freeDeliveryThreshold}
             memberFee={data.memberFee}
           />
           <Closing signedIn={data.signedIn} />

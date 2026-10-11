@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
-import { quoteDelivery } from "@/lib/pricing";
 import { buildStarterPicks, type StarterCandidate } from "@/lib/starter-basket-core";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { ProductImage } from "@/components/product-image";
@@ -36,14 +35,12 @@ export function Price({
   onGoal,
   candidates,
   memberFee,
-  freeDeliveryThreshold,
   signedIn,
 }: {
   goal: MenuGoal;
   onGoal: (g: MenuGoal) => void;
   candidates: StarterCandidate[];
   memberFee: number | null;
-  freeDeliveryThreshold: number;
   signedIn: boolean;
 }) {
   const [member, setMember] = useState(false);
@@ -58,9 +55,9 @@ export function Price({
     [starterSlug, adults, kids, candidates],
   );
   const produce = picks.reduce((s, p) => s + (isMember ? p.memberPrice : p.standardPrice) * p.quantity, 0);
-  const delivery = quoteDelivery(produce, isMember);
-  const membershipWeekly = isMember && memberFee ? Math.round((memberFee * 12) / 52) : 0;
-  const total = produce + delivery.fee + membershipWeekly;
+  // Delivery is priced per area and the membership is paid once a month, so
+  // the weekly number is the food alone; both are spelled out beside it.
+  const total = produce;
   // Three everyday items with both prices, so "member price" is concrete
   // before anyone opens the full list.
   const samples = useMemo(
@@ -79,7 +76,7 @@ export function Price({
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
           <h2 className="hm-h2">What a week of eating well costs.</h2>
           <p className="hm-lede mt-4 max-w-[30rem]">
-            Pick a goal and your household and see the real number. No minimum order. Delivery is free on member baskets, and on any order over {formatNaira(freeDeliveryThreshold)}.
+            Pick a goal and your household and see what the food costs. No minimum order. Delivery is priced by your area, and free on Member Plus.
           </p>
           <div className="mt-8 flex flex-wrap gap-2" role="radiogroup" aria-label="Your goal">
             {MENU_GOALS.map((g) => (
@@ -163,7 +160,7 @@ export function Price({
 
             <div className="mt-7 flex items-baseline justify-between gap-4">
               <RollingNumber value={total} format={formatNaira} className="text-[clamp(2.4rem,5vw,3rem)] leading-none font-semibold tracking-[-0.045em] tabular-nums" />
-              <span className="text-[14px] text-[var(--hm-ink-2)]">a week, delivered</span>
+              <span className="text-[14px] text-[var(--hm-ink-2)]">a week, for the food</span>
             </div>
 
             <div className="mt-5 text-[15px]">
@@ -173,14 +170,14 @@ export function Price({
               </div>
               <div className="flex justify-between border-t border-[var(--hm-line)] py-3">
                 <span>Delivery</span>
-                {delivery.isFree ? <span className="rounded-full bg-mint-pop px-2.5 py-0.5 text-[13px] font-semibold">Free</span> : <span className="tabular-nums">{formatNaira(delivery.fee)}</span>}
+                <span className="text-[var(--hm-ink-2)]">Priced by your area</span>
               </div>
               <AnimatePresence initial={false}>
-                {isMember && (
+                {isMember && memberFee != null && (
                   <motion.div key="m" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={spring.smooth} className="overflow-hidden">
                     <div className="flex justify-between border-t border-[var(--hm-line)] py-3">
-                      <span>Membership, per week</span>
-                      <span className="tabular-nums">{formatNaira(membershipWeekly)}</span>
+                      <span>Membership</span>
+                      <span className="tabular-nums">{formatNaira(memberFee)}, once a month</span>
                     </div>
                   </motion.div>
                 )}
@@ -211,7 +208,7 @@ export function Price({
               {signedIn ? "Open your basket" : "Build my basket"}
             </MagneticLink>
             <p className="mt-3 text-center text-[13px] text-[var(--hm-ink-3)]">
-              {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)} a month. Cancel anytime.` : "Free to set up. Nothing is charged until you check out."}
+              {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)}, paid once a month. Cancel anytime.` : "Free to set up. Nothing is charged until you check out."}
             </p>
           </div>
         </Reveal>

@@ -5,7 +5,6 @@ import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { useDestination } from "@/components/destination-provider";
 import { DestinationPill, DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
 import { formatNaira } from "@/lib/format";
-import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
 import { addToStandingBasket } from "@/app/(site)/basket/actions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,7 +158,7 @@ export function BuyBox({
       <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-4 text-[11px] text-muted">
         <span>Handpicked &amp; quality checked</span>
         <span>
-          Delivery from {formatNaira(BASE_DELIVERY_FEE)}, free over {formatNaira(FREE_DELIVERY_THRESHOLD)}
+          Delivery priced by your area
         </span>
         <span>Freshness guaranteed</span>
       </div>

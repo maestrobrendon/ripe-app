@@ -3,7 +3,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
-import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
 import { OFFERED } from "@/lib/product";
 import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { startSubscription } from "./actions";
@@ -13,7 +12,7 @@ import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
   title: "Pricing. Basket",
-  description: "Pay as you go at standard prices, or become a member for lower prices, free delivery and a basket that plans itself.",
+  description: "Pay as you go at standard prices, or become a member for every recipe, lower prices and a basket that plans itself. Member Plus adds free delivery.",
 };
 
 /** "Chilli Pepper (Ata Rodo)" reads as "Chilli Pepper" in a price table. */
@@ -26,17 +25,18 @@ type Cell = boolean | string;
 
 /**
  * Who gets what, row by row. Columns: pay as you go, Member, Member Plus.
- * Everything here is how the app behaves today, except the two Plus rows,
- * which are service promises (see prisma/tiers.ts).
+ * Two rows are the business's rules rather than code yet: recipe access is
+ * not gated by plan, and checkout still prices delivery with the flat rule in
+ * lib/pricing.ts until each delivery area has its own fee.
  */
 function comparison(avgSaving: number): { label: string; cells: [Cell, Cell, Cell] }[] {
   const member = avgSaving > 0 ? `About ${avgSaving}% less` : "Member";
   return [
-    { label: "Every recipe, with amounts and steps", cells: [true, true, true] },
+    { label: "Recipes, with amounts and steps", cells: ["Most recipes", "Every recipe", "Every recipe"] },
     { label: "Shop the full produce list", cells: [true, true, true] },
     { label: "Kachi, your food assistant", cells: [true, true, true] },
     { label: "Prices", cells: ["Standard", member, member] },
-    { label: "Delivery", cells: [`${formatNaira(BASE_DELIVERY_FEE)}, free over ${formatNaira(FREE_DELIVERY_THRESHOLD)}`, "Free", "Free"] },
+    { label: "Delivery", cells: ["Priced by area", "Priced by area", "Free"] },
     { label: "Standing weekly basket", cells: [false, true, true] },
     { label: "Weekly meal plan", cells: [false, true, true] },
     { label: "Recipes add only what you're missing", cells: [false, true, true] },
@@ -49,6 +49,8 @@ function comparison(avgSaving: number): { label: string; cells: [Cell, Cell, Cel
 const FAQ = [
   { q: "Do I need a membership to order?", a: "No. Anyone can sign up, pick recipes and order at standard prices. Membership makes every basket cheaper and keeps one coming each week." },
   { q: "When am I charged for food?", a: "Only when you check out a basket. Change it until the night before, or skip a week and nothing is charged." },
+  { q: "How much is delivery?", a: "It depends on where you are. Each delivery area has its own fee, shown before you pay. Delivery is free on Member Plus." },
+  { q: "How is the membership paid?", a: "Once a month, in one payment. It isn't split across your weekly baskets." },
   { q: "Can I switch plans or cancel?", a: "Yes, anytime, from this page or your account. Cancelling takes you back to paying as you go." },
   { q: "Which plan is right for me?", a: "Member covers almost everyone. Member Plus is for people who want first pick of seasonal produce and faster help when something needs sorting." },
 ];
@@ -69,10 +71,6 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
   const rows = SAMPLE_SLUGS.map((s) => samples.find((p) => p.slug === s)).filter((p): p is NonNullable<typeof p> => Boolean(p));
   const featuredSlug = tiers[0]?.slug;
 
-  // A plan pays for itself once the member discount on a month's produce
-  // covers the fee. Rounded up to the next ₦500 so it never flatters.
-  const breakEven = (fee: number) => (saving > 0 ? Math.ceil(fee / saving / 500) * 500 : null);
-  const perWeek = (fee: number) => Math.round((fee * 12) / 52 / 10) * 10;
 
   // Guests make an account first, then land straight back on the plans.
   const joinHref = "/start?next=%2Fsubscribe%23plans";
@@ -85,8 +83,8 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
           <h1 className="hm-h2 mx-auto max-w-[20ch]">Pick how you pay. Change it anytime.</h1>
           <p className="hm-lede mx-auto mt-4 max-w-2xl">
-            Everyone gets the recipes, the full produce list and Kachi. Members pay less on everything, get free delivery and a
-            basket that turns up every week.
+            Anyone can shop the full produce list and cook most of the recipes. Members get every recipe, pay less on everything
+            and get a basket that turns up every week. Member Plus adds free delivery.
           </p>
         </div>
       </section>
@@ -120,9 +118,10 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
             <p className="mt-1.5 text-[14px] text-[var(--hm-ink-2)]">No fee. Pay for food when you order it.</p>
             <ul className="mt-6 flex-1 space-y-2.5 text-[15px]">
               {[
-                "Every recipe and the full produce list",
-                "Standard prices, no minimum order",
-                `Delivery ${formatNaira(BASE_DELIVERY_FEE)}, free over ${formatNaira(FREE_DELIVERY_THRESHOLD)}`,
+                "Most recipes, with amounts and steps",
+                "The full produce list at standard prices",
+                "No minimum order",
+                "Delivery priced by your area",
                 "One trial basket",
               ].map((t) => (
                 <li key={t} className="flex gap-2.5">
@@ -142,7 +141,6 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
           {tiers.map((tier) => {
             const featured = tier.slug === featuredSlug;
             const isCurrent = tier.slug === currentSlug;
-            const pays = breakEven(tier.monthlyFee);
             const button = featured ? "bg-paper-white text-carbon" : "bg-[var(--hm-tint)] hover:bg-[var(--hm-tint-2)]";
             return (
               <article
@@ -158,7 +156,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                   <span className={`text-[15px] font-normal ${featured ? "text-paper-white/60" : "text-[var(--hm-ink-2)]"}`}> a month</span>
                 </p>
                 <p className={`mt-1.5 text-[14px] ${featured ? "text-paper-white/70" : "text-[var(--hm-ink-2)]"}`}>
-                  About {formatNaira(perWeek(tier.monthlyFee))} a week.{pays ? ` Pays for itself from about ${formatNaira(pays)} of produce a month.` : ""}
+                  Paid once a month. {tier.tagline}
                 </p>
                 <ul className="mt-6 flex-1 space-y-2.5 text-[15px]">
                   {tier.perks.map((perk) => (
