@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { KachiMark } from "@/components/kachi-mark";
 import { spring, press } from "@/lib/motion/tokens";
-import type { KachiCard, KachiRecipe, KachiReply } from "@/lib/kachi-types";
+import type { KachiRecipe } from "@/lib/kachi-types";
 import type { GuestKachiReply } from "@/app/api/kachi/route";
 import { KACHI_HIDDEN, kachiContext } from "./kachi-context";
 
@@ -14,9 +14,10 @@ import { KACHI_HIDDEN, kachiContext } from "./kachi-context";
  * Kachi, on every page: a small mark in the corner that opens a chat, and
  * now and then one short, page-aware offer of help beside it.
  *
- * Signed-in visitors talk to the full agent (api/assistant, "just chatting":
- * it sees their basket, changes nothing, and hands changes to the full chat).
- * Visitors without an account talk to api/kachi, which knows the public site.
+ * Visitors only: members already have Kachi in the app (her tab in the dock,
+ * the basket's "Get ideas", the planners), so the site layout mounts this
+ * just for people who aren't signed in. Visitors talk to api/kachi, which
+ * knows the public site and can change nothing.
  *
  * The nudge is the part that could annoy, so it is rationed: only after
  * someone has stayed and scrolled, never while they type, once per kind of
@@ -29,13 +30,11 @@ type Msg = {
   role: "me" | "kachi";
   text: string;
   recipes?: KachiRecipe[];
-  /** Signed-in only: Kachi offered a change that needs the full chat to pick a basket. */
-  handoff?: boolean;
   suggestions?: string[];
   retry?: string;
 };
 
-type Saved = { msgs: Msg[]; threadId: string | null };
+type Saved = { msgs: Msg[] };
 
 const STORE = "kachi-bubble";
 const SNOOZE = "kachi-nudge-snooze-until";
@@ -63,7 +62,7 @@ const local = () => localStorage;
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean; firstName?: string | null }) {
+export function KachiBubble() {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const hidden = KACHI_HIDDEN.some((r) => r.test(pathname));
@@ -82,7 +81,6 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
   // reload between the homepage and the rest of the site). The panel isn't
   // in the server HTML, so reading storage up front can't mismatch it.
   const [msgs, setMsgs] = useState<Msg[]>(() => (typeof window === "undefined" ? [] : (read<Saved | null>(session, STORE, null)?.msgs ?? []).slice(-30)));
-  const [threadId, setThreadId] = useState<string | null>(() => (typeof window === "undefined" ? null : (read<Saved | null>(session, STORE, null)?.threadId ?? null)));
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   // Tagged with the page it was offered on, so it simply stops showing elsewhere.
@@ -98,11 +96,11 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
     const t = window.setTimeout(() => setPageTitle(document.title.replace(/\s*(recipe)?\.\s*Basket$/i, "").replace(/^Basket\s*[—-].*$/, "")), 300);
     return () => window.clearTimeout(t);
   }, [pathname]);
-  const ctx = kachiContext(pathname, signedIn, pageTitle.toLowerCase());
+  const ctx = kachiContext(pathname, false, pageTitle.toLowerCase());
 
   useEffect(() => {
-    write(session, STORE, { msgs: msgs.slice(-30), threadId } satisfies Saved);
-  }, [msgs, threadId]);
+    write(session, STORE, { msgs: msgs.slice(-30) } satisfies Saved);
+  }, [msgs]);
 
   useEffect(() => {
     if (open) endRef.current?.scrollIntoView({ block: "end", behavior: reduce ? "auto" : "smooth" });
@@ -147,7 +145,7 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
     };
     // Re-arm per page; ctx is derived from these.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, hidden, open, signedIn]);
+  }, [pathname, hidden, open]);
 
   const snooze = () => {
     write(local, SNOOZE, Date.now() + 24 * 60 * 60 * 1000);
@@ -168,44 +166,24 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
       setDraft("");
       setThinking(true);
       try {
-        let reply: Msg;
-        if (signedIn) {
-          const res = await fetch("/api/assistant", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, threadId, mode: { kind: "chat" }, page: pageContext(), replay: opts.replay }),
-          });
-          const data = (await res.json()) as KachiReply;
-          if (data.threadId) setThreadId(data.threadId);
-          const cards: KachiCard[] = data.cards ?? [];
-          reply = {
-            id: uid(),
-            role: "kachi",
-            text: data.reply || data.error || "Something went wrong on my side.",
-            recipes: cards.flatMap((c) => (c.type === "recipes" ? c.recipes : [])),
-            handoff: cards.some((c) => c.type === "ask"),
-            retry: data.retry ? message : undefined,
-          };
-        } else {
-          const turns = history
-            .filter((m) => !m.retry)
-            .slice(-8)
-            .map((m) => ({ role: m.role === "me" ? "user" : "assistant", content: m.text }));
-          const res = await fetch("/api/kachi", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: turns, page: pageContext() }),
-          });
-          const data = (await res.json()) as GuestKachiReply;
-          reply = {
-            id: uid(),
-            role: "kachi",
-            text: data.reply || "Something went wrong on my side.",
-            recipes: data.recipes,
-            suggestions: data.suggestions,
-            retry: data.retry ? message : undefined,
-          };
-        }
+        const turns = history
+          .filter((m) => !m.retry)
+          .slice(-8)
+          .map((m) => ({ role: m.role === "me" ? "user" : "assistant", content: m.text }));
+        const res = await fetch("/api/kachi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: turns, page: pageContext() }),
+        });
+        const data = (await res.json()) as GuestKachiReply;
+        const reply: Msg = {
+          id: uid(),
+          role: "kachi",
+          text: data.reply || "Something went wrong on my side.",
+          recipes: data.recipes,
+          suggestions: data.suggestions,
+          retry: data.retry ? message : undefined,
+        };
         setMsgs((m) => [...m, reply]);
       } catch {
         setMsgs((m) => [...m, { id: uid(), role: "kachi", text: "I couldn't reach the kitchen. Check your connection and try again.", retry: message }]);
@@ -215,7 +193,7 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
     },
     // pageContext reads current state each call.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [msgs, thinking, signedIn, threadId, pathname, pageTitle],
+    [msgs, thinking, pathname, pageTitle],
   );
 
   const openWith = (text?: string) => {
@@ -246,16 +224,9 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
 
   if (hidden) return null;
 
-  // Clear of whatever else lives at the bottom: the app dock for members,
-  // and the recipe page's sticky "get the ingredients" bar on phones.
+  // Clear of the recipe page's sticky "get the ingredients" bar on phones.
   const onRecipe = /^\/recipes\/[^/]+$/.test(pathname);
-  const lift = signedIn
-    ? onRecipe
-      ? "bottom-[calc(var(--dock-height)+var(--dock-inset)+4.75rem)]"
-      : "bottom-[calc(var(--dock-height)+var(--dock-inset)+0.75rem)]"
-    : onRecipe
-      ? "bottom-[5.5rem]"
-      : "bottom-[max(1rem,env(safe-area-inset-bottom))]";
+  const lift = onRecipe ? "bottom-[5.5rem]" : "bottom-[max(1rem,env(safe-area-inset-bottom))]";
 
   const last = msgs[msgs.length - 1];
   const showNudge = Boolean(nudge && nudge.key === ctx.key && !open);
@@ -368,17 +339,11 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
                   <p className="text-[16px] leading-tight font-semibold">Kachi</p>
                   <p className="text-[13px] text-carbon/55">{thinking ? "Thinking…" : "Here to help you eat well"}</p>
                 </div>
-                {signedIn && (
-                  <Link href="/assistant" onClick={close} className="rounded-full px-3 py-1.5 text-[13px] font-semibold hover:bg-soft-mist">
-                    Full chat
-                  </Link>
-                )}
                 {msgs.length > 0 && (
                   <button
                     type="button"
                     onClick={() => {
                       setMsgs([]);
-                      setThreadId(null);
                     }}
                     className="rounded-full px-3 py-1.5 text-[13px] font-semibold text-carbon/60 hover:bg-soft-mist hover:text-carbon"
                   >
@@ -393,7 +358,7 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
               </header>
 
               <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4" data-lenis-prevent aria-live="polite">
-                <Bubble role="kachi">{firstName && msgs.length === 0 ? `Hi ${firstName}! ${ctx.greeting.replace(/^Hi,? I'm Kachi\.\s*/, "")}` : ctx.greeting}</Bubble>
+                <Bubble role="kachi">{ctx.greeting}</Bubble>
                 {msgs.length === 0 && (
                   <div className="flex flex-wrap gap-2 pl-1">
                     {ctx.starters.map((s) => (
@@ -425,11 +390,6 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
                         ))}
                       </div>
                     )}
-                    {m.handoff && (
-                      <Link href="/assistant" onClick={close} className="ml-1 inline-flex h-9 items-center rounded-full bg-carbon px-4 text-[13px] font-semibold text-paper-white">
-                        Pick a basket in the full chat
-                      </Link>
-                    )}
                     {m.retry && m === last && (
                       <Chip onClick={() => send(m.retry!, { replay: true })}>Try again</Chip>
                     )}
@@ -457,7 +417,7 @@ export function KachiBubble({ signedIn, firstName = null }: { signedIn: boolean;
                     ))}
                   </div>
                 )}
-                {!signedIn && msgs.filter((m) => m.role === "me").length >= 4 && (
+                {msgs.filter((m) => m.role === "me").length >= 4 && (
                   <p className="rounded-[18px] bg-mint-pop/30 px-4 py-3 text-[13px] leading-relaxed">
                     Want me to remember this and build your basket?{" "}
                     <Link href="/start" className="font-semibold underline underline-offset-2">

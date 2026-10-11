@@ -33,7 +33,7 @@ export default function BareRootLayout({ children }: { children: React.ReactNode
           {children}
           {/* The homepage is for visitors (members are sent to /basket), and
               sign-up hides the bubble itself, so this one is always a guest's. */}
-          <KachiBubble signedIn={false} />
+          <KachiBubble />
         </MotionProvider>
       </body>
     </html>

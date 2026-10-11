@@ -68,7 +68,9 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
                 <CartDrawer />
                 <DestinationToast />
                 <PrimaryMobileNav signedIn={Boolean(user)} />
-                <KachiBubble signedIn={Boolean(user)} firstName={user?.name.trim().split(/\s+/)[0] ?? null} />
+                {/* Members already have Kachi in the app (her tab, "Get ideas",
+                    the planners); the floating one is for visitors. */}
+                {!user && <KachiBubble />}
               </DestinationProvider>
             </CartProvider>
           </ZoneProvider>
