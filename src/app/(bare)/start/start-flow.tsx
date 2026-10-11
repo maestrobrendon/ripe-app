@@ -22,13 +22,17 @@ type Zone = { slug: string; name: string; area: string; isServed: boolean; deliv
 type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
 
 /**
- * Sign-up, as the homepage promises it: tell Kachi your goal, get a week of
- * recipes and the basket to cook them, pick your day. Six short screens, one
- * question each, with the answer that unlocks the next one always in reach
- * of a thumb at the bottom. The account comes last, after the customer has
- * seen what they are getting.
+ * Sign-up, as the homepage promises it: say where you are, tell Kachi your
+ * goal, get a week of recipes and the basket to cook them, pick your day.
+ * Short screens, one question each, with the answer that unlocks the next one
+ * always in reach of a thumb at the bottom. The account comes last, after the
+ * customer has seen what they are getting.
+ *
+ * Area comes first so nobody builds a basket before learning we don't reach
+ * them yet; the day waits until after the basket, where it means something,
+ * and only offers that area's days. Outside our areas, the day is skipped.
  */
-const STEPS = ["goal", "table", "recipes", "basket", "delivery", "account"] as const;
+const STEPS = ["area", "goal", "table", "recipes", "basket", "day", "account"] as const;
 type Step = (typeof STEPS)[number];
 
 const DIETARY: [Dietary, string][] = [
@@ -46,6 +50,12 @@ function firstDelivery(day: DeliveryDay) {
   d.setDate(d.getDate() + 2);
   while (d.getDay() !== DAY_INDEX[day]) d.setDate(d.getDate() + 1);
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+/** "Monday, Wednesday and Friday". */
+function listDays(days: DeliveryDay[]) {
+  const names = days.map((d) => DELIVERY_DAY_LABEL[d] ?? d);
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : (names[0] ?? "");
 }
 
 const goalLabel = (g: MenuGoal | null) => MENU_GOALS.find((x) => x.id === g)?.label ?? "";
@@ -78,7 +88,12 @@ export function StartFlow({
   const [[index, direction], setIndex] = useState<[number, 1 | -1]>([0, 1]);
   const step: Step = STEPS[index];
   const go = (to: number) => {
-    setIndex(([from]) => [to, to >= from ? 1 : -1]);
+    setIndex(([from]) => {
+      const dir = to >= from ? 1 : -1;
+      // No day to pick outside our areas: step over it either way.
+      const target = STEPS[to] === "day" && notListed ? to + dir : to;
+      return [target, dir];
+    });
     window.scrollTo({ top: 0 });
   };
 
@@ -99,6 +114,7 @@ export function StartFlow({
   const soon = zones.filter((z) => !z.isServed);
   const [zone, setZone] = useState<string | null>(served.some((z) => z.slug === initialZone) ? initialZone : null);
   const [notListed, setNotListed] = useState(false);
+  const [locating, setLocating] = useState<"idle" | "finding" | "denied" | "outside">("idle");
   const [day, setDay] = useState<DeliveryDay | null>(served.find((z) => z.slug === initialZone)?.deliveryDays[0] ?? null);
 
   const recipeSlugs = picked ?? MENU.filter((r) => r.goal === goal).map((r) => r.slug);
@@ -110,6 +126,46 @@ export function StartFlow({
   const delivery = quoteDelivery(produce, false);
   const people = adults + kids;
   const chosenZone = served.find((z) => z.slug === zone) ?? null;
+
+  // Remember the area for the rest of the site too (the header's "Delivering
+  // to…"), the same cookie the area picker elsewhere sets. Best effort.
+  const pickZone = (z: Zone) => {
+    setNotListed(false);
+    setLocating("idle");
+    setZone(z.slug);
+    if (!day || !z.deliveryDays.includes(day)) setDay(z.deliveryDays[0] ?? null);
+    fetch("/api/zone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: z.slug }) }).catch(() => {});
+  };
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocating("denied");
+      return;
+    }
+    setLocating("finding");
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const res = await fetch("/api/zone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: coords.latitude, lng: coords.longitude }),
+          });
+          const data: { zone?: { slug: string } } = await res.json();
+          const found = served.find((z) => z.slug === data.zone?.slug);
+          if (found) pickZone(found);
+          else {
+            setZone(null);
+            setNotListed(true);
+            setLocating("outside");
+          }
+        } catch {
+          setLocating("denied");
+        }
+      },
+      () => setLocating("denied"),
+      { timeout: 10000, maximumAge: 600000 },
+    );
+  };
 
   const pickGoal = (g: MenuGoal) => {
     if (g !== goal) {
@@ -129,11 +185,12 @@ export function StartFlow({
   const setLine = (productId: string, quantity: number) => setOverrides((o) => ({ ...o, [productId]: quantity }));
 
   const ready: Record<Step, boolean> = {
+    area: notListed || Boolean(chosenZone),
     goal: Boolean(goal),
     table: dietary !== "allergies" || dietaryDetail.trim().length > 0,
     recipes: recipes.length > 0,
     basket: kept.length > 0,
-    delivery: notListed || Boolean(chosenZone && day),
+    day: Boolean(chosenZone && day),
     account: true,
   };
 
@@ -144,6 +201,7 @@ export function StartFlow({
   const [contact, setContact] = useState("");
 
   const cta: Record<Step, ReactNode> = {
+    area: notListed ? "Continue anyway" : chosenZone ? `Continue in ${chosenZone.name}` : "Pick your area",
     goal: "Continue",
     table: `Continue for ${people} ${people === 1 ? "person" : "people"}`,
     recipes: recipes.length ? `Continue with ${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}` : "Pick a recipe",
@@ -152,7 +210,7 @@ export function StartFlow({
         Looks good, <RollingNumber value={produce + delivery.fee} format={formatNaira} />
       </>
     ),
-    delivery: "Continue",
+    day: day ? `${DELIVERY_DAY_LABEL[day] ?? day}s it is` : "Pick a day",
     account: pending ? "Saving your week…" : "Create my account",
   };
 
@@ -213,7 +271,11 @@ export function StartFlow({
           >
             {step === "goal" && (
               <>
-                <Kachi>Hi, I&apos;m Kachi. Tell me what you&apos;re working toward and I&apos;ll plan your first week around it.</Kachi>
+                <Kachi>
+                  {notListed
+                    ? "Let's plan your week anyway. Tell me what you're working toward."
+                    : `${chosenZone ? `${chosenZone.name}, perfect. ` : ""}Now tell me what you're working toward and I'll plan your first week around it.`}
+                </Kachi>
                 <Title>What are you working toward?</Title>
                 <LayoutGroup id="start-goal">
                   <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Your goal">
@@ -249,12 +311,6 @@ export function StartFlow({
                     })}
                   </div>
                 </LayoutGroup>
-                <p className="mt-6 text-center text-[14px] text-(--hm-ink-2)">
-                  Already have an account?{" "}
-                  <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-semibold text-carbon underline underline-offset-2">
-                    Sign in
-                  </Link>
-                </p>
               </>
             )}
 
@@ -413,75 +469,66 @@ export function StartFlow({
               </>
             )}
 
-            {step === "delivery" && (
+            {step === "area" && (
               <>
-                <Kachi>Last thing before your account: where and when should it arrive?</Kachi>
+                <Kachi>Hi, I&apos;m Kachi. First, where are you? I&apos;ll check we deliver there before we plan anything.</Kachi>
                 <Title>Where should we deliver?</Title>
+
+                <motion.button
+                  type="button"
+                  onClick={useMyLocation}
+                  disabled={locating === "finding"}
+                  whileTap={{ scale: press.scale }}
+                  transition={spring.snappy}
+                  className="mt-6 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-(--hm-tint) text-[15px] font-semibold transition-colors hover:bg-(--hm-tint-2) disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M10 18s5.5-5.2 5.5-9.5a5.5 5.5 0 1 0-11 0C4.5 12.8 10 18 10 18Z" />
+                    <circle cx="10" cy="8.5" r="2" />
+                  </svg>
+                  {locating === "finding" ? "Finding you…" : "Use my location"}
+                </motion.button>
+                {locating === "denied" && (
+                  <p className="mt-2.5 text-center text-[13px] text-(--hm-ink-2)">Couldn&apos;t get your location. Pick your area below instead.</p>
+                )}
+
+                <p className="mt-6 mb-2.5 text-[13px] font-semibold text-(--hm-ink-2)">Or pick your area</p>
                 <LayoutGroup id="start-zone">
-                  <div className="mt-6 grid gap-2.5" role="radiogroup" aria-label="Delivery area">
+                  <div className="grid gap-2.5" role="radiogroup" aria-label="Delivery area">
                     {served.map((z) => {
                       const on = zone === z.slug && !notListed;
                       return (
-                        <div key={z.slug} className={`relative rounded-[20px] transition-colors ${on ? "bg-paper-white" : "bg-(--hm-tint) hover:bg-(--hm-tint-2)"}`}>
+                        <motion.button
+                          key={z.slug}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => pickZone(z)}
+                          whileTap={{ scale: press.scaleLarge }}
+                          transition={spring.snappy}
+                          className={`relative flex w-full items-center gap-3 rounded-[20px] px-4 py-3.5 text-left transition-colors ${on ? "bg-paper-white" : "bg-(--hm-tint) hover:bg-(--hm-tint-2)"}`}
+                        >
                           {on && <motion.span layoutId="zone-ring" transition={spring.indicator} className="pointer-events-none absolute inset-0 rounded-[20px] ring-2 ring-carbon" aria-hidden />}
-                          <motion.button
-                            type="button"
-                            role="radio"
-                            aria-checked={on}
-                            onClick={() => {
-                              setNotListed(false);
-                              setZone(z.slug);
-                              if (!day || !z.deliveryDays.includes(day)) setDay(z.deliveryDays[0] ?? null);
-                            }}
-                            whileTap={{ scale: press.scaleLarge }}
-                            transition={spring.snappy}
-                            className="relative flex w-full items-center gap-3 px-4 py-3.5 text-left"
-                          >
-                            <span className="min-w-0 flex-1">
-                              <b className="block text-[16px] font-semibold">{z.name}</b>
-                              <span className="block truncate text-[13px] text-(--hm-ink-2)">{z.area}</span>
-                            </span>
-                            <span className="shrink-0 text-[13px] text-(--hm-ink-3)">
-                              {z.deliveryDays.map((d) => (DELIVERY_DAY_LABEL[d] ?? d).slice(0, 3)).join(", ")}
-                            </span>
-                          </motion.button>
-                          <AnimatePresence initial={false}>
-                            {on && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={spring.smooth}
-                                className="relative overflow-hidden"
-                              >
-                                <div className="px-4 pb-4">
-                                  <p className="text-[14px] font-medium">Which day suits you?</p>
-                                  <LayoutGroup id={`start-day-${z.slug}`}>
-                                    <div className="mt-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Delivery day">
-                                      {z.deliveryDays.map((d) => (
-                                        <Chip key={d} on={day === d} onClick={() => setDay(d)} layoutId="day-pill">
-                                          {DELIVERY_DAY_LABEL[d] ?? d}
-                                        </Chip>
-                                      ))}
-                                    </div>
-                                  </LayoutGroup>
-                                  {day && (
-                                    <p className="mt-3 text-[13px] leading-relaxed text-(--hm-ink-2)">
-                                      First one could arrive <b className="font-semibold text-carbon">{firstDelivery(day)}</b>, 9am to 5pm. Change it until the night before, or skip a week.
-                                    </p>
-                                  )}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
+                          <span className="relative min-w-0 flex-1">
+                            <b className="block text-[16px] font-semibold">{z.name}</b>
+                            <span className="block truncate text-[13px] text-(--hm-ink-2)">{z.area}</span>
+                          </span>
+                          <span className="relative shrink-0 text-[13px] text-(--hm-ink-3)">
+                            {z.deliveryDays.map((d) => (DELIVERY_DAY_LABEL[d] ?? d).slice(0, 3)).join(", ")}
+                          </span>
+                          <Tick on={on} />
+                        </motion.button>
                       );
                     })}
                     <button
                       type="button"
                       role="radio"
                       aria-checked={notListed}
-                      onClick={() => setNotListed(true)}
+                      onClick={() => {
+                        setZone(null);
+                        setNotListed(true);
+                        setLocating("idle");
+                      }}
                       className={`rounded-[20px] px-4 py-3.5 text-left text-[15px] font-medium transition-colors ${notListed ? "bg-paper-white ring-2 ring-carbon" : "text-(--hm-ink-2) hover:bg-(--hm-tint)"}`}
                     >
                       My area isn&apos;t listed
@@ -492,10 +539,58 @@ export function StartFlow({
                 <AnimatePresence initial={false}>
                   {notListed && (
                     <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring.smooth} className="hm-panel mt-5 p-4 text-[14px] leading-relaxed">
-                      We don&apos;t deliver there yet{soon.length ? ` (next up: ${soon.map((z) => z.name).join(", ")})` : ""}. Make your account anyway: your recipes and basket stay saved, and you can set your area the day we arrive.
+                      {locating === "outside" ? "You're outside the areas we reach right now. " : ""}
+                      We don&apos;t deliver there yet{soon.length ? ` (next up: ${soon.map((z) => z.name).join(", ")})` : ""}. You can still plan your week: your recipes and basket stay saved, and you can set your area the day we arrive.
                     </motion.p>
                   )}
                 </AnimatePresence>
+
+                <p className="mt-6 text-center text-[14px] text-(--hm-ink-2)">
+                  Already have an account?{" "}
+                  <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-semibold text-carbon underline underline-offset-2">
+                    Sign in
+                  </Link>
+                </p>
+              </>
+            )}
+
+            {step === "day" && chosenZone && (
+              <>
+                <Kachi>Last thing before your account: which day should it arrive?</Kachi>
+                <Title>Which day suits you?</Title>
+                <p className="mt-2 text-[15px] text-(--hm-ink-2)">
+                  {chosenZone.name} gets deliveries on {listDays(chosenZone.deliveryDays)}.{" "}
+                  <button type="button" onClick={() => go(0)} className="font-semibold text-carbon underline underline-offset-2">
+                    Change area
+                  </button>
+                </p>
+                <LayoutGroup id="start-day">
+                  <div className="mt-6 grid gap-2.5" role="radiogroup" aria-label="Delivery day">
+                    {chosenZone.deliveryDays.map((d) => {
+                      const on = day === d;
+                      return (
+                        <motion.button
+                          key={d}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => setDay(d)}
+                          whileTap={{ scale: press.scaleLarge }}
+                          transition={spring.snappy}
+                          className={`relative flex w-full items-center gap-3 rounded-[20px] px-4 py-4 text-left transition-colors ${on ? "bg-paper-white" : "bg-(--hm-tint) hover:bg-(--hm-tint-2)"}`}
+                        >
+                          {on && <motion.span layoutId="day-ring" transition={spring.indicator} className="pointer-events-none absolute inset-0 rounded-[20px] ring-2 ring-carbon" aria-hidden />}
+                          <span className="relative min-w-0 flex-1">
+                            <b className="block text-[16px] font-semibold">{DELIVERY_DAY_LABEL[d] ?? d}s</b>
+                            <span className="block text-[13px] text-(--hm-ink-2)">First one {firstDelivery(d)}, 9am to 5pm</span>
+                          </span>
+                          <Tick on={on} />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </LayoutGroup>
+                <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-2)">Change it until the night before, or skip a week.</p>
               </>
             )}
 
