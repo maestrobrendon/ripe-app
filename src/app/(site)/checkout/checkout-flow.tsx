@@ -64,7 +64,7 @@ export function CheckoutFlow({
   // Only the days this area gets; if the chosen day isn't one, the first that is.
   const days = DAYS.filter((d) => !zone || zone.deliveryDays.includes(d));
   const deliveryDay = days.includes(form.deliveryDay) ? form.deliveryDay : (days[0] ?? form.deliveryDay);
-  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, zone?.deliveryFee ?? cart.deliveryFee);
+  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, zone?.deliveryFee ?? cart.deliveryFee, cart.freeDeliveryThreshold);
   const total = cart.subtotal + delivery.fee;
 
   const addressValid = form.name && form.phone && form.address && form.zoneSlug;

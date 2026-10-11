@@ -13,7 +13,8 @@ import {
   type KachiRecipe,
   type KachiScope,
 } from "@/lib/kachi-types";
-import { MENU, MENU_GOALS } from "@/app/(bare)/home-menu/recipes";
+import { MENU_GOALS } from "@/lib/menu-types";
+import { getMenu } from "@/lib/menu";
 
 /**
  * Resolves a requested mode into a scope the server trusts: a basket only if
@@ -123,9 +124,10 @@ export async function activeBasketContext(userId: string) {
 
 /** The recipe library as prompt lines. It is small enough to hand over whole. */
 export async function recipeLibrary() {
-  const [stored, products] = await Promise.all([
-    prisma.recipe.findMany({ select: { slug: true, title: true, summary: true, goalTags: true, ingredientProductIds: true } }),
+  const [stored, products, MENU] = await Promise.all([
+    prisma.recipe.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, title: true, summary: true, goalTags: true, ingredientProductIds: true } }),
     prisma.product.findMany({ select: { id: true, name: true, slug: true } }),
+    getMenu(),
   ]);
   const names = new Map(products.map((p) => [p.id, p.name]));
   const idBySlug = new Map(products.map((p) => [p.slug, p.id]));

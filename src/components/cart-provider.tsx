@@ -29,6 +29,8 @@ export type CartSnapshot = {
   freeDelivery: boolean;
   /** The customer's area fee. */
   deliveryFee: number;
+  /** Cart value for free delivery (a site setting). */
+  freeDeliveryThreshold: number;
 };
 
 export type AddableProduct = {
@@ -58,7 +60,7 @@ type CartContextValue = CartSnapshot & {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function recompute(items: CartLine[], who: Pick<CartSnapshot, "isSubscriber" | "freeDelivery" | "deliveryFee">): CartSnapshot {
+function recompute(items: CartLine[], who: Pick<CartSnapshot, "isSubscriber" | "freeDelivery" | "deliveryFee" | "freeDeliveryThreshold">): CartSnapshot {
   const { isSubscriber } = who;
   const standardSubtotal = items.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
   const memberSubtotal = items.reduce((s, l) => s + l.memberPrice * l.quantity, 0);
@@ -114,7 +116,7 @@ export function CartProvider({
               },
             ];
 
-      setState(recompute(nextItems, { isSubscriber: state.isSubscriber, freeDelivery: state.freeDelivery, deliveryFee: state.deliveryFee }));
+      setState(recompute(nextItems, { isSubscriber: state.isSubscriber, freeDelivery: state.freeDelivery, deliveryFee: state.deliveryFee, freeDeliveryThreshold: state.freeDeliveryThreshold }));
       if (quantity > 0) setIsOpen(true);
 
       try {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LegalPage, type LegalSection } from "@/components/legal-page";
-import { SUPPORT_EMAIL } from "@/lib/site";
+import { SupportEmail } from "@/components/support-links";
 
 export const metadata = {
   title: "Terms of service. Basket",
@@ -110,7 +110,7 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>
           If anything arrives damaged, spoiled or missing, tell us within 24 hours of delivery. Email{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> with your order details and a photo.
+          <SupportEmail /> with your order details and a photo.
           We&rsquo;ll replace the item on your next delivery or refund it, whichever you prefer.
         </p>
         <p>
@@ -289,7 +289,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         Questions about these terms, an order or your data? Email{" "}
-        <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and a real person will get back to you.
+        <SupportEmail /> and a real person will get back to you.
       </p>
     ),
   },

@@ -6,6 +6,7 @@ import { can, type Role } from "@/lib/admin/permissions";
 import { Badge, Card, PageHeader } from "../../_ui/kit";
 import { daysAgo, naira, one, when } from "../../_ui/format";
 import { RequestDecision } from "./request-decision";
+import { PlanEditor } from "./plan-editor";
 
 export const metadata: Metadata = { title: "Memberships" };
 
@@ -102,6 +103,13 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
           </ul>
         )}
       </Card>
+
+      <section className="mb-5" aria-labelledby="plans-title">
+        <h2 id="plans-title" className="mb-3 text-[15px] font-semibold">
+          Plans
+        </h2>
+        <PlanEditor canManage={canDecide} tiers={tiers.map((t) => ({ slug: t.slug, name: t.name, monthlyFee: t.monthlyFee, tagline: t.tagline, perks: t.perks }))} />
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <Card

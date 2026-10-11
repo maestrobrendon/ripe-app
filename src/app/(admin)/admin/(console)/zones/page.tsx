@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { requireStaffPage } from "@/lib/admin/guard";
 import { can, type Role } from "@/lib/admin/permissions";
-import { FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
+import { getSiteSettings } from "@/lib/site-settings";
 import { PageHeader } from "../../_ui/kit";
 import { naira } from "../../_ui/format";
 import { ZonesView } from "./zones-view";
@@ -19,7 +19,7 @@ export default async function ZonesPage() {
     <>
       <PageHeader
         title="Delivery areas"
-        description={`Where you deliver, on which days, what it costs and when orders close. Delivery is free above ${naira(FREE_DELIVERY_THRESHOLD)} and always on Member Plus.`}
+        description={`Where you deliver, on which days, what it costs and when orders close. Delivery is free above ${naira((await getSiteSettings()).delivery.freeThreshold)} and always on Member Plus.`}
       />
       <ZonesView
         canManage={can(staff.role as Role, "zones.manage")}

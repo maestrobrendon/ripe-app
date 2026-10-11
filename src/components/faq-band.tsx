@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
-import { formatNaira } from "@/lib/format";
-import { FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
+import { FreeDeliveryAmount } from "@/components/support-links";
 import { spring } from "@/lib/motion/tokens";
 
 const FAQS = [
@@ -38,7 +37,7 @@ const FAQS = [
       <>
         No cart minimum. Each product is sold in a set pack size, greens by weight, oranges in pairs, and
         so on, so you add only what you need. Delivery is priced by your area, free once your cart passes{" "}
-        {formatNaira(FREE_DELIVERY_THRESHOLD)}, and always free on Member Plus.
+        <FreeDeliveryAmount />, and always free on Member Plus.
       </>
     ),
   },

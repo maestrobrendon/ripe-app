@@ -1,6 +1,7 @@
 import "server-only";
 import { isOffered, isBuyable, snapQuantity } from "@/lib/product";
-import { BASE_DELIVERY_FEE, hasFreeDelivery } from "@/lib/pricing";
+import { BASE_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD, hasFreeDelivery } from "@/lib/pricing";
+import { getSiteSettings } from "@/lib/site-settings";
 import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +37,8 @@ export type CartView = {
   freeDelivery: boolean;
   /** The customer's area fee, or the default when no area is known. */
   deliveryFee: number;
+  /** Cart value for free delivery (a site setting). */
+  freeDeliveryThreshold: number;
 };
 
 const EMPTY: CartView = {
@@ -48,6 +51,7 @@ const EMPTY: CartView = {
   isSubscriber: false,
   freeDelivery: false,
   deliveryFee: BASE_DELIVERY_FEE,
+  freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
 };
 
 async function loadCartByToken(token: string | undefined) {
@@ -60,7 +64,7 @@ async function loadCartByToken(token: string | undefined) {
 
 function buildView(
   items: { quantity: number; product: import("@/generated/prisma/client").Product }[],
-  who: Pick<CartView, "isSubscriber" | "freeDelivery" | "deliveryFee">,
+  who: Who,
 ): CartView {
   const { isSubscriber } = who;
   const lines: CartLineView[] = items.map((i) => ({
@@ -94,8 +98,12 @@ function buildView(
 }
 
 /** What the signed-in customer pays: member prices, free delivery, their area's fee. */
-function whoFor(user: Awaited<ReturnType<typeof getCurrentUser>>): Pick<CartView, "isSubscriber" | "freeDelivery" | "deliveryFee"> {
+type Who = Pick<CartView, "isSubscriber" | "freeDelivery" | "deliveryFee" | "freeDeliveryThreshold">;
+
+async function whoFor(user: Awaited<ReturnType<typeof getCurrentUser>>): Promise<Who> {
+  const settings = await getSiteSettings();
   return {
+    freeDeliveryThreshold: settings.delivery.freeThreshold,
     isSubscriber: Boolean(user?.subscriptionTierId),
     freeDelivery: hasFreeDelivery(user?.subscriptionTier?.slug),
     deliveryFee: user?.deliveryZone?.deliveryFee ?? BASE_DELIVERY_FEE,
@@ -106,7 +114,7 @@ function whoFor(user: Awaited<ReturnType<typeof getCurrentUser>>): Pick<CartView
 export async function readCart(): Promise<CartView> {
   const store = await cookies();
   const cart = await loadCartByToken(store.get(CART_COOKIE)?.value);
-  const who = whoFor(await getCurrentUser());
+  const who = await whoFor(await getCurrentUser());
   if (!cart) return { ...EMPTY, ...who };
   return buildView(cart.items, who);
 }
@@ -142,7 +150,7 @@ export async function cartViewForCart(cartId: string): Promise<CartView> {
     where: { id: cartId },
     include: { items: { include: { product: true }, orderBy: { product: { name: "asc" } } } },
   });
-  const who = whoFor(await getCurrentUser());
+  const who = await whoFor(await getCurrentUser());
   if (!cart) return { ...EMPTY, ...who };
   return buildView(cart.items, who);
 }

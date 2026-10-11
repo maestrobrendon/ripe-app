@@ -13,7 +13,8 @@ import { KachiMark } from "@/components/kachi-mark";
 import { ProductImage } from "@/components/product-image";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { Icon } from "@/components/ui/icon";
-import { MENU, MENU_GOALS, type MenuGoal, type MenuRecipe } from "../home-menu/recipes";
+import { MENU_GOALS, type MenuGoal, type MenuRecipe } from "../home-menu/recipes";
+import { useMenu } from "@/components/menu-provider";
 import { shortName } from "../home-menu/parts/shared";
 import { buildRecipeBasket, snapQuantity } from "./recipe-basket";
 import { createAccountFromOnboarding, type StartState } from "./actions";
@@ -85,6 +86,7 @@ export function StartFlow({
   freeDeliveryThreshold: number;
   next: string | null;
 }) {
+  const MENU = useMenu();
   const [[index, direction], setIndex] = useState<[number, 1 | -1]>([0, 1]);
   const step: Step = STEPS[index];
   const go = (to: number) => {
@@ -123,7 +125,7 @@ export function StartFlow({
   const lines = built.lines.map((l) => ({ ...l, quantity: overrides[l.productId] ?? l.quantity }));
   const kept = lines.filter((l) => l.quantity > 0);
   const produce = kept.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
-  const delivery = quoteDelivery(produce, false);
+  const delivery = quoteDelivery(produce, false, undefined, freeDeliveryThreshold);
   const people = adults + kids;
   const chosenZone = served.find((z) => z.slug === zone) ?? null;
 

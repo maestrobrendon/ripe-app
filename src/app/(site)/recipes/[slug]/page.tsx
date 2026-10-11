@@ -59,6 +59,12 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
         ? `/start?goal=${recipe.goal}`
         : "/start";
 
+  // Members-only recipes: everyone sees the dish and what goes in it; the
+  // amounts and method are for members (and stay out of the page source).
+  const locked = recipe.membersOnly && !isSubscriber;
+  const basket = locked ? recipe.basket.map((i) => ({ ...i, amount: null })) : recipe.basket;
+  const elsewhere = locked ? recipe.elsewhere.map((e) => ({ ...e, amount: null })) : recipe.elsewhere;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Recipe",
@@ -68,7 +74,7 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
     totalTime: recipe.minutes ? `PT${recipe.minutes}M` : undefined,
     recipeYield: recipe.serves ? `${recipe.serves} servings` : undefined,
     recipeIngredient: [...recipe.basket.map((i) => i.product.name), ...recipe.elsewhere.map((e) => e.label)],
-    recipeInstructions: recipe.steps.map((text) => ({ "@type": "HowToStep", text })),
+    recipeInstructions: locked ? undefined : recipe.steps.map((text) => ({ "@type": "HowToStep", text })),
   };
 
   return (
@@ -174,8 +180,23 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
         {/* The recipe, with the ask beside it on wide screens. */}
         <div className="mt-12 grid gap-12 lg:mt-16 lg:grid-cols-[1fr_340px] lg:gap-14">
           <div className="min-w-0 space-y-14">
-            <Ingredients basket={recipe.basket} elsewhere={recipe.elsewhere} serves={recipe.serves} showHave={isSubscriber} />
-            <CookSteps slug={recipe.slug} steps={recipe.steps} products={recipe.basket.map((i) => i.product)} tools={recipe.tools} />
+            <Ingredients basket={basket} elsewhere={elsewhere} serves={recipe.serves} showHave={isSubscriber} />
+            {locked ? (
+              <section aria-labelledby="method-locked" className="rounded-[28px] bg-[var(--hm-tint)] p-7 sm:p-9">
+                <h2 id="method-locked" className="hm-h3 text-[1.5rem]!">
+                  The method is for members
+                </h2>
+                <p className="mt-3 max-w-xl text-[16px] text-[var(--hm-ink-2)]">
+                  {recipe.steps.length} steps with amounts for every ingredient, scaled to how many you&apos;re feeding. Members get every recipe, pay less on
+                  everything and get a basket that turns up each week.
+                </p>
+                <Link href="/subscribe" className="mt-6 inline-flex h-12 items-center rounded-full bg-carbon px-6 text-[15px] font-semibold text-paper-white">
+                  See membership
+                </Link>
+              </section>
+            ) : (
+              <CookSteps slug={recipe.slug} steps={recipe.steps} products={recipe.basket.map((i) => i.product)} tools={recipe.tools} />
+            )}
             <p className="text-[13px] text-[var(--hm-ink-3)]">This is a food idea, not nutritional or medical advice.</p>
           </div>
 

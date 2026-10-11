@@ -7,7 +7,8 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { MagneticLink, Reveal, setScrollLocked } from "../../home-next/parts/runtime";
-import { MENU, MENU_GOALS, type MenuGoal, type MenuRecipe } from "../recipes";
+import { MENU_GOALS, type MenuGoal, type MenuRecipe } from "../recipes";
+import { useMenu } from "@/components/menu-provider";
 import type { MenuProduct } from "../types";
 import { Check, Clock, Eyebrow, IngredientChip, People, ShareMeter, splitRecipe } from "./shared";
 
@@ -22,6 +23,7 @@ export function Menu({
   products: Record<string, MenuProduct>;
   signedIn: boolean;
 }) {
+  const MENU = useMenu();
   const [open, setOpen] = useState<MenuRecipe | null>(null);
   const close = useCallback(() => setOpen(null), []);
   const recipes = MENU.filter((r) => r.goal === goal);
@@ -236,6 +238,14 @@ function RecipeSheet({ recipe, products, signedIn, onClose }: { recipe: MenuReci
 
                 <div className="mt-7">
                   <h4 className="text-[15px] font-semibold">How to make it</h4>
+                  {recipe.membersOnly && recipe.steps.length === 0 && (
+                    <p className="mt-3 text-[15px] leading-relaxed text-[var(--hm-ink-2)]">
+                      The method for this one is for members, with amounts for every ingredient.{" "}
+                      <Link href="/subscribe" className="font-semibold text-carbon underline underline-offset-4">
+                        See membership
+                      </Link>
+                    </p>
+                  )}
                   <ol className="mt-3 space-y-3">
                     {recipe.steps.map((s, i) => (
                       <li key={i} className="flex gap-3 text-[15px] leading-relaxed">

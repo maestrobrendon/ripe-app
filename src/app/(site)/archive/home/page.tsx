@@ -3,8 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { formatNaira, CATEGORY_LABEL } from "@/lib/format";
-import { FREE_DELIVERY_THRESHOLD } from "@/lib/pricing";
+import { CATEGORY_LABEL } from "@/lib/format";
+import { FreeDeliveryAmount } from "@/components/support-links";
 import { ProductCard } from "@/components/product-card";
 import { ProductGrid } from "@/components/product-grid";
 import { FaqBand } from "@/components/faq-band";
@@ -198,7 +198,7 @@ export default async function LandingPage() {
             <h2 className="text-heading-lg">What a week costs</h2>
             <p className="mt-4 text-base text-muted">
               Set your household and see a real basket, priced both ways. Delivery is free over{" "}
-              {formatNaira(FREE_DELIVERY_THRESHOLD)}, or on every member order.
+              <FreeDeliveryAmount />, or on every member order.
             </p>
             <LinkButton href="/subscribe" variant="ghost" className="mt-6">
               Compare subscriptions

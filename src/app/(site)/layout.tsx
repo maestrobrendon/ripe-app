@@ -15,6 +15,8 @@ import { SiteHeader } from "@/components/site-header";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { CartDrawer } from "@/components/cart-drawer";
 import { AnnouncementBar } from "@/components/announcement-bar";
+import { SiteSettingsProvider } from "@/components/site-settings-provider";
+import { getSiteSettings } from "@/lib/site-settings";
 import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
  * separate root layouts.
  */
 export default async function SiteRootLayout({ children }: { children: React.ReactNode }) {
-  const [user, cart, zone] = await Promise.all([getCurrentUser(), readCart(), getActiveZone()]);
+  const [user, cart, zone, settings] = await Promise.all([getCurrentUser(), readCart(), getActiveZone(), getSiteSettings()]);
 
   let destinationBaskets: DestinationBasket[] = [];
   if (user) {
@@ -48,6 +50,7 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
           screen needs to clear one: --mobile-nav-h is zero for them. */}
       <body className="flex min-h-full flex-col" style={user ? undefined : ({ "--mobile-nav-h": "0px" } as React.CSSProperties)}>
         <MotionProvider>
+          <SiteSettingsProvider settings={settings}>
           <ZoneProvider initialZoneName={zone?.name ?? null}>
             <CartProvider initial={cart}>
               <DestinationProvider signedIn={Boolean(user)} baskets={destinationBaskets}>
@@ -74,6 +77,7 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
               </DestinationProvider>
             </CartProvider>
           </ZoneProvider>
+          </SiteSettingsProvider>
         </MotionProvider>
       </body>
     </html>

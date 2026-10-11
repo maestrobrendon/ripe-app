@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, type CurrentUser } from "@/lib/session";
-import { MENU } from "@/app/(bare)/home-menu/recipes";
+import { getMenu } from "@/lib/menu";
 import { getOrCreateActiveBasket } from "@/lib/basket";
 import { toolAddItemToBasket, toolAddItemsToBasket, toolAddItemsToCart } from "@/lib/assistant-tools";
 import { matchProductByName, normalizeTerm } from "@/lib/ingredient-match";
@@ -429,17 +429,17 @@ export async function sendRecipeIngredientsToCart(recipeId: string): Promise<voi
 
 /**
  * The recipe page's button, for either kind of recipe it shows: a menu
- * recipe (by its MENU slug) or a library one (by its Recipe slug). A
+ * recipe (by its slug, from its catalogue slugs) or a library one. A
  * subscriber's basket gets what it's missing; anyone else's cart gets the lot,
  * the same split as the two actions above.
  */
 export async function sendRecipeBySlug(slug: string): Promise<{ added: number; to: "basket" | "cart" }> {
   const user = await requireUser();
 
-  const menu = MENU.find((r) => r.slug === slug);
+  const menu = (await getMenu()).find((r) => r.slug === slug);
   const productIds = menu
     ? (await prisma.product.findMany({ where: { slug: { in: menu.basket } }, select: { id: true } })).map((p) => p.id)
-    : ((await prisma.recipe.findUnique({ where: { slug }, select: { ingredientProductIds: true } }))?.ingredientProductIds ?? []);
+    : ((await prisma.recipe.findFirst({ where: { slug, status: "PUBLISHED" }, select: { ingredientProductIds: true } }))?.ingredientProductIds ?? []);
 
   if (user.subscriptionTierId) return { added: await addMissingToBasket(user, productIds), to: "basket" };
   return { added: await addAllToCart(user, productIds), to: "cart" };

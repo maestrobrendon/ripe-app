@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { SUPPORT_EMAIL, SUPPORT_WHATSAPP } from "@/lib/site";
+import { useSiteSettings } from "@/components/site-settings-provider";
 import "@/app/(bare)/home-menu/home-menu.css";
 
 /**
@@ -7,7 +9,7 @@ import "@/app/(bare)/home-menu/home-menu.css";
  * members have Account > Help and info instead.
  */
 
-const COLUMNS: { title: string; links: [string, string][] }[] = [
+const columns = (support: { whatsapp: string; email: string }): { title: string; links: [string, string][] }[] => [
   {
     title: "Basket",
     links: [
@@ -30,14 +32,15 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
   {
     title: "Help",
     links: [
-      ["WhatsApp us", `https://wa.me/${SUPPORT_WHATSAPP}`],
-      [SUPPORT_EMAIL, `mailto:${SUPPORT_EMAIL}`],
+      ["WhatsApp us", `https://wa.me/${support.whatsapp}`],
+      [support.email, `mailto:${support.email}`],
       ["Your account", "/account"],
     ],
   },
 ];
 
 export function MarketingFooter() {
+  const { support } = useSiteSettings();
   return (
     <footer className="hm border-t border-[var(--hm-line)] py-14">
       <div className="hm-wrap grid gap-10 sm:grid-cols-[1.4fr_repeat(3,1fr)]">
@@ -47,7 +50,7 @@ export function MarketingFooter() {
           </Link>
           <p className="mt-3 max-w-[16rem] text-[14px] leading-relaxed text-[var(--hm-ink-3)]">Recipes and fresh produce for whatever you&apos;re working toward. Lagos.</p>
         </div>
-        {COLUMNS.map((c) => (
+        {columns(support).map((c) => (
           <div key={c.title}>
             <h3 className="text-[14px] font-semibold">{c.title}</h3>
             <ul className="mt-3 space-y-2">

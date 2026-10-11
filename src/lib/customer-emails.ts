@@ -1,7 +1,8 @@
 import "server-only";
 import { sendEmail } from "@/lib/email";
 import { formatNaira } from "@/lib/format";
-import { appOrigin, SUPPORT_WHATSAPP } from "@/lib/site";
+import { appOrigin } from "@/lib/site";
+import { getSiteSettings } from "@/lib/site-settings";
 import type { OrderStatus } from "@/generated/prisma/enums";
 
 /*
@@ -12,7 +13,7 @@ import type { OrderStatus } from "@/generated/prisma/enums";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const day = (d: Date) => d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Lagos" });
-const help = `Questions? Reply to this email or message us on WhatsApp: https://wa.me/${SUPPORT_WHATSAPP}`;
+
 
 type OrderForEmail = {
   id: string;
@@ -29,7 +30,8 @@ function orderLink(o: OrderForEmail) {
   return `${appOrigin()}/orders/${o.id}?t=${encodeURIComponent(o.accessToken)}`;
 }
 
-function wrap(lines: string[], link?: { href: string; label: string }) {
+async function wrap(lines: string[], link?: { href: string; label: string }) {
+  const help = `Questions? Reply to this email or message us on WhatsApp: https://wa.me/${(await getSiteSettings()).support.whatsapp}`;
   const html = `${lines.map((l) => `<p>${esc(l)}</p>`).join("")}${link ? `<p><a href="${esc(link.href)}">${esc(link.label)}</a></p>` : ""}<p style="color:#666">${esc(help)}</p>`;
   const text = `${lines.join("\n\n")}${link ? `\n\n${link.label}: ${link.href}` : ""}\n\n${help}`;
   return { html, text };
@@ -46,7 +48,7 @@ export async function sendOrderConfirmation(o: OrderForEmail & { items: { name: 
   await send(
     o.customerEmail,
     `Order #${o.id.slice(-8).toUpperCase()} confirmed`,
-    wrap(
+    await wrap(
       [
         `Thanks, ${first}. Your order is in.`,
         `Arriving ${day(o.deliveryDate)} at ${o.address} (${o.zoneName}). Total ${formatNaira(o.total)}.`,
@@ -69,14 +71,14 @@ export async function sendOrderStatusEmail(o: OrderForEmail, status: OrderStatus
   const copy = STATUS_COPY[status]?.(o);
   if (!copy) return;
   const lines = note && status === "CANCELLED" ? [...copy.lines, `Reason: ${note}`] : copy.lines;
-  await send(o.customerEmail, `${copy.subject} (#${o.id.slice(-8).toUpperCase()})`, wrap(lines, { href: orderLink(o), label: "See your order" }));
+  await send(o.customerEmail, `${copy.subject} (#${o.id.slice(-8).toUpperCase()})`, await wrap(lines, { href: orderLink(o), label: "See your order" }));
 }
 
 export async function sendRefundEmail(o: OrderForEmail, amount: number, method: string) {
   await send(
     o.customerEmail,
     `Refund for order #${o.id.slice(-8).toUpperCase()}`,
-    wrap([`We've refunded ${formatNaira(amount)} for your order, by ${method}.`, "It can take a few working days to show, depending on your bank."], { href: orderLink(o), label: "See your order" }),
+    await wrap([`We've refunded ${formatNaira(amount)} for your order, by ${method}.`, "It can take a few working days to show, depending on your bank."], { href: orderLink(o), label: "See your order" }),
   );
 }
 
@@ -84,7 +86,7 @@ export async function sendPlanRequestReceived(to: string | null, name: string, t
   await send(
     to,
     `Your ${tierName} request`,
-    wrap(
+    await wrap(
       [
         `Thanks, ${name.split(/\s+/)[0]}. We've got your request to join ${tierName} (${formatNaira(monthlyFee)} a month).`,
         "We'll email you payment details within one working day. Your plan starts as soon as payment is confirmed, and nothing is charged automatically.",
@@ -98,5 +100,5 @@ export async function sendPlanDecision(to: string | null, name: string, tierName
   const lines = approved
     ? [`You're on ${tierName}, ${name.split(/\s+/)[0]}. Member prices and your weekly basket are ready.`]
     : [`We couldn't start your ${tierName} plan this time.`, ...(note ? [note] : []), "You can keep shopping as you go, and ask again anytime."];
-  await send(to, approved ? `Welcome to ${tierName}` : `About your ${tierName} request`, wrap(lines, { href: `${appOrigin()}/${approved ? "basket" : "subscribe"}`, label: approved ? "Open your basket" : "See plans" }));
+  await send(to, approved ? `Welcome to ${tierName}` : `About your ${tierName} request`, await wrap(lines, { href: `${appOrigin()}/${approved ? "basket" : "subscribe"}`, label: approved ? "Open your basket" : "See plans" }));
 }

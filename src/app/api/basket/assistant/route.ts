@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json<IdeasResponse>({ kind: "starter", picks });
   }
 
-  const [products, recipes] = await Promise.all([prisma.product.findMany({ where: OFFERED }), prisma.recipe.findMany()]);
+  const [products, recipes] = await Promise.all([prisma.product.findMany({ where: OFFERED }), prisma.recipe.findMany({ where: { status: "PUBLISHED" } })]);
 
   const byId = new Map(products.map((p) => [p.id, p]));
   const favoriteSlugs = (user.preferences?.favoriteProductIds ?? [])

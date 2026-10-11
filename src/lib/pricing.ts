@@ -3,7 +3,7 @@
 // Each delivery area has its own fee (DeliveryZone.deliveryFee, set in the
 // admin); BASE_DELIVERY_FEE is only the fallback when no area is known yet.
 
-/** Cart value at or above which delivery is free for everyone. */
+/** Default cart value for free delivery; the live figure is a site setting (Settings in the admin). */
 export const FREE_DELIVERY_THRESHOLD = 25000;
 
 /** Delivery fee when the customer's area isn't known yet. */
@@ -27,13 +27,18 @@ export type DeliveryQuote = {
  * Delivery fee for a given subtotal. Free on a plan that includes delivery,
  * or above FREE_DELIVERY_THRESHOLD; otherwise the area's fee.
  */
-export function quoteDelivery(subtotal: number, freeDelivery: boolean, areaFee: number = BASE_DELIVERY_FEE): DeliveryQuote {
-  if (freeDelivery || subtotal >= FREE_DELIVERY_THRESHOLD) {
+export function quoteDelivery(
+  subtotal: number,
+  freeDelivery: boolean,
+  areaFee: number = BASE_DELIVERY_FEE,
+  threshold: number = FREE_DELIVERY_THRESHOLD,
+): DeliveryQuote {
+  if (freeDelivery || subtotal >= threshold) {
     return { fee: 0, isFree: true, toFreeDelivery: 0 };
   }
   return {
     fee: areaFee,
     isFree: false,
-    toFreeDelivery: Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal),
+    toFreeDelivery: Math.max(0, threshold - subtotal),
   };
 }

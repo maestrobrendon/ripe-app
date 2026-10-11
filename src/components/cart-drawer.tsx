@@ -17,7 +17,7 @@ export function CartDrawer() {
 
   useBodyScrollLock(cart.isOpen);
 
-  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, cart.deliveryFee);
+  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, cart.deliveryFee, cart.freeDeliveryThreshold);
 
   return (
     <AnimatePresence>

@@ -6,7 +6,7 @@ import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { LEVELS, type CoachProgress } from "@/lib/coach";
-import { SUPPORT_WHATSAPP } from "@/lib/site";
+import { useSiteSettings } from "@/components/site-settings-provider";
 import type { StreakView } from "@/lib/streak-config";
 import type { CoachReply } from "@/app/api/coach/route";
 
@@ -21,6 +21,7 @@ type Payload = {
 type Turn = { question: string; reply: CoachReply };
 
 export function CoachWidget() {
+  const { support } = useSiteSettings();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<Payload | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -189,7 +190,7 @@ export function CoachWidget() {
 
                   {turn.reply.id === "human" ? (
                     <a
-                      href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
+                      href={`https://wa.me/${support.whatsapp}?text=${encodeURIComponent(
                         "Hi Basket, I have a question about",
                       )}`}
                       target="_blank"

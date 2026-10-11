@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { SUPPORT_WHATSAPP } from "@/lib/site";
+import { getSiteSettings } from "@/lib/site-settings";
 import { customerStatusLabel, OPEN_STATUSES } from "@/lib/order-status";
 import { AccountView, type OrderRow } from "./account-view";
 
@@ -77,7 +77,7 @@ export default async function AccountPage() {
       }
       cheapestPlan={cheapestTier?.monthlyFee ?? null}
       orders={orderRows}
-      whatsappHref={`https://wa.me/${SUPPORT_WHATSAPP}`}
+      whatsappHref={`https://wa.me/${(await getSiteSettings()).support.whatsapp}`}
     />
   );
 }

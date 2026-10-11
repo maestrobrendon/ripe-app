@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRef } from "react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { Reveal } from "../../home-next/parts/runtime";
-import { MENU } from "../recipes";
+import { useMenu } from "@/components/menu-provider";
 import type { MenuProduct } from "../types";
 import { Check, Eyebrow, IngredientChip, ShareMeter, localName, shortName, splitRecipe } from "./shared";
 
@@ -19,6 +19,7 @@ const PINS = [
 ];
 
 export function Inside({ products }: { products: Record<string, MenuProduct> }) {
+  const MENU = useMenu();
   const recipe = MENU.find((r) => r.slug === "sweet-potato-burrito-bowl") ?? MENU[0];
   const { basket, elsewhere, total } = splitRecipe(recipe, products);
   const root = useRef<HTMLElement>(null);

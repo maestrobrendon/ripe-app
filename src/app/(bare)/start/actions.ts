@@ -14,7 +14,8 @@ import { appOrigin } from "@/lib/site";
 import { sendSignupAttemptEmail } from "@/lib/email";
 import { BUYABLE } from "@/lib/product";
 import type { DeliveryDay } from "@/generated/prisma/enums";
-import { MENU, MENU_GOALS } from "../home-menu/recipes";
+import { MENU_GOALS } from "@/lib/menu-types";
+import { getMenu } from "@/lib/menu";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -148,8 +149,9 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   await createSession(userId);
 
   // The welcome screen shows the week they picked; recipe slugs are not personal.
+  const menuSlugs = new Set((await getMenu()).map((r) => r.slug));
   const picked = parseJson<unknown[]>(formData.get("recipes"), [])
-    .filter((s): s is string => typeof s === "string" && MENU.some((r) => r.slug === s))
+    .filter((s): s is string => typeof s === "string" && menuSlugs.has(s))
     .slice(0, 8);
   redirect(safeNextPath(String(formData.get("next") ?? ""), `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`));
 }

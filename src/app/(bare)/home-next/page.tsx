@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { buildStarterPicks, getHeroBasketCandidates, getStarterCandidates } from "@/lib/starter-basket";
 import { DELIVERY_DAY_LABEL } from "@/lib/format";
-import { FREE_DELIVERY_THRESHOLD, BASE_DELIVERY_FEE } from "@/lib/pricing";
+import { BASE_DELIVERY_FEE } from "@/lib/pricing";
+import { getSiteSettings } from "@/lib/site-settings";
 import { HomeNext } from "./home-next";
 import type { HomeData, ShowcaseGoal } from "./types";
 import "./home-next.css";
@@ -111,7 +112,7 @@ export default async function HomeNextPage() {
     comingSoon: zones.filter((z) => !z.isServed).map((z) => z.name),
     deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Wednesday",
     memberFee: tier?.monthlyFee ?? null,
-    freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
+    freeDeliveryThreshold: (await getSiteSettings()).delivery.freeThreshold,
     deliveryFee: BASE_DELIVERY_FEE,
   };
 

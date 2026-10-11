@@ -201,7 +201,7 @@ export async function addRecipeIngredients(basketId: string | undefined, recipeS
   const basket = await resolveBasket(user, basketId);
   await assertWindowOpen(basket);
 
-  const recipe = await prisma.recipe.findUnique({ where: { slug: recipeSlug } });
+  const recipe = await prisma.recipe.findFirst({ where: { slug: recipeSlug, status: "PUBLISHED" } });
   if (!recipe) return;
 
   const existing = new Set(

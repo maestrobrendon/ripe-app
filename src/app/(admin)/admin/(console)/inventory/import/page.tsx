@@ -20,7 +20,6 @@ export default async function ImportPage() {
         <Card title="Export">
           <p className="text-[13px] text-carbon/65">Every product with its stock, promised quantity, reorder point and prices. Weighed produce is in kg.</p>
           {/* A file download, not a page: a plain link, so the browser saves it. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/inventory/export" download className="mt-3 inline-flex h-9 items-center rounded-xl bg-carbon px-3 text-[13px] font-semibold text-paper-white hover:bg-carbon/85">
             Download CSV
           </a>

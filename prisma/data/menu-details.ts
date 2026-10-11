@@ -1,20 +1,11 @@
 /**
- * The cooking detail behind each menu recipe (src/app/(bare)/home-menu/recipes.ts):
- * how much of each ingredient, and what to cook it in. Kept beside the recipe
- * page rather than on MenuRecipe so the homepage and sign-up, which never
- * show amounts, don't carry it.
- *
- * Amounts are for the recipe's own `serves` and scale linearly with the
- * servings switch. Keys are a basket slug or an `elsewhere` label exactly as
- * written in MENU. A unit of "" means a count ("2 tomatoes").
+ * Amounts and tools for each menu recipe, as first written. Imported into the
+ * Recipe table by prisma/scripts/import-menu.ts; edited in the admin after.
+ * Amounts are for the recipe's own serves; keys are a basket slug or an
+ * elsewhere label exactly as written in the recipe. Unit "" means a count.
  */
-
-export type Amount = readonly [qty: number, unit: string];
-
-export type MenuDetail = {
-  amounts: Record<string, Amount>;
-  tools: string[];
-};
+type Amount = readonly [qty: number, unit: string];
+type MenuDetail = { amounts: Record<string, Amount>; tools: string[] };
 
 export const MENU_DETAILS: Record<string, MenuDetail> = {
   "chicken-shawarma-bowl": {
@@ -175,41 +166,3 @@ export const MENU_DETAILS: Record<string, MenuDetail> = {
     tools: ["Ovenproof frying pan", "Mixing bowl", "Whisk or fork"],
   },
 };
-
-/** Units that change in the plural. "tbsp", "ripe", "small" and "whole fish" don't. */
-const PLURAL: Record<string, string> = {
-  head: "heads",
-  handful: "handfuls",
-  bunch: "bunches",
-  sprig: "sprigs",
-  slice: "slices",
-  thumb: "thumbs",
-  bag: "bags",
-  loaf: "loaves",
-  cob: "cobs",
-};
-
-const FRACTIONS: [number, string][] = [
-  [0.25, "¼"],
-  [1 / 3, "⅓"],
-  [0.5, "½"],
-  [2 / 3, "⅔"],
-  [0.75, "¾"],
-];
-
-/**
- * "1.5" reads as "1½" and "0.25" as "¼". Big gram weights round to the
- * nearest 10 and everything else to the nearest quarter, since nobody
- * measures 3.07 tomatoes.
- */
-export function formatQty(qty: number, unit: string) {
-  if (unit === "g" || unit === "g tin") {
-    const rounded = qty >= 100 ? Math.round(qty / 10) * 10 : Math.round(qty);
-    return `${rounded}${unit === "g" ? "g" : " g tin"}`;
-  }
-  const whole = Math.floor(qty + 0.01);
-  const rest = qty - whole;
-  const frac = FRACTIONS.find(([v]) => Math.abs(v - rest) < 0.09)?.[1];
-  const rounded = frac ? `${whole || ""}${frac}` : String(Math.max(1, Math.round(qty * 4) / 4)).replace(/\.0+$/, "");
-  return unit ? `${rounded} ${qty > 1 ? (PLURAL[unit] ?? unit) : unit}` : rounded;
-}

@@ -32,10 +32,10 @@ function pickRecipeFor(day: MealPlanDay, pool: { id: string }[]): string | null 
 
 async function candidateRecipes(primaryGoal: string | null | undefined) {
   const goalMatched = primaryGoal
-    ? await prisma.recipe.findMany({ where: { goalTags: { has: primaryGoal } } })
+    ? await prisma.recipe.findMany({ where: { status: "PUBLISHED", goalTags: { has: primaryGoal } } })
     : [];
   if (goalMatched.length > 0) return goalMatched;
-  return prisma.recipe.findMany({ take: 20 });
+  return prisma.recipe.findMany({ where: { status: "PUBLISHED" }, take: 20 });
 }
 
 /**

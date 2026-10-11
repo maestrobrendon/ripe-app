@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/session";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { CUSTOMER_STEPS, customerStep } from "@/lib/order-status";
-import { SUPPORT_WHATSAPP } from "@/lib/site";
+import { getSiteSettings } from "@/lib/site-settings";
 
 function tokenMatches(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -57,7 +57,7 @@ export default async function OrderPage({
           {order.cancelReason && <p className="mt-1 text-muted">{order.cancelReason}</p>}
           <p className="mt-3 text-muted">
             Questions?{" "}
-            <a href={`https://wa.me/${SUPPORT_WHATSAPP}`} className="font-medium text-carbon underline">
+            <a href={`https://wa.me/${(await getSiteSettings()).support.whatsapp}`} className="font-medium text-carbon underline">
               Message us on WhatsApp
             </a>
             .

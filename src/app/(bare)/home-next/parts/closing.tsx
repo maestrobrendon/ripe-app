@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
-import { SUPPORT_EMAIL, SUPPORT_WHATSAPP } from "@/lib/site";
+import { useSiteSettings } from "@/components/site-settings-provider";
 import { MagneticLink, Reveal } from "./runtime";
 import { ProduceSticker } from "./produce";
 import type { FarmProduct } from "../types";
@@ -221,7 +221,7 @@ export function Faq({
 /* Footer                                                                     */
 /* -------------------------------------------------------------------------- */
 
-const COLUMNS: { title: string; links: [string, string][] }[] = [
+const columns = (support: { whatsapp: string; email: string }): { title: string; links: [string, string][] }[] => [
   {
     title: "Shop",
     links: [
@@ -243,8 +243,8 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
   {
     title: "Support",
     links: [
-      [SUPPORT_EMAIL, `mailto:${SUPPORT_EMAIL}`],
-      ["WhatsApp us", `https://wa.me/${SUPPORT_WHATSAPP}`],
+      [support.email, `mailto:${support.email}`],
+      ["WhatsApp us", `https://wa.me/${support.whatsapp}`],
       ["Your account", "/account"],
       ["Terms", "/terms"],
       ["Privacy", "/privacy"],
@@ -253,6 +253,7 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
 ];
 
 export function Footer() {
+  const { support } = useSiteSettings();
   const ref = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -277,7 +278,7 @@ export function Footer() {
             Fruit and vegetables, delivered across Lagos, sourced from farmers we know. Built for people who have already decided eating better is worth planning around.
           </p>
         </div>
-        {COLUMNS.map((c) => (
+        {columns(support).map((c) => (
           <div key={c.title}>
             <h5 className="mb-3.5 text-[13px] font-semibold tracking-[0.06em] text-paper-white/55 uppercase">{c.title}</h5>
             <ul>

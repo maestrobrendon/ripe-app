@@ -6,7 +6,8 @@ import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
 import { spring } from "@/lib/motion/tokens";
 import { ProductImage } from "@/components/product-image";
 import { MagneticLink, Reveal } from "../../home-next/parts/runtime";
-import { MENU, MENU_GOALS, type MenuGoal } from "../recipes";
+import { MENU_GOALS, type MenuGoal } from "../recipes";
+import { useMenu } from "@/components/menu-provider";
 import type { MenuProduct } from "../types";
 import { KachiMark } from "./art";
 import { Check, Eyebrow } from "./shared";
@@ -47,6 +48,7 @@ function Step({ n, title, body, children }: { n: number; title: string; body: st
 }
 
 function KachiChat({ goal }: { goal: MenuGoal }) {
+  const MENU = useMenu();
   const g = MENU_GOALS.find((x) => x.id === goal)!;
   const picks = MENU.filter((r) => r.goal === goal);
   const { ref, stage } = useStage(3, goal, 1000);
@@ -105,6 +107,7 @@ function KachiChat({ goal }: { goal: MenuGoal }) {
 const PLAN_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 function WeekPlan({ goal }: { goal: MenuGoal }) {
+  const MENU = useMenu();
   const own = MENU.filter((r) => r.goal === goal);
   const others = MENU.filter((r) => r.goal !== goal);
   // Three from the goal, then two from elsewhere on the menu, so the week has range.
@@ -146,6 +149,7 @@ function WeekPlan({ goal }: { goal: MenuGoal }) {
 const TRACK = ["Packed", "On the way", "At your door"];
 
 function Delivery({ goal, deliveryDay, products }: { goal: MenuGoal; deliveryDay: string; products: Record<string, MenuProduct> }) {
+  const MENU = useMenu();
   const { ref, stage } = useStage(3, goal, 1100);
   // The produce the goal's three recipes share most, as the basket's faces.
   const counts = new Map<string, number>();

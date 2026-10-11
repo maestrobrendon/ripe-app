@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LegalPage, type LegalSection } from "@/components/legal-page";
-import { SUPPORT_EMAIL } from "@/lib/site";
+import { SupportEmail } from "@/components/support-links";
 
 export const metadata = {
   title: "Privacy policy. Basket",
@@ -8,7 +8,7 @@ export const metadata = {
     "What personal data Basket collects, why we use it, who we share it with, how long we keep it, and your rights under the Nigeria Data Protection Act.",
 };
 
-const email = <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>;
+const email = <SupportEmail />;
 
 const SUMMARY = [
   "We collect what we need to deliver your food and plan your meals, and nothing more.",

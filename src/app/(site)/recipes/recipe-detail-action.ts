@@ -13,7 +13,7 @@ import type { RecipeSheetData } from "./recipe-sheet";
 export async function getRecipeDetail(recipeId: string): Promise<RecipeSheetData | null> {
   const [user, recipe] = await Promise.all([
     getCurrentUser(),
-    prisma.recipe.findUnique({ where: { id: recipeId } }),
+    prisma.recipe.findFirst({ where: { id: String(recipeId).slice(0, 40), status: "PUBLISHED" } }),
   ]);
   if (!recipe) return null;
 
@@ -35,7 +35,8 @@ export async function getRecipeDetail(recipeId: string): Promise<RecipeSheetData
     slug: recipe.slug,
     title: recipe.title,
     summary: recipe.summary,
-    instructions: recipe.instructions,
+    // A members-only method stays with members; everyone else is pointed at the full page.
+    instructions: recipe.membersOnly && !isSubscriber ? "The method for this recipe is for members. Open the full recipe to see membership." : recipe.instructions,
     ingredients: recipe.ingredientProductIds
       .map((id) => byId.get(id))
       .filter((p): p is NonNullable<typeof p> => Boolean(p))

@@ -7,6 +7,7 @@ import { gsap } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
+import { useSiteSettings } from "@/components/site-settings-provider";
 import { buildStarterPicks, type StarterCandidate } from "@/lib/starter-basket-core";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { MagneticLink, Reveal } from "./runtime";
@@ -95,6 +96,7 @@ export function Price({
   freeDeliveryThreshold: number;
   signedIn: boolean;
 }) {
+  const freeThreshold = useSiteSettings().delivery.freeThreshold;
   const [plan, setPlan] = useState<Plan>("once");
   const [adults, setAdults] = useState(2);
   const [kids, setKids] = useState(0);
@@ -106,7 +108,7 @@ export function Price({
   );
   const produce = picks.reduce((s, p) => s + (member ? p.memberPrice : p.standardPrice) * p.quantity, 0);
   // Free delivery is a Member Plus perk, not Member.
-  const delivery = quoteDelivery(produce, false);
+  const delivery = quoteDelivery(produce, false, undefined, freeThreshold);
   const membershipWeekly = member && memberFee ? Math.round((memberFee * 12) / 52) : 0;
   const total = produce + delivery.fee + membershipWeekly;
 

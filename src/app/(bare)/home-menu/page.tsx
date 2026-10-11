@@ -5,7 +5,8 @@ import { getStarterCandidates } from "@/lib/starter-basket";
 import { FRESH_CUTS_TAG } from "@/lib/product";
 import { DELIVERY_DAY_LABEL } from "@/lib/format";
 import { HomeMenu } from "./home-menu";
-import { MENU_SLUGS } from "./recipes";
+import { getGuestMenu, getMenuSlugs } from "@/lib/menu";
+import { MenuProvider } from "@/components/menu-provider";
 import type { MenuData, MenuProduct } from "./types";
 
 /*
@@ -22,10 +23,11 @@ export const metadata: Metadata = {
 };
 
 export default async function HomeMenuPage() {
+  const [menu, menuSlugs] = await Promise.all([getGuestMenu(), getMenuSlugs()]);
   const [user, products, candidates, freshCuts, zones, tier] = await Promise.all([
     getCurrentUser(),
     prisma.product.findMany({
-      where: { slug: { in: MENU_SLUGS } },
+      where: { slug: { in: menuSlugs } },
       select: { slug: true, name: true, category: true, imageEmoji: true, cloudinaryPublicId: true },
     }),
     getStarterCandidates(),
@@ -64,7 +66,9 @@ export default async function HomeMenuPage() {
             "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('hn-js')",
         }}
       />
-      <HomeMenu data={data} />
+      <MenuProvider menu={menu}>
+        <HomeMenu data={data} />
+      </MenuProvider>
     </>
   );
 }

@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/session";
 import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
 import { hasFreeDelivery, quoteDelivery } from "@/lib/pricing";
 import { nextDeliveryDate } from "@/lib/delivery-dates";
+import { getSiteSettings } from "@/lib/site-settings";
 import { isBuyable } from "@/lib/product";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { nextShoppingWindowDate } from "@/lib/shopping-window";
@@ -74,7 +75,8 @@ export async function placeOrder(input: CheckoutInput) {
   // locked pricing mode.
   const subtotal = snapshot.reduce((sum, s) => sum + s.unitPrice * s.quantity, 0);
   // The area sets the fee; only plans that include delivery (Member Plus) skip it.
-  const delivery = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zone.deliveryFee);
+  const settings = await getSiteSettings();
+  const delivery = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zone.deliveryFee, settings.delivery.freeThreshold);
   const total = subtotal + delivery.fee;
 
   const accessToken = randomBytes(24).toString("base64url");

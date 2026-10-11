@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { DELIVERY_DAY_LABEL, formatNaira } from "@/lib/format";
 import { KachiMark } from "@/components/kachi-mark";
-import { MENU } from "../home-menu/recipes";
+import { getMenu } from "@/lib/menu";
 
 // The last beat of sign-up: a bare page (see src/proxy.ts) in the homepage's look.
 import "../home-menu/home-menu.css";
@@ -18,7 +18,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   const { recipes: picked } = await searchParams;
 
   const slugs = (picked ?? "").split(",");
-  const recipes = MENU.filter((r) => slugs.includes(r.slug));
+  const recipes = (await getMenu()).filter((r) => slugs.includes(r.slug));
   const basket = await prisma.basket.findFirst({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },

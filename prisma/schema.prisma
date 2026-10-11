@@ -363,17 +363,60 @@ model Product {
   orderItems         OrderItem[]
 }
 
+// One table for every recipe: the photographed menu (onMenu: the homepage,
+// sign-up and Kachi) and the older library the meal plan points at. Edited
+// in the admin; nothing about a recipe lives in code any more.
 model Recipe {
   id                   String        @id @default(cuid())
   slug                 String        @unique
   title                String
+  // The one-line hook under the title.
   summary              String
   goalTags             String[]
   ingredientProductIds String[]
   instructions         String
   isAssistantGenerated Boolean       @default(false)
+  // lighter | training | family | everyday (see MENU_GOALS)
+  goal                 String?
+  minutes              Int?
+  serves               Int?
+  // A site path (/images/menu/…) or a full https image URL.
+  image                String?
+  imageAlt             String?
+  // Catalogue slugs, in the order the recipe uses them.
+  basketSlugs          String[]
+  // What the cook picks up elsewhere (proteins, grains, dairy, sauces).
+  elsewhere            String[]
+  steps                String[]
+  // { "<basket slug or elsewhere label>": [quantity, unit] }, for the recipe's own serves.
+  amounts              Json?
+  tools                String[]
+  onMenu               Boolean       @default(false)
+  // Pay-as-you-go customers see the dish and ingredients; members get the method.
+  membersOnly          Boolean       @default(false)
+  status               RecipeStatus  @default(PUBLISHED)
+  sortOrder            Int           @default(0)
+  version              Int           @default(0)
+  updatedAt            DateTime      @default(now()) @updatedAt
   createdAt            DateTime      @default(now())
   savedBy              SavedRecipe[]
+
+  @@index([onMenu, status, sortOrder])
+}
+
+enum RecipeStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/**
+ * Typed site-wide settings, edited in the admin (see src/lib/site-settings.ts).
+ */
+model SiteSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedById String?
 }
 
 // A free account's saved recipes — the Recipes-page-by-tier addendum's one

@@ -6,6 +6,7 @@ import { ProductImage } from "@/components/product-image";
 import { LinkButton } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
+import { useSiteSettings } from "@/components/site-settings-provider";
 import { SHOPPING_WINDOW_DAYS } from "@/lib/shopping-window";
 import { Icon } from "@/components/ui/icon";
 
@@ -55,6 +56,7 @@ function Stepper({
  * rather than a marketing claim.
  */
 export function BasketEstimator({ candidates }: { candidates: StarterCandidate[] }) {
+  const freeThreshold = useSiteSettings().delivery.freeThreshold;
   const [isMember, setIsMember] = useState(false);
   const [adults, setAdults] = useState(2);
   const [kids, setKids] = useState(0);
@@ -72,7 +74,7 @@ export function BasketEstimator({ candidates }: { candidates: StarterCandidate[]
   const memberTotal = picks.reduce((sum, p) => sum + p.memberPrice * p.quantity, 0);
   const subtotal = isMember ? memberTotal : standardTotal;
   // Free delivery is a Member Plus perk; this estimate is for Member.
-  const delivery = quoteDelivery(subtotal, false);
+  const delivery = quoteDelivery(subtotal, false, undefined, freeThreshold);
   const saving = standardTotal - memberTotal;
   const itemCount = picks.reduce((sum, p) => sum + p.quantity, 0);
 

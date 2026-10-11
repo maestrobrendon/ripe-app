@@ -1,14 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { GOAL_LABEL } from "@/lib/format";
-import { MENU, MENU_GOALS, MENU_SLUGS, type MenuGoal, type MenuRecipe } from "@/app/(bare)/home-menu/recipes";
-import { MENU_DETAILS, type Amount } from "./menu-details";
+import { MENU_GOALS, type Amount, type MenuGoal, type MenuRecipe } from "@/lib/menu-types";
+import { getMenu, getMenuSlugs, getRecipeRow, toMenuDetail, toMenuRecipe } from "@/lib/menu";
 
 /**
- * One shape for the recipe page, whichever source the recipe comes from:
- * the photographed menu (MENU, what the homepage and sign-up use) or the
- * older Recipe table (the library the meal plan and saves point at). The
- * page reads only this, so the two can merge later without touching it.
+ * One shape for the recipe page, whichever kind the recipe is: on the
+ * photographed menu (what the homepage and sign-up use) or from the older
+ * library. Both live in the Recipe table now; the page reads only this.
  */
 
 export type RecipeProduct = {
@@ -28,8 +27,10 @@ export type ElsewhereIngredient = { label: string; amount: Amount | null };
 
 export type RecipeView = {
   source: "menu" | "library";
-  /** The Recipe row's id, for saving. Menu recipes have none yet. */
+  /** The Recipe row's id, for saving. */
   recipeId: string | null;
+  /** Members get the method and amounts; pay-as-you-go sees the dish and ingredients. */
+  membersOnly: boolean;
   slug: string;
   title: string;
   hook: string;
@@ -84,10 +85,9 @@ const slugLabel = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
 
 /** The menu as cards, with how much of each recipe Basket covers. */
 export async function getMenuCards(): Promise<RecipeCardView[]> {
-  const stocked = new Set(
-    (await prisma.product.findMany({ where: { slug: { in: MENU_SLUGS } }, select: { slug: true } })).map((p) => p.slug),
-  );
-  return MENU.map((r) => toCard(r, stocked));
+  const [menu, slugs] = await Promise.all([getMenu(), getMenuSlugs()]);
+  const stocked = new Set((await prisma.product.findMany({ where: { slug: { in: slugs } }, select: { slug: true } })).map((p) => p.slug));
+  return menu.map((r) => toCard(r, stocked));
 }
 
 function toCard(r: MenuRecipe, stocked: Set<string>): RecipeCardView {
@@ -109,10 +109,12 @@ function toCard(r: MenuRecipe, stocked: Set<string>): RecipeCardView {
 
 export async function getRecipeView(slug: string, viewer: Viewer): Promise<RecipeView | null> {
   const has = (id: string) => Boolean(viewer.isSubscriber && viewer.basketProductIds?.has(id));
-  const menu = MENU.find((r) => r.slug === slug);
+  const row = await getRecipeRow(slug);
+  if (!row) return null;
 
-  if (menu) {
-    const detail = MENU_DETAILS[menu.slug];
+  if (row.basketSlugs.length > 0 || row.onMenu) {
+    const menu = toMenuRecipe(row);
+    const detail = toMenuDetail(row);
     const products = await prisma.product.findMany({ where: { slug: { in: menu.basket } } });
     const bySlug = new Map(products.map((p) => [p.slug, p]));
     const basket: BasketIngredient[] = [];
@@ -124,7 +126,8 @@ export async function getRecipeView(slug: string, viewer: Viewer): Promise<Recip
     }
     return {
       source: "menu",
-      recipeId: null,
+      recipeId: row.id,
+      membersOnly: row.membersOnly,
       slug: menu.slug,
       title: menu.title,
       hook: menu.hook,
@@ -144,13 +147,13 @@ export async function getRecipeView(slug: string, viewer: Viewer): Promise<Recip
     };
   }
 
-  const recipe = await prisma.recipe.findUnique({ where: { slug } });
-  if (!recipe) return null;
+  const recipe = row;
   const products = await prisma.product.findMany({ where: { id: { in: recipe.ingredientProductIds } } });
   const byId = new Map(products.map((p) => [p.id, p]));
   return {
     source: "library",
     recipeId: recipe.id,
+    membersOnly: recipe.membersOnly,
     slug: recipe.slug,
     title: recipe.title,
     hook: recipe.summary,

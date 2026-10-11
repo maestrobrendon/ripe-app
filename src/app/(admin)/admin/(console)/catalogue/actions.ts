@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { staffAction, auditStaff, type ActionResult } from "@/lib/admin/guard";
 import { can, type Role } from "@/lib/admin/permissions";
 import { inSeasonFor } from "@/lib/product";
 import type { StaffContext } from "@/lib/admin/session";
+import { isOurPublicId, signImageUpload, type SignedUpload } from "@/lib/admin/cloudinary";
 
 /*
  * The product catalogue. Copy and setup need catalogue.edit; prices need
@@ -192,38 +192,22 @@ export async function setPrices(input: { id: string; version: number; standardPr
   });
 }
 
-/**
- * Signs one direct upload to Cloudinary for a product photo: fixed folder,
- * image formats only, a fresh public id. The browser sends the file straight
- * to Cloudinary; our API secret never leaves the server.
- */
-export async function signProductUpload(productId: string): Promise<ActionResult<{ url: string; fields: Record<string, string> }>> {
+/** Signs one direct upload to Cloudinary for a product photo (see src/lib/admin/cloudinary.ts). */
+export async function signProductUpload(productId: string): Promise<ActionResult<SignedUpload>> {
   return staffAction("catalogue.edit", async () => {
-    const key = process.env.CLOUDINARY_API_KEY;
-    const secret = process.env.CLOUDINARY_API_SECRET;
-    const cloud = process.env.CLOUDINARY_CLOUD_NAME || "dusynu0kv";
-    if (!key || !secret) return { ok: false, code: "ERROR", error: "Photo uploads aren't set up on this server (Cloudinary keys missing)." };
     const product = await prisma.product.findUnique({ where: { id: String(productId).slice(0, 40) }, select: { slug: true } });
     if (!product) return { ok: false, code: "INVALID", error: "That product doesn't exist." };
-    const folder = `${process.env.CLOUDINARY_FOLDER || "Fruits_Veggie"}`;
-    const params: Record<string, string> = {
-      allowed_formats: "jpg,jpeg,png,webp",
-      asset_folder: folder,
-      public_id: `${folder}/${product.slug}-${randomBytes(4).toString("hex")}`,
-      timestamp: String(Math.floor(Date.now() / 1000)),
-    };
-    const toSign = Object.keys(params).sort().map((k) => `${k}=${params[k]}`).join("&");
-    const signature = createHash("sha1").update(toSign + secret).digest("hex");
-    return { ok: true, data: { url: `https://api.cloudinary.com/v1_1/${cloud}/image/upload`, fields: { ...params, api_key: key, signature } } };
+    const signed = signImageUpload("products", product.slug);
+    if (!signed) return { ok: false, code: "ERROR", error: "Photo uploads aren't set up on this server (Cloudinary keys missing)." };
+    return { ok: true, data: signed };
   });
 }
 
 /** Saves the uploaded photo's id; only ids from our own folder are accepted. */
 export async function setProductImage(input: { id: string; publicId: string | null }): Promise<ActionResult> {
   return staffAction("catalogue.edit", async (ctx) => {
-    const folder = process.env.CLOUDINARY_FOLDER || "Fruits_Veggie";
     const publicId = input.publicId === null ? null : String(input.publicId).slice(0, 200);
-    if (publicId !== null && !new RegExp(`^${folder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/[a-z0-9-]+$`).test(publicId)) {
+    if (publicId !== null && !isOurPublicId(publicId, "products")) {
       return { ok: false, code: "INVALID", error: "That isn't one of our product photos." };
     }
     const before = await prisma.product.findUnique({ where: { id: String(input.id).slice(0, 40) }, select: { id: true, name: true, cloudinaryPublicId: true } });

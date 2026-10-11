@@ -69,6 +69,12 @@ function admin(request: NextRequest): NextResponse {
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
 
+  // The site's public photos (recipe images in the recipe editor) are served
+  // as they are, still with the admin's headers.
+  if (request.nextUrl.pathname.startsWith("/images/")) {
+    return withAdminHeaders(NextResponse.next({ request: { headers } }), csp);
+  }
+
   // "/orders" on the admin host is /admin/orders inside the app. A request
   // that already names /admin/... maps to /admin/admin/... and 404s, so the
   // admin has exactly one address for each screen.

@@ -1,3 +1,5 @@
+import { SiteSettingsProvider } from "@/components/site-settings-provider";
+import { getSiteSettings } from "@/lib/site-settings";
 import type { Metadata } from "next";
 import "../globals.css";
 import { fontVariables } from "@/brand/fonts";
@@ -23,17 +25,20 @@ export const metadata: Metadata = {
  * rendered with no CartProvider and crashed. Crossing between two root
  * layouts is always a full page load, so each page gets the right shell.
  */
-export default function BareRootLayout({ children }: { children: React.ReactNode }) {
+export default async function BareRootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await getSiteSettings();
   return (
     // hn-page lets sticky sections work (see home-next.css); the pre-paint
     // script adds hn-js to <html>, hence suppressHydrationWarning.
     <html lang="en" className={`${fontVariables} hn-page antialiased`} suppressHydrationWarning>
       <body>
         <MotionProvider>
-          {children}
+          <SiteSettingsProvider settings={settings}>
+            {children}
           {/* The homepage is for visitors (members are sent to /basket), and
               sign-up hides the bubble itself, so this one is always a guest's. */}
-          <KachiBubble />
+            <KachiBubble />
+          </SiteSettingsProvider>
         </MotionProvider>
       </body>
     </html>

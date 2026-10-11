@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
-import { SUPPORT_WHATSAPP } from "@/lib/site";
+import { useWhatsappHref } from "@/components/support-links";
 import { MagneticLink, Reveal } from "../../home-next/parts/runtime";
 import { AvocadoHalf, Bowl, Carrot, Chilli, LimeSlice, Mushroom, Sparkle, Tomato, INK } from "./art";
 import { Eyebrow } from "./shared";
@@ -24,6 +24,7 @@ export function Faq({
   comingSoon: string[];
   memberFee: number | null;
 }) {
+  const whatsapp = useWhatsappHref();
   const [open, setOpen] = useState<number | null>(0);
   const names = zones.map((z) => z.name);
   const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0] ?? "selected Lagos areas";
@@ -96,7 +97,7 @@ export function Faq({
             <h2 className="hm-h2">Before your first basket.</h2>
             <p className="hm-lede mt-4">
               Anything else?{" "}
-              <a href={`https://wa.me/${SUPPORT_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
                 Message us on WhatsApp
               </a>
               .

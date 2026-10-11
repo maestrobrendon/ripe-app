@@ -15,7 +15,8 @@ import { getActiveBasketReadOnly, getBasketView } from "@/lib/basket";
 import { getOrCreateWeeklyPlan, weekStartWithOffset, parseDays, MEAL_SLOTS } from "@/lib/weekly-meal-plan";
 import { SHOPPING_WINDOW_DAY_LABEL } from "@/lib/shopping-window";
 import type { ShoppingWindowDay } from "@/generated/prisma/enums";
-import { MENU, MENU_GOALS, type MenuGoal } from "@/app/(bare)/home-menu/recipes";
+import { MENU_GOALS, type MenuGoal, type MenuRecipe } from "@/lib/menu-types";
+import { getMenu } from "@/lib/menu";
 import { Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { MenuBrowser } from "./menu-browser";
 import { KachiMark } from "@/components/kachi-mark";
@@ -30,9 +31,13 @@ const PLANNER_IMAGE_ID = "basket-recipes-unpacking";
 // The guest hero's photo collage: one tall, two stacked.
 const HERO_RECIPES = ["chicken-shawarma-bowl", "mango-passion-smoothie-bowl", "garden-egg-shakshuka"];
 // The signed-in header's little table of dishes.
-const HEADER_DISHES = ["sweet-potato-burrito-bowl", "green-mango-crunch-salad", "avocado-dodo-toast"]
-  .map((slug) => MENU.find((r) => r.slug === slug))
-  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+const HEADER_SLUGS = ["sweet-potato-burrito-bowl", "green-mango-crunch-salad", "avocado-dodo-toast"];
+
+/** These dishes if they're still on the menu, topped up from the rest of it if an editor removed one. */
+function pickDishes(menu: MenuRecipe[], slugs: string[]): MenuRecipe[] {
+  const found = slugs.map((slug) => menu.find((r) => r.slug === slug)).filter((r): r is MenuRecipe => Boolean(r));
+  return [...found, ...menu.filter((r) => !found.includes(r))].slice(0, slugs.length);
+}
 
 type Tab = "library" | "planner" | "produce";
 const TABS: { id: Tab; label: string }[] = [
@@ -48,7 +53,8 @@ export default async function RecipesPage({
 }) {
   const { tab: tabParam, goal, ingredient, saved, week: weekParam, for: forParam } = await searchParams;
 
-  const [user, allProducts, menuCards] = await Promise.all([getCurrentUser(), prisma.product.findMany(), getMenuCards()]);
+  const [user, allProducts, menuCards, MENU] = await Promise.all([getCurrentUser(), prisma.product.findMany(), getMenuCards(), getMenu()]);
+  const HEADER_DISHES = pickDishes(MENU, HEADER_SLUGS);
   const bySlug = new Map(allProducts.map((p) => [p.slug, p]));
   const byId = new Map(allProducts.map((p) => [p.id, p]));
 
@@ -74,6 +80,7 @@ export default async function RecipesPage({
   const [recipes, totalRecipes] = await Promise.all([
     prisma.recipe.findMany({
       where: {
+        status: "PUBLISHED",
         ...(goal ? { goalTags: { has: goal } } : {}),
         ...(ingredientProduct ? { ingredientProductIds: { has: ingredientProduct.id } } : {}),
         ...(isSavedFilter ? { id: { in: Array.from(savedRecipeIds) } } : {}),
@@ -129,7 +136,7 @@ export default async function RecipesPage({
       prisma.recipe.findMany({ where: { id: { in: recipeIds } } }),
       prisma.ownMeal.findMany({ where: { id: { in: ownMealIds } } }),
       prisma.ownMeal.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" } }),
-      prisma.recipe.findMany({ orderBy: { title: "asc" } }),
+      prisma.recipe.findMany({ where: { status: "PUBLISHED" }, orderBy: { title: "asc" } }),
     ]);
     const recipeById = new Map(planRecipes.map((r) => [r.id, r]));
     const ownMealById = new Map(planOwnMeals.map((m) => [m.id, m]));
@@ -385,14 +392,11 @@ export default async function RecipesPage({
               </p>
             </div>
             <div className="hidden grid-cols-2 grid-rows-2 gap-3 lg:grid lg:h-[360px]" aria-hidden>
-              {HERO_RECIPES.map((slug, i) => {
-                const r = MENU.find((m) => m.slug === slug);
-                return r ? (
-                  <div key={slug} className={`relative overflow-hidden rounded-[24px] ${i === 0 ? "row-span-2" : ""}`}>
-                    <Image src={r.image} alt="" fill priority sizes="260px" className="object-cover" />
-                  </div>
-                ) : null;
-              })}
+              {pickDishes(MENU, HERO_RECIPES).map((r, i) => (
+                <div key={r.slug} className={`relative overflow-hidden rounded-[24px] ${i === 0 ? "row-span-2" : ""}`}>
+                  <Image src={r.image} alt="" fill priority sizes="260px" className="object-cover" />
+                </div>
+              ))}
             </div>
           </div>
         </section>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ProductImage } from "@/components/product-image";
 import { Check, localName, shortName } from "@/app/(bare)/home-menu/parts/shared";
-import { formatQty, type Amount } from "../menu-details";
+import { formatQty, type Amount } from "@/lib/menu-types";
 import type { BasketIngredient, ElsewhereIngredient } from "../recipe-data";
 
 const PANTRY = ["Cooking oil", "Salt", "Black pepper"];
