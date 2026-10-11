@@ -53,6 +53,7 @@ export async function placeOrder(input: CheckoutInput) {
   }
 
   const zone = await prisma.deliveryZone.findUnique({ where: { slug: input.zoneSlug } });
+  if (!zone || !zone.isServed) throw new Error("We don't deliver to that area yet.");
 
   const isBasket = input.source === "basket";
   const basket = isBasket && input.basketId
@@ -79,6 +80,12 @@ export async function placeOrder(input: CheckoutInput) {
   const total = subtotal + delivery.fee;
 
   const accessToken = randomBytes(24).toString("base64url");
+
+  // A one-off order goes out on one of the area's own delivery days.
+  if (!basket && !zone.deliveryDays.includes(input.deliveryDay)) {
+    const days = zone.deliveryDays.map((d) => d.charAt(0) + d.slice(1).toLowerCase()).join(", ");
+    throw new Error(`${zone.name} gets deliveries on ${days}. Pick one of those days.`);
+  }
 
   const deliveryDate = basket
     ? nextShoppingWindowDate(basket.shoppingWindowDay)

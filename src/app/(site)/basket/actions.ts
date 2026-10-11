@@ -1,5 +1,6 @@
 "use server";
 
+import { OFFERED, isOffered, snapQuantity } from "@/lib/product";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -14,11 +15,6 @@ import { getOrCreateCart, clearCart } from "@/lib/cart";
 import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
 import type { DeliveryDay, ShoppingWindowDay } from "@/generated/prisma/enums";
 import type { CurrentUser } from "@/lib/session";
-
-function snapQty(quantity: number, minOrderQty: number, stepQty: number) {
-  const above = Math.max(0, quantity - minOrderQty);
-  return minOrderQty + Math.ceil(above / stepQty) * stepQty;
-}
 
 /** Every mutating action takes an optional basket id (explicit when switching between several) and falls back to the member's active basket. */
 async function resolveBasket(user: CurrentUser, basketId: string | undefined) {
@@ -47,6 +43,7 @@ export async function addToStandingBasket(
   if (!user.subscriptionTierId) redirect("/subscribe");
 
   const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
+  if (!isOffered(product)) throw new Error("We don't sell that any more.");
   const basket = await resolveBasket(user, undefined);
 
   await prisma.basket.update({
@@ -54,13 +51,13 @@ export async function addToStandingBasket(
     data: { frequencyWeeks: frequencyWeeks === 2 ? 2 : 1 },
   });
 
-  const qty = snapQty(quantity, product.minOrderQty, product.stepQty);
+  const qty = snapQuantity(quantity, product);
   const existing = await prisma.basketItem.findUnique({
     where: { basketId_productId: { basketId: basket.id, productId } },
   });
   await prisma.basketItem.upsert({
     where: { basketId_productId: { basketId: basket.id, productId } },
-    update: { quantity: (existing?.quantity ?? 0) + qty },
+    update: { quantity: snapQuantity((existing?.quantity ?? 0) + qty, product) },
     create: { basketId: basket.id, productId, quantity: qty },
   });
 
@@ -141,8 +138,8 @@ export async function setBasketItemQuantity(basketId: string | undefined, produc
   if (quantity <= 0) {
     await prisma.basketItem.deleteMany({ where: { basketId: basket.id, productId } });
   } else {
-    const above = Math.max(0, quantity - product.minOrderQty);
-    const snapped = product.minOrderQty + Math.ceil(above / product.stepQty) * product.stepQty;
+    if (!isOffered(product)) throw new Error("We don't sell that any more.");
+    const snapped = snapQuantity(quantity, product);
     await prisma.basketItem.upsert({
       where: { basketId_productId: { basketId: basket.id, productId } },
       update: { quantity: snapped },
@@ -154,6 +151,7 @@ export async function setBasketItemQuantity(basketId: string | undefined, produc
 }
 
 export async function setBasketDeliveryDay(basketId: string | undefined, deliveryDay: DeliveryDay) {
+  if (!(["MONDAY", "WEDNESDAY", "FRIDAY"] as const).includes(deliveryDay)) throw new Error("Pick a delivery day.");
   const user = await requireUser();
   const basket = await resolveBasket(user, basketId);
   await prisma.basket.update({ where: { id: basket.id }, data: { deliveryDay } });
@@ -174,6 +172,7 @@ export async function setWindowSkipped(basketId: string | undefined, skipped: bo
 
 async function addProductAtMin(basketId: string, productId: string) {
   const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
+  if (!isOffered(product)) return;
   const existing = await prisma.basketItem.findUnique({
     where: { basketId_productId: { basketId, productId } },
   });
@@ -221,10 +220,16 @@ export async function applyStarterPicks(
   const basket = await resolveBasket(user, basketId);
   await assertWindowOpen(basket);
 
-  await prisma.basketItem.createMany({
-    data: picks.map((p) => ({ basketId: basket.id, productId: p.productId, quantity: p.quantity })),
-    skipDuplicates: true,
+  // The picks come from the browser: keep only products we sell, at quantities they allow.
+  const wanted = picks.slice(0, 60);
+  const products = await prisma.product.findMany({ where: { id: { in: wanted.map((p) => p.productId) }, ...OFFERED } });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const data = wanted.flatMap((p) => {
+    const product = byId.get(p.productId);
+    const quantity = product ? snapQuantity(p.quantity, product) : 0;
+    return product && quantity > 0 ? [{ basketId: basket.id, productId: product.id, quantity }] : [];
   });
+  await prisma.basketItem.createMany({ data, skipDuplicates: true });
   revalidatePath("/basket");
 }
 

@@ -1,21 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { normalizeContact } from "@/lib/auth";
 import { createPasswordResetToken } from "@/lib/password-reset";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { appOrigin } from "@/lib/site";
 
 const HOUR = 60 * 60 * 1000;
-
-async function siteOrigin(): Promise<string> {
-  const store = await headers();
-  const host = store.get("x-forwarded-host") ?? store.get("host") ?? "localhost:3000";
-  const proto = store.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 export async function requestPasswordReset(formData: FormData) {
   const contact = String(formData.get("contact") ?? "").trim();
@@ -35,8 +28,7 @@ export async function requestPasswordReset(formData: FormData) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {
       const token = await createPasswordResetToken(user.id);
-      const origin = await siteOrigin();
-      const resetUrl = `${origin}/reset-password?token=${token}`;
+      const resetUrl = `${appOrigin()}/reset-password?token=${token}`;
       await sendPasswordResetEmail(email, resetUrl);
     }
   }

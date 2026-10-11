@@ -1,3 +1,4 @@
+import "server-only";
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 

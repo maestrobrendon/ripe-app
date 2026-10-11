@@ -9,6 +9,10 @@ import { ZONE_COOKIE } from "@/lib/zone";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { buildStarterPicks, getStarterCandidates } from "@/lib/starter-basket";
 import { createUserBasket } from "@/lib/basket";
+import { safeNextPath } from "@/lib/safe-redirect";
+import { appOrigin } from "@/lib/site";
+import { sendSignupAttemptEmail } from "@/lib/email";
+import { OFFERED } from "@/lib/product";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import { MENU, MENU_GOALS } from "../home-menu/recipes";
 
@@ -76,7 +80,12 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   const existing = await prisma.user.findFirst({
     where: { OR: [email ? { email } : {}, phone ? { phone } : {}].filter((c) => Object.keys(c).length) },
   });
-  if (existing) return { error: "failed" };
+  if (existing) {
+    // Same answer as any other failure, so the form can't be used to find out
+    // who has an account. The owner of the address is told by email instead.
+    if (existing.email) await sendSignupAttemptEmail(existing.email, appOrigin()).catch(() => {});
+    return { error: "failed" };
+  }
 
   let userId: string;
   try {
@@ -111,6 +120,13 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
     )
     .slice(0, 60)
     .map((p) => ({ productId: p.productId, quantity: Math.min(50, Math.round(p.quantity)) }));
+  // Only products we still sell, whatever the form claimed.
+  if (picks.length > 0) {
+    const sold = new Set(
+      (await prisma.product.findMany({ where: { id: { in: picks.map((p) => p.productId) }, ...OFFERED }, select: { id: true } })).map((p) => p.id),
+    );
+    picks = picks.filter((p) => sold.has(p.productId));
+  }
   if (picks.length === 0) {
     picks = buildStarterPicks({ goalSlug, producePreferences: [], adults, kids }, await getStarterCandidates());
   }
@@ -135,6 +151,5 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   const picked = parseJson<unknown[]>(formData.get("recipes"), [])
     .filter((s): s is string => typeof s === "string" && MENU.some((r) => r.slug === s))
     .slice(0, 8);
-  const next = String(formData.get("next") ?? "");
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`);
+  redirect(safeNextPath(String(formData.get("next") ?? ""), `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`));
 }

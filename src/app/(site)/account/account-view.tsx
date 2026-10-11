@@ -17,6 +17,7 @@ import {
   addTestCard,
   removeCard,
   signOut,
+  signOutEverywhere,
   type SaveResult,
 } from "./actions";
 
@@ -282,6 +283,11 @@ export function AccountView(props: Props) {
         <p className="mb-3 text-[15px] leading-snug text-muted">Your baskets, cart and timetable are saved to your account.</p>
         <form action={signOut}>
           <button className="tap-target mt-5 h-13 w-full rounded-full bg-ember text-base font-semibold text-white">Sign out</button>
+        </form>
+        <form action={signOutEverywhere}>
+          <button className="tap-target mt-2.5 h-12 w-full rounded-full border border-border text-[15px] font-semibold">
+            Sign out on all devices
+          </button>
         </form>
         <button onClick={() => setSheet(null)} className={SOFT}>
           Stay signed in
@@ -581,7 +587,10 @@ function ContactForm({ name, phone, email, onSaved, onError }: Props & { onSaved
   const [n, setN] = useState(name);
   const [p, setP] = useState(phone);
   const [e, setE] = useState(email);
+  const [pw, setPw] = useState("");
   const { pending, run } = useSave(onSaved, onError);
+  // Email and phone are how the account is recovered: changing them asks for the password.
+  const contactChanged = p.trim() !== phone.trim() || e.trim().toLowerCase() !== email.trim().toLowerCase();
   return (
     <>
       <p className="mb-3 text-[15px] leading-snug text-muted">So our riders can reach you.</p>
@@ -597,7 +606,27 @@ function ContactForm({ name, phone, email, onSaved, onError }: Props & { onSaved
         Email
       </label>
       <input id="em" type="email" value={e} onChange={(ev) => setE(ev.target.value)} autoComplete="email" className={FIELD} />
-      <button disabled={pending} onClick={() => run(() => saveContact({ name: n, phone: p, email: e }))} className={PRIMARY}>
+      {contactChanged && (
+        <>
+          <label className={LABEL} htmlFor="cpw">
+            Current password
+          </label>
+          <input
+            id="cpw"
+            type="password"
+            value={pw}
+            onChange={(ev) => setPw(ev.target.value)}
+            autoComplete="current-password"
+            className={FIELD}
+          />
+          <p className="-mt-1 mb-3 text-[13px] text-muted">To keep your account safe, changing your email or phone needs your password.</p>
+        </>
+      )}
+      <button
+        disabled={pending || (contactChanged && !pw)}
+        onClick={() => run(() => saveContact({ name: n, phone: p, email: e, currentPassword: contactChanged ? pw : undefined }))}
+        className={PRIMARY}
+      >
         Save
       </button>
     </>

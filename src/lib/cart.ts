@@ -1,3 +1,5 @@
+import "server-only";
+import { isOffered, snapQuantity } from "@/lib/product";
 import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -111,6 +113,7 @@ export async function getOrCreateCart() {
   });
   store.set(CART_COOKIE, newToken, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: COOKIE_MAX_AGE,
@@ -147,9 +150,9 @@ export async function setCartItemQuantity(cartId: string, productId: string, qua
     await prisma.cartItem.deleteMany({ where: { cartId, productId } });
     return { productId, name: product.name, quantity: 0 };
   }
+  if (!isOffered(product)) throw new Error("We don't sell that any more.");
 
-  const above = Math.max(0, quantity - product.minOrderQty);
-  const snapped = product.minOrderQty + Math.ceil(above / product.stepQty) * product.stepQty;
+  const snapped = snapQuantity(quantity, product);
   await prisma.cartItem.upsert({
     where: { cartId_productId: { cartId, productId } },
     update: { quantity: snapped },

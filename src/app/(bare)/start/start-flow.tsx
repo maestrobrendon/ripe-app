@@ -614,11 +614,15 @@ export function StartFlow({
                   <p role="alert" className="mt-5 rounded-[18px] bg-ember/12 p-4 text-[14px] leading-relaxed">
                     {state.error === "failed" ? (
                       <>
-                        There&apos;s already an account with those details.{" "}
+                        We couldn&apos;t create an account with those details. If you already have one,{" "}
                         <Link href="/login" className="font-semibold underline underline-offset-2">
-                          Sign in instead
+                          sign in
+                        </Link>{" "}
+                        or{" "}
+                        <Link href="/forgot-password" className="font-semibold underline underline-offset-2">
+                          reset your password
                         </Link>
-                        , or use another email or phone.
+                        .
                       </>
                     ) : state.error === "missing"
                       ? "Add your name, an email or phone number, and a password of at least 8 characters."

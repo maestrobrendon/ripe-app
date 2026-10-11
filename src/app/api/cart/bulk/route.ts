@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { OFFERED, snapQuantity } from "@/lib/product";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateCart, cartViewForCart } from "@/lib/cart";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const products = await prisma.product.findMany({
-    where: { id: { in: wanted.map((w) => w.productId) } },
+    where: { id: { in: wanted.map((w) => w.productId) }, ...OFFERED },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
   const cart = await getOrCreateCart();
@@ -44,15 +45,14 @@ export async function POST(request: Request) {
   for (const { productId, quantity } of wanted) {
     const product = byId.get(productId);
     if (!product) continue;
-    const above = Math.max(0, quantity - product.minOrderQty);
-    const snapped = product.minOrderQty + Math.ceil(above / product.stepQty) * product.stepQty;
+    const snapped = snapQuantity(quantity, product);
 
     const existing = await prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
     });
     await prisma.cartItem.upsert({
       where: { cartId_productId: { cartId: cart.id, productId } },
-      update: { quantity: (existing?.quantity ?? 0) + snapped },
+      update: { quantity: snapQuantity((existing?.quantity ?? 0) + snapped, product) },
       create: { cartId: cart.id, productId, quantity: snapped },
     });
   }

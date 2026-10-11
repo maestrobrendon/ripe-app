@@ -3,7 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser, destroySession } from "@/lib/session";
+import { requireUser, destroySession, destroyAllSessions, endOtherSessions } from "@/lib/session";
+import { verifyPassword } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { sendContactChangedEmail } from "@/lib/email";
 import { setZoneCookie } from "@/lib/zone";
 import { GOALS } from "@/lib/assistant";
 import { PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
@@ -27,12 +30,23 @@ export async function saveAddress(input: { address: string; zoneSlug: string }):
   return done();
 }
 
-export async function saveContact(input: { name: string; phone: string; email: string }): Promise<SaveResult> {
+export async function saveContact(input: { name: string; phone: string; email: string; currentPassword?: string }): Promise<SaveResult> {
   const user = await requireUser();
   const name = input.name.trim().slice(0, 120) || user.name;
   const phone = input.phone.trim().slice(0, 32) || null;
   const email = input.email.trim().toLowerCase().slice(0, 254) || user.email;
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "That email doesn't look right" };
+
+  // Email and phone are how an account is recovered, so changing them needs
+  // the password: a stolen session alone can't redirect the reset emails.
+  const contactChanged = email !== user.email || phone !== user.phone;
+  if (contactChanged) {
+    if (!rateLimit(`contact-change:${user.id}`, 5, 10 * 60 * 1000).ok) return { ok: false, error: "Too many tries. Wait a few minutes." };
+    if (!user.passwordHash) return { ok: false, error: "Set a password first: use Forgot password on the sign-in page." };
+    if (!input.currentPassword || !(await verifyPassword(input.currentPassword, user.passwordHash))) {
+      return { ok: false, error: "That password isn't right" };
+    }
+  }
 
   const clash = await prisma.user.findFirst({
     where: {
@@ -41,11 +55,15 @@ export async function saveContact(input: { name: string; phone: string; email: s
     },
     select: { email: true },
   });
-  if (clash) {
-    return { ok: false, error: clash.email === email ? "That email is on another account" : "That phone number is on another account" };
-  }
+  // Neutral wording: this form shouldn't confirm whose details are registered.
+  if (clash) return { ok: false, error: "That email or phone number can't be used. Try another." };
 
   await prisma.user.update({ where: { id: user.id }, data: { name, phone, email } });
+  if (contactChanged) {
+    await endOtherSessions(user.id);
+    // Tell the address being replaced, so a change you didn't make doesn't go unnoticed.
+    if (user.email && user.email !== email) await sendContactChangedEmail(user.email).catch(() => {});
+  }
   return done();
 }
 
@@ -117,5 +135,12 @@ export async function removeCard(): Promise<SaveResult> {
 
 export async function signOut() {
   await destroySession();
+  redirect("/");
+}
+
+/** Sign out on every device: for a lost phone or a shared computer. */
+export async function signOutEverywhere() {
+  const user = await requireUser();
+  await destroyAllSessions(user.id);
   redirect("/");
 }

@@ -1,6 +1,28 @@
 import type { NextConfig } from "next";
 
+/*
+ * Baseline security headers for the customer site. The admin host gets its
+ * own, stricter set (nonce CSP, no-store, noindex) from src/proxy.ts.
+ * Geolocation stays allowed for this origin: sign-up's "Use my location".
+ */
+const SECURITY_HEADERS = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'; object-src 'none'; base-uri 'self'" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), payment=(), usb=(), serial=(), bluetooth=(), geolocation=(self), interest-cohort=()",
+  },
+];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   // The old storefront collections now live on one page, /shop, as filters.
   // Fresh Cuts is discontinued; its address lands on the full list.
   async redirects() {
