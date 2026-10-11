@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -42,6 +42,19 @@ const STARTERS = {
     ["🚚", "Where is my order?"],
   ],
 } as const;
+
+/** Each starter gets its own sticker colour, so the first screen feels like a kitchen, not a form. */
+const STARTER_TINTS = ["bg-mint-pop/35", "bg-sunburst/45", "bg-lavender", "bg-[#d1eafd]"];
+
+/** A line for the time of day; null on the server so the first render matches. */
+function timeGreeting(hour: number | null) {
+  if (hour === null) return "What are we cooking?";
+  if (hour < 5) return "Up late? Let's find you something good.";
+  if (hour < 12) return "Good morning. Breakfast, or planning ahead?";
+  if (hour < 17) return "Good afternoon. Thinking about dinner already?";
+  return "Good evening. Something light, or something to share?";
+}
+const noSubscribe = () => () => {};
 
 const AFTER_CHANGE_REPLIES = ["What can I cook with this?", "Check my order"];
 const ORDER_STEP_LABELS = ["Received", "Picked", "On the way", "Delivered"];
@@ -272,6 +285,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
   }, []);
 
   const lastKachiIdx = messages.map((m) => m.role).lastIndexOf("kachi");
+  const hour = useSyncExternalStore(noSubscribe, () => new Date().getHours(), () => null);
   const starters = acting ? STARTERS.act : STARTERS.chat;
 
   return (
@@ -307,14 +321,28 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
         <main ref={threadRef} aria-live="polite" className="flex-1 overflow-y-auto px-5 pb-4 pt-5">
           {messages.length === 0 ? (
             <div className="flex min-h-full flex-col items-center justify-center py-3 text-center">
-              <KachiMark className="mb-4 h-14 w-14" />
-              <h1 className="text-[32px] font-extrabold leading-tight tracking-tight">Hi {firstName}</h1>
-              <p className="mt-2 max-w-75 text-base leading-snug text-muted">
-                {acting
-                  ? `Tell me what you need and I'll add, swap or plan it in ${modeWhere}.`
-                  : "Ask me what to cook, what to buy, or what's in your basket."}
-              </p>
-              <div className="mt-7 grid w-full grid-cols-2 gap-2.5">
+              <div className="relative w-full overflow-hidden rounded-[28px] bg-[#d1eafd] px-5 pt-6 pb-5">
+                {/* Confetti of colour behind her: she's warm, not a form. */}
+                <span aria-hidden className="absolute -top-6 -left-6 h-24 w-24 rounded-full bg-sunburst/70" />
+                <span aria-hidden className="absolute -right-5 -bottom-8 h-24 w-24 rounded-full bg-lavender" />
+                <span aria-hidden className="absolute top-5 right-8 h-3 w-3 rounded-full bg-ember" />
+                <div className="relative flex flex-col items-center">
+                  <motion.span
+                    animate={{ rotate: [0, -10, 8, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 6, ease: "easeInOut" }}
+                    className="rounded-full bg-paper-white p-1.5 shadow-[0_10px_24px_-12px_rgb(0_0_0/0.4)]"
+                  >
+                    <KachiMark className="h-14 w-14" />
+                  </motion.span>
+                  <h1 className="mt-3 text-[30px] leading-tight font-extrabold tracking-tight">
+                    Hi {firstName} <span aria-hidden>👋</span>
+                  </h1>
+                  <p className="mt-1 max-w-75 text-[15px] leading-snug text-carbon/75">
+                    {acting ? `Tell me what you need and I'll add, swap or plan it in ${modeWhere}.` : timeGreeting(hour)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid w-full grid-cols-2 gap-2.5">
                 {starters.map(([emoji, text], i) => (
                   <motion.button
                     key={`${mode.kind}-${text}`}
@@ -323,9 +351,9 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...spring.snappy, delay: i * 0.04 }}
                     whileTap={{ scale: press.scale }}
-                    className="flex min-h-27 flex-col gap-2 rounded-2xl border border-border p-3.5 text-left active:bg-soft-mist"
+                    className={`flex min-h-26 flex-col gap-2.5 rounded-[22px] p-3.5 text-left transition-[filter] hover:brightness-[0.97] active:brightness-95 ${STARTER_TINTS[i % STARTER_TINTS.length]}`}
                   >
-                    <span className="text-2xl" aria-hidden>
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-paper-white text-[22px] shadow-[0_6px_14px_-8px_rgb(0_0_0/0.35)]" aria-hidden>
                       {emoji}
                     </span>
                     <b className="text-[15px] font-semibold leading-snug">{text}</b>
@@ -373,7 +401,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
                       {[0, 1, 2].map((d) => (
                         <motion.i
                           key={d}
-                          className="block h-1.75 w-1.75 rounded-full bg-muted"
+                          className={`block h-2 w-2 rounded-full ${["bg-mint-pop", "bg-sunburst", "bg-lavender"][d]}`}
                           animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }}
                           transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }}
                         />
@@ -429,7 +457,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
                         <button
                           key={r}
                           onClick={() => send(r)}
-                          className="h-9.5 rounded-full border border-border px-3.5 text-sm active:bg-soft-mist"
+                          className="h-9.5 rounded-full bg-lavender/70 px-3.5 text-sm font-medium transition-colors hover:bg-lavender active:bg-lavender"
                         >
                           {r}
                         </button>
@@ -449,9 +477,9 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
             onClick={() => setWhereOpen(true)}
             whileTap={{ scale: press.scale }}
             transition={spring.snappy}
-            className="mb-2 ml-1 inline-flex h-8 items-center gap-1.5 rounded-full bg-soft-mist px-3 text-[13px]"
+            className={`mb-2 ml-1 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] ${acting ? "bg-mint-pop/45" : "bg-lavender"}`}
           >
-            <span className={`h-2 w-2 rounded-full ${acting ? "bg-mint-pop" : "bg-muted"}`} />
+            <span className={`h-2 w-2 rounded-full ${acting ? "bg-[#0f7a48]" : "bg-voltage-violet"}`} />
             {acting ? (
               <span>
                 Working on <b className="font-semibold">{modeLabel}</b>
@@ -468,7 +496,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
               send(input);
             }}
             autoComplete="off"
-            className="flex min-h-13 items-center gap-2 rounded-full border border-border py-1 pl-4.5 pr-1 focus-within:border-carbon"
+            className="flex min-h-13 items-center gap-2 rounded-full bg-soft-mist py-1 pr-1 pl-4.5 shadow-[inset_0_0_0_1.5px_transparent] transition-shadow focus-within:bg-paper-white focus-within:shadow-[inset_0_0_0_1.5px_var(--color-carbon)]"
           >
             <input
               value={input}
@@ -482,7 +510,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
               aria-label="Send"
               disabled={busy || !input.trim()}
               whileTap={{ scale: press.scale }}
-              className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-carbon text-white disabled:bg-border"
+              className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-mint-pop text-carbon transition-colors disabled:bg-carbon/10 disabled:text-carbon/35"
             >
               <Icon name="arrowUp" size={20} weight="bold" />
             </motion.button>

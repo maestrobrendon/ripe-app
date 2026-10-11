@@ -18,6 +18,7 @@ import type { ShoppingWindowDay } from "@/generated/prisma/enums";
 import { MENU, MENU_GOALS, type MenuGoal } from "@/app/(bare)/home-menu/recipes";
 import { Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { MenuBrowser } from "./menu-browser";
+import { KachiMark } from "@/components/kachi-mark";
 import { getMenuCards } from "./recipe-data";
 
 // The menu shares the homepage's look: soft tints, photo first.
@@ -28,6 +29,10 @@ export const metadata = { title: "Recipes. Basket" };
 const PLANNER_IMAGE_ID = "basket-recipes-unpacking";
 // The guest hero's photo collage: one tall, two stacked.
 const HERO_RECIPES = ["chicken-shawarma-bowl", "mango-passion-smoothie-bowl", "garden-egg-shakshuka"];
+// The signed-in header's little table of dishes.
+const HEADER_DISHES = ["sweet-potato-burrito-bowl", "green-mango-crunch-salad", "avocado-dodo-toast"]
+  .map((slug) => MENU.find((r) => r.slug === slug))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
 type Tab = "library" | "planner" | "produce";
 const TABS: { id: Tab; label: string }[] = [
@@ -79,6 +84,7 @@ export default async function RecipesPage({
   ]);
 
   const prefs = user?.preferences;
+  const firstName = user?.name.trim().split(/\s+/)[0] ?? null;
   // The one food-preferences record (Account > Food preferences): household
   // size is adults plus children on the user.
   const defaultServings = user ? user.householdAdults + user.householdKids : 3;
@@ -394,48 +400,90 @@ export default async function RecipesPage({
         // Personalization strip: an account already knows the customer, so
         // this replaces the marketing hero and trust badges entirely rather
         // than showing convincing copy to someone who's already convinced.
-        <section className="border-b border-border bg-sky-wash">
-          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-carbon">Suggestions tuned for you</p>
-                <h1 className="mt-1 text-2xl font-semibold text-carbon">
-                  {prefs?.primaryGoal ? GOAL_LABEL[prefs.primaryGoal] ?? prefs.primaryGoal : "Recipes"}
-                  {prefs?.householdType && (
-                    <span className="ml-2 text-base font-normal text-carbon/70">
-                      for {HOUSEHOLD_TYPE_LABEL[prefs.householdType]?.toLowerCase() ?? prefs.householdType}
-                    </span>
-                  )}
-                </h1>
-                {isSubscriber && basketShipDayLabel && (
-                  <p className="mt-2 text-sm text-carbon/80">
-                    Your basket ships {basketShipDayLabel} — this week&rsquo;s plan is built to use what&rsquo;s
-                    already in it where it can.
-                  </p>
-                )}
+        <section className="hm relative overflow-hidden bg-[#d1eafd]" aria-labelledby="recipes-hello">
+          {/* Three of this week's dishes, set down at a slight angle like plates on a table. */}
+          <div aria-hidden className="pointer-events-none absolute top-1/2 right-[max(1.5rem,calc((100vw-1080px)/2))] hidden -translate-y-1/2 lg:flex">
+            {HEADER_DISHES.map((r, i) => (
+              <div
+                key={r.slug}
+                className={`relative h-36 w-36 overflow-hidden rounded-full shadow-[0_18px_30px_-16px_rgb(0_0_0/0.45)] ring-[6px] ring-[#d1eafd] ${i ? "-ml-10" : ""}`}
+                style={{ rotate: `${[-8, 5, -3][i]}deg`, marginTop: `${[0, 36, -12][i]}px` }}
+              >
+                <Image src={r.image} alt="" fill sizes="144px" className="object-cover" />
               </div>
+            ))}
+          </div>
+
+          <div className="hm-wrap relative py-7 sm:py-10">
+            <div className="flex items-center justify-between gap-3">
+              <p className="inline-flex items-center gap-2 rounded-full bg-paper-white/75 py-1 pr-3.5 pl-1 text-[13px] font-semibold whitespace-nowrap">
+                <KachiMark className="h-6 w-6" />
+                Picked for you this week
+              </p>
+              <div aria-hidden className="flex shrink-0 max-[359px]:hidden lg:hidden">
+                {HEADER_DISHES.map((r, i) => (
+                  <div
+                    key={r.slug}
+                    className={`relative h-10 w-10 overflow-hidden rounded-full ring-[3px] ring-[#d1eafd] sm:h-12 sm:w-12 ${i ? "-ml-3 sm:-ml-3.5" : ""}`}
+                    style={{ rotate: `${[-8, 5, -3][i]}deg` }}
+                  >
+                    <Image src={r.image} alt="" fill sizes="48px" className="object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h1 id="recipes-hello" className="hm-h2 mt-4 max-w-[15ch]">
+              What are we cooking{firstName ? `, ${firstName}` : ""}?
+            </h1>
+
+            {/* What the suggestions are tuned to, as stickers. */}
+            <ul className="mt-5 flex flex-wrap gap-2 text-[13px] font-semibold">
+              {prefs?.primaryGoal && (
+                <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-mint-pop px-3">
+                  <span aria-hidden>🎯</span> {GOAL_LABEL[prefs.primaryGoal] ?? prefs.primaryGoal}
+                </li>
+              )}
+              {prefs?.householdType && (
+                <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-sunburst px-3">
+                  <span aria-hidden>🍽️</span> For {HOUSEHOLD_TYPE_LABEL[prefs.householdType]?.toLowerCase() ?? prefs.householdType}
+                </li>
+              )}
+              {isSubscriber && basketShipDayLabel && (
+                <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-lavender px-3">
+                  <span aria-hidden>🧺</span> Basket ships {basketShipDayLabel}
+                </li>
+              )}
+              <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-paper-white/75 px-3">
+                <span aria-hidden>📖</span> {menuCards.length} recipes this week
+              </li>
+            </ul>
+
+            <div className="mt-6">
               <IdeasSheetTrigger
-                className="tap-target inline-flex items-center gap-1.5 rounded-full border border-carbon px-4 py-2 text-sm font-semibold text-carbon hover:bg-white"
-                label="Get ideas for your basket"
+                className="tap-target inline-flex h-11 items-center gap-2 rounded-full bg-carbon pr-5 pl-4 text-[14px] font-semibold text-paper-white transition hover:bg-carbon/85"
+                icon="spark"
+                label="Ask Kachi for ideas"
               />
             </div>
 
             {/* Three-tab shell (Basket vs. Cart addendum, Section 2): All
-                recipes, Meal plan, Produce list. Guests never see this —
-                they keep the single scrolling page below, unchanged. */}
-            <div className="mt-6 flex gap-1 border-b border-carbon/15">
+                recipes, Meal plan, Produce list. Guests never see this:
+                they keep the single scrolling page below. */}
+            <nav aria-label="Recipes sections" className="mt-8 flex w-full max-w-md rounded-full bg-paper-white/70 p-1 sm:w-fit">
               {TABS.map((t) => (
                 <Link
                   key={t.id}
                   href={tabHref(t.id)}
-                  className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
-                    tab === t.id ? "border-carbon text-carbon" : "border-transparent text-carbon/60 hover:text-carbon"
+                  aria-current={tab === t.id ? "page" : undefined}
+                  className={`flex h-10 flex-1 items-center justify-center rounded-full px-4 text-[14px] font-semibold whitespace-nowrap transition-colors sm:flex-none ${
+                    tab === t.id ? "bg-carbon text-paper-white" : "text-carbon/65 hover:text-carbon"
                   }`}
                 >
                   {t.label}
                 </Link>
               ))}
-            </div>
+            </nav>
           </div>
         </section>
       )}
