@@ -177,12 +177,17 @@ export function extractRecipes(
 ): { text: string; recipes: KachiRecipe[] } {
   const recipes: KachiRecipe[] = [];
   const cleaned = text
-    .replace(/[ \t]*\[\[([a-z0-9-]+)\]\]/g, (_, slug: string) => {
+    .replace(/([ \t]*)\[\[([a-z0-9-]+)\]\]/g, (_, space: string, slug: string, offset: number, whole: string) => {
       const r = bySlug.get(slug);
-      if (r && !recipes.some((x) => x.slug === slug)) {
+      if (!r) return "";
+      if (!recipes.some((x) => x.slug === slug)) {
         recipes.push({ slug: r.slug, title: r.title, summary: r.summary, fromBasket: r.ingredientProductIds.length });
       }
-      return "";
+      // The model sometimes writes the marker in place of the dish's name
+      // ("1. [[slug]], crunchy…"). Then the name goes back in; when the name
+      // is already right before it, the marker just disappears.
+      const before = whole.slice(Math.max(0, offset - r.title.length - 12), offset).toLowerCase();
+      return before.includes(r.title.toLowerCase()) ? "" : `${space}${r.title}`;
     })
     .replace(/[ \t]+([.,;:!?])/g, "$1")
     .replace(/[ \t]+$/gm, "")
