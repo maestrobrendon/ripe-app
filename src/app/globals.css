@@ -291,6 +291,27 @@ button:not(:disabled):active {
   40% { transform: translateY(-3px); opacity: 1; }
 }
 
+/* Admin dashboard entrances: bars grow, lines draw, cards rise. */
+@keyframes admin-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes admin-grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes admin-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes admin-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @theme inline {
   /* Role-named colour aliases over the same primitives. */
   --color-canvas: var(--paper-white);

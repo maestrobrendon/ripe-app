@@ -21,7 +21,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   await headers();
   return (
     <html lang="en" className={`${fontVariables} antialiased`}>
-      <body className="min-h-svh bg-[#f6f7f5] text-carbon">{children}</body>
+      <body className="min-h-svh bg-[#f4f5f1] text-carbon">{children}</body>
     </html>
   );
 }
