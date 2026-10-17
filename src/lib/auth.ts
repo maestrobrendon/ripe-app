@@ -1,3 +1,4 @@
+import "server-only";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 

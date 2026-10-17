@@ -33,13 +33,104 @@ enum OrderUnit {
 enum OrderType {
   ONE_OFF
   SUBSCRIPTION
+  BASKET
 }
 
+// A basket's price is fixed to one mode at creation and never silently
+// recomputed off live subscriber status. A free-trial basket is always
+// STANDARD, permanently, even if the account subscribes later.
+enum PricingMode {
+  STANDARD
+  MEMBER
+}
+
+// How a product's quantity field is denominated. SINGLE/SET count units;
+// WEIGHT counts grams, priced against referenceWeightG. Every product must
+// carry one explicitly, there is no meaningful default.
+enum SoldAs {
+  SINGLE
+  SET
+  WEIGHT
+}
+
+// A produce item's dominant colour, for the Produce Planner's "colours
+// covered" variety stat (informational, not medical advice). A fixed lookup
+// assigned once when the catalogue was built, not guessed at request time —
+// null for anything that isn't a single-colour item (a mixed box or a mix
+// like coleslaw), which the stat then simply doesn't count.
+enum ProduceColor {
+  RED
+  ORANGE
+  YELLOW
+  GREEN
+  PURPLE
+  WHITE_BROWN
+}
+
+// The three days a basket can be scheduled to ship on. Distinct from the
+// subscription DeliveryDay (Mon/Wed/Fri) and from the ShoppingWindow edit
+// mechanic. Picking one never starts a countdown or authorises a charge.
+enum ShoppingWindowDay {
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+// The order lifecycle. Allowed moves, and who may make each, live in one
+// place: src/lib/order-status.ts. Customers see these folded into four steps.
 enum OrderStatus {
   RECEIVED
-  SOURCED
+  CONFIRMED
+  PICKING
+  PACKED
   OUT_FOR_DELIVERY
   DELIVERED
+  FAILED_DELIVERY
+  CANCELLED
+  REFUNDED
+}
+
+// What staff choose for a product. AVAILABLE and LIMITED sell normally;
+// OUT_OF_STOCK shows but can't be bought; HIDDEN takes it off the site.
+enum Availability {
+  AVAILABLE
+  LIMITED
+  OUT_OF_STOCK
+  HIDDEN
+}
+
+enum StockMovementKind {
+  RECEIVE
+  SALE
+  RETURN
+  WASTE
+  ADJUST
+  COUNT
+}
+
+enum DeliveryRunStatus {
+  PLANNING
+  OUT
+  DONE
+}
+
+enum OrderEventKind {
+  STATUS
+  NOTE
+  REFUND
+  EMAIL
+}
+
+enum CreditKind {
+  REFUND
+  CREDIT
+}
+
+enum PlanRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  WITHDRAWN
 }
 
 enum WindowStatus {
@@ -50,14 +141,15 @@ enum WindowStatus {
 }
 
 model SubscriptionTier {
-  id         String  @id @default(cuid())
-  slug       String  @unique
+  id         String        @id @default(cuid())
+  slug       String        @unique
   name       String
   monthlyFee Int
   tagline    String
   perks      String[]
   sortOrder  Int
   users      User[]
+  requests   PlanRequest[]
 }
 
 // A Lagos delivery zone. Boundaries start as a centre point plus a radius,
@@ -73,32 +165,76 @@ model DeliveryZone {
   centerLng    Float?
   radiusKm     Float?
   sortOrder    Int           @default(0)
+  // What delivery costs in this area, below the free-delivery threshold.
+  deliveryFee  Int           @default(2000)
+  // Orders for a delivery day close at this hour (Lagos time) the day before.
+  cutoffHour   Int           @default(18)
   users        User[]
   orders       Order[]
 }
 
 model User {
-  id                  String            @id @default(cuid())
-  name                String
-  email               String?           @unique
-  phone               String?           @unique
-  passwordHash        String?
-  address             String?
-  deliveryZoneId      String?
-  deliveryZone        DeliveryZone?     @relation(fields: [deliveryZoneId], references: [id])
+  id                        String               @id @default(cuid())
+  name                      String
+  email                     String?              @unique
+  phone                     String?              @unique
+  passwordHash              String?
+  address                   String?
+  deliveryZoneId            String?
+  deliveryZone              DeliveryZone?        @relation(fields: [deliveryZoneId], references: [id])
   // Subscription is an optional upgrade on top of an account. Null for non-members.
-  subscriptionTierId  String?
-  subscriptionTier    SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
-  deliveryDay         DeliveryDay?
-  onboardingCompleted Boolean           @default(false)
-  preferences         UserPreferences?
-  streak              UserStreak?
-  sessions            Session[]
-  createdAt           DateTime          @default(now())
-  carts               Cart[]
-  baskets             Basket[]
-  orders              Order[]
-  windows             ShoppingWindow[]
+  subscriptionTierId        String?
+  subscriptionTier          SubscriptionTier?    @relation(fields: [subscriptionTierId], references: [id])
+  // When the current membership started; the monthly renewal date is derived
+  // from it. Null for non-members and for members from before it existed.
+  subscribedAt              DateTime?
+  // Test-mode payment method. Only a display brand, the last four digits and
+  // the expiry are ever stored, never a full card number.
+  paymentCardBrand          String?
+  paymentCardLast4          String?
+  paymentCardExpiry         String?
+  deliveryDay               DeliveryDay?
+  // Basket-order shipping day, chosen during onboarding. Null until then.
+  shoppingWindowDay         ShoppingWindowDay?
+  householdAdults           Int                  @default(1)
+  householdKids             Int                  @default(0)
+  onboardingCompleted       Boolean              @default(false)
+  // The one-time "your basket is saved, nothing is auto-charged" explainer.
+  // Shown once on a member's first basket visit after signup, then never again.
+  basketIntroSeen           Boolean              @default(false)
+  // An unsubscribed account gets exactly one basket, ever, at standard pricing.
+  // This flips permanently on creation; it never resets, even if that basket
+  // is later deleted.
+  hasCreatedFreeTrialBasket Boolean              @default(false)
+  // Member-only: when on, a new week's meal plan is seeded by cloning the
+  // previous week's timetable instead of fresh recipe suggestions. Off by
+  // default, and meaningless for a non-subscriber, who has no weekly plan.
+  mealPlanRepeats           Boolean              @default(false)
+  preferences               UserPreferences?
+  streak                    StreakStatus?
+  sessions                  Session[]
+  passwordResetTokens       PasswordResetToken[]
+  // Set by staff. A suspended customer can't sign in and has no live sessions.
+  suspendedAt               DateTime?
+  suspendedReason           String?
+  // Set when the customer's personal data was erased on request (NDPA).
+  erasedAt                  DateTime?
+  // When the customer agreed that the Basket team may read their Kachi chats
+  // to improve her. Null: not agreed (the default); staff can't see them.
+  kachiReviewConsentAt      DateTime?
+  createdAt                 DateTime             @default(now())
+  notes                     CustomerNote[]
+  credits                   CreditRecord[]
+  planRequests              PlanRequest[]
+  carts                     Cart[]
+  baskets                   Basket[]
+  orders                    Order[]
+  windows                   ShoppingWindow[]
+  savedRecipes              SavedRecipe[]
+  weeklyMealPlans           WeeklyMealPlan[]
+  ownMeals                  OwnMeal[]
+  producePlans              ProducePlan[]
+  assistantThreads          AssistantThread[]
 }
 
 // Server-side session. The cookie holds only the opaque random token.
@@ -114,77 +250,310 @@ model Session {
   @@index([expiresAt])
 }
 
-// Consecutive weeks the subscriber did not skip. Recomputed on basket load.
-model UserStreak {
-  id                String    @id @default(cuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  currentStreak     Int       @default(0)
-  longestStreak     Int       @default(0)
-  lastCompletedWeek DateTime?
-  updatedAt         DateTime  @updatedAt
+// Single-use password reset link. tokenHash is sha256(raw token); only the raw
+// token goes in the emailed URL, never stored. usedAt makes it single-use.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
-// Onboarding survey answers. Feeds the trained assistant's suggestions.
+// Consecutive weeks with a completed order (skip/pause weeks bridge, not break).
+// Recomputed on basket and account load.
+model StreakStatus {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreakWeeks      Int       @default(0)
+  longestStreakWeeks      Int       @default(0)
+  lastQualifyingOrderDate DateTime?
+  nextMilestoneWeeks      Int?
+  updatedAt               DateTime  @updatedAt
+}
+
+// Onboarding survey answers. Feeds the trained assistant and the Meal Planner.
 model UserPreferences {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  primaryGoal      String?
-  householdSize    Int?
-  dietaryNotes     String?
-  favoriteProductIds String[]
-  shoppingStyle    String?
-  updatedAt        DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryGoal          String?
+  // What the customer usually reaches for: fruits | vegetables | leafy-greens | root-veg | herbs
+  producePreferences   String[]
+  householdType        String?
+  weeklyBudgetBand     String?
+  cookTimeAvailable    String?
+  dietaryNotes         String?
+  favoriteProductIds   String[]
+  mealFormatPreference String[]
+  shoppingStyle        String?
+  updatedAt            DateTime @updatedAt
 }
 
 model Product {
-  id            String          @id @default(cuid())
-  slug          String          @unique
-  name          String
-  category      ProductCategory
+  id                 String          @id @default(cuid())
+  slug               String          @unique
+  name               String
+  category           ProductCategory
   // Human-readable pricing label, for example "per pineapple", "per kg", "per pair of 2".
-  unit          String
-  orderUnit     OrderUnit       @default(PIECE)
-  minOrderQty   Int             @default(1)
-  stepQty       Int             @default(1)
-  memberPrice   Int
-  standardPrice Int
-  inSeason      Boolean         @default(true)
-  source        String
+  unit               String
+  orderUnit          OrderUnit       @default(PIECE)
+  minOrderQty        Int             @default(1)
+  stepQty            Int             @default(1)
+  // How the quantity field is denominated. A WEIGHT product's cart and
+  // order quantity counts packs of referenceWeightG ("per 250g": 2 is 500g),
+  // and its prices are per pack. Stock (stockOnHand) counts grams; see
+  // orderToStock in src/lib/stock-core.ts for the one conversion.
+  // The DB default exists only so this column could be added to existing
+  // rows; the seed/backfill sets an explicit, correct value on every product.
+  soldAs             SoldAs          @default(SINGLE)
+  // Only meaningful when soldAs is SET: how many units make up one set.
+  setSize            Int?
+  // Only meaningful when soldAs is WEIGHT: the gram weight that
+  // memberPrice/standardPrice are priced against.
+  referenceWeightG   Int?
+  color              ProduceColor?
+  memberPrice        Int
+  standardPrice      Int
+  inSeason           Boolean         @default(true)
+  source             String
   // One-line factual summary shown under the buy box.
-  description   String?
+  description        String?
   // Short plain-voice paragraph shown under the factual summary.
-  blurb         String?
+  blurb              String?
   // One-line quality / sourcing close.
-  sourcingLine  String?
+  sourcingLine       String?
   // Accordion copy. educationCopy powers the "Why you'll love them" section.
-  educationCopy   String?
-  benefitsCopy    String?
-  howToEnjoyCopy  String?
-  storageTips     String?
+  educationCopy      String?
+  benefitsCopy       String?
+  howToEnjoyCopy     String?
+  storageTips        String?
   // Cross-sell for "Complete your basket". Falls back to same category when empty.
-  relatedProductIds String[]
-  ratingAvg     Float?
-  ratingCount   Int             @default(0)
-  tags          String[]
-  imageEmoji    String          @default("🥬")
-  featured      Boolean         @default(false)
-  cartItems     CartItem[]
-  basketItems   BasketItem[]
-  orderItems    OrderItem[]
+  relatedProductIds  String[]
+  ratingAvg          Float?
+  ratingCount        Int             @default(0)
+  tags               String[]
+  imageEmoji         String          @default("🥬")
+  // Cloudinary public id (e.g. "Fruits_Veggie/pineapple"). Null falls back to the emoji tile.
+  cloudinaryPublicId String?
+  featured           Boolean         @default(false)
+  // Staff control; inSeason is kept in step with it for the customer site.
+  availability       Availability    @default(AVAILABLE)
+  // Stock in the product's own quantity unit (grams for WEIGHT, else pieces,
+  // sets or bunches). Only ever changed with a StockMovement in the same
+  // transaction; may go negative when packing outruns recorded stock.
+  stockOnHand        Int             @default(0)
+  // At or below this, the product shows as low stock. Null: not tracked.
+  reorderPoint       Int?
+  // What one priced unit costs us (same basis as standardPrice).
+  costPrice          Int?
+  supplierId         String?
+  supplier           Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  // Optimistic concurrency for staff edits (see Order.version).
+  version            Int             @default(0)
+  updatedAt          DateTime        @default(now()) @updatedAt
+  movements          StockMovement[]
+  batches            StockBatch[]
+  priceChanges       PriceChange[]
+  cartItems          CartItem[]
+  basketItems        BasketItem[]
+  orderItems         OrderItem[]
 }
 
+// One table for every recipe: the photographed menu (onMenu: the homepage,
+// sign-up and Kachi) and the older library the meal plan points at. Edited
+// in the admin; nothing about a recipe lives in code any more.
 model Recipe {
-  id                   String   @id @default(cuid())
-  slug                 String   @unique
+  id                   String        @id @default(cuid())
+  slug                 String        @unique
   title                String
+  // The one-line hook under the title.
   summary              String
   goalTags             String[]
   ingredientProductIds String[]
   instructions         String
-  isAssistantGenerated Boolean  @default(false)
-  createdAt            DateTime @default(now())
+  isAssistantGenerated Boolean       @default(false)
+  // lighter | training | family | everyday (see MENU_GOALS)
+  goal                 String?
+  minutes              Int?
+  serves               Int?
+  // A site path (/images/menu/…) or a full https image URL.
+  image                String?
+  imageAlt             String?
+  // Catalogue slugs, in the order the recipe uses them.
+  basketSlugs          String[]
+  // What the cook picks up elsewhere (proteins, grains, dairy, sauces).
+  elsewhere            String[]
+  steps                String[]
+  // { "<basket slug or elsewhere label>": [quantity, unit] }, for the recipe's own serves.
+  amounts              Json?
+  tools                String[]
+  onMenu               Boolean       @default(false)
+  // Pay-as-you-go customers see the dish and ingredients; members get the method.
+  membersOnly          Boolean       @default(false)
+  status               RecipeStatus  @default(PUBLISHED)
+  sortOrder            Int           @default(0)
+  version              Int           @default(0)
+  updatedAt            DateTime      @default(now()) @updatedAt
+  createdAt            DateTime      @default(now())
+  savedBy              SavedRecipe[]
+
+  @@index([onMenu, status, sortOrder])
+}
+
+enum RecipeStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/**
+ * Typed site-wide settings, edited in the admin (see src/lib/site-settings.ts).
+ */
+model SiteSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedById String?
+}
+
+// A free account's saved recipes — the Recipes-page-by-tier addendum's one
+// piece of real write access for Recipes itself. Saving a favorite isn't a
+// basket mutation, so it doesn't need to go through the Assistant's tool
+// layer the way basket/cart changes do.
+model SavedRecipe {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId String
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  savedAt  DateTime @default(now())
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+}
+
+enum MealPlanDayStatus {
+  PLANNED
+  SKIPPED
+  COOKED
+}
+
+// One row per member per week. `days` holds exactly 7 entries shaped like
+// { day: ShoppingWindowDay-style label, slots: { breakfast, lunch, dinner },
+// status: MealPlanDayStatus }, where each slot is null or
+// { kind: "recipe", recipeId } | { kind: "own", ownMealId }. Kept as JSON
+// because a slot can point at a real Recipe or a customer's own OwnMeal.
+// `elsewhereGot` holds the free-text "get elsewhere" terms this week's
+// shopping list has ticked off, so the checklist survives a reload.
+model WeeklyMealPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStartDate DateTime
+  days          Json
+  elsewhereGot  Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, weekStartDate])
+  @@index([userId])
+}
+
+// A customer's own typed meal (not from our Recipe catalogue), used on the
+// Meal Plan timetable. `ingredients` is free text exactly as typed; matching
+// it against the product catalog to decide "we sell this" vs "get elsewhere"
+// happens at read time, never stored, so a later catalog change is reflected
+// immediately rather than needing a backfill.
+model OwnMeal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  ingredients String[]
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A demand signal, not a customer record: every free-text ingredient that
+// showed up on a shopping list under "Get these elsewhere" (i.e. didn't match
+// anything in the product catalog) bumps this row so the team can see what to
+// consider stocking. Keyed by the normalized term, not by user.
+model UnstockedIngredientRequest {
+  id               String   @id @default(cuid())
+  term             String   @unique
+  requestCount     Int      @default(1)
+  firstRequestedAt DateTime @default(now())
+  lastRequestedAt  DateTime @default(now())
+}
+
+// A saved Produce Planner result (Recipes addendum, Section 2c). Free
+// accounts keep only their latest plan; subscribers keep history — both are
+// just rows here, "latest" and "history" are query-shape, not schema.
+model ProducePlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart     DateTime
+  householdSize Int
+  goal          String?
+  theme         String?
+  // { productId, qty, prep: "raw" | "cooked" | "either" }[]
+  items         Json
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Kachi's persisted chat history (Basket vs. Cart addendum, Section 4).
+// "assistant" is a route/table name only; the customer-facing name is Kachi
+// everywhere in the UI.
+enum AssistantThreadSource {
+  ASSISTANT
+  BASKET_SHEET
+  CART_SHEET
+  MEAL_PLANNER
+  PRODUCE_PLANNER
+}
+
+model AssistantThread {
+  id         String                @id @default(cuid())
+  userId     String
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  source     AssistantThreadSource @default(ASSISTANT)
+  // Free-form pointer to what started this thread, e.g. a basket id — display
+  // only, never trusted for authorization.
+  contextRef String?
+  messages   AssistantMessage[]
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+enum AssistantMessageRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
+model AssistantMessage {
+  id        String               @id @default(cuid())
+  threadId  String
+  thread    AssistantThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      AssistantMessageRole
+  content   String
+  toolCalls Json?
+  createdAt DateTime             @default(now())
+
+  @@index([threadId, createdAt])
 }
 
 // Email capture for visitors whose zone is outside current coverage.
@@ -218,17 +587,38 @@ model CartItem {
 }
 
 // Subscriber standing basket, edited during a recurring shopping window.
+// A member's basket. Non-subscribers are capped at exactly one (the free
+// trial); subscribers can hold several side by side, each with its own items,
+// ship day and shopping window.
 model Basket {
-  id             String       @id @default(cuid())
-  userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  isStanding     Boolean      @default(true)
-  deliveryDay    DeliveryDay
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id])
+  isStanding        Boolean            @default(true)
+  deliveryDay       DeliveryDay
   // Delivery cadence chosen via Subscribe & save: 1 = weekly, 2 = every 2 weeks.
-  frequencyWeeks Int          @default(1)
-  items          BasketItem[]
-  updatedAt   DateTime     @updatedAt
-  createdAt   DateTime     @default(now())
+  frequencyWeeks    Int                @default(1)
+  // The day this specific basket would ship. Per-basket so a subscriber's
+  // several baskets can each run on a different day.
+  shoppingWindowDay ShoppingWindowDay?
+  // Set once at creation and never recomputed from live subscriber status.
+  isFreeTrial       Boolean            @default(false)
+  pricingMode       PricingMode        @default(STANDARD)
+  // Set once, at the moment a free-trial basket's order is placed (its one and
+  // only checkout). Null until then. Never set for a subscriber basket, which
+  // recurs indefinitely and has no single "used up" moment. Drives the
+  // read-only "trial finished" view on the basket home screen.
+  trialDeliveredAt  DateTime?
+  // Optional template tag from a "New basket" goal template (Gym week,
+  // Family, Plant-based, Weight management), display-only.
+  goalTag           String?
+  items             BasketItem[]
+  windows           ShoppingWindow[]
+  orders            Order[]
+  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime           @default(now())
+
+  @@index([userId])
 }
 
 model BasketItem {
@@ -247,25 +637,30 @@ model ShoppingWindow {
   id        String       @id @default(cuid())
   userId    String
   user      User         @relation(fields: [userId], references: [id])
+  // Scoped to one basket, so a subscriber's several baskets each run their own
+  // independent edit-window countdown rather than sharing a single clock.
+  basketId  String?
+  basket    Basket?      @relation(fields: [basketId], references: [id], onDelete: Cascade)
   opensAt   DateTime
   closesAt  DateTime
   status    WindowStatus @default(OPEN)
   createdAt DateTime     @default(now())
 
   @@index([userId])
+  @@index([basketId])
 }
 
 model Order {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   // High-entropy token so a guest can view their own order without an account.
   // Set explicitly in code on every new order; DB default only backfills old rows.
-  accessToken    String        @unique @default(dbgenerated("gen_random_uuid()"))
+  accessToken    String         @unique @default(dbgenerated("gen_random_uuid()"))
   userId         String?
-  user           User?         @relation(fields: [userId], references: [id])
+  user           User?          @relation(fields: [userId], references: [id])
   deliveryZoneId String?
-  deliveryZone   DeliveryZone? @relation(fields: [deliveryZoneId], references: [id])
+  deliveryZone   DeliveryZone?  @relation(fields: [deliveryZoneId], references: [id])
   orderType      OrderType
-  status         OrderStatus   @default(RECEIVED)
+  status         OrderStatus    @default(RECEIVED)
   // Contact and address snapshot so guest orders stand alone.
   customerName   String
   customerPhone  String
@@ -274,12 +669,224 @@ model Order {
   zoneName       String
   deliveryDate   DateTime
   subtotal       Int
-  deliveryFee    Int           @default(0)
+  deliveryFee    Int            @default(0)
   total          Int
   paymentMethod  String
   itemSnapshot   Json
   items          OrderItem[]
-  createdAt      DateTime      @default(now())
+  // Set when the customer completes checkout. Nothing sets this on a schedule:
+  // a basket is only ever charged by the customer's own checkout action.
+  paidAt         DateTime?
+  // The basket this order came from, if any.
+  basketId       String?
+  basket         Basket?        @relation(fields: [basketId], references: [id], onDelete: SetNull)
+  // The delivery run carrying this order, and its stop number on it.
+  deliveryRunId  String?
+  deliveryRun    DeliveryRun?   @relation(fields: [deliveryRunId], references: [id], onDelete: SetNull)
+  runSequence    Int?
+  // Set when stock was taken for this order (at packing), so it's taken once
+  // and given back once if the order is cancelled afterwards.
+  stockTakenAt   DateTime?
+  // Staff-only working note; never shown to the customer.
+  internalNote   String?
+  cancelReason   String?
+  cancelledAt    DateTime?
+  deliveredAt    DateTime?
+  // Optimistic concurrency: every staff change bumps it and must name the
+  // version it saw, so two people can't silently overwrite each other.
+  version        Int            @default(0)
+  events         OrderEvent[]
+  credits        CreditRecord[]
+  updatedAt      DateTime       @default(now()) @updatedAt
+  createdAt      DateTime       @default(now())
+
+  @@index([status, deliveryDate])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+/**
+ * The order's timeline: status moves, notes, refunds and emails, oldest first.
+ */
+model OrderEvent {
+  id         String         @id @default(cuid())
+  orderId    String
+  order      Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind       OrderEventKind
+  fromStatus OrderStatus?
+  toStatus   OrderStatus?
+  note       String?
+  // Who did it: a staff member, the customer, or the system. Names are copied
+  // so the timeline still reads right after a staff account is removed.
+  staffId    String?
+  actorName  String
+  at         DateTime       @default(now())
+
+  @@index([orderId, at])
+}
+
+/**
+ * Staff notes on a customer, for whoever helps them next.
+ */
+/**
+ * The stock ledger. Every change to Product.stockOnHand is one row here, in
+ * the same transaction, with who did it and why. Never updated or deleted.
+ */
+model StockMovement {
+  id           String            @id @default(cuid())
+  productId    String
+  product      Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind         StockMovementKind
+  // Signed change, in the product's quantity unit.
+  quantity     Int
+  balanceAfter Int
+  reason       String?
+  orderId      String?
+  batchId      String?
+  supplierId   String?
+  unitCost     Int?
+  staffId      String?
+  staffName    String
+  at           DateTime          @default(now())
+
+  @@index([productId, at])
+  @@index([kind, at])
+  @@index([orderId])
+}
+
+/**
+ * One delivery from a supplier, tracked to its best-before date (used first-expiring-first).
+ */
+model StockBatch {
+  id         String    @id @default(cuid())
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  received   Int
+  remaining  Int
+  unitCost   Int?
+  receivedAt DateTime  @default(now())
+  bestBefore DateTime?
+
+  @@index([productId, remaining])
+  @@index([bestBefore])
+}
+
+model Supplier {
+  id        String       @id @default(cuid())
+  name      String
+  phone     String?
+  market    String?
+  notes     String?
+  active    Boolean      @default(true)
+  products  Product[]
+  batches   StockBatch[]
+  createdAt DateTime     @default(now())
+}
+
+/**
+ * Every price change, for the history on the product page.
+ */
+model PriceChange {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  field     String
+  fromValue Int?
+  toValue   Int?
+  reason    String?
+  staffId   String?
+  staffName String
+  at        DateTime @default(now())
+
+  @@index([productId, at])
+}
+
+model Rider {
+  id        String        @id @default(cuid())
+  name      String
+  phone     String
+  notes     String?
+  active    Boolean       @default(true)
+  runs      DeliveryRun[]
+  createdAt DateTime      @default(now())
+}
+
+/**
+ * A rider's trip on one day: an ordered list of stops (orders).
+ */
+model DeliveryRun {
+  id        String            @id @default(cuid())
+  // Lagos midnight of the delivery day.
+  day       DateTime
+  name      String
+  riderId   String?
+  rider     Rider?            @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  status    DeliveryRunStatus @default(PLANNING)
+  notes     String?
+  orders    Order[]
+  startedAt DateTime?
+  doneAt    DateTime?
+  createdAt DateTime          @default(now())
+
+  @@index([day])
+}
+
+model CustomerNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  staffId   String?
+  staffName String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/**
+ * Money given back or owed, recorded by Finance. There's no payment gateway
+ * yet, so this is the ledger of what was paid out by hand, and how.
+ */
+model CreditRecord {
+  id        String     @id @default(cuid())
+  kind      CreditKind
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderId   String?
+  order     Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  amount    Int
+  reason    String
+  method    String
+  staffId   String?
+  staffName String
+  createdAt DateTime   @default(now())
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+/**
+ * A customer asking to join or move up a paid plan. Until there's a payment
+ * gateway, Finance confirms payment and approves it in the admin; nothing a
+ * customer does on the site grants a paid plan by itself.
+ */
+model PlanRequest {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tierId      String
+  tier        SubscriptionTier  @relation(fields: [tierId], references: [id])
+  deliveryDay DeliveryDay?
+  status      PlanRequestStatus @default(PENDING)
+  decidedAt   DateTime?
+  decidedById String?
+  decidedNote String?
+  createdAt   DateTime          @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId])
 }
 
 model OrderItem {
@@ -290,4 +897,170 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   unitPrice Int
+}
+
+// ============================================================================
+// ADMIN: staff identity, sessions, audit. Staff are a separate population
+// from customers (User): a customer can never sign in to the admin, and a
+// staff account never shops. See src/lib/admin/.
+// ============================================================================
+
+// Mirrors ROLES in src/lib/admin/permissions.ts, which maps each to permissions.
+enum StaffRole {
+  OWNER
+  ADMIN
+  OPERATIONS_MANAGER
+  INVENTORY
+  FULFILMENT
+  DISPATCH
+  CONTENT_EDITOR
+  CUSTOMER_SUPPORT
+  FINANCE
+  ANALYST
+}
+
+enum StaffStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+model StaffUser {
+  id                String              @id @default(cuid())
+  // Stored lowercased.
+  email             String              @unique
+  name              String
+  role              StaffRole
+  status            StaffStatus         @default(INVITED)
+  // "v2$logN$r$p$salt$hash" (src/lib/admin/password.ts). Null until the invite is accepted.
+  passwordHash      String?
+  passwordChangedAt DateTime?
+  // AES-256-GCM ciphertext (src/lib/admin/crypto.ts), never the plain secret.
+  totpSecretEnc     String?
+  totpEnabledAt     DateTime?
+  // The last TOTP step used, so a code works exactly once.
+  totpLastCounter   Int?
+  failedLogins      Int                 @default(0)
+  lockedUntil       DateTime?
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  sessions          StaffSession[]
+  passkeys          StaffPasskey[]
+  recoveryCodes     StaffRecoveryCode[]
+  invitesSent       StaffInvite[]       @relation("InvitedBy")
+}
+
+// A WebAuthn credential (passkey, Face ID, security key).
+model StaffPasskey {
+  id           String    @id @default(cuid())
+  staffId      String
+  staff        StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  credentialId String    @unique
+  publicKey    Bytes
+  // Signature counter; a counter that goes backwards means a cloned authenticator.
+  counter      BigInt    @default(0)
+  transports   String[]
+  deviceType   String?
+  backedUp     Boolean   @default(false)
+  name         String
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([staffId])
+}
+
+// One-time recovery codes, stored as sha256 only.
+model StaffRecoveryCode {
+  id        String    @id @default(cuid())
+  staffId   String
+  staff     StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([staffId])
+}
+
+// A staff session. The cookie holds a random token; only its sha256 is here,
+// so a database leak gives no usable sessions. A session is "half" (password
+// only, MFA pending, short-lived) until mfaVerifiedAt is set.
+model StaffSession {
+  id                 String    @id @default(cuid())
+  tokenHash          String    @unique
+  staffId            String
+  staff              StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  createdAt          DateTime  @default(now())
+  lastSeenAt         DateTime  @default(now())
+  // Absolute end; idle expiry is computed from lastSeenAt.
+  expiresAt          DateTime
+  mfaVerifiedAt      DateTime?
+  // Last fresh second factor, for step-up on sensitive actions.
+  stepUpAt           DateTime?
+  revokedAt          DateTime?
+  ip                 String?
+  userAgent          String?
+  csrfToken          String
+  // A pending WebAuthn challenge (registration or authentication).
+  challenge          String?
+  challengeExpiresAt DateTime?
+
+  @@index([staffId])
+  @@index([expiresAt])
+}
+
+// Invite-only onboarding: single-use, hashed, short-lived.
+model StaffInvite {
+  id          String     @id @default(cuid())
+  tokenHash   String     @unique
+  email       String
+  name        String
+  role        StaffRole
+  invitedById String?
+  invitedBy   StaffUser? @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([email])
+}
+
+// Append-only, hash-chained audit log (src/lib/admin/audit.ts). Each row's
+// hash covers its content and the previous row's hash; seq orders the chain.
+// Nothing in the app updates or deletes these rows.
+model AuditEvent {
+  id         String   @id @default(cuid())
+  seq        BigInt   @unique @default(autoincrement())
+  at         DateTime @default(now())
+  // STAFF, SYSTEM or CUSTOMER.
+  actorType  String
+  actorId    String?
+  actorEmail String?
+  actorRole  String?
+  action     String
+  targetType String?
+  targetId   String?
+  summary    String?
+  diff       Json?
+  ip         String?
+  userAgent  String?
+  prevHash   String
+  hash       String   @unique
+
+  @@index([at])
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([action])
+}
+
+// Shared, durable rate limits (src/lib/rate-limit-db.ts), so a limit holds
+// across every server instance, unlike the in-memory one.
+model RateLimitBucket {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
 }

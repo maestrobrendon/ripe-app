@@ -1,3 +1,4 @@
+import "server-only";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -32,6 +33,11 @@ async function readToken(): Promise<string | null> {
  * token is ever sent to the browser. Call from a Server Action or Route Handler.
  */
 export async function createSession(userId: string) {
+  // Rotate: whatever session this browser already held is ended, so a token
+  // planted before sign-in (session fixation) is worthless after it.
+  const previous = await readToken();
+  if (previous) await prisma.session.deleteMany({ where: { token: previous } }).catch(() => {});
+
   // Best-effort cleanup of this user's stale sessions.
   await prisma.session
     .deleteMany({ where: { userId, expiresAt: { lt: new Date() } } })
@@ -43,6 +49,22 @@ export async function createSession(userId: string) {
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, cookieOptions());
+}
+
+/**
+ * End every session this user has except the one making the request: after a
+ * contact change, so a stolen session elsewhere can't ride along.
+ */
+export async function endOtherSessions(userId: string) {
+  const token = await readToken();
+  await prisma.session.deleteMany({ where: { userId, ...(token ? { NOT: { token } } : {}) } });
+}
+
+/** End every session this user has, this one included, and clear the cookie. */
+export async function destroyAllSessions(userId: string) {
+  await prisma.session.deleteMany({ where: { userId } });
+  const store = await cookies();
+  store.delete(SESSION_COOKIE);
 }
 
 /** Delete the current session server-side and clear the cookie. */
@@ -70,6 +92,8 @@ export async function getCurrentUser() {
   });
 
   if (!session || session.expiresAt.getTime() <= Date.now()) return null;
+  // Suspended (or erased) by staff: every existing session stops working at once.
+  if (session.user.suspendedAt || session.user.erasedAt) return null;
   return session.user;
 }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { OFFERED } from "@/lib/product";
 
 export async function GET(request: Request) {
   const q = new URL(request.url).searchParams.get("q")?.trim() ?? "";
@@ -7,6 +8,7 @@ export async function GET(request: Request) {
 
   const products = await prisma.product.findMany({
     where: {
+      ...OFFERED,
       OR: [
         { name: { contains: q, mode: "insensitive" } },
         { tags: { has: q.toLowerCase() } },

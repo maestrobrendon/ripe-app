@@ -1,0 +1,48 @@
+Basket homepage hero illustration
+=================================
+
+Generated 2026-10-10 for the homepage hero (src/app/home-menu/parts/hero.tsx).
+
+Tool:   Playground AI (playgroundai.com), via its MCP connector, free plan
+Model:  GPT Image 2.5 Sunburst ("gpt-image-2.5-sunburst")
+Output: 1536 x 1024 PNG (the model's maximum; 2560 x 1440 was requested)
+
+Chosen concept: 1, "Shawarma table" (concepts/c1-shawarma.webp)
+Other concepts, same tool and model: concepts/c2-market.webp, concepts/c3-smoothie.webp
+Concept 4 ("Cooking for four") was not generated: Playground's free credits ran
+out, Comfy Cloud needs a paid subscription for partner models, and the Recraft
+and Higgsfield connectors could not generate on this account.
+
+Prompt (concept 1)
+------------------
+Flat vector editorial food illustration, top-down tabletop view, bold simple
+shapes, each object one base colour with one darker shadow tone and a hard
+offset drop shadow, small confetti flecks of herbs and seeds, crisp edges, no
+gradients, no outlines, no text, no letters, no logos. Objects crop off the
+canvas edges; the centre of the canvas is left completely empty. Wide 16:9
+hero banner. Flat pale sky-blue field (#dceeff); hard drop shadows in a deeper
+dusty blue (#a9c8e6). Restrained palette: carbon black, white, mint green
+#55db9c, ember orange #fb4903, sunburst yellow #ffd731, lavender #e9ccff. Top
+right corner, cropped by the edges: a chicken shawarma bowl on a patterned
+cloth. Bottom left corner, cropped: a large plate of green mango salad. Bottom
+right corner: a dark-skinned hand reaching in from the edge holding a lime
+wedge. Small bowls of yoghurt sauce and chilli; scattered lime slices and
+parsley leaves near the edges. The middle 45% of the width and 70% of the
+height is completely empty flat blue. Mature, sophisticated magazine
+illustration, not childish, no faces on food.
+
+Post-processing (local, no further AI)
+--------------------------------------
+- layers/*.webp: the generated image cut into 11 transparent layers with a
+  colour key on the flat field (#d1eafd, measured from the art). Edge pixels
+  are un-premultiplied against the field so they sit cleanly on it; each dish
+  keeps its own drop shadow. layers.json lists every layer's box in the
+  1536 x 1024 source.
+- The background field is not an image: it is the CSS colour #d1eafd on the
+  hero section (--hm-field in src/app/home-menu/home-menu.css).
+- In the live hero the yoghurt bowl is tucked further into its corner and the
+  chilli bowl moves from top centre to the bottom right, so both clear the
+  headline and the nav. hero.tsx holds the live positions.
+- hero-desktop.webp (1920 x 1080, 16:9) and hero-mobile.webp (1080 x 1920,
+  9:16) are stills flattened from the layers in that live arrangement, for
+  social cards, decks and other places without the animated hero.

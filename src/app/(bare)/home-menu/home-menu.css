@@ -1,0 +1,214 @@
+/* ==========================================================================
+   The recipe-led homepage draft. Prefixed hm- so nothing leaks into the app.
+   It sits on the hn- runtime (smooth scroll, sticky fix) from home-next.css.
+
+   One loud thing: the hero headline in the display face. Everything else is
+   the UI face, sentence case, quiet, with soft tinted panels instead of the
+   app's black outlines, so the food photography does the talking.
+   ========================================================================== */
+
+.hm {
+  /* The panel colour: a pale leaf tint, the page's only surface besides white. */
+  --hm-tint: #f3f5f0;
+  --hm-tint-2: #e8ede3;
+  --hm-line: rgb(0 0 0 / 0.08);
+  --hm-ink-2: rgb(0 0 0 / 0.62);
+  --hm-ink-3: rgb(0 0 0 / 0.45);
+  /* The two roles every ingredient has on this page. */
+  --hm-basket: var(--mint-pop);
+  --hm-basket-ink: #0f7a48;
+  --hm-elsewhere: var(--ember);
+}
+
+.hm-wrap {
+  width: min(1080px, calc(100% - 32px));
+  margin-inline: auto;
+}
+@media (min-width: 640px) {
+  .hm-wrap {
+    width: min(1080px, calc(100% - 48px));
+  }
+}
+
+/* The hero headline: the only display-face moment on the page. */
+.hm-display {
+  font-family: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.012em;
+  line-height: 0.96;
+}
+
+/* The hero sits on the illustration's own flat sky field. --k scales the
+   1536px-wide source scene to the screen; the layers hang from the corners,
+   so on phones and tablets the padding opens a band above and below the copy
+   for them (556 and 565 are the tallest top and bottom layers in source px). */
+.hm-hero {
+  --hm-field: #d1eafd;
+  --k: 1.25;
+  /* Below lg the nav is a solid bar in the field colour (see nav.tsx), so
+     the top band starts under it rather than behind the logo and button,
+     and the band's cut edges tuck under the bar. Matches the nav's height. */
+  --nav: 64px;
+  background: var(--hm-field);
+  padding-top: calc(556 * 100vw / 1536 * var(--k) + var(--nav) + 8px);
+  padding-bottom: calc(565 * 100vw / 1536 * var(--k) + 8px);
+}
+.hm-hero-art {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  pointer-events: none;
+  user-select: none;
+  --s: calc(100cqw / 1536 * var(--k));
+  --push: 0px;
+  /* How far a layer's cut edge sits past the hero's edge (see hero.tsx). */
+  --bleed: calc(36 * var(--s));
+}
+.hm-layer {
+  position: absolute;
+}
+/* Every wrapper of a layer turns about the same point (--o, set per layer:
+   a plate's centre, the hand's wrist). The innermost one moves all the time,
+   so it gets its own compositing layer. */
+.hm-layer,
+.hm-tilt,
+.hm-float {
+  transform-origin: var(--o, 50% 50%);
+}
+.hm-float {
+  will-change: transform;
+}
+.hm-layer img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (min-width: 640px) {
+  .hm-hero {
+    --k: 0.85;
+    --nav: 72px;
+  }
+}
+/* Desktop: the scene fits the hero like a contained 3:2 frame, and pushes
+   outward a little more as the screen narrows so the flanks never reach the
+   headline. */
+@media (min-width: 1024px) {
+  .hm-hero {
+    --nav: 0px;
+    padding-top: 9rem;
+    padding-bottom: 6rem;
+  }
+  .hm-hero-art {
+    --s: calc(min(100cqw, 150cqh) / 1536);
+    --push: clamp(0px, (1440px - 100cqw) * 0.4, 180px);
+  }
+}
+
+/* The hero headline is four hand-set lines. The type is sized to the
+   column, not the screen, so the widest line ("PLANNED AND", 7.66em in
+   the display face) always just fits: about 43px on a phone, capped at
+   60px from tablets up so the four lines don't swamp the hero. 7.9 leaves a
+   little room for rounding; nowrap keeps the four lines exactly as written
+   even before the web font arrives. */
+.hm-hero-title-box {
+  container-type: inline-size;
+}
+.hm-hero-title {
+  font-size: min(3.75rem, calc(100cqi / 7.9));
+  white-space: nowrap;
+}
+
+/* "meals" and "fruits" share one slot on the second line: both words sit in
+   the same grid cell (so the slot is as wide as the longer one and the line
+   never jumps), and the slot clips them so one can slide out as the other
+   slides in. The padding keeps the caps clear of the clip edge; the negative
+   margin gives that space back so the line spacing is unchanged. Until the
+   hero script runs, and with reduced motion, only "meals" shows. */
+.hm-swap {
+  display: inline-grid;
+  justify-items: start;
+  overflow: clip;
+  padding-block: 0.1em;
+  margin-block: -0.1em;
+}
+.hm-swap > span {
+  grid-area: 1 / 1;
+}
+.hm-swap > span + span {
+  transform: translateY(120%);
+}
+
+/* Section headlines: the UI face, tight, sentence case. */
+.hm-h2 {
+  font-size: clamp(2rem, 4.2vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.hm-h3 {
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.hm-lede {
+  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
+  line-height: 1.55;
+  letter-spacing: -0.012em;
+  color: var(--hm-ink-2);
+  text-wrap: pretty;
+}
+
+.hm-panel {
+  background: var(--hm-tint);
+  border-radius: 28px;
+}
+
+/* Keyboard focus that is visible on white, tint and photos alike. */
+.hm :where(a, button, [role="tab"], [role="radio"]):focus-visible {
+  outline: 2.5px solid var(--carbon);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+/* Kachi's typing dots. */
+@keyframes hm-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+.hm-typing i {
+  animation: hm-dot 1.1s ease-in-out infinite;
+}
+.hm-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.hm-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* The menu photos ease in a touch on hover, on devices that hover. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .hm-photo img {
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hm-photo:hover img {
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-typing i {
+    animation: none;
+    opacity: 0.6;
+  }
+}

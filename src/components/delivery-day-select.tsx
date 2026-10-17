@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { RadioCard } from "@/components/ui/radio-card";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const OPTIONS: { value: DeliveryDay; label: string }[] = [
@@ -19,17 +20,18 @@ export function DeliveryDaySelect({
   const [isPending, startTransition] = useTransition();
 
   return (
-    <select
-      defaultValue={value}
-      disabled={isPending}
-      onChange={(e) => startTransition(() => onChange(e.target.value as DeliveryDay))}
-      className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-60"
-    >
+    <div className="flex flex-col gap-2 sm:flex-row">
       {OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
+        <RadioCard
+          key={o.value}
+          groupId="delivery-day-select"
+          selected={value === o.value}
+          disabled={isPending}
+          onSelect={() => startTransition(() => onChange(o.value))}
+        >
           {o.label}
-        </option>
+        </RadioCard>
       ))}
-    </select>
+    </div>
   );
 }

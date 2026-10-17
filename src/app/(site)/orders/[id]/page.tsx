@@ -1,0 +1,146 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { timingSafeEqual } from "crypto";
+import { Check } from "@phosphor-icons/react/dist/ssr";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
+import { ProductImage } from "@/components/product-image";
+import { formatNaira } from "@/lib/format";
+import { CUSTOMER_STEPS, customerStep } from "@/lib/order-status";
+import { getSiteSettings } from "@/lib/site-settings";
+
+function tokenMatches(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
+
+export default async function OrderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ t?: string }>;
+}) {
+  const [{ id }, { t }, user] = await Promise.all([params, searchParams, getCurrentUser()]);
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: { include: { product: true } } },
+  });
+
+  if (!order) notFound();
+
+  const ownsIt = Boolean(user && order.userId && order.userId === user.id);
+  const hasValidToken = Boolean(t) && tokenMatches(t!, order.accessToken);
+  // Same response as "not found" so the endpoint does not confirm the order exists.
+  if (!ownsIt && !hasValidToken) notFound();
+
+  const currentIndex = customerStep(order.status) ?? -1;
+  const stopped = order.status === "CANCELLED" || order.status === "REFUNDED";
+  const isBasket = order.orderType === "SUBSCRIPTION" || order.orderType === "BASKET";
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+      <p className="text-sm text-muted">Order #{order.id.slice(-8)}</p>
+      <h1 className="mt-1 text-3xl font-semibold">
+        {stopped ? (order.status === "REFUNDED" ? "Order refunded" : "Order cancelled") : isBasket ? "Basket order confirmed" : "Order confirmed"}
+      </h1>
+      <p className="mt-2 text-sm text-muted">
+        Delivering {order.deliveryDate.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" })} to{" "}
+        {order.address} ({order.zoneName})
+      </p>
+
+      {stopped ? (
+        <div className="mt-8 rounded-card border border-border bg-surface p-6 text-sm">
+          <p className="font-medium">{order.status === "REFUNDED" ? "This order was refunded." : "This order was cancelled and won't be delivered."}</p>
+          {order.cancelReason && <p className="mt-1 text-muted">{order.cancelReason}</p>}
+          <p className="mt-3 text-muted">
+            Questions?{" "}
+            <a href={`https://wa.me/${(await getSiteSettings()).support.whatsapp}`} className="font-medium text-carbon underline">
+              Message us on WhatsApp
+            </a>
+            .
+          </p>
+        </div>
+      ) : (
+      <div className="mt-8 rounded-card border border-border bg-surface p-6">
+        {order.status === "FAILED_DELIVERY" && (
+          <p className="mb-5 rounded-lg bg-soft-mist px-3 py-2 text-sm">
+            We couldn&apos;t complete your delivery. We&apos;ll be in touch to arrange another time.
+          </p>
+        )}
+        <ol className="flex items-start justify-between">
+          {CUSTOMER_STEPS.map((label, i) => (
+            <li key={label} className="relative flex flex-1 flex-col items-center text-center">
+              {/* Connector sits between this circle's centre and the next one's,
+                  vertically centred on the circle (top: half its height) — not
+                  layered over the circles themselves. */}
+              {i < CUSTOMER_STEPS.length - 1 && (
+                <span
+                  aria-hidden
+                  className={`absolute top-4 left-1/2 h-px w-full ${i < currentIndex ? "bg-carbon" : "bg-border"}`}
+                />
+              )}
+              <span
+                className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+                  i <= currentIndex ? "bg-carbon text-white" : "border border-border bg-surface text-muted"
+                }`}
+              >
+                {i <= currentIndex ? <Check size={14} weight="bold" aria-hidden /> : i + 1}
+              </span>
+              <span className={`mt-2 text-xs ${i <= currentIndex ? "font-medium" : "text-muted"}`}>
+                {label}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      )}
+
+      <div className="mt-8">
+        <h2 className="mb-3 text-lg font-medium">Items</h2>
+        <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+          {order.items.map((i) => (
+            <li key={i.id} className="flex items-center gap-3 p-4 text-sm">
+              <ProductImage
+                publicId={i.product.cloudinaryPublicId}
+                alt={i.product.name}
+                emoji={i.product.imageEmoji}
+                className="h-10 w-10 shrink-0"
+                rounded="rounded-lg"
+                emojiClassName="text-lg"
+                sizes="40px"
+              />
+              <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
+              <span className="shrink-0">{formatNaira(i.unitPrice * i.quantity)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 space-y-1 px-1 text-sm">
+          <div className="flex justify-between text-muted">
+            <span>Subtotal</span>
+            <span>{formatNaira(order.subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-muted">
+            <span>Delivery</span>
+            <span>{order.deliveryFee === 0 ? "Free" : formatNaira(order.deliveryFee)}</span>
+          </div>
+          <div className="flex justify-between font-semibold">
+            <span>Total</span>
+            <span>{formatNaira(order.total)}</span>
+          </div>
+          <div className="flex justify-between text-muted">
+            <span>Payment</span>
+            <span>{order.paymentMethod}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex gap-4">
+        <Link href="/shop" className="text-sm font-medium text-carbon underline">Keep shopping</Link>
+        <Link href="/account" className="text-sm font-medium text-carbon underline">Your account</Link>
+      </div>
+    </div>
+  );
+}

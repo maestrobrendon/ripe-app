@@ -1,0 +1,141 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { randomBytes } from "crypto";
+import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/session";
+import { readCart, getOrCreateCart, clearCart } from "@/lib/cart";
+import { hasFreeDelivery, quoteDelivery } from "@/lib/pricing";
+import { nextDeliveryDate } from "@/lib/delivery-dates";
+import { getSiteSettings } from "@/lib/site-settings";
+import { isBuyable } from "@/lib/product";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { nextShoppingWindowDate } from "@/lib/shopping-window";
+import { sendOrderConfirmation } from "@/lib/customer-emails";
+import type { DeliveryDay } from "@/generated/prisma/enums";
+
+export type CheckoutInput = {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  zoneSlug: string;
+  deliveryDay: DeliveryDay;
+  paymentMethod: "card" | "transfer";
+  source?: "basket";
+  basketId?: string;
+};
+
+export async function placeOrder(input: CheckoutInput) {
+  const ip = await clientIp();
+  if (!rateLimit(`checkout:ip:${ip}`, 10, 10 * 60 * 1000).ok) {
+    throw new Error("Too many checkout attempts. Please try again in a few minutes.");
+  }
+
+  // An account is required to check out, for individual orders as well as
+  // basket orders. Browsing and cart-building both stay account-free; this is
+  // the one gate, at payment.
+  const [user, cart] = await Promise.all([requireUser(), readCart()]);
+
+  if (cart.items.length === 0) throw new Error("Your cart is empty.");
+  const name = input.name.trim().slice(0, 120);
+  const phone = input.phone.trim().slice(0, 32);
+  const address = input.address.trim().slice(0, 400);
+  if (!name || !phone || !address || !input.zoneSlug) {
+    throw new Error("Please fill in your name, phone, address and zone.");
+  }
+
+  // Anything that went out of stock after it was added can't be ordered.
+  const stock = await prisma.product.findMany({ where: { id: { in: cart.items.map((i) => i.productId) } }, select: { name: true, tags: true, availability: true } });
+  const gone = stock.filter((p) => !isBuyable(p)).map((p) => p.name);
+  if (gone.length) throw new Error(`${gone.join(", ")} ${gone.length === 1 ? "is" : "are"} out of stock now. Remove ${gone.length === 1 ? "it" : "them"} from your cart to continue.`);
+
+  const zone = await prisma.deliveryZone.findUnique({ where: { slug: input.zoneSlug } });
+  if (!zone || !zone.isServed) throw new Error("We don't deliver to that area yet.");
+
+  const isBasket = input.source === "basket";
+  const basket = isBasket && input.basketId
+    ? await prisma.basket.findFirst({ where: { id: input.basketId, userId: user.id } })
+    : null;
+  // A basket order prices from that basket's own locked mode, never live
+  // subscriber status, so a free-trial basket can never slip into member
+  // pricing even if the account has since subscribed. A non-basket order
+  // still follows live status, same as before.
+  const isMemberPriced = basket ? basket.pricingMode === "MEMBER" : Boolean(user.subscriptionTierId);
+
+  const snapshot = cart.items.map((i) => ({
+    productId: i.productId,
+    name: i.name,
+    unit: i.unit,
+    quantity: i.quantity,
+    unitPrice: isMemberPriced ? i.memberPrice : i.standardPrice,
+  }));
+  // Recomputed from the snapshot rather than trusting cart.subtotal, which is
+  // priced off live subscriber status and can disagree with a basket's own
+  // locked pricing mode.
+  const subtotal = snapshot.reduce((sum, s) => sum + s.unitPrice * s.quantity, 0);
+  // The area sets the fee; only plans that include delivery (Member Plus) skip it.
+  const settings = await getSiteSettings();
+  const delivery = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zone.deliveryFee, settings.delivery.freeThreshold);
+  const total = subtotal + delivery.fee;
+
+  const accessToken = randomBytes(24).toString("base64url");
+
+  // A one-off order goes out on one of the area's own delivery days.
+  if (!basket && !zone.deliveryDays.includes(input.deliveryDay)) {
+    const days = zone.deliveryDays.map((d) => d.charAt(0) + d.slice(1).toLowerCase()).join(", ");
+    throw new Error(`${zone.name} gets deliveries on ${days}. Pick one of those days.`);
+  }
+
+  const deliveryDate = basket
+    ? nextShoppingWindowDate(basket.shoppingWindowDay)
+    : nextDeliveryDate(input.deliveryDay, zone.cutoffHour);
+
+  const order = await prisma.order.create({
+    data: {
+      accessToken,
+      userId: user.id,
+      deliveryZoneId: zone?.id ?? null,
+      orderType: isBasket ? "BASKET" : "ONE_OFF",
+      status: "RECEIVED",
+      customerName: name,
+      customerPhone: phone,
+      customerEmail: (input.email || "").trim().slice(0, 254) || null,
+      address,
+      zoneName: zone?.name ?? input.zoneSlug,
+      deliveryDate,
+      paidAt: new Date(),
+      subtotal,
+      deliveryFee: delivery.fee,
+      total,
+      paymentMethod: input.paymentMethod === "card" ? "Card (test mode)" : "Bank transfer (test mode)",
+      itemSnapshot: snapshot,
+      basketId: basket?.id ?? null,
+      events: { create: { kind: "STATUS", toStatus: "RECEIVED", actorName: "Customer", note: "Order placed" } },
+      items: {
+        create: snapshot.map((s) => ({
+          productId: s.productId,
+          quantity: s.quantity,
+          unitPrice: s.unitPrice,
+        })),
+      },
+    },
+  });
+
+  // A free-trial basket gets exactly one order, ever; this is that moment.
+  // A subscriber basket recurs indefinitely and never sets this.
+  if (basket?.isFreeTrial) {
+    await prisma.basket.update({
+      where: { id: basket.id },
+      data: { trialDeliveredAt: deliveryDate },
+    });
+  }
+
+  await sendOrderConfirmation({ ...order, items: snapshot.map((s) => ({ name: s.name, quantity: s.quantity })) });
+
+  const activeCart = await getOrCreateCart();
+  await clearCart(activeCart.id);
+
+  // The token lets the buyer (guest or signed-in) view this one order.
+  redirect(`/orders/${order.id}?t=${accessToken}`);
+}

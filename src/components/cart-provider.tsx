@@ -11,6 +11,7 @@ export type CartLine = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId: string | null;
   memberPrice: number;
   standardPrice: number;
   quantity: number;
@@ -24,6 +25,12 @@ export type CartSnapshot = {
   savingsIfMember: number;
   itemCount: number;
   isSubscriber: boolean;
+  /** On a plan that includes delivery (Member Plus). */
+  freeDelivery: boolean;
+  /** The customer's area fee. */
+  deliveryFee: number;
+  /** Cart value for free delivery (a site setting). */
+  freeDeliveryThreshold: number;
 };
 
 export type AddableProduct = {
@@ -35,8 +42,11 @@ export type AddableProduct = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId?: string | null;
   memberPrice: number;
   standardPrice: number;
+  /** Shown, but staff marked it out of stock: it can't be added right now. */
+  soldOut?: boolean;
 };
 
 type CartContextValue = CartSnapshot & {
@@ -50,7 +60,8 @@ type CartContextValue = CartSnapshot & {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function recompute(items: CartLine[], isSubscriber: boolean): CartSnapshot {
+function recompute(items: CartLine[], who: Pick<CartSnapshot, "isSubscriber" | "freeDelivery" | "deliveryFee" | "freeDeliveryThreshold">): CartSnapshot {
+  const { isSubscriber } = who;
   const standardSubtotal = items.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
   const memberSubtotal = items.reduce((s, l) => s + l.memberPrice * l.quantity, 0);
   return {
@@ -60,7 +71,7 @@ function recompute(items: CartLine[], isSubscriber: boolean): CartSnapshot {
     subtotal: isSubscriber ? memberSubtotal : standardSubtotal,
     savingsIfMember: standardSubtotal - memberSubtotal,
     itemCount: items.reduce((s, l) => s + l.quantity, 0),
-    isSubscriber,
+    ...who,
   };
 }
 
@@ -98,13 +109,14 @@ export function CartProvider({
                 minOrderQty: product.minOrderQty,
                 stepQty: product.stepQty,
                 imageEmoji: product.imageEmoji,
+                cloudinaryPublicId: product.cloudinaryPublicId ?? null,
                 memberPrice: product.memberPrice,
                 standardPrice: product.standardPrice,
                 quantity,
               },
             ];
 
-      setState(recompute(nextItems, state.isSubscriber));
+      setState(recompute(nextItems, { isSubscriber: state.isSubscriber, freeDelivery: state.freeDelivery, deliveryFee: state.deliveryFee, freeDeliveryThreshold: state.freeDeliveryThreshold }));
       if (quantity > 0) setIsOpen(true);
 
       try {
