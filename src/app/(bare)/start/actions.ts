@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
-import { hashPassword, normalizeContact } from "@/lib/auth";
+import { hashPassword, normalizeContact, contactWhere } from "@/lib/auth";
 import { ZONE_COOKIE } from "@/lib/zone";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { buildStarterPicks, getStarterCandidates } from "@/lib/starter-basket";
@@ -78,9 +78,8 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   // Always hash so the "already exists" path costs the same as a real signup.
   const passwordHash = await hashPassword(password);
 
-  const existing = await prisma.user.findFirst({
-    where: { OR: [email ? { email } : {}, phone ? { phone } : {}].filter((c) => Object.keys(c).length) },
-  });
+  const where = contactWhere(contact);
+  const existing = where ? await prisma.user.findFirst({ where }) : null;
   if (existing) {
     // Same answer as any other failure, so the form can't be used to find out
     // who has an account. The owner of the address is told by email instead.

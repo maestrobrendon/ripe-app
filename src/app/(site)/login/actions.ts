@@ -3,9 +3,10 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession } from "@/lib/session";
-import { verifyPassword, normalizeContact } from "@/lib/auth";
+import { verifyPassword, contactWhere } from "@/lib/auth";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { mergeGuestCartIntoBasket } from "@/lib/order-container";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 
@@ -22,10 +23,8 @@ export async function signIn(formData: FormData) {
     redirect(`/login?error=throttled${nextParam}`);
   }
 
-  const { email, phone } = normalizeContact(contact);
-  const user = await prisma.user.findFirst({
-    where: { OR: [email ? { email } : {}, phone ? { phone } : {}].filter((c) => Object.keys(c).length) },
-  });
+  const where = contactWhere(contact);
+  const user = where ? await prisma.user.findFirst({ where }) : null;
 
   // Always run a hash comparison so a missing account is not faster to detect.
   const stored = user?.passwordHash ?? `x:${"0".repeat(128)}`;
@@ -39,7 +38,9 @@ export async function signIn(formData: FormData) {
   if (user.suspendedAt || user.erasedAt) redirect("/login?error=suspended");
 
   await createSession(user.id);
-  redirect(safeNext || (user.onboardingCompleted ? "/account" : "/onboarding"));
+  await mergeGuestCartIntoBasket(user.id);
+  // Every signed-in arrival lands on Home, this week's order.
+  redirect(safeNext || "/basket");
 }
 
 export async function signOut() {

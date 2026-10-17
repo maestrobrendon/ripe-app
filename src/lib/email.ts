@@ -6,6 +6,15 @@ import "server-only";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
+async function replyTo(): Promise<string> {
+  try {
+    const { getSiteSettings } = await import("@/lib/site-settings");
+    return (await getSiteSettings()).support.email;
+  } catch {
+    return "hello@basket.ng";
+  }
+}
+
 type SendEmailInput = {
   to: string;
   subject: string;
@@ -36,7 +45,8 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput): Pr
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to, subject, html, text }),
+      // Replies reach a person (the support address), never the no-reply sender.
+      body: JSON.stringify({ from, to, subject, html, text, reply_to: await replyTo() }),
     });
     if (!res.ok) {
       // Status only: Resend's error body can echo the recipient back.

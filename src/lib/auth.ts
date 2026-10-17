@@ -1,6 +1,7 @@
 import "server-only";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
+import { normalizePhone, phoneVariants } from "@/lib/phone";
 
 const scryptAsync = promisify(scrypt);
 
@@ -23,5 +24,18 @@ export async function verifyPassword(password: string, stored: string): Promise<
 export function normalizeContact(raw: string): { email?: string; phone?: string } {
   const value = raw.trim();
   if (value.includes("@")) return { email: value.toLowerCase() };
-  return { phone: value.replace(/[^\d+]/g, "") };
+  const phone = normalizePhone(value);
+  return phone ? { phone } : {};
+}
+
+/**
+ * The account lookup for "email or phone". A phone matches however an older
+ * account stored it (0803…, 234803…, +234803…), so nobody is locked out by
+ * the switch to one stored format.
+ */
+export function contactWhere(raw: string) {
+  const { email, phone } = normalizeContact(raw);
+  if (email) return { email };
+  if (phone) return { phone: { in: phoneVariants(raw) } };
+  return null;
 }

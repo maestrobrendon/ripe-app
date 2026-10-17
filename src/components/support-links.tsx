@@ -2,6 +2,7 @@
 
 import { formatNaira } from "@/lib/format";
 import { useSiteSettings } from "@/components/site-settings-provider";
+import { supportHref, supportVerb } from "@/lib/support";
 
 /*
  * Live site settings inside copy that's written once as module-level JSX
@@ -21,8 +22,12 @@ export function FreeDeliveryAmount() {
   return <>{formatNaira(useSiteSettings().delivery.freeThreshold)}</>;
 }
 
-/** The support WhatsApp link, optionally with a prefilled message. */
+/** A link to reach us (WhatsApp, or email while the number isn't set), optionally prefilled. */
 export function useWhatsappHref(text?: string): string {
-  const { support } = useSiteSettings();
-  return `https://wa.me/${support.whatsapp}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+  return supportHref(useSiteSettings().support, text);
+}
+
+/** "Message us on WhatsApp" or "Email us", for sentences. */
+export function useSupportVerb(): string {
+  return supportVerb(useSiteSettings().support);
 }

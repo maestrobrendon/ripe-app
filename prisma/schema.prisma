@@ -171,6 +171,7 @@ model DeliveryZone {
   cutoffHour   Int           @default(18)
   users        User[]
   orders       Order[]
+  addresses    Address[]
 }
 
 model User {
@@ -222,6 +223,16 @@ model User {
   // When the customer agreed that the Basket team may read their Kachi chats
   // to improve her. Null: not agreed (the default); staff can't see them.
   kachiReviewConsentAt      DateTime?
+  // The customer asked us to delete their account; staff erase it (NDPA).
+  deletionRequestedAt       DateTime?
+  // How we may message them: order updates and weekly reminders.
+  notifyWhatsApp            Boolean              @default(true)
+  notifyEmail               Boolean              @default(true)
+  // Their own invite code, and who invited them (a user id), if anyone.
+  referralCode              String?              @unique
+  referredById              String?
+  // When the invite reward was paid out for this (invited) customer.
+  referralRewardedAt        DateTime?
   createdAt                 DateTime             @default(now())
   notes                     CustomerNote[]
   credits                   CreditRecord[]
@@ -235,6 +246,34 @@ model User {
   ownMeals                  OwnMeal[]
   producePlans              ProducePlan[]
   assistantThreads          AssistantThread[]
+  addresses                 Address[]
+  orderIssues               OrderIssue[]
+  notifications             NotificationLog[]
+}
+
+// A saved delivery address. Lagos addresses are found by landmark as much as
+// by street, so the landmark, gate notes and a second phone travel with it.
+model Address {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "Home", "Office", "Mum's place".
+  label        String
+  // House or flat number and street.
+  line1        String
+  estate       String?
+  // Nearest landmark or bus stop.
+  landmark     String?
+  // Gate, security or rider notes.
+  instructions String?
+  altPhone     String?
+  zoneId       String
+  zone         DeliveryZone @relation(fields: [zoneId], references: [id])
+  isDefault    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([userId])
 }
 
 // Server-side session. The cookie holds only the opaque random token.
@@ -612,6 +651,8 @@ model Basket {
   // Optional template tag from a "New basket" goal template (Gym week,
   // Family, Plant-based, Weight management), display-only.
   goalTag           String?
+  // What the customer calls this delivery: "Home", "For Mum". Null: the day names it.
+  name              String?
   items             BasketItem[]
   windows           ShoppingWindow[]
   orders            Order[]
@@ -692,6 +733,13 @@ model Order {
   cancelReason   String?
   cancelledAt    DateTime?
   deliveredAt    DateTime?
+  // Rider help from the address: landmark, gate notes, a second number.
+  landmark       String?
+  deliveryNote   String?
+  altPhone       String?
+  // Account credit taken off this order's total (invites, goodwill).
+  creditApplied  Int            @default(0)
+  issues         OrderIssue[]
   // Optimistic concurrency: every staff change bumps it and must name the
   // version it saw, so two people can't silently overwrite each other.
   version        Int            @default(0)
@@ -1063,4 +1111,50 @@ model RateLimitBucket {
   resetAt DateTime
 
   @@index([resetAt])
+}
+
+enum IssueStatus {
+  OPEN
+  RESOLVED
+}
+
+// "Something wrong?" on a delivered order: what was wrong and with which items.
+model OrderIssue {
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // missing | damaged | wrong | quality | other
+  kind       String
+  // Product names the customer ticked.
+  items      String[]
+  note       String?
+  status     IssueStatus @default(OPEN)
+  resolution String?
+  resolvedAt DateTime?
+  createdAt  DateTime    @default(now())
+
+  @@index([status, createdAt])
+  @@index([orderId])
+}
+
+// Every message we send or would send a customer. WhatsApp messages are kept
+// here (status LOGGED) until a provider is connected; dedupeKey makes a
+// scheduled reminder go out once.
+model NotificationLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // EMAIL | WHATSAPP
+  channel   String
+  kind      String
+  dedupeKey String   @unique
+  to        String
+  body      String
+  // SENT | LOGGED | FAILED | SKIPPED
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
