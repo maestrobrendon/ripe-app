@@ -56,6 +56,12 @@ const PLURAL: Record<string, string> = {
   bag: "bags",
   loaf: "loaves",
   cob: "cobs",
+  clove: "cloves",
+  cup: "cups",
+  stalk: "stalks",
+  can: "cans",
+  leaf: "leaves",
+  pinch: "pinches",
 };
 
 const FRACTIONS: [number, string][] = [

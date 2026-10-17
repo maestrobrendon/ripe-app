@@ -12,6 +12,7 @@
     "test:seed": "tsx --conditions=react-server prisma/scripts/reset-test-account.ts --seed",
     "admin:create-owner": "tsx --conditions=react-server prisma/scripts/create-owner.ts",
     "menu:import": "tsx --conditions=react-server prisma/scripts/import-menu.ts",
+    "library:import": "tsx --conditions=react-server prisma/scripts/import-library.ts",
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:watch": "vitest",
