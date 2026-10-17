@@ -3,7 +3,7 @@
 import { FloatingDock, type DockItem } from "@/components/ui/floating-dock";
 
 /**
- * The one menu for every signed-in page: Basket (home), Recipes, Kachi,
+ * The one menu for every signed-in page: Home (the basket page), Recipes, Kachi,
  * Account. No count badge here; the item count lives only on the header's
  * Cart button.
  */
@@ -11,7 +11,7 @@ export function AccountDock() {
   const items: DockItem[] = [
     {
       href: "/basket",
-      label: "Basket",
+      label: "Home",
       icon: "home",
       match: (p) => p.startsWith("/basket") || p.startsWith("/cart") || p.startsWith("/orders"),
     },
