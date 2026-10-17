@@ -26,34 +26,29 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   // Nothing to search on the chat or account screens.
   const showSearch = !pathname.startsWith("/assistant") && !pathname.startsWith("/account");
 
-  // Every signed-in page gets the same stripped-down header: wordmark, cart,
-  // search. No category row (the floating dock is the one nav, and it
-  // already covers Recipes/Kachi/Account) and no avatar (Account is its own
-  // destination in the dock). Cart is its own screen here, not the slide-out
-  // drawer — one header design for the whole signed-in app, not one per page.
+  // Every signed-in page gets the same slim header: the wordmark (Home),
+  // search, and Ask Kachi spelled out. No cart: the customer's order is Home,
+  // one tap away in the dock. Search is a full field on desktop and a button
+  // to the search page on phones, so Home isn't pushed below the fold.
   if (isSignedIn) {
     return (
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto max-w-5xl px-4 pt-3 pb-3 sm:px-6">
-          <div className={`flex h-11 items-center justify-between ${showSearch ? "mb-3" : ""}`}>
-            <Link href="/basket" className="logo-wordmark text-2xl text-carbon">
-              {SITE_NAME}
+        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4 sm:px-6">
+          <Link href="/basket" className="logo-wordmark text-2xl text-carbon">
+            {SITE_NAME}
+          </Link>
+          <div className="flex-1">{showSearch && <div className="hidden max-w-md lg:ml-6 lg:block"><SearchBar compact /></div>}</div>
+          {showSearch && (
+            <Link href="/search" aria-label="Search produce and recipes" title="Search" className={`${ICON_BUTTON} lg:hidden`}>
+              <Icon name="search" size={20} />
             </Link>
-            <Link
-              href="/cart"
-              aria-label={cart.itemCount > 0 ? `Cart, ${cart.itemCount} items` : "Cart"}
-              className="flex h-11 items-center gap-2 rounded-full bg-soft-mist pl-3 pr-4 text-sm font-semibold"
-            >
-              <Icon name="cart" size={20} />
-              Cart
-              {cart.itemCount > 0 && (
-                <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-ember px-1 text-xs font-medium text-white">
-                  <RollingNumber value={cart.itemCount} />
-                </span>
-              )}
+          )}
+          {!pathname.startsWith("/assistant") && (
+            <Link href="/assistant" className="flex h-10 items-center gap-1.5 rounded-full bg-[var(--hm-tint)] px-3.5 text-sm font-semibold text-carbon transition-colors hover:bg-[var(--hm-tint-2)]">
+              <Icon name="assistant" size={18} />
+              Ask Kachi
             </Link>
-          </div>
-          {showSearch && <SearchBar compact />}
+          )}
         </div>
       </header>
     );

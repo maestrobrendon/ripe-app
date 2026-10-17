@@ -290,7 +290,7 @@ export function KachiChat({ firstName, baskets }: { firstName: string; baskets: 
   return (
     // Fills the screen under the 69px signed-in header (no search here) and
     // above the dock, so the thread scrolls inside and the composer stays put.
-    <div className="lg:pl-60 xl:pl-0">
+    <div>
       <div className="mx-auto flex h-[calc(100svh-69px-var(--dock-clearance))] max-w-2xl flex-col lg:h-[calc(100svh-69px)]">
         {/* Chat bar */}
         <div className="flex flex-none items-center gap-2 border-b border-border px-3 py-2.5">

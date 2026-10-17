@@ -79,7 +79,7 @@ function Card({ product }: { product: CrossSellProduct }) {
             }}
             className="w-full rounded-full border border-carbon px-4 py-2 text-xs font-medium uppercase tracking-wide text-carbon hover:bg-sky-wash"
           >
-            {inCart ? "Add another" : "Add to cart"}
+            {inCart ? "Add another" : "Add"}
           </motion.button>
         )}
       </div>
@@ -91,7 +91,7 @@ export function CompleteYourBasket({ products }: { products: CrossSellProduct[] 
   if (products.length === 0) return null;
   return (
     <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-      <h2 className="text-lg font-semibold sm:text-xl">Complete your basket</h2>
+      <h2 className="text-lg font-semibold sm:text-xl">Goes well with it</h2>
       <div className="snap-row mt-4 flex gap-3 overflow-x-auto pb-2 sm:gap-4">
         {products.map((p) => (
           <Card key={p.id} product={p} />

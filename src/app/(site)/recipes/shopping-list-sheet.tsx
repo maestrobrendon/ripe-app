@@ -7,6 +7,7 @@ import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { weekShoppingList, addShoppingListItems, toggleElsewhereGot } from "./meal-plan-actions";
+import { useCart } from "@/components/cart-provider";
 
 type WeSellLine = {
   productId: string;
@@ -37,6 +38,7 @@ export function ShoppingListSheet({
   const router = useRouter();
   const [weSell, setWeSell] = useState<WeSellLine[]>([]);
   const [elsewhere, setElsewhere] = useState<ElsewhereLine[]>([]);
+  const cart = useCart();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, startLoading] = useTransition();
   const [isPending, startTransition] = useTransition();
@@ -59,18 +61,26 @@ export function ShoppingListSheet({
       return next;
     });
 
-  const addTo = (destination: "cart" | "basket") =>
+  const addToOrder = () =>
     startTransition(async () => {
-      await addShoppingListItems(Array.from(selected), destination);
+      const { added, label } = await addShoppingListItems(Array.from(selected));
+      cart.announce(added ? `Added ${added} to ${label}` : `It's all in ${label} already`);
       onClose();
       router.refresh();
     });
 
-  const cost = weSell.filter((l) => selected.has(l.productId)).reduce((s, l) => s + l.memberPrice, 0);
+  // A tick shows at once; the server keeps it for next time.
+  const toggleGot = (term: string) => {
+    setElsewhere((list) => list.map((l) => (l.term === term ? { ...l, got: !l.got } : l)));
+    startTransition(() => toggleElsewhereGot(weekOffset, term));
+  };
+
+  const priceOf = (l: { memberPrice: number; standardPrice: number }) => (cart.isSubscriber ? l.memberPrice : l.standardPrice);
+  const cost = weSell.filter((l) => selected.has(l.productId)).reduce((s, l) => s + priceOf(l), 0);
 
   return (
     <BottomSheet open={open} onClose={onClose} title="Shopping list">
-      <p className="text-sm text-muted">Everything your timetable needs this week.</p>
+      <p className="text-sm text-muted">Everything your meal plan needs this week.</p>
 
       {loading ? (
         <p className="mt-6 text-sm text-muted">Building your list…</p>
@@ -109,27 +119,18 @@ export function ShoppingListSheet({
                         {l.haveIt ? "You have this" : `For ${l.mealCount} meal${l.mealCount > 1 ? "s" : ""}`}
                       </span>
                     </span>
-                    {!l.haveIt && <span className="shrink-0 text-sm font-medium">{formatNaira(l.memberPrice)}</span>}
+                    {!l.haveIt && <span className="shrink-0 text-sm font-medium">{formatNaira(priceOf(l))}</span>}
                   </button>
                 ))}
               </div>
 
-              <div className="mt-3 flex gap-2">
-                <button
-                  disabled={isPending || selected.size === 0}
-                  onClick={() => addTo("cart")}
-                  className="flex-1 rounded-full border border-border py-3 text-sm font-semibold disabled:opacity-50"
-                >
-                  Add {selected.size} to cart
-                </button>
-                <button
-                  disabled={isPending || selected.size === 0}
-                  onClick={() => addTo("basket")}
-                  className="flex-1 rounded-full bg-carbon py-3 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  Add to basket · {formatNaira(cost)}
-                </button>
-              </div>
+              <button
+                disabled={isPending || selected.size === 0}
+                onClick={addToOrder}
+                className="mt-3 w-full rounded-full bg-carbon py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {isPending ? "Adding…" : `Add ${selected.size} to ${cart.deliveryLabel ?? "your order"} · ${formatNaira(cost)}`}
+              </button>
             </div>
           )}
 
@@ -141,7 +142,7 @@ export function ShoppingListSheet({
                 {elsewhere.map((l) => (
                   <button
                     key={l.term}
-                    onClick={() => startTransition(() => toggleElsewhereGot(weekOffset, l.term))}
+                    onClick={() => toggleGot(l.term)}
                     className="flex w-full items-center gap-3 py-2.5 text-left"
                   >
                     <span
@@ -164,7 +165,7 @@ export function ShoppingListSheet({
           )}
 
           {weSell.length === 0 && elsewhere.length === 0 && (
-            <p className="mt-6 text-sm text-muted">Add a meal to your timetable to build a shopping list.</p>
+            <p className="mt-6 text-sm text-muted">Add a meal to your meal plan to build a shopping list.</p>
           )}
         </>
       )}

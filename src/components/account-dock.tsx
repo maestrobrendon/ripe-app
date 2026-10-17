@@ -3,21 +3,17 @@
 import { FloatingDock, type DockItem } from "@/components/ui/floating-dock";
 
 /**
- * The one menu for every signed-in page: Home (the basket page), Recipes, Kachi,
- * Account. No count badge here; the item count lives only on the header's
- * Cart button.
+ * The one menu for every signed-in page, always labelled: Home (this week's
+ * order), Shop, Recipes, Orders, Me. Kachi is "Ask Kachi" in the header and on
+ * Home and Recipes, where the questions come up.
  */
 export function AccountDock() {
   const items: DockItem[] = [
-    {
-      href: "/basket",
-      label: "Home",
-      icon: "home",
-      match: (p) => p.startsWith("/basket") || p.startsWith("/cart") || p.startsWith("/orders"),
-    },
+    { href: "/basket", label: "Home", icon: "home", match: (p) => p.startsWith("/basket") || p.startsWith("/checkout"), flightTarget: true },
+    { href: "/shop", label: "Shop", icon: "shop", match: (p) => p.startsWith("/shop") || p.startsWith("/products") || p.startsWith("/search") },
     { href: "/recipes", label: "Recipes", icon: "recipes", match: (p) => p.startsWith("/recipes") },
-    { href: "/assistant", label: "Kachi", icon: "assistant", match: (p) => p.startsWith("/assistant") },
-    { href: "/account", label: "Account", icon: "account", match: (p) => p.startsWith("/account") },
+    { href: "/orders", label: "Orders", icon: "box", match: (p) => p.startsWith("/orders") },
+    { href: "/account", label: "Me", icon: "account", match: (p) => p.startsWith("/account") || p.startsWith("/subscribe") },
   ];
 
   return <FloatingDock items={items} ariaLabel="Primary" />;

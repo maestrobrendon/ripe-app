@@ -29,15 +29,15 @@ const arrow = (
 
 /**
  * The one thing every recipe page asks for. A guest starts sign-up with this
- * recipe already picked; an account gets the ingredients added in one tap,
- * to the basket for a subscriber (only what's missing) or the cart otherwise.
+ * recipe already picked; an account gets what its order doesn't already
+ * have added in one tap.
  * Drawn twice: a card beside the recipe on wide screens, a bar along the
  * bottom on phones.
  */
 export function RecipeCta(props: CtaProps) {
-  const { signedIn, isSubscriber, fromBasket, total, toGet, cost, startHref, slug } = props;
+  const { signedIn, fromBasket, total, toGet, cost, startHref, slug } = props;
   const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ added: number; to: "basket" | "cart" } | null>(null);
+  const [result, setResult] = useState<{ added: number; label: string } | null>(null);
   const [failed, setFailed] = useState(false);
   const router = useRouter();
 
@@ -53,21 +53,20 @@ export function RecipeCta(props: CtaProps) {
     });
 
   const nothingToGet = signedIn && toGet === 0;
-  const label = !signedIn ? "Start with this recipe" : isSubscriber ? `Add ${toGet} to my basket` : "Add ingredients to cart";
-  const destination = result?.to === "basket" ? "/basket" : "/cart";
+  const label = !signedIn ? "Start with this recipe" : `Add the ${toGet} you don't have`;
 
   const action = (size: "md" | "sm") => {
     const cls = `inline-flex w-full items-center justify-center gap-2 rounded-full bg-carbon font-semibold text-paper-white transition hover:bg-carbon/85 disabled:opacity-60 ${size === "md" ? "h-13 text-[15px]" : "h-12 text-[14px]"}`;
     if (result)
       return (
-        <Link href={destination} className={cls}>
-          {result.added > 0 ? `Added ${result.added}. View ${result.to}` : `Already in your ${result.to}. View it`} {arrow}
+        <Link href="/basket" className={cls}>
+          {result.added > 0 ? `Added ${result.added} to ${result.label}. View` : `It's all in ${result.label}. View`} {arrow}
         </Link>
       );
     if (nothingToGet)
       return (
         <p className={`${cls} bg-mint-pop! text-carbon!`}>
-          <Check className="h-4 w-4" /> You have everything
+          <Check className="h-4 w-4" /> It&apos;s all in your order
         </p>
       );
     if (!signedIn)
@@ -90,19 +89,19 @@ export function RecipeCta(props: CtaProps) {
           <p className="text-[15px] font-semibold">{signedIn ? "Get the ingredients" : "Cook this next week"}</p>
           <p className="mt-1 text-[14px] leading-relaxed text-[var(--hm-ink-2)]">
             {signedIn
-              ? "We add the fresh produce for you. The rest is on the list below."
-              : "Pick it when you sign up and the fresh produce comes in your first basket, on your day."}
+              ? "We add the fresh produce you don't have to your order. The rest is on the list below."
+              : "Pick it when you sign up and the fresh produce comes in your first order, on your day."}
           </p>
           <ShareMeter have={fromBasket} total={total} className="mt-5" animate={false} />
           <p className="mt-2 text-[13px] text-[var(--hm-ink-2)]">
             <b className="font-semibold text-carbon">
               {fromBasket} of {total}
             </b>{" "}
-            ingredients come in your basket
+            ingredients we can bring
           </p>
           {toGet > 0 && !result && (
             <p className="mt-5 flex items-baseline justify-between border-t border-[var(--hm-line)] pt-4 text-[14px]">
-              <span className="text-[var(--hm-ink-2)]">{signedIn && isSubscriber ? `The ${toGet} you're missing` : "Produce from"}</span>
+              <span className="text-[var(--hm-ink-2)]">{signedIn ? `The ${toGet} you don't have` : "Produce from"}</span>
               <b className="text-[18px] font-semibold tabular-nums">{formatNaira(cost)}</b>
             </p>
           )}
@@ -110,7 +109,7 @@ export function RecipeCta(props: CtaProps) {
           {failed && <p className="mt-3 text-[13px] text-ember">That didn&apos;t go through. Try again in a moment.</p>}
           {!signedIn && (
             <ul className="mt-5 space-y-2 text-[13px] text-[var(--hm-ink-2)]">
-              {["Change your basket until the night before.", "Skip a week and nothing is charged.", "Recipes picked for your goal."].map((t) => (
+              {["Change your order until the night before.", "Skip a week and nothing is charged.", "Recipes picked for your goal."].map((t) => (
                 <li key={t} className="flex gap-2">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--hm-basket-ink)]" /> {t}
                 </li>

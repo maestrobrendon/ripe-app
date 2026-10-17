@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
-import { useDestination, type Destination } from "@/components/destination-provider";
-import { DestinationOverrideChevron, addToDestination } from "@/components/destination-pill";
-import { setBasketItemQuantity } from "@/app/(site)/basket/actions";
 import { ProductImage } from "@/components/product-image";
 import { Card } from "@/components/ui/card";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { flyToCart } from "@/components/ui/fly-to-cart";
 import { formatNaira } from "@/lib/format";
+import { unitPriceLabel } from "@/lib/delivery-labels";
 import { flavourFor } from "@/lib/flavour";
 import type { ProductCategory } from "@/generated/prisma/enums";
 
@@ -21,74 +18,17 @@ export type ProductCardData = AddableProduct & {
   tags: string[];
 };
 
+/**
+ * A product in a grid. The stepper shows what's really in the order (or a
+ * guest's cart), so "Add" never overwrites a quantity already there. One price:
+ * the one this customer pays. Non-members see what members pay, once.
+ */
 export function ProductCard({ product }: { product: ProductCardData }) {
   const cart = useCart();
-  const dest = useDestination();
-  const goingToBasket = dest.signedIn && dest.destination.type === "basket";
-
-  // Only the cart tracks item quantity client-side app-wide; a basket
-  // destination's quantity here is this card's own optimistic count of what
-  // it has sent this basket this session, not a live read of the basket.
-  const [basketQty, setBasketQty] = useState(0);
-  const [basketLoading, setBasketLoading] = useState(false);
-  const destinationKey = dest.signedIn && dest.destination.type === "basket" ? dest.destination.basketId : "cart";
-  useEffect(() => {
-    // Resets this card's optimistic count when the "shopping into" target
-    // changes, so switching baskets doesn't carry over a stale local number.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBasketQty(0);
-  }, [destinationKey]);
-
-  const cartLine = cart.items.find((i) => i.productId === product.id);
-  const quantity = goingToBasket ? basketQty : cartLine?.quantity ?? 0;
-  const isLoading = goingToBasket ? basketLoading : cart.loadingProductId === product.id;
+  const quantity = cart.quantityOf(product.id);
   const price = cart.isSubscriber ? product.memberPrice : product.standardPrice;
   const href = `/products/${product.slug}`;
-
-  const change = async (next: number) => {
-    if (goingToBasket && dest.destination.type === "basket") {
-      setBasketLoading(true);
-      try {
-        await setBasketItemQuantity(dest.destination.basketId, product.id, next);
-        setBasketQty(next);
-        if (next > basketQty) {
-          dest.announceAdd({
-            productId: product.id,
-            productName: product.name,
-            quantity: next,
-            destination: dest.destination,
-            destinationLabel: dest.destination.label,
-          });
-        }
-      } finally {
-        setBasketLoading(false);
-      }
-      return;
-    }
-    const wasEmpty = quantity === 0;
-    await cart.setQuantity(product, next);
-    if (wasEmpty && next > 0 && dest.signedIn) {
-      dest.announceAdd({
-        productId: product.id,
-        productName: product.name,
-        quantity: next,
-        destination: { type: "cart" },
-        destinationLabel: "Cart",
-      });
-    }
-  };
-
-  const addOverride = async (destination: Destination) => {
-    await addToDestination(destination, product.id, product.minOrderQty);
-    if (destination.type === "cart") await cart.refresh();
-    dest.announceAdd({
-      productId: product.id,
-      productName: product.name,
-      quantity: product.minOrderQty,
-      destination,
-      destinationLabel: destination.type === "cart" ? "Cart" : destination.label,
-    });
-  };
+  const signedIn = cart.container === "delivery";
 
   return (
     <Card className="flex flex-col transition hover:bg-sky-wash">
@@ -104,52 +44,42 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         />
       </Link>
 
-      {/* Fixed-height title, badge, and price blocks so a card with a long
-          name and a member-price line takes the same room as one without,
-          keeping every card in a row the same height regardless of content. */}
+      {/* Fixed-height title and price blocks keep every card in a row the same height. */}
       <div className="mb-1 flex items-start justify-between gap-2">
         <h3 className="line-clamp-2 min-h-10 min-w-0 text-sm font-medium leading-snug break-words sm:min-h-11 sm:text-base">
           <Link href={href} className="hover:underline">{product.name}</Link>
         </h3>
         {product.soldOut ? (
-          <span className="shrink-0 rounded-full bg-soft-mist px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">Out of stock</span>
-        ) : !product.inSeason && (
-          <span className="shrink-0 rounded-full bg-ember/12 px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">
-            Off-season
-          </span>
+          <span className="shrink-0 rounded-full bg-soft-mist px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">Sold out</span>
+        ) : (
+          !product.inSeason && (
+            <span className="shrink-0 rounded-full bg-ember/12 px-1.5 py-0.5 text-[10px] font-medium text-carbon sm:px-2 sm:text-[11px]">Limited</span>
+          )
         )}
       </div>
-      <p className="mb-2 truncate text-xs text-muted">{product.unit}</p>
 
       <div className="mb-3 flex flex-col gap-0.5">
-        <span className="text-base font-semibold sm:text-lg">{formatNaira(price)}</span>
+        <span className="text-base font-semibold sm:text-lg">{unitPriceLabel(formatNaira(price), product.unit)}</span>
         <span className="text-xs text-muted">
-          {cart.isSubscriber ? (
-            <span className="line-through">{formatNaira(product.standardPrice)}</span>
-          ) : product.memberPrice < product.standardPrice ? (
-            <>members {formatNaira(product.memberPrice)}</>
-          ) : (
-            <>&nbsp;</>
-          )}
+          {!cart.isSubscriber && product.memberPrice < product.standardPrice ? <>Members pay {formatNaira(product.memberPrice)}</> : <>&nbsp;</>}
         </span>
       </div>
 
       {product.soldOut && quantity === 0 ? (
         <p className="mt-auto flex h-9 items-center text-xs text-muted">Back soon</p>
       ) : (
-      <div className="mt-auto flex items-center gap-1.5">
-        <QuantityStepper
-          quantity={quantity}
-          min={product.minOrderQty}
-          step={product.stepQty}
-          label={product.name}
-          loading={isLoading}
-          suffix={goingToBasket ? `in ${dest.destination.type === "basket" ? dest.destination.label : "basket"}` : "in cart"}
-          onAddFrom={(el) => flyToCart(el, product.imageEmoji)}
-          onChange={change}
-        />
-        <DestinationOverrideChevron onPick={addOverride} />
-      </div>
+        <div className="mt-auto">
+          <QuantityStepper
+            quantity={quantity}
+            min={product.minOrderQty}
+            step={product.stepQty}
+            label={product.name}
+            loading={cart.loadingProductId === product.id}
+            suffix={signedIn ? "in your order" : "in cart"}
+            onAddFrom={(el) => flyToCart(el, product.imageEmoji)}
+            onChange={(next) => cart.setQuantity(product, next)}
+          />
+        </div>
       )}
     </Card>
   );

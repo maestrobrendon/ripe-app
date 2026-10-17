@@ -11,10 +11,11 @@ import { RecipeLibrary, type LibraryRecipe } from "./recipe-library";
 import { ProduceListTab } from "./produce-list-tab";
 import { WeeklyMealPlanBuilder, MealPlanGate, type DayView, type MealOption, type RecipeOption } from "./weekly-meal-plan";
 import { IdeasSheetTrigger } from "@/app/(site)/basket/ideas-sheet-trigger";
-import { getActiveBasketReadOnly, getBasketView } from "@/lib/basket";
+import { readActiveDelivery } from "@/lib/order-container";
+import { getDeliveryCycle, zoneForUser } from "@/lib/delivery";
+import { longDate } from "@/lib/delivery-labels";
 import { getOrCreateWeeklyPlan, weekStartWithOffset, parseDays, MEAL_SLOTS } from "@/lib/weekly-meal-plan";
-import { SHOPPING_WINDOW_DAY_LABEL } from "@/lib/shopping-window";
-import type { ShoppingWindowDay } from "@/generated/prisma/enums";
+import type { DeliveryDay } from "@/generated/prisma/enums";
 import { MENU_GOALS, type MenuGoal, type MenuRecipe } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
 import { Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
@@ -98,21 +99,17 @@ export default async function RecipesPage({
 
   const isFiltered = Boolean(goal || ingredientProduct || isSavedFilter);
 
-  // Active basket contents, used by the personalization strip's basket-aware
-  // line and the weekly plan's "already have" counts — subscribers only, per
-  // the Recipes-by-tier addendum, Section 2.
+  // What's already in the customer's order (for "you have"), and when it comes.
   let activeBasketProductIds = new Set<string>();
-  let basketShipDayLabel: string | null = null;
-  let basketShipDay: ShoppingWindowDay | null = null;
-  if (isSubscriber && user) {
-    const activeBasket = await getActiveBasketReadOnly(user.id);
+  let deliveryDay: DeliveryDay | null = null;
+  let deliveryLine: string | null = null;
+  if (user) {
+    const activeBasket = await readActiveDelivery(user.id);
     if (activeBasket) {
-      const view = await getBasketView(activeBasket.id);
-      activeBasketProductIds = new Set((view?.basket.items ?? []).map((i) => i.productId));
-      basketShipDay = activeBasket.shoppingWindowDay;
-      basketShipDayLabel = activeBasket.shoppingWindowDay
-        ? SHOPPING_WINDOW_DAY_LABEL[activeBasket.shoppingWindowDay]
-        : null;
+      activeBasketProductIds = new Set((await prisma.basketItem.findMany({ where: { basketId: activeBasket.id }, select: { productId: true } })).map((i) => i.productId));
+      const cycle = await getDeliveryCycle(activeBasket, await zoneForUser(user.id));
+      deliveryDay = cycle.day;
+      deliveryLine = cycle.date ? `Your order comes ${longDate(cycle.date)}` : null;
     }
   }
 
@@ -326,7 +323,8 @@ export default async function RecipesPage({
       {isSubscriber ? (
         <WeeklyMealPlanBuilder
           days={mealPlanDayViews}
-          basketShipDay={basketShipDay}
+          deliveryDay={deliveryDay}
+          deliveryLine={deliveryLine}
           repeatsEnabled={repeatsEnabled}
           ownMealOptions={ownMealOptions}
           recipeOptions={recipeOptions}
@@ -453,9 +451,9 @@ export default async function RecipesPage({
                   <span aria-hidden>🍽️</span> For {HOUSEHOLD_TYPE_LABEL[prefs.householdType]?.toLowerCase() ?? prefs.householdType}
                 </li>
               )}
-              {isSubscriber && basketShipDayLabel && (
+              {deliveryLine && (
                 <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-lavender px-3">
-                  <span aria-hidden>🧺</span> Basket ships {basketShipDayLabel}
+                  <span aria-hidden>🧺</span> {deliveryLine}
                 </li>
               )}
               <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-paper-white/75 px-3">

@@ -6,7 +6,8 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
-import { sendRecipeIngredientsToBasket, sendRecipeIngredientsToCart } from "./meal-plan-actions";
+import { sendRecipeIngredientsToOrder } from "./meal-plan-actions";
+import { useCart } from "@/components/cart-provider";
 
 export type RecipeSheetData = {
   id: string;
@@ -50,6 +51,7 @@ export function RecipeSheet({
 }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const cart = useCart();
 
   if (!recipe) return null;
 
@@ -59,8 +61,8 @@ export function RecipeSheet({
 
   const getMissing = () =>
     startTransition(async () => {
-      if (isSubscriber) await sendRecipeIngredientsToBasket(recipe.id);
-      else await sendRecipeIngredientsToCart(recipe.id);
+      await sendRecipeIngredientsToOrder(recipe.id);
+      cart.announce(`Added ${missing.length} to ${cart.deliveryLabel ?? "your order"}`);
       router.refresh();
     });
 
@@ -111,17 +113,13 @@ export function RecipeSheet({
               onClick={getMissing}
               className="tap-target w-full rounded-full bg-carbon py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {isSubscriber
-                ? `Get the ${missing.length} I'm missing, ${formatNaira(missingCost)}`
-                : "Add ingredients to cart"}
+              {isPending ? "Adding…" : `Add the ${missing.length} you don't have · ${formatNaira(missingCost)}`}
             </button>
           ) : (
-            isSubscriber && (
-              <p className="flex items-center justify-center gap-2 rounded-full bg-mint-pop/25 py-3 text-sm font-semibold text-carbon">
-                <Icon name="check" size={16} />
-                You have everything
-              </p>
-            )
+            <p className="flex items-center justify-center gap-2 rounded-full bg-mint-pop/25 py-3 text-sm font-semibold text-carbon">
+              <Icon name="check" size={16} />
+              It&apos;s all in your order
+            </p>
           ))}
 
         {isSubscriber && onAddToTimetable && (

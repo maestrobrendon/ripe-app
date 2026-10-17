@@ -11,14 +11,14 @@ import {
   type MealPlanDay,
   type MealSlotKey,
 } from "@/lib/meal-plan-types";
-import type { MealPlanDayStatus, ShoppingWindowDay } from "@/generated/prisma/enums";
+import type { DeliveryDay, MealPlanDayStatus } from "@/generated/prisma/enums";
+import { useCart } from "@/components/cart-provider";
 import {
   setMealSlot,
   setMealPlanDayStatus,
   setMealPlanRepeats,
   sendDayIngredientsToBasket,
-  sendWeekMissingToBasket,
-  sendWeekMissingToCart,
+  sendWeekMissingToOrder,
 } from "./meal-plan-actions";
 import { getRecipeDetail } from "./recipe-detail-action";
 import { RecipeSheet, type RecipeSheetData } from "./recipe-sheet";
@@ -66,7 +66,8 @@ export function WeeklyMealPlanBuilder({
   weekOffset = 0,
   weekLabel,
   days,
-  basketShipDay,
+  deliveryDay,
+  deliveryLine,
   repeatsEnabled,
   ownMealOptions,
   recipeOptions,
@@ -74,8 +75,10 @@ export function WeeklyMealPlanBuilder({
   weekOffset?: number;
   weekLabel?: string;
   days: DayView[];
-  /** The active basket's ship day, so the timetable and the delivery it draws from stay visibly lined up. */
-  basketShipDay?: ShoppingWindowDay | null;
+  /** The order's delivery day, so the plan and the delivery it draws from stay visibly lined up. */
+  deliveryDay?: DeliveryDay | null;
+  /** "Your order comes Wednesday 22 Oct". */
+  deliveryLine?: string | null;
   repeatsEnabled: boolean;
   ownMealOptions: MealOption[];
   recipeOptions: RecipeOption[];
@@ -88,7 +91,8 @@ export function WeeklyMealPlanBuilder({
   const [menuTarget, setMenuTarget] = useState<{ day: MealPlanDay; slot: MealSlotKey } | null>(null);
   const [recipeSheet, setRecipeSheet] = useState<RecipeSheetData | null>(null);
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
-  const [weekSent, setWeekSent] = useState<"basket" | "cart" | null>(null);
+  const cart = useCart();
+  const [weekSent, setWeekSent] = useState(false);
 
   const dayView = (day: MealPlanDay) => days.find((d) => d.day === day) ?? { day, status: "PLANNED" as const, slots: { breakfast: null, lunch: null, dinner: null } };
   const current = dayView(selectedDay);
@@ -119,13 +123,9 @@ export function WeeklyMealPlanBuilder({
     <div className="rounded-card-lg border border-border bg-surface p-5 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="text-heading">Food timetable</h3>
+          <h3 className="text-heading">Meal plan</h3>
           <p className="mt-1 text-muted">Plan what you eat this week. Add your own meals or ours.</p>
-          {basketShipDay && (
-            <p className="mt-2 text-sm font-medium text-carbon">
-              Your basket ships {basketShipDay.slice(0, 1) + basketShipDay.slice(1).toLowerCase()}
-            </p>
-          )}
+          {deliveryLine && <p className="mt-2 text-sm font-medium text-carbon">{deliveryLine}</p>}
         </div>
         <div className="flex overflow-hidden rounded-full bg-soft-mist p-1">
           {(["day", "week"] as const).map((v) => (
@@ -152,32 +152,20 @@ export function WeeklyMealPlanBuilder({
           Shopping list
         </button>
         {anyFilled && (
-          <>
-            <button
-              disabled={isPending}
-              onClick={() =>
-                startTransition(async () => {
-                  await sendWeekMissingToCart(weekOffset);
-                  setWeekSent("cart");
-                })
-              }
-              className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-sky-wash disabled:opacity-50"
-            >
-              {weekSent === "cart" ? "Sent to cart" : "Send week's gaps to Cart"}
-            </button>
-            <button
-              disabled={isPending}
-              onClick={() =>
-                startTransition(async () => {
-                  await sendWeekMissingToBasket(weekOffset);
-                  setWeekSent("basket");
-                })
-              }
-              className="rounded-full bg-carbon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-            >
-              {weekSent === "basket" ? "Added to basket" : "Add week's gaps to Basket"}
-            </button>
-          </>
+          <button
+            disabled={isPending}
+            onClick={() =>
+              startTransition(async () => {
+                const { added, label } = await sendWeekMissingToOrder(weekOffset);
+                cart.announce(added ? `Added ${added} to ${label}` : `Everything's already in ${label}`);
+                setWeekSent(true);
+                router.refresh();
+              })
+            }
+            className="rounded-full bg-carbon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {weekSent ? "Added to your order" : "Add what the week needs to your order"}
+          </button>
         )}
       </div>
 
@@ -237,10 +225,10 @@ export function WeeklyMealPlanBuilder({
                 {DAY_FULL[selectedDay]}
                 {selectedDay === todayAsPlanDay() && weekOffset === 0 ? ", today" : ""}
               </h4>
-              {basketShipDay === selectedDay && (
+              {deliveryDay === selectedDay && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-mint-pop/25 px-2.5 py-1 text-xs font-semibold text-carbon">
                   <Icon name="delivery" size={12} />
-                  Your basket arrives today
+                  Delivery day
                 </span>
               )}
               <button
@@ -303,10 +291,16 @@ export function WeeklyMealPlanBuilder({
             {current.status !== "SKIPPED" && MEAL_SLOTS.some((s) => current.slots[s]?.kind === "recipe") && (
               <button
                 disabled={isPending}
-                onClick={() => startTransition(async () => { await sendDayIngredientsToBasket(weekOffset, selectedDay); router.refresh(); })}
+                onClick={() =>
+                  startTransition(async () => {
+                    const r = await sendDayIngredientsToBasket(weekOffset, selectedDay);
+                    cart.announce(r.added ? `Added ${r.added} to your order` : "Everything for this day is already in your order");
+                    router.refresh();
+                  })
+                }
                 className="mt-3 text-sm font-semibold text-carbon underline disabled:opacity-50"
               >
-                Send today&rsquo;s missing ingredients to basket
+                Add {DAY_FULL[selectedDay]}&rsquo;s missing ingredients to your order
               </button>
             )}
           </div>
@@ -329,7 +323,7 @@ export function WeeklyMealPlanBuilder({
                 const dv = dayView(day);
                 return (
                   <tr key={day} className="border-t border-border">
-                    <td className={`p-2 align-top font-semibold ${basketShipDay === day ? "text-carbon" : ""}`}>
+                    <td className={`p-2 align-top font-semibold ${deliveryDay === day ? "text-carbon" : ""}`}>
                       {DAY_SHORT[day]}
                     </td>
                     {MEAL_SLOTS.map((slot) => {
@@ -361,7 +355,7 @@ export function WeeklyMealPlanBuilder({
         className="mt-6 flex w-full items-center gap-3 rounded-input bg-soft-mist p-3.5 text-left disabled:opacity-60"
       >
         <span className="flex-1">
-          <span className="block text-sm font-semibold">Use this timetable every week</span>
+          <span className="block text-sm font-semibold">Use this plan every week</span>
           <span className="block text-xs text-muted">Your shopping list refreshes each week</span>
         </span>
         <span

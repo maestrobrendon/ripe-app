@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, type CurrentUser } from "@/lib/session";
 import { getMenu } from "@/lib/menu";
-import { getOrCreateActiveBasket } from "@/lib/basket";
-import { toolAddItemToBasket, toolAddItemsToBasket, toolAddItemsToCart } from "@/lib/assistant-tools";
+import { addLinesToDelivery, getOrCreateActiveDelivery, readActiveDelivery } from "@/lib/order-container";
+import { orderPhrase } from "@/lib/delivery-labels";
 import { matchProductByName, normalizeTerm } from "@/lib/ingredient-match";
 import {
   weekStartWithOffset,
@@ -194,11 +194,22 @@ export async function toggleElsewhereGot(weekOffset: number, term: string) {
 }
 
 /**
- * Sends a day's missing ingredients to the customer's active basket, across
- * all three slots. Hands off to the Assistant's own add_item_to_basket tool
- * function rather than writing to BasketItem directly — Recipes still has
- * zero basket write path of its own, per the two-tier AI split addendum.
+ * Adds whichever of these products the customer's order doesn't already
+ * hold, at each product's smallest pack. Everyone has one order (this week's
+ * delivery), so recipes, the meal plan and the shopping list all fill it.
  */
+async function addMissingToOrder(user: CurrentUser, productIds: string[]): Promise<{ added: number; label: string }> {
+  const delivery = await getOrCreateActiveDelivery(user);
+  const existing = new Set((await prisma.basketItem.findMany({ where: { basketId: delivery.id }, select: { productId: true } })).map((i) => i.productId));
+  const missing = [...new Set(productIds)].filter((id) => !existing.has(id));
+  const products = missing.length ? await prisma.product.findMany({ where: { id: { in: missing } }, select: { id: true, minOrderQty: true } }) : [];
+  const added = await addLinesToDelivery(delivery.id, products.map((p) => ({ productId: p.id, quantity: p.minOrderQty })));
+  revalidatePath("/basket");
+  revalidatePath("/recipes");
+  return { added, label: orderPhrase(delivery, delivery.deliveryDay) };
+}
+
+/** Sends a day's missing ingredients, across its three meals, to the order. */
 export async function sendDayIngredientsToBasket(weekOffset: number, day: MealPlanDay) {
   const user = await requireSubscriber();
   const row = await loadPlanRow(user.id, weekOffset);
@@ -208,34 +219,10 @@ export async function sendDayIngredientsToBasket(weekOffset: number, day: MealPl
 
   const { recipesById, ownMealsById, products } = await loadRefLookups(refs);
   const { productIds } = await resolveWithLiveCatalog(refs, recipesById, ownMealsById, products);
-
-  const basket = await getOrCreateActiveBasket(user.id, {
-    isSubscriber: true,
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-  });
-  const existingIds = new Set(
-    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
-  );
-  const missing = Array.from(productIds).filter((id) => !existingIds.has(id));
-  if (missing.length === 0) return { added: 0 };
-
-  const missingProducts = products.filter((p) => missing.includes(p.id));
-  let added = 0;
-  for (const product of missingProducts) {
-    const result = await toolAddItemToBasket(user, {
-      basket_id: basket.id,
-      product_id: product.id,
-      quantity: product.minOrderQty,
-    });
-    if (result.ok) added += 1;
-  }
-
-  revalidatePath("/basket");
-  revalidatePath("/recipes");
-  return { added };
+  return addMissingToOrder(user, Array.from(productIds));
 }
 
-/** Everything the week's timetable needs: what we sell (with counts), and what to get elsewhere (with counts). */
+/** Everything the week's meal plan needs: what we sell (with counts), and what to get elsewhere (with counts). */
 export async function weekShoppingList(weekOffset: number) {
   const user = await requireSubscriber();
   const row = await loadPlanRow(user.id, weekOffset);
@@ -258,13 +245,8 @@ export async function weekShoppingList(weekOffset: number) {
     }
   }
 
-  const basket = await getOrCreateActiveBasket(user.id, {
-    isSubscriber: true,
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-  });
-  const inBasket = new Set(
-    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
-  );
+  const delivery = await readActiveDelivery(user.id);
+  const inOrder = new Set(delivery ? (await prisma.basketItem.findMany({ where: { basketId: delivery.id } })).map((i) => i.productId) : []);
 
   const weSellProducts = await prisma.product.findMany({ where: { id: { in: Array.from(weSellCounts.keys()) } } });
   const weSell = weSellProducts.map((p) => ({
@@ -275,69 +257,30 @@ export async function weekShoppingList(weekOffset: number) {
     standardPrice: p.standardPrice,
     memberPrice: p.memberPrice,
     mealCount: weSellCounts.get(p.id) ?? 0,
-    haveIt: inBasket.has(p.id),
+    haveIt: inOrder.has(p.id),
   }));
 
   const got = parseElsewhereGot(row.elsewhereGot);
-  const elsewhere = Array.from(elsewhereCounts.entries()).map(([term, mealCount]) => ({
-    term,
-    mealCount,
-    got: got.has(term),
-  }));
-
+  const elsewhere = Array.from(elsewhereCounts.entries()).map(([term, mealCount]) => ({ term, mealCount, got: got.has(term) }));
   return { weSell, elsewhere };
 }
 
-/** Adds the picked "we sell these" items (only, not everything) to the destination the customer chose. */
-export async function addShoppingListItems(
-  productIds: string[],
-  destination: "cart" | "basket",
-): Promise<{ added: number }> {
+/** Adds the ticked "we can bring these" items to the order. */
+export async function addShoppingListItems(productIds: string[]): Promise<{ added: number; label: string }> {
   const user = await requireUser();
-  if (productIds.length === 0) return { added: 0 };
-  const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
-
-  if (destination === "cart") {
-    const result = await toolAddItemsToCart(user, {
-      items: products.map((p) => ({ product_id: p.id, quantity: p.minOrderQty })),
-    });
-    revalidatePath("/cart");
-    revalidatePath("/recipes");
-    return { added: result.ok ? result.data.added.length : 0 };
-  }
-
-  if (!user.subscriptionTierId) throw new Error("Sending ingredients to your basket is a subscriber feature.");
-  const basket = await getOrCreateActiveBasket(user.id, {
-    isSubscriber: true,
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-  });
-  const result = await toolAddItemsToBasket(user, {
-    basket_id: basket.id,
-    items: products.map((p) => ({ product_id: p.id, quantity: p.minOrderQty })),
-  });
-  revalidatePath("/basket");
-  revalidatePath("/recipes");
-  return { added: result.ok ? result.data.added.length : 0 };
+  if (productIds.length === 0) return { added: 0, label: "your order" };
+  return addMissingToOrder(user, productIds);
 }
 
-/** Week-level shortcut (Section 2b): everything the plan still needs, in one call. */
-export async function sendWeekMissingToBasket(weekOffset: number): Promise<{ added: number }> {
+/** Everything the meal plan still needs, in one tap. */
+export async function sendWeekMissingToOrder(weekOffset: number): Promise<{ added: number; label: string }> {
   const { weSell } = await weekShoppingList(weekOffset);
-  const missing = weSell.filter((l) => !l.haveIt).map((l) => l.productId);
-  return addShoppingListItems(missing, "basket");
-}
-
-export async function sendWeekMissingToCart(weekOffset: number): Promise<{ added: number }> {
-  const { weSell } = await weekShoppingList(weekOffset);
-  const missing = weSell.filter((l) => !l.haveIt).map((l) => l.productId);
-  return addShoppingListItems(missing, "cart");
+  return addShoppingListItems(weSell.filter((l) => !l.haveIt).map((l) => l.productId));
 }
 
 /**
- * Library's "Add to plan": places a recipe on the next day/dinner slot that
- * isn't already marked cooked. The richer sheet flow (pick day + slot
- * explicitly) is `setMealSlot`; this stays as the one-tap shortcut from a
- * recipe card.
+ * A recipe card's "Add to plan": the next day's dinner from today that isn't
+ * already cooked. The richer sheet flow (pick a day and meal) is `setMealSlot`.
  */
 export async function addRecipeToMealPlan(recipeId: string): Promise<void> {
   const user = await requireSubscriber();
@@ -348,99 +291,28 @@ export async function addRecipeToMealPlan(recipeId: string): Promise<void> {
   const order = [...MEAL_PLAN_DAYS.slice(todayIndex), ...MEAL_PLAN_DAYS.slice(0, todayIndex)];
   const targetDay = order.find((d) => days.find((entry) => entry.day === d)?.status !== "COOKED") ?? order[0];
 
-  const updated: MealPlanDayEntry[] = days.map((d) =>
-    d.day === targetDay ? { ...d, slots: { ...d.slots, dinner: { kind: "recipe", recipeId } } } : d,
-  );
-
-  await prisma.weeklyMealPlan.update({
-    where: { id: plan.id },
-    data: { days: updated as object as never },
-  });
+  const updated: MealPlanDayEntry[] = days.map((d) => (d.day === targetDay ? { ...d, slots: { ...d.slots, dinner: { kind: "recipe", recipeId } } } : d));
+  await prisma.weeklyMealPlan.update({ where: { id: plan.id }, data: { days: updated as object as never } });
   revalidatePath("/recipes");
 }
 
-/** Adds whichever of these products the active basket doesn't already hold. */
-async function addMissingToBasket(user: CurrentUser, productIds: string[]): Promise<number> {
-  const basket = await getOrCreateActiveBasket(user.id, {
-    isSubscriber: true,
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-  });
-  const existingIds = new Set(
-    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
-  );
-  const missing = productIds.filter((id) => !existingIds.has(id));
-  if (missing.length === 0) return 0;
-
-  const products = await prisma.product.findMany({ where: { id: { in: missing } } });
-  for (const product of products) {
-    await toolAddItemToBasket(user, {
-      basket_id: basket.id,
-      product_id: product.id,
-      quantity: product.minOrderQty,
-    });
-  }
-
-  revalidatePath("/basket");
-  revalidatePath("/recipes");
-  return products.length;
-}
-
-async function addAllToCart(user: CurrentUser, productIds: string[]): Promise<number> {
-  if (productIds.length === 0) return 0;
-  const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
-  await toolAddItemsToCart(user, {
-    items: products.map((p) => ({ product_id: p.id, quantity: p.minOrderQty })),
-  });
-
-  revalidatePath("/cart");
-  revalidatePath("/recipes");
-  return products.length;
-}
-
-/**
- * For a recipe card outside the weekly plan (Section 2's "individual recipe
- * cards"). Returns void, not a result object: it's bound as a plain <form
- * action>, which Next.js requires to resolve to void.
- */
-export async function sendRecipeIngredientsToBasket(recipeId: string): Promise<void> {
+/** A recipe card's "Add what's missing", bound as a plain form action (so it resolves to void). */
+export async function sendRecipeIngredientsToOrder(recipeId: string): Promise<void> {
   const user = await requireUser();
-  if (!user.subscriptionTierId) {
-    throw new Error("Sending ingredients to your basket is a subscriber feature.");
-  }
-
   const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
   if (!recipe) return;
-  await addMissingToBasket(user, recipe.ingredientProductIds);
+  await addMissingToOrder(user, recipe.ingredientProductIds);
 }
 
 /**
- * A recipe card's cart-bound counterpart: free accounts have no recurring
- * basket to compare against here (basket personalization is a subscriber
- * perk, per the Recipes-by-tier addendum), so this sends every ingredient to
- * the one-off cart rather than trying to diff against basket contents.
+ * The recipe page's button, for a menu recipe (by its catalogue slugs) or a
+ * library one: whatever the order doesn't already have.
  */
-export async function sendRecipeIngredientsToCart(recipeId: string): Promise<void> {
+export async function sendRecipeBySlug(slug: string): Promise<{ added: number; label: string }> {
   const user = await requireUser();
-
-  const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
-  if (!recipe) return;
-  await addAllToCart(user, recipe.ingredientProductIds);
-}
-
-/**
- * The recipe page's button, for either kind of recipe it shows: a menu
- * recipe (by its slug, from its catalogue slugs) or a library one. A
- * subscriber's basket gets what it's missing; anyone else's cart gets the lot,
- * the same split as the two actions above.
- */
-export async function sendRecipeBySlug(slug: string): Promise<{ added: number; to: "basket" | "cart" }> {
-  const user = await requireUser();
-
   const menu = (await getMenu()).find((r) => r.slug === slug);
   const productIds = menu
     ? (await prisma.product.findMany({ where: { slug: { in: menu.basket } }, select: { id: true } })).map((p) => p.id)
     : ((await prisma.recipe.findFirst({ where: { slug, status: "PUBLISHED" }, select: { ingredientProductIds: true } }))?.ingredientProductIds ?? []);
-
-  if (user.subscriptionTierId) return { added: await addMissingToBasket(user, productIds), to: "basket" };
-  return { added: await addAllToCart(user, productIds), to: "cart" };
+  return addMissingToOrder(user, productIds);
 }

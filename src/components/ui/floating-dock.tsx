@@ -2,10 +2,11 @@
 
 /**
  * <FloatingDock /> — the account area's navigation (DESIGN_SYSTEM.md §12).
- * Floating, fully rounded, sticker-outlined. Mobile/tablet: a bottom pill,
- * 16px from the edge, the active tab widening to fit its label. Desktop
- * (≥1024px): the same component as a floating left rail, labels always
- * visible. A carbon pill (shared layoutId) slides between tabs either way.
+ * Floating, fully rounded, sticker-outlined. Mobile/tablet: a bottom bar,
+ * 16px from the edge, every tab an icon over its label (an unlabelled icon is
+ * a guess, and nobody should have to guess). Desktop (≥1024px): the same
+ * component as a floating left rail. A carbon pill (shared layoutId) slides
+ * between tabs either way.
  */
 
 import Link from "next/link";
@@ -22,6 +23,8 @@ export type DockItem = {
   icon: IconName;
   match?: (pathname: string) => boolean;
   badge?: number;
+  /** Where produce "flies" when it's added (see fly-to-cart). */
+  flightTarget?: boolean;
 };
 
 const HIDE_AFTER = 120;
@@ -71,22 +74,23 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
         // as a rounded rectangle regardless of how tall the column gets.
         isDesktop
           ? "left-6 top-1/2 flex w-52 -translate-y-1/2 flex-col gap-1 rounded-3xl p-2"
-          : "inset-x-0 mx-auto flex h-16 w-[min(100%-2rem,26rem)] items-stretch justify-between gap-1 rounded-full p-1.5",
+          : "inset-x-0 mx-auto flex h-16 w-[min(100%-1.5rem,28rem)] items-stretch justify-between gap-0.5 rounded-[1.75rem] p-1.5",
       )}
       style={isDesktop ? undefined : { bottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
     >
       {items.map((item) => {
         const active = isActive(item);
         return (
-          <div key={item.href} className={cn("relative", isDesktop ? "" : active ? "flex-[1.7]" : "flex-1")}>
+          <div key={item.href} className={cn("relative", isDesktop ? "" : "min-w-0 flex-1")}>
             <motion.div layout transition={spring.indicator} className="h-full">
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 onClick={() => !active && haptic(8)}
+                data-flight-target={item.flightTarget ? "cart" : undefined}
                 className={cn(
-                  "group relative flex h-full min-h-12 items-center gap-2 rounded-full outline-none transition-colors",
-                  isDesktop ? "px-4 py-3" : "justify-center px-3",
+                  "group relative flex h-full min-h-12 outline-none transition-colors",
+                  isDesktop ? "items-center gap-2 rounded-full px-4 py-3" : "flex-col items-center justify-center gap-0.5 rounded-[1.35rem] px-1",
                   active ? "text-paper-white" : "text-muted hover:bg-sky-wash",
                 )}
               >
@@ -94,7 +98,7 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
                   <motion.span
                     layoutId={`${ariaLabel}-dock-pill`}
                     transition={spring.indicator}
-                    className="absolute inset-0 rounded-full bg-carbon"
+                    className={cn("absolute inset-0 bg-carbon", isDesktop ? "rounded-full" : "rounded-[1.35rem]")}
                     aria-hidden
                   />
                 )}
@@ -105,7 +109,7 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
                   animate={active ? { scale: [1, 1.14, 1] } : { scale: 1 }}
                   transition={active ? { duration: 0.34, times: [0, 0.4, 1] } : spring.snappy}
                 >
-                  <Icon name={item.icon} size={22} weight={active ? "fill" : "regular"} />
+                  <Icon name={item.icon} size={isDesktop ? 22 : 21} weight={active ? "fill" : "regular"} />
                   <AnimatePresence>
                     {Boolean(item.badge) && !active && (
                       <motion.span
@@ -123,21 +127,7 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
                   </AnimatePresence>
                 </motion.span>
 
-                <AnimatePresence initial={false} mode="popLayout">
-                  {(active || isDesktop) && (
-                    <motion.span
-                      key="label"
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -6 }}
-                      transition={spring.snappy}
-                      className="relative text-sm font-bold"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-                {!active && !isDesktop && <span className="sr-only">{item.label}</span>}
+                <span className={cn("relative truncate", isDesktop ? "text-sm font-bold" : "text-[11px] font-semibold leading-none")}>{item.label}</span>
               </Link>
             </motion.div>
           </div>

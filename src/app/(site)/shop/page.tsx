@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/session";
 import { formatNaira } from "@/lib/format";
 import { OFFERED, toCardData } from "@/lib/product";
 import { ProductCard } from "@/components/product-card";
-import { DestinationPill } from "@/components/destination-pill";
 import { Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import type { Prisma, Product, ProductCategory } from "@/generated/prisma/client";
 import "@/app/(bare)/home-menu/home-menu.css";
@@ -158,7 +157,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         </div>
 
         <div className="mt-6">
-          <DestinationPill />
         </div>
 
         {products.length === 0 ? (

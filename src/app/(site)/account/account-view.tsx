@@ -104,7 +104,7 @@ export function AccountView(props: Props) {
   );
 
   return (
-    <div className="lg:pl-60 xl:pl-0">
+    <div>
       <div className="mx-auto max-w-5xl pb-6 lg:grid lg:grid-cols-[360px_1fr] lg:gap-10 lg:px-6 lg:pt-8">
         {/* Left on desktop: who you are, what's left to set up, membership */}
         <div className="lg:sticky lg:top-24 lg:self-start">
