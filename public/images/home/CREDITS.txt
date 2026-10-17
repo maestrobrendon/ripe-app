@@ -11,3 +11,4 @@ family.jpg: August de Richelieu, https://www.pexels.com/photo/family-setting-the
 market.jpg: D Flamez, https://www.pexels.com/photo/traditional-nigerian-market-with-woman-and-peppers-38909242/
 stall.jpg: Muhammad Zubair, https://www.pexels.com/photo/colorful-fruit-market-stand-in-zaria-city-nigeria-36937767/
 chop.jpg: Jagaba Denis, https://www.pexels.com/photo/woman-preparing-vegetables-outdoors-in-jos-nigeria-37278541/
+fresh-doorstep.jpg, fresh-kitchen.jpg: generated for Basket with ByteDance Seedream 4.5 on Higgsfield (Oct 2026). No real people depicted.

@@ -135,7 +135,9 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
     () => {
       const mm = gsap.matchMedia();
       mm.add(motionQueries.full, () => {
-        const split = SplitText.create(".hm-hero-title", { type: "lines,words", mask: "lines" });
+        // The word slot and its screen-reader twin stay whole: the slot runs its
+        // own loop below, and splitting it would stack its two words as lines.
+        const split = SplitText.create(".hm-hero-title", { type: "lines,words", mask: "lines", ignore: ".hm-swap, .sr-only" });
         gsap.set("[data-intro]", { visibility: "visible" });
 
         const layers = gsap.utils.toArray<HTMLElement>(".hm-layer");
@@ -183,7 +185,24 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
             },
             1.05,
           )
-          .from(role("flecks"), { autoAlpha: 0, scale: 0.9, duration: 1.2, stagger: 0.1 }, 1.2);
+          .from(role("flecks"), { autoAlpha: 0, scale: 0.9, duration: 1.2, stagger: 0.1 }, 1.2)
+          // The word slot rises with the words around it, in fourth place.
+          .from(".hm-swap", { yPercent: 115, duration: 1 }, 0.1 + 3 * 0.06);
+
+        // Then "meals" and "fruits" take turns: one slides up and out as the
+        // other rises in, with a pause on each.
+        const [meals, fruits] = gsap.utils.toArray<HTMLElement>(".hm-swap > span");
+        gsap.set(fruits, { y: 0, yPercent: 120 });
+        const turn = (from: HTMLElement, to: HTMLElement) =>
+          gsap
+            .timeline()
+            .to(from, { yPercent: -120, duration: 0.75, ease: "ripe.emphasized" })
+            .fromTo(to, { yPercent: 120 }, { yPercent: 0, duration: 0.75, ease: "ripe.emphasized" }, "<0.06");
+        gsap
+          .timeline({ repeat: -1, delay: 2.4 })
+          .add(turn(meals, fruits))
+          .add(turn(fruits, meals), "+=2.2")
+          .to({}, { duration: 2.2 });
 
         // Once everything has landed, each thing moves like itself: the
         // plates drift about their centres, the bowls bob, the limes rock,
@@ -276,7 +295,15 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
             <h1 className="hm-hero-title hm-display">
               Your week
               <br />
-              of meals,
+              of{" "}
+              {/* "meals" and "fruits" take turns in one slot, so the line
+                  says both: whichever you're after, it's planned and
+                  delivered. Screen readers hear the pair once. */}
+              <span className="sr-only">meals or fruits,</span>
+              <span className="hm-swap" aria-hidden>
+                <span>meals,</span>
+                <span>fruits,</span>
+              </span>
               <br />
               planned and
               <br />

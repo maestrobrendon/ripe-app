@@ -11,7 +11,7 @@ import type { Prisma, Product, ProductCategory } from "@/generated/prisma/client
 import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
-  title: "Produce and prices. Basket",
+  title: "Fruits. Basket",
   description: "Every fruit and vegetable Basket sells, with the standard price and the member price side by side.",
 };
 
@@ -79,7 +79,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       <section className="bg-[var(--hm-tint)]">
         <div className="hm-wrap grid gap-8 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-14">
           <div>
-            <Eyebrow>Produce &amp; prices</Eyebrow>
+            <Eyebrow>Fruits</Eyebrow>
             <h1 className="hm-h2 max-w-[18ch]">Every fruit and vegetable, priced up front.</h1>
             <p className="hm-lede mt-4 max-w-xl">
               {produceCount} fruits and vegetables, plus ready-made boxes. Look around without an account. Every item shows two

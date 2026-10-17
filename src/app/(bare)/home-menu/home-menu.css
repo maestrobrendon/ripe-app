@@ -119,6 +119,26 @@
   white-space: nowrap;
 }
 
+/* "meals" and "fruits" share one slot on the second line: both words sit in
+   the same grid cell (so the slot is as wide as the longer one and the line
+   never jumps), and the slot clips them so one can slide out as the other
+   slides in. The padding keeps the caps clear of the clip edge; the negative
+   margin gives that space back so the line spacing is unchanged. Until the
+   hero script runs, and with reduced motion, only "meals" shows. */
+.hm-swap {
+  display: inline-grid;
+  justify-items: start;
+  overflow: clip;
+  padding-block: 0.1em;
+  margin-block: -0.1em;
+}
+.hm-swap > span {
+  grid-area: 1 / 1;
+}
+.hm-swap > span + span {
+  transform: translateY(120%);
+}
+
 /* Section headlines: the UI face, tight, sentence case. */
 .hm-h2 {
   font-size: clamp(2rem, 4.2vw, 3.25rem);

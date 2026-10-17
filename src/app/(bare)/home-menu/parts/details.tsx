@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useInView } from "motion/react";
 import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
@@ -163,9 +164,37 @@ export function Details() {
       <div className="hm-wrap grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <div>
           <div className="lg:sticky lg:top-28">
-            <Eyebrow className="text-voltage-violet">The small things</Eyebrow>
-            <h2 className="hm-h2">A basket that bends around your week.</h2>
-            <p className="hm-lede mt-4 max-w-[24rem]">Plans change. Yours can too, right up to the night before.</p>
+            <Eyebrow className="text-[#0f7a48]">Fresh to your door</Eyebrow>
+            <h2 className="hm-h2">The fresh produce behind every recipe.</h2>
+            <p className="hm-lede mt-4 max-w-[26rem]">
+              Picked ripe, checked by hand and brought to your door on your day. And it bends around your week, right up to the night before.
+            </p>
+            {/* The basket arriving, then unpacked at home: the produce is the
+                product, the recipes are what it turns into. */}
+            <Reveal className="relative mt-8 pb-[12%] lg:max-w-[460px]">
+              <figure className="hm-photo relative aspect-[5/4] w-[82%] overflow-hidden rounded-[28px] bg-[#f3f5f0]">
+                <Image
+                  src="/images/home/fresh-doorstep.jpg"
+                  alt="A rider hands a basket of fresh fruit and vegetables to a woman at her front door"
+                  fill
+                  sizes="(min-width: 1024px) 380px, 82vw"
+                  className="object-cover"
+                />
+              </figure>
+              <figure className="hm-photo absolute right-0 bottom-0 aspect-square w-[46%] overflow-hidden rounded-[22px] bg-[#f3f5f0] shadow-[0_0_0_6px_var(--paper-white),0_24px_40px_-24px_rgb(0_0_0/0.35)]">
+                <Image
+                  src="/images/home/fresh-kitchen.jpg"
+                  alt="Pineapple, mangoes, plantain and greens being unpacked on a kitchen counter"
+                  fill
+                  sizes="(min-width: 1024px) 220px, 46vw"
+                  className="object-cover"
+                />
+              </figure>
+              <span className="absolute top-4 left-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-paper-white/92 px-3.5 text-[13px] font-semibold backdrop-blur-sm">
+                <Check className="h-4 w-4 text-[#0f7a48]" />
+                Delivered on your day
+              </span>
+            </Reveal>
           </div>
         </div>
         <div className="grid gap-14">

@@ -58,16 +58,11 @@ export function Price({
   // Delivery is priced per area and the membership is paid once a month, so
   // the weekly number is the food alone; both are spelled out beside it.
   const total = produce;
-  // Three everyday items with both prices, so "member price" is concrete
-  // before anyone opens the full list.
-  const samples = useMemo(
-    () =>
-      candidates
-        .filter((c) => (c.category === "FRUIT" || c.category === "VEGETABLE") && c.inSeason && c.memberPrice < c.standardPrice)
-        .sort((a, b) => Number(b.featured) - Number(a.featured) || a.name.localeCompare(b.name))
-        .slice(0, 3),
-    [candidates],
-  );
+  // Every item has a standard and a member price. Rather than a table of
+  // them, the card says what this same basket would cost as a member.
+  const memberProduce = picks.reduce((s, p) => s + p.memberPrice * p.quantity, 0);
+  const standardProduce = picks.reduce((s, p) => s + p.standardPrice * p.quantity, 0);
+  const memberSaving = standardProduce - memberProduce;
 
   return (
     <section id="price" className="scroll-mt-20 py-16 sm:py-24">
@@ -93,36 +88,13 @@ export function Price({
             ))}
           </div>
 
-          <div className="mt-10 max-w-[30rem]">
-            <div className="flex items-baseline justify-between text-[13px] font-semibold text-[var(--hm-ink-2)]">
-              <span>Every item has two prices</span>
-              <span className="flex gap-6">
-                <span>Standard</span>
-                <span className="text-[var(--hm-basket-ink)]">Member</span>
-              </span>
-            </div>
-            <ul className="mt-2">
-              {samples.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 border-t border-[var(--hm-line)] py-2.5 text-[15px]">
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <ProductImage publicId={p.cloudinaryPublicId} alt="" emoji={p.imageEmoji} sizes="28px" rounded="rounded-full" flavour="bg-[#f3f5f0]" emojiClassName="text-sm" className="h-7 w-7 shrink-0" />
-                    <span className="truncate">{shortName(p.name)}</span>
-                  </span>
-                  <span className="flex shrink-0 gap-6 tabular-nums">
-                    <span className="w-16 text-right">{formatNaira(p.standardPrice)}</span>
-                    <b className="w-16 text-right font-semibold text-[var(--hm-basket-ink)]">{formatNaira(p.memberPrice)}</b>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[14px] font-semibold">
-              <Link href="/shop" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
-                See every price
-              </Link>
-              <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
-                Compare membership plans
-              </Link>
-            </div>
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[14px] font-semibold">
+            <Link href="/shop" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+              See every price
+            </Link>
+            <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+              Compare membership plans
+            </Link>
           </div>
         </Reveal>
 
@@ -162,6 +134,22 @@ export function Price({
               <RollingNumber value={total} format={formatNaira} className="text-[clamp(2.4rem,5vw,3rem)] leading-none font-semibold tracking-[-0.045em] tabular-nums" />
               <span className="text-[14px] text-[var(--hm-ink-2)]">a week, for the food</span>
             </div>
+            {memberFee != null && memberSaving > 0 && (
+              <p className="mt-2 text-[14px] text-[var(--hm-ink-2)]">
+                {isMember ? (
+                  <>
+                    <b className="font-semibold text-[var(--hm-basket-ink)]">{formatNaira(memberSaving)} less</b> than standard prices, every week.
+                  </>
+                ) : (
+                  <>
+                    <b className="font-semibold text-[var(--hm-basket-ink)]">{formatNaira(memberProduce)}</b> at member prices.{" "}
+                    <button type="button" onClick={() => setMember(true)} className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+                      See how
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
 
             <div className="mt-5 text-[15px]">
               <div className="flex justify-between border-t border-[var(--hm-line)] py-3">
