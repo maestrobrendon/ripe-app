@@ -27,6 +27,7 @@ export function Menu({
   const [open, setOpen] = useState<MenuRecipe | null>(null);
   const close = useCallback(() => setOpen(null), []);
   const recipes = MENU.filter((r) => r.goal === goal);
+  const trio = recipes.length >= 3;
 
   return (
     <section id="menu" className="scroll-mt-20 py-16 sm:py-24">
@@ -53,7 +54,7 @@ export function Menu({
                     className={`relative h-10 shrink-0 rounded-full px-4 text-[14px] font-semibold transition-colors ${on ? "text-paper-white" : "text-carbon/65 hover:text-carbon"}`}
                   >
                     {on && <motion.span layoutId="hm-goal-pill" transition={spring.indicator} className="absolute inset-0 rounded-full bg-carbon" />}
-                    <span className="relative">{g.label}</span>
+                    <span className="relative">{g.short}</span>
                   </button>
                 );
               })}
@@ -61,7 +62,12 @@ export function Menu({
           </LayoutGroup>
         </div>
 
-        <div id="hm-menu-grid" role="tabpanel" className="mt-6 grid gap-4 md:grid-cols-[1.25fr_1fr] md:grid-rows-2 sm:gap-5">
+        {/* Three or more: one large card and a stack beside it. Fewer: equal cards side by side. */}
+        <div
+          id="hm-menu-grid"
+          role="tabpanel"
+          className={`mt-6 grid gap-4 sm:gap-5 ${trio ? "md:grid-cols-[1.25fr_1fr] md:grid-rows-2" : "md:grid-cols-2"}`}
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             {recipes.map((r, i) => (
               <motion.div
@@ -71,9 +77,9 @@ export function Menu({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ ...spring.smooth, delay: i * 0.05 }}
-                className={i === 0 ? "md:row-span-2" : ""}
+                className={trio && i === 0 ? "md:row-span-2" : ""}
               >
-                <RecipeCard recipe={r} products={products} large={i === 0} onOpen={() => setOpen(r)} />
+                <RecipeCard recipe={r} products={products} large={!trio || i === 0} onOpen={() => setOpen(r)} />
               </motion.div>
             ))}
           </AnimatePresence>

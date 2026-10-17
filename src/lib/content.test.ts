@@ -20,7 +20,7 @@ describe("menu rows", () => {
 
   it("falls back for an unknown goal and uses the title as alt text", () => {
     const m = toMenuRecipe(row({ goal: "nonsense", imageAlt: null }));
-    expect(m.goal).toBe("everyday");
+    expect(m.goal).toBe("busy");
     expect(m.alt).toBe("Bowl");
     expect(m.basket).toEqual(["tomato"]);
   });

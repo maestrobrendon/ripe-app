@@ -45,6 +45,9 @@ const STARTER_SEED: Record<string, { box: string; produce: string[] }> = {
   "family-household": { box: "breakfast-box", produce: ["pawpaw", "banana", "avocado", "orange"] },
   "general-wellness": { box: "weekly-staples-box", produce: ["ugu", "spinach", "tomato", "orange", "apple"] },
   "weight-management": { box: "weekly-staples-box", produce: ["cucumber", "cabbage", "carrot", "tomato", "watermelon"] },
+  "busy-weeks": { box: "weekly-staples-box", produce: ["avocado", "tomato", "cucumber", "banana", "orange"] },
+  "plant-based": { box: "weekly-staples-box", produce: ["spinach", "ugu", "sweet-potato", "tomato", "avocado"] },
+  "fresh-fruit": { box: "breakfast-box", produce: ["pineapple", "mango", "watermelon", "banana", "orange", "pawpaw"] },
 };
 
 const DEFAULT_SEED = STARTER_SEED["general-wellness"];

@@ -76,7 +76,7 @@ export function MenuBrowser({
           </button>
           {MENU_GOALS.map((g) => (
             <button key={g.id} type="button" aria-pressed={goal === g.id} onClick={() => setGoal(goal === g.id ? null : g.id)} className={chip(goal === g.id)}>
-              {g.label}
+              {g.short}
             </button>
           ))}
           <span className="mx-1 w-px shrink-0 self-stretch bg-[var(--hm-line)]" aria-hidden />

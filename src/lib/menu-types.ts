@@ -1,5 +1,5 @@
 /**
- * The menu's shape, and the four goals it's organised around. Client-safe.
+ * The menu's shape, and the six goals it's organised around. Client-safe.
  *
  * Global dishes, light prep, rebuilt around what Basket actually stocks:
  * every `basket` entry is a real catalogue slug, so pages can show the
@@ -12,7 +12,7 @@
  * admin; servers read them with getMenu() in src/lib/menu.ts.
  */
 
-export type MenuGoal = "lighter" | "training" | "family" | "everyday";
+export type MenuGoal = "lighter" | "training" | "family" | "busy" | "plants" | "fruit";
 
 export type MenuRecipe = {
   slug: string;
@@ -34,11 +34,19 @@ export type MenuRecipe = {
   membersOnly?: boolean;
 };
 
-export const MENU_GOALS: { id: MenuGoal; label: string; prompt: string; starterSlug: string }[] = [
-  { id: "lighter", label: "Eat lighter", prompt: "I want to lose a little weight without feeling hungry.", starterSlug: "weight-management" },
-  { id: "training", label: "Train better", prompt: "I train five days a week and need to eat for it.", starterSlug: "post-workout-recovery" },
-  { id: "family", label: "Feed the family", prompt: "Dinners for four that the kids will actually eat.", starterSlug: "family-household" },
-  { id: "everyday", label: "Just eat better", prompt: "More fresh food in my week, less guesswork.", starterSlug: "general-wellness" },
+/**
+ * Why people come to Basket, food first and never medical. Each maps to a
+ * starter-basket slug (starter-basket-core) and Kachi's goal vocabulary.
+ * "general-wellness" survives only as the fallback for older accounts.
+ */
+/** `short` is for chips and tabs, where six full labels would crowd the row. */
+export const MENU_GOALS: { id: MenuGoal; label: string; short: string; prompt: string; starterSlug: string }[] = [
+  { id: "lighter", label: "Eat lighter", short: "Eat lighter", prompt: "I want to lose a little weight without feeling hungry.", starterSlug: "weight-management" },
+  { id: "training", label: "Train better", short: "Train better", prompt: "I train most days and need to eat for it.", starterSlug: "post-workout-recovery" },
+  { id: "family", label: "Feed the family", short: "Feed the family", prompt: "Dinners for four that the kids will actually eat.", starterSlug: "family-household" },
+  { id: "busy", label: "Eat well on busy weeks", short: "Busy weeks", prompt: "Long days. I need quick, fresh meals I'll actually make.", starterSlug: "busy-weeks" },
+  { id: "plants", label: "More plants", short: "More plants", prompt: "I want more plant-based meals in my week.", starterSlug: "plant-based" },
+  { id: "fruit", label: "Fresh fruit every week", short: "Fresh fruit", prompt: "Fruit on hand for breakfasts, snacks and lunchboxes.", starterSlug: "fresh-fruit" },
 ];
 
 export type Amount = readonly [qty: number, unit: string];

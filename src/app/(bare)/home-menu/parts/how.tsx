@@ -82,7 +82,7 @@ function KachiChat({ goal }: { goal: MenuGoal }) {
           <motion.div key={`a-${goal}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring.sheet} className="flex items-start gap-2">
             <KachiMark className="mt-0.5 h-7 w-7" />
             <div className="max-w-[88%] rounded-[18px] rounded-tl-md bg-paper-white px-4 py-3 text-[14px] leading-snug">
-              Here&apos;s a week built for that. I&apos;ve picked three recipes to start:
+              Here&apos;s a week built for that. I&apos;ve picked {picks.length === 1 ? "one recipe" : picks.length === 2 ? "two recipes" : picks.length === 3 ? "three recipes" : `${picks.length} recipes`} to start:
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {picks.map((r, i) => (
                   <motion.span
@@ -110,8 +110,12 @@ function WeekPlan({ goal }: { goal: MenuGoal }) {
   const MENU = useMenu();
   const own = MENU.filter((r) => r.goal === goal);
   const others = MENU.filter((r) => r.goal !== goal);
-  // Three from the goal, then two from elsewhere on the menu, so the week has range.
-  const week = [own[0], others[1], own[1], others[4], own[2]];
+  // The goal's own recipes alternating with others from the menu, so the week
+  // has range; however many each goal has, the five days are always filled.
+  const week = Array.from({ length: Math.max(own.length, others.length) }, (_, i) => [own[i], others[i * 2 + 1]])
+    .flat()
+    .filter((r): r is NonNullable<typeof r> => Boolean(r))
+    .slice(0, PLAN_DAYS.length);
   const { ref, stage } = useStage(week.length, goal, 260);
 
   return (

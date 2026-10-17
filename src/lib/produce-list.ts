@@ -25,6 +25,9 @@ const GOAL_CATEGORY_WEIGHT: Record<string, Partial<Record<ProductCategory, numbe
   "post-workout-recovery": { FRUIT: 3, VEGETABLE: 2, SEASONAL: 1 },
   "family-household": { FRUIT: 2, VEGETABLE: 2, SEASONAL: 1 },
   "general-wellness": { FRUIT: 2, VEGETABLE: 2, SEASONAL: 2 },
+  "busy-weeks": { VEGETABLE: 2, FRUIT: 2, SEASONAL: 1 },
+  "plant-based": { VEGETABLE: 3, FRUIT: 2, SEASONAL: 1 },
+  "fresh-fruit": { FRUIT: 4, SEASONAL: 2, VEGETABLE: 0 },
 };
 
 function snapQty(raw: number, minOrderQty: number, stepQty: number): number {

@@ -83,7 +83,7 @@ export function Price({
                 onClick={() => onGoal(g.id)}
                 className={`h-10 rounded-full px-4 text-[14px] font-semibold transition-colors ${goal === g.id ? "bg-carbon text-paper-white" : "bg-[#f3f5f0] text-carbon/70 hover:text-carbon"}`}
               >
-                {g.label}
+                {g.short}
               </button>
             ))}
           </div>

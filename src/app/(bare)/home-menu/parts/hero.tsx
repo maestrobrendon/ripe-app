@@ -337,7 +337,7 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
                   }}
                   className="h-10 rounded-full bg-paper-white px-4 text-[14px] font-semibold shadow-[0_0_0_1px_var(--hm-line)] transition-[background-color,box-shadow] hover:bg-[#f3f5f0] hover:shadow-[0_0_0_1px_rgb(0_0_0/0.18)] active:scale-[0.97]"
                 >
-                  {g.label}
+                  {g.short}
                 </button>
               ))}
             </div>

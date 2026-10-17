@@ -14,6 +14,7 @@
  *   npm run library:import -- --prod  # production (PROD_DATABASE_URL)
  */
 import { config } from "dotenv";
+import type { MenuGoal } from "../../src/lib/menu-types";
 config({ path: ".env.local", quiet: true });
 
 const prod = process.argv.includes("--prod");
@@ -43,7 +44,7 @@ type LibraryRecipe = {
   slug: string;
   title: string;
   summary: string;
-  goal: "lighter" | "training" | "family" | "everyday";
+  goal: MenuGoal;
   minutes: number;
   serves: number;
   basketSlugs: string[];

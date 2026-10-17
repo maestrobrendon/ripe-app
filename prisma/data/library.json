@@ -860,7 +860,7 @@
    "slug": "avocado-toast-with-ata-rodo-salsa",
    "title": "Avocado Toast with Ata Rodo Salsa",
    "summary": "A fresh tomato, onion and ata rodo salsa on top instead of chilli flakes.",
-   "goal": "everyday",
+   "goal": "busy",
    "minutes": 13,
    "serves": 2,
    "basketSlugs": [
@@ -1087,7 +1087,7 @@
    "slug": "coconut-chia-pudding-with-mango",
    "title": "Coconut Chia Pudding with Mango",
    "summary": "Fresh coconut milk and dates instead of canned milk and maple syrup.",
-   "goal": "everyday",
+   "goal": "fruit",
    "minutes": 10,
    "serves": 2,
    "basketSlugs": [
@@ -1135,7 +1135,7 @@
    "slug": "chilli-lime-fruit-cup-yaji-edition",
    "title": "Chilli-Lime Fruit Cup (Yaji Edition)",
    "summary": "Yaji replaces Tajin. Same salty, spicy, sour hit on cold fruit.",
-   "goal": "everyday",
+   "goal": "fruit",
    "minutes": 10,
    "serves": 2,
    "basketSlugs": [
@@ -1313,7 +1313,7 @@
    "slug": "avocado-mango-and-cucumber-salad",
    "title": "Avocado, Mango & Cucumber Salad",
    "summary": "Ata rodo for heat, coriander for freshness.",
-   "goal": "everyday",
+   "goal": "busy",
    "minutes": 15,
    "serves": 2,
    "basketSlugs": [
@@ -1370,7 +1370,7 @@
    "slug": "watermelon-cucumber-and-grilled-wara-salad",
    "title": "Watermelon, Cucumber & Grilled Wara Salad",
    "summary": "Grilled wara (local soft cheese) replaces feta.",
-   "goal": "everyday",
+   "goal": "fruit",
    "minutes": 20,
    "serves": 2,
    "basketSlugs": [
@@ -1632,7 +1632,7 @@
    "slug": "orange-spinach-and-tiger-nut-salad",
    "title": "Orange, Spinach & Tiger Nut Salad",
    "summary": "Local oranges or tangerines and tiger nuts for crunch.",
-   "goal": "everyday",
+   "goal": "fruit",
    "minutes": 15,
    "serves": 2,
    "basketSlugs": [
@@ -1957,7 +1957,7 @@
    "slug": "moroccan-carrot-and-orange-salad",
    "title": "Moroccan Carrot & Orange Salad",
    "summary": "Jos carrots, local oranges and fresh mint.",
-   "goal": "everyday",
+   "goal": "fruit",
    "minutes": 15,
    "serves": 2,
    "basketSlugs": [
@@ -2073,7 +2073,7 @@
    "slug": "kachumbari",
    "title": "Kachumbari",
    "summary": "Ata rodo for heat. Built to sit next to grilled fish, suya or rice.",
-   "goal": "family",
+   "goal": "lighter",
    "minutes": 10,
    "serves": 4,
    "basketSlugs": [
@@ -2422,7 +2422,7 @@
    "slug": "black-eyed-bean-falafel-bowl",
    "title": "Black-Eyed Bean Falafel Bowl",
    "summary": "Black-eyed beans (akara's cousin) replace chickpeas. Scent leaf joins parsley.",
-   "goal": "everyday",
+   "goal": "plants",
    "minutes": 45,
    "serves": 3,
    "basketSlugs": [
@@ -2505,7 +2505,7 @@
    "slug": "sweet-potato-buddha-bowl-with-ugu-pesto",
    "title": "Sweet Potato Buddha Bowl with Ugu Pesto",
    "summary": "Ugu and groundnut pesto replaces tahini dressing.",
-   "goal": "everyday",
+   "goal": "plants",
    "minutes": 50,
    "serves": 2,
    "basketSlugs": [
@@ -2661,7 +2661,7 @@
    "slug": "thai-groundnut-wara-bowl",
    "title": "Thai Groundnut Wara Bowl",
    "summary": "Wara soya is Nigerian tofu. Groundnut sauce does the rest.",
-   "goal": "everyday",
+   "goal": "plants",
    "minutes": 35,
    "serves": 2,
    "basketSlugs": [
@@ -3829,7 +3829,7 @@
    "slug": "chickpea-and-efo-curry",
    "title": "Chickpea & Efo Curry",
    "summary": "Efo tete for spinach, fresh coconut milk for cream.",
-   "goal": "everyday",
+   "goal": "plants",
    "minutes": 40,
    "serves": 3,
    "basketSlugs": [
@@ -4607,7 +4607,7 @@
    "slug": "roasted-tomato-and-tatashe-soup",
    "title": "Roasted Tomato & Tatashe Soup",
    "summary": "Basically a smooth, lighter obe ata you eat with a spoon.",
-   "goal": "family",
+   "goal": "lighter",
    "minutes": 45,
    "serves": 4,
    "basketSlugs": [
@@ -4670,7 +4670,7 @@
    "slug": "coconut-lemongrass-chicken-soup",
    "title": "Coconut Lemongrass Chicken Soup",
    "summary": "Fresh coconut milk, local lemongrass, and ginger in place of galangal.",
-   "goal": "everyday",
+   "goal": "busy",
    "minutes": 35,
    "serves": 3,
    "basketSlugs": [
@@ -4864,7 +4864,7 @@
    "slug": "guacamole-with-garden-egg-crudites",
    "title": "Guacamole with Garden Egg Crudites",
    "summary": "Garden egg, cucumber and carrot sticks to dip instead of tortilla chips.",
-   "goal": "everyday",
+   "goal": "busy",
    "minutes": 15,
    "serves": 3,
    "basketSlugs": [
@@ -5042,7 +5042,7 @@
    "slug": "black-eyed-bean-hummus-with-veggie-sticks",
    "title": "Black-Eyed Bean Hummus with Veggie Sticks",
    "summary": "Black-eyed beans and groundnut paste replace chickpeas and tahini.",
-   "goal": "family",
+   "goal": "busy",
    "minutes": 15,
    "serves": 4,
    "basketSlugs": [
@@ -5226,7 +5226,7 @@
    "slug": "banana-groundnut-nice-cream",
    "title": "Banana Groundnut Nice Cream",
    "summary": "Roasted groundnuts and dates make it taste like a Nigerian childhood treat.",
-   "goal": "everyday",
+   "goal": "fruit",
    "minutes": 10,
    "serves": 2,
    "basketSlugs": [

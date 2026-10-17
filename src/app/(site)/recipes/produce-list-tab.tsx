@@ -10,10 +10,12 @@ import type { ProduceListLine } from "@/lib/produce-list";
 import { getProduceList, addProduceListItems } from "./produce-list-actions";
 
 const GOAL_OPTIONS: { slug: string; label: string; emoji: string }[] = [
-  { slug: "general-wellness", label: "General wellness", emoji: "🌿" },
-  { slug: "weight-management", label: "Weight management", emoji: "⚖️" },
-  { slug: "post-workout-recovery", label: "Post-workout recovery", emoji: "💪" },
-  { slug: "family-household", label: "Family and household", emoji: "👨‍👩‍👧" },
+  { slug: "weight-management", label: "Eat lighter", emoji: "⚖️" },
+  { slug: "post-workout-recovery", label: "Train better", emoji: "💪" },
+  { slug: "family-household", label: "Feed the family", emoji: "👨‍👩‍👧" },
+  { slug: "busy-weeks", label: "Busy weeks", emoji: "⏱️" },
+  { slug: "plant-based", label: "More plants", emoji: "🌱" },
+  { slug: "fresh-fruit", label: "Fresh fruit", emoji: "🍍" },
 ];
 
 const PREP_GROUPS: PrepGroup[] = ["raw", "cooked", "either"];
@@ -35,7 +37,8 @@ export function ProduceListTab({
   isSubscriber: boolean;
 }) {
   const [people, setPeople] = useState(defaultServings);
-  const [goal, setGoal] = useState(defaultGoal);
+  // Older accounts may carry a goal that's no longer offered; start them on the first.
+  const [goal, setGoal] = useState(GOAL_OPTIONS.some((g) => g.slug === defaultGoal) ? defaultGoal : GOAL_OPTIONS[0].slug);
   const [lines, setLines] = useState<ProduceListLine[] | null>(null);
   const [isPending, startTransition] = useTransition();
   const [added, setAdded] = useState<"cart" | "basket" | null>(null);

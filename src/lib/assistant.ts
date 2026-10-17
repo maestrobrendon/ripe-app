@@ -28,6 +28,21 @@ export const GOALS: Goal[] = [
     label: "Weight management",
     description: "Lower-calorie produce that is filling and easy to prep.",
   },
+  {
+    slug: "busy-weeks",
+    label: "Eating well on busy weeks",
+    description: "Produce that needs little or no cooking, for long days.",
+  },
+  {
+    slug: "plant-based",
+    label: "More plant-based meals",
+    description: "Greens, roots and fruit to build meals around plants.",
+  },
+  {
+    slug: "fresh-fruit",
+    label: "Fresh fruit every week",
+    description: "Fruit for breakfasts, snacks and lunchboxes through the week.",
+  },
 ];
 
 type PlanRecipe = {
@@ -73,6 +88,30 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
       { title: "Cabbage and carrot slaw", uses: ["cabbage", "carrot"], note: "Shredded raw, dressed lightly." },
     ],
     addOns: ["cucumber", "cabbage", "carrot"],
+  },
+  "busy-weeks": {
+    recipes: [
+      { title: "Avocado and tomato on toast", uses: ["avocado", "tomato"], note: "Ready in five minutes, no cooking." },
+      { title: "Cucumber and tomato side", uses: ["cucumber", "tomato"], note: "Chopped and dressed while something else cooks." },
+      { title: "Fruit to grab on the way out", uses: ["banana", "orange"], note: "No knife needed." },
+    ],
+    addOns: ["avocado", "banana", "cucumber"],
+  },
+  "plant-based": {
+    recipes: [
+      { title: "Greens for the week", uses: ["spinach", "ugu", "tomato"], note: "Wilted into stews, eggs or rice through the week." },
+      { title: "Roast sweet potato and spinach", uses: ["sweet-potato", "spinach"], note: "A filling plate built around vegetables." },
+      { title: "Avocado on everything", uses: ["avocado", "tomato"], note: "Makes a plant-based plate feel like a meal." },
+    ],
+    addOns: ["spinach", "sweet-potato", "avocado"],
+  },
+  "fresh-fruit": {
+    recipes: [
+      { title: "A fruit plate for the morning", uses: ["pineapple", "mango", "pawpaw"], note: "Cut once, eaten over two or three breakfasts." },
+      { title: "Lunchbox fruit", uses: ["banana", "orange"], note: "Travels well and needs no knife." },
+      { title: "Watermelon in place of dessert", uses: ["watermelon"], note: "Cold from the fridge after dinner." },
+    ],
+    addOns: ["pineapple", "mango", "watermelon"],
   },
 };
 

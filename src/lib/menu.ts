@@ -18,7 +18,7 @@ export function toMenuRecipe(r: Recipe): MenuRecipe {
     slug: r.slug,
     title: r.title,
     hook: r.summary,
-    goal: (GOALS.has(r.goal ?? "") ? r.goal : "everyday") as MenuGoal,
+    goal: (GOALS.has(r.goal ?? "") ? r.goal : "busy") as MenuGoal,
     minutes: r.minutes ?? 0,
     serves: r.serves ?? 2,
     image: r.image ?? "",

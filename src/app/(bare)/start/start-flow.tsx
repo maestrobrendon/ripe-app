@@ -65,7 +65,9 @@ const GOAL_PHRASE: Record<MenuGoal, string> = {
   lighter: "eating lighter",
   training: "training",
   family: "feeding the family",
-  everyday: "eating better",
+  busy: "busy weeks",
+  plants: "eating more plants",
+  fruit: "fresh fruit every week",
 };
 
 export function StartFlow({
@@ -278,7 +280,6 @@ export function StartFlow({
                 <LayoutGroup id="start-goal">
                   <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Your goal">
                     {MENU_GOALS.map((g) => {
-                      const cover = MENU.find((r) => r.goal === g.id);
                       const on = goal === g.id;
                       return (
                         <motion.button
@@ -294,11 +295,9 @@ export function StartFlow({
                           {on && (
                             <motion.span layoutId="goal-ring" transition={spring.indicator} className="pointer-events-none absolute inset-0 rounded-[24px] ring-2 ring-carbon" aria-hidden />
                           )}
-                          {cover && (
-                            <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px]">
-                              <Image src={cover.image} alt="" fill sizes="64px" className="object-cover" />
-                            </span>
-                          )}
+                          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px] bg-(--hm-tint-2)">
+                            <Image src={`/images/goals/${g.id}.jpg`} alt="" fill sizes="64px" className="object-cover" />
+                          </span>
                           <span className="relative min-w-0 flex-1">
                             <b className="block text-[17px] font-semibold tracking-[-0.02em]">{g.label}</b>
                             <span className="mt-0.5 block text-[14px] leading-snug text-(--hm-ink-2)">&ldquo;{g.prompt}&rdquo;</span>
@@ -374,7 +373,7 @@ export function StartFlow({
                 <Kachi>
                   {initialRecipe
                     ? `I've kept the recipe you picked and added a few for ${goal ? GOAL_PHRASE[goal] : "your goal"}. Add or swap any of them.`
-                    : `I've started you with three for ${goal ? GOAL_PHRASE[goal] : "your goal"}. Add or swap any of them.`}
+                    : `I've started you with ${recipes.length === 1 ? "one" : recipes.length === 2 ? "two" : recipes.length === 3 ? "three" : recipes.length} for ${goal ? GOAL_PHRASE[goal] : "your goal"}. Add or swap any of them.`}
                 </Kachi>
                 <Title>Pick your first week</Title>
                 <RecipeGrid label={`For ${goal ? GOAL_PHRASE[goal] : "your goal"}`} recipes={MENU.filter((r) => r.goal === goal)} picked={recipeSlugs} onToggle={toggleRecipe} candidates={candidates} />

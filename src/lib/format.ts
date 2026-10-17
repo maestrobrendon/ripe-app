@@ -32,6 +32,9 @@ export const GOAL_LABEL: Record<string, string> = {
   "weight-management": "Weight management",
   "post-workout-recovery": "Post-workout recovery",
   "family-household": "Family and household eating",
+  "busy-weeks": "Eating well on busy weeks",
+  "plant-based": "More plant-based meals",
+  "fresh-fruit": "Fresh fruit every week",
   other: "Something else",
 };
 
