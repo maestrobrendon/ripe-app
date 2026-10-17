@@ -29,11 +29,11 @@ type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
  * always in reach of a thumb at the bottom. The account comes last, after the
  * customer has seen what they are getting.
  *
- * Area comes first so nobody builds a basket before learning we don't reach
- * them yet; the day waits until after the basket, where it means something,
- * and only offers that area's days. Outside our areas, the day is skipped.
+ * The plan comes first: goal, table, recipes, basket. Then where it goes and
+ * which of that area's days it arrives on, just before the account. Outside
+ * our areas the day is skipped, and the week is still saved.
  */
-const STEPS = ["area", "goal", "table", "recipes", "basket", "day", "account"] as const;
+const STEPS = ["goal", "table", "recipes", "basket", "area", "day", "account"] as const;
 type Step = (typeof STEPS)[number];
 
 const DIETARY: [Dietary, string][] = [
@@ -273,11 +273,7 @@ export function StartFlow({
           >
             {step === "goal" && (
               <>
-                <Kachi>
-                  {notListed
-                    ? "Let's plan your week anyway. Tell me what you're working toward."
-                    : `${chosenZone ? `${chosenZone.name}, perfect. ` : ""}Now tell me what you're working toward and I'll plan your first week around it.`}
-                </Kachi>
+                <Kachi>Hi, I&apos;m Kachi. Tell me what you&apos;re working toward and I&apos;ll plan your first week around it.</Kachi>
                 <Title>What are you working toward?</Title>
                 <LayoutGroup id="start-goal">
                   <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Your goal">
@@ -313,6 +309,8 @@ export function StartFlow({
                     })}
                   </div>
                 </LayoutGroup>
+
+                <SignInLink next={next} />
               </>
             )}
 
@@ -473,7 +471,7 @@ export function StartFlow({
 
             {step === "area" && (
               <>
-                <Kachi>Hi, I&apos;m Kachi. First, where are you? I&apos;ll check we deliver there before we plan anything.</Kachi>
+                <Kachi>Your week is ready. Where should it go? I&apos;ll check we deliver there.</Kachi>
                 <Title>Where should we deliver?</Title>
 
                 <motion.button
@@ -542,17 +540,10 @@ export function StartFlow({
                   {notListed && (
                     <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring.smooth} className="hm-panel mt-5 p-4 text-[14px] leading-relaxed">
                       {locating === "outside" ? "You're outside the areas we reach right now. " : ""}
-                      We don&apos;t deliver there yet{soon.length ? ` (next up: ${soon.map((z) => z.name).join(", ")})` : ""}. You can still plan your week: your recipes and basket stay saved, and you can set your area the day we arrive.
+                      We don&apos;t deliver there yet{soon.length ? ` (next up: ${soon.map((z) => z.name).join(", ")})` : ""}. Your week stays saved: make your account and set your area the day we arrive.
                     </motion.p>
                   )}
                 </AnimatePresence>
-
-                <p className="mt-6 text-center text-[14px] text-(--hm-ink-2)">
-                  Already have an account?{" "}
-                  <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-semibold text-carbon underline underline-offset-2">
-                    Sign in
-                  </Link>
-                </p>
               </>
             )}
 
@@ -562,7 +553,7 @@ export function StartFlow({
                 <Title>Which day suits you?</Title>
                 <p className="mt-2 text-[15px] text-(--hm-ink-2)">
                   {chosenZone.name} gets deliveries on {listDays(chosenZone.deliveryDays)}.{" "}
-                  <button type="button" onClick={() => go(0)} className="font-semibold text-carbon underline underline-offset-2">
+                  <button type="button" onClick={() => go(STEPS.indexOf("area"))} className="font-semibold text-carbon underline underline-offset-2">
                     Change area
                   </button>
                 </p>
@@ -855,5 +846,17 @@ function PasswordInput() {
         </button>
       </span>
     </label>
+  );
+}
+
+/** For people who already have an account, on the first screen. */
+function SignInLink({ next }: { next: string | null }) {
+  return (
+    <p className="mt-6 text-center text-[14px] text-(--hm-ink-2)">
+      Already have an account?{" "}
+      <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-semibold text-carbon underline underline-offset-2">
+        Sign in
+      </Link>
+    </p>
   );
 }

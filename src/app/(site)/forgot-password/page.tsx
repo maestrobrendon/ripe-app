@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthShell, authInput, authPrimaryButton } from "@/components/auth-shell";
 import { requestPasswordReset } from "./actions";
 
 export default async function ForgotPasswordPage({
@@ -9,48 +10,35 @@ export default async function ForgotPasswordPage({
   const { sent } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14 sm:px-6">
-      <h1 className="text-3xl font-semibold">Reset your password</h1>
-
+    <AuthShell
+      title={sent ? "Check your email" : "Reset your password"}
+      subtitle={sent ? undefined : "Enter the email on your account and we will send you a link to reset your password."}
+      photo="kitchen"
+    >
       {sent ? (
-        <div className="mt-6 rounded-input border border-border bg-sky-wash p-4 text-sm">
-          <p>
-            If that email matches a Basket account, we have sent a link to reset your password.
-            It expires in 30 minutes.
-          </p>
-          <p className="mt-2 text-muted">
-            Signed up with a phone number only? Email reset is not available yet for
-            phone-only accounts. <Link href="/login" className="text-carbon underline">Contact us</Link> for help.
+        <div className="mt-6 rounded-xl bg-sky-wash p-4 text-sm leading-relaxed">
+          <p>If that email matches a Basket account, we have sent a link to reset your password. It expires in 30 minutes.</p>
+          <p className="mt-2 text-carbon/60">
+            Signed up with a phone number only? Email reset is not available yet for phone-only accounts. Message us on WhatsApp and we&apos;ll help.
           </p>
         </div>
       ) : (
-        <>
-          <p className="mt-3 text-sm text-muted">
-            Enter the email on your account and we will send you a link to reset your password.
-          </p>
-          <form action={requestPasswordReset} className="mt-8 space-y-4">
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">Email</span>
-              <input
-                name="contact"
-                type="email"
-                required
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-              />
-            </label>
-            <button
-              type="submit"
-              className="w-full rounded-full bg-carbon px-6 py-3 text-sm font-medium text-white hover:bg-carbon/85"
-            >
-              Send reset link
-            </button>
-          </form>
-        </>
+        <form action={requestPasswordReset} className="mt-8 space-y-5">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">Email</span>
+            <input name="contact" type="email" required autoComplete="email" placeholder="you@example.com" className={authInput} />
+          </label>
+          <button type="submit" className={authPrimaryButton}>
+            Send reset link
+          </button>
+        </form>
       )}
 
-      <p className="mt-6 text-sm text-muted">
-        <Link href="/login" className="text-carbon underline">Back to sign in</Link>
+      <p className="mt-7 text-sm">
+        <Link href="/login" className="font-medium text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+          Back to sign in
+        </Link>
       </p>
-    </div>
+    </AuthShell>
   );
 }

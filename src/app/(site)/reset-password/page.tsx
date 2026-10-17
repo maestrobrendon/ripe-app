@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PasswordField } from "@/components/ui/password-field";
+import { AuthAlert, AuthShell, authPrimaryButton } from "@/components/auth-shell";
 import { resetPassword } from "./actions";
 
 export default async function ResetPasswordPage({
@@ -11,48 +12,42 @@ export default async function ResetPasswordPage({
 
   if (!token) {
     return (
-      <div className="mx-auto max-w-md px-4 py-14 sm:px-6">
-        <h1 className="text-3xl font-semibold">Link expired</h1>
-        <p className="mt-3 text-sm text-muted">
-          This password reset link is invalid or has already been used. Reset links expire
-          30 minutes after they are sent.
-        </p>
-        <Link href="/forgot-password" className="mt-4 inline-block text-sm font-medium text-carbon underline">
+      <AuthShell
+        title="Link expired"
+        subtitle="This password reset link is invalid or has already been used. Reset links expire 30 minutes after they are sent."
+        photo="kitchen"
+      >
+        <Link href="/forgot-password" className={`mt-8 ${authPrimaryButton}`}>
           Request a new link
         </Link>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14 sm:px-6">
-      <h1 className="text-3xl font-semibold">Choose a new password</h1>
-
+    <AuthShell title="Choose a new password" subtitle="At least 8 characters. You'll use it to sign in from now on." photo="kitchen">
       {error === "expired" ? (
-        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
-          That link has expired or was already used. <Link href="/forgot-password" className="underline">Request a new one</Link>.
-        </p>
+        <AuthAlert>
+          That link has expired or was already used.{" "}
+          <Link href="/forgot-password" className="underline">
+            Request a new one
+          </Link>
+          .
+        </AuthAlert>
       ) : error === "throttled" ? (
-        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
-          Too many attempts. Please wait a few minutes and try again.
-        </p>
+        <AuthAlert>Too many attempts. Please wait a few minutes and try again.</AuthAlert>
       ) : error === "invalid" ? (
-        <p className="mt-4 rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">
-          Passwords must be at least 8 characters and match.
-        </p>
+        <AuthAlert>Passwords must be at least 8 characters and match.</AuthAlert>
       ) : null}
 
-      <form action={resetPassword} className="mt-8 space-y-4">
+      <form action={resetPassword} className="mt-8 space-y-5">
         <input type="hidden" name="token" value={token} />
-        <PasswordField name="password" label="New password" required minLength={8} maxLength={200} />
-        <PasswordField name="confirm" label="Confirm password" required minLength={8} maxLength={200} />
-        <button
-          type="submit"
-          className="w-full rounded-full bg-carbon px-6 py-3 text-sm font-medium text-white hover:bg-carbon/85"
-        >
+        <PasswordField name="password" label="New password" required minLength={8} maxLength={200} autoComplete="new-password" />
+        <PasswordField name="confirm" label="Confirm password" required minLength={8} maxLength={200} autoComplete="new-password" />
+        <button type="submit" className={authPrimaryButton}>
           Reset password
         </button>
       </form>
-    </div>
+    </AuthShell>
   );
 }

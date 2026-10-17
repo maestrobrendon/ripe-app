@@ -20,7 +20,7 @@ export function PasswordField({ label, labelExtra, id, className, ...props }: Pa
 
   return (
     <label htmlFor={inputId} className="block">
-      <span className="mb-1 flex items-center justify-between text-sm font-medium">
+      <span className="mb-1.5 flex items-center justify-between text-sm font-medium">
         {label}
         {labelExtra}
       </span>
@@ -28,7 +28,7 @@ export function PasswordField({ label, labelExtra, id, className, ...props }: Pa
         <input
           id={inputId}
           type={visible ? "text" : "password"}
-          className={`w-full rounded-input border border-border px-3 py-2 pr-10 text-sm ${className ?? ""}`}
+          className={`h-12 w-full rounded-xl border border-border bg-paper-white px-4 pr-12 text-[15px] outline-none transition-shadow focus:border-carbon focus:shadow-[0_0_0_3px_rgb(0_0_0/0.08)] ${className ?? ""}`}
           {...props}
         />
         <button
@@ -36,7 +36,7 @@ export function PasswordField({ label, labelExtra, id, className, ...props }: Pa
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
-          className="tap-target absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted hover:text-foreground"
+          className="tap-target absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted hover:text-foreground"
         >
           <Icon name={visible ? "hide" : "show"} size={18} />
         </button>
