@@ -45,6 +45,14 @@ import {
   Truck,
   User,
   X,
+  DotsThree,
+  Phone,
+  ArrowCounterClockwise,
+  WarningCircle,
+  Gift,
+  Bell,
+  DownloadSimple,
+  Clock,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
@@ -103,6 +111,14 @@ export const ICONS = {
   doc: FileText,
   star: Star,
   box: Package,
+  more: DotsThree,
+  phone: Phone,
+  undo: ArrowCounterClockwise,
+  warning: WarningCircle,
+  gift: Gift,
+  bell: Bell,
+  download: DownloadSimple,
+  clock: Clock,
 } as const;
 
 export type IconName = keyof typeof ICONS;

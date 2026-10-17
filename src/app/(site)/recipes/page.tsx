@@ -10,7 +10,6 @@ import { matchProductByName } from "@/lib/ingredient-match";
 import { RecipeLibrary, type LibraryRecipe } from "./recipe-library";
 import { ProduceListTab } from "./produce-list-tab";
 import { WeeklyMealPlanBuilder, MealPlanGate, type DayView, type MealOption, type RecipeOption } from "./weekly-meal-plan";
-import { IdeasSheetTrigger } from "@/app/(site)/basket/ideas-sheet-trigger";
 import { readActiveDelivery } from "@/lib/order-container";
 import { getDeliveryCycle, zoneForUser } from "@/lib/delivery";
 import { longDate } from "@/lib/delivery-labels";
@@ -462,11 +461,13 @@ export default async function RecipesPage({
             </ul>
 
             <div className="mt-6">
-              <IdeasSheetTrigger
+              <Link
+                href="/assistant"
                 className="tap-target inline-flex h-11 items-center gap-2 rounded-full bg-carbon pr-5 pl-4 text-[14px] font-semibold text-paper-white transition hover:bg-carbon/85"
-                icon="spark"
-                label="Ask Kachi for ideas"
-              />
+              >
+                <Icon name="spark" size={16} />
+                Ask Kachi for ideas
+              </Link>
             </div>
 
             {/* Three-tab shell (Basket vs. Cart addendum, Section 2): All

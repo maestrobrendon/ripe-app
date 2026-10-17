@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
@@ -9,7 +10,9 @@ import { spring } from "@/lib/motion/tokens";
  * What the customer is filling, on every page: a guest's cart, or a signed-in
  * customer's delivery (this week's order). The server decides which (see
  * lib/cart.ts); components just call setQuantity. Every change answers with a
- * short toast: where it went, or why it couldn't be added.
+ * short toast: where it went, or why it couldn't be added, and a removal can
+ * be undone from the toast. On Home, the page refreshes quietly after changes
+ * so its suggestions and recipe counts follow the order.
  */
 
 export type CartLine = {
@@ -25,6 +28,8 @@ export type CartLine = {
   memberPrice: number;
   standardPrice: number;
   quantity: number;
+  soldOut?: boolean;
+  limited?: boolean;
 };
 
 export type CartSnapshot = {
@@ -64,7 +69,7 @@ export type AddableProduct = {
   soldOut?: boolean;
 };
 
-type Notice = { id: number; tone: "ok" | "error"; text: string; showView: boolean };
+type Notice = { id: number; tone: "ok" | "error"; text: string; showView: boolean; action?: { label: string; run: () => void } };
 
 type CartContextValue = CartSnapshot & {
   isOpen: boolean;
@@ -102,6 +107,9 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
   const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const timer = useRef<number | undefined>(undefined);
+  const refreshTimer = useRef<number | undefined>(undefined);
+  const router = useRouter();
+  const pathname = usePathname();
 
   // The server is the truth: whenever the page is re-rendered on the server
   // (a refresh after Kachi, a recipe or Home changed the order), take its view.
@@ -113,12 +121,28 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
     setState(initial);
   }, [initialKey, initial]);
 
-  const announce = useCallback((text: string, tone: "ok" | "error" = "ok", showView = tone === "ok") => {
+  const announce = useCallback((text: string, tone: "ok" | "error" = "ok", showView = tone === "ok", action?: Notice["action"]) => {
     window.clearTimeout(timer.current);
-    setNotice({ id: Date.now(), tone, text, showView });
-    timer.current = window.setTimeout(() => setNotice(null), tone === "error" ? 5000 : 3200);
+    setNotice({ id: Date.now(), tone, text, showView, action });
+    timer.current = window.setTimeout(() => setNotice(null), tone === "error" ? 5000 : action ? 5000 : 3200);
   }, []);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+      window.clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
+  // Home shows things worked out from the order on the server (suggestions,
+  // what recipes still need); refresh it once the taps settle.
+  const settle = useCallback(() => {
+    if (pathname !== "/basket") return;
+    window.clearTimeout(refreshTimer.current);
+    refreshTimer.current = window.setTimeout(() => router.refresh(), 900);
+  }, [pathname, router]);
+
+  const setQuantityRef = useRef<CartContextValue["setQuantity"] | null>(null);
 
   const setQuantity: CartContextValue["setQuantity"] = useCallback(
     async (product, quantity) => {
@@ -145,6 +169,8 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
                 memberPrice: product.memberPrice,
                 standardPrice: product.standardPrice,
                 quantity,
+                soldOut: product.soldOut ?? false,
+                limited: false,
               },
             ];
       setState(recompute(nextItems, state));
@@ -160,7 +186,9 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
         setState(data as CartSnapshot);
         const where = (data as CartSnapshot).deliveryLabel ?? "your cart";
         if (before === 0 && quantity > 0) announce(`${product.name} added to ${where}`);
-        else if (quantity <= 0 && before > 0) announce(`${product.name} removed`, "ok", false);
+        else if (quantity <= 0 && before > 0)
+          announce(`${product.name} removed`, "ok", false, { label: "Undo", run: () => void setQuantityRef.current?.(product, before) });
+        settle();
       } catch (e) {
         setState(previous);
         announce(e instanceof Error ? e.message : "That didn't go through. Try again.", "error");
@@ -168,8 +196,11 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
         setLoadingProductId(null);
       }
     },
-    [state, announce],
+    [state, announce, settle],
   );
+  useEffect(() => {
+    setQuantityRef.current = setQuantity;
+  }, [setQuantity]);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/cart");
@@ -198,11 +229,7 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
   return (
     <CartContext.Provider value={value}>
       {children}
-      <div
-        className="pointer-events-none fixed inset-x-0 z-(--z-toast) flex justify-center px-4"
-        style={{ bottom: signedIn ? "calc(var(--dock-clearance) - 0.5rem)" : "1.25rem" }}
-        aria-live="polite"
-      >
+      <div className="cart-toast pointer-events-none fixed inset-x-0 z-(--z-toast) flex justify-center px-4" data-signed-in={signedIn || undefined} aria-live="polite">
         <AnimatePresence>
           {notice && (
             <motion.div
@@ -215,6 +242,18 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
               className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-full px-4 py-2.5 text-sm shadow-lg ${notice.tone === "error" ? "bg-ember text-white" : "bg-carbon text-white"}`}
             >
               <span className="min-w-0">{notice.text}</span>
+              {notice.action && (
+                <button
+                  type="button"
+                  className="shrink-0 font-semibold text-mint-pop"
+                  onClick={() => {
+                    notice.action?.run();
+                    setNotice(null);
+                  }}
+                >
+                  {notice.action.label}
+                </button>
+              )}
               {notice.showView &&
                 (signedIn ? (
                   <Link href="/basket" className="shrink-0 font-semibold text-mint-pop underline-offset-2 hover:underline" onClick={() => setNotice(null)}>

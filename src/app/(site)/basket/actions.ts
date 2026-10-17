@@ -1,288 +1,196 @@
 "use server";
 
-import { BUYABLE, isOffered, isBuyable, snapQuantity } from "@/lib/product";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser, getCurrentUser } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
+import { BasketCapReachedError } from "@/lib/basket";
 import {
-  createUserBasket,
-  getOrCreateActiveBasket,
-  getOwnedBasket,
-  BasketCapReachedError,
-} from "@/lib/basket";
-import { getOrCreateCart, clearCart } from "@/lib/cart";
-import { getOrCreateCurrentWindow, windowState } from "@/lib/window";
-import type { DeliveryDay, ShoppingWindowDay } from "@/generated/prisma/enums";
-import type { CurrentUser } from "@/lib/session";
+  addLinesToDelivery,
+  createDelivery,
+  getOrCreateActiveDelivery,
+  ownedDelivery,
+  rememberActiveDelivery,
+} from "@/lib/order-container";
+import { getDeliveryCycle, setDateSkipped, zoneForUser } from "@/lib/delivery";
+import { cutoffFor } from "@/lib/delivery-dates";
+import { buildStarterPicks } from "@/lib/starter-basket-core";
+import { getStarterCandidates } from "@/lib/starter-basket";
+import { MENU_GOALS } from "@/lib/menu-types";
+import { getMenu } from "@/lib/menu";
+import { BUYABLE } from "@/lib/product";
+import { audit } from "@/lib/admin/audit";
+import type { DeliveryDay } from "@/generated/prisma/enums";
 
-/** Every mutating action takes an optional basket id (explicit when switching between several) and falls back to the member's active basket. */
-async function resolveBasket(user: CurrentUser, basketId: string | undefined) {
-  if (basketId) {
-    const owned = await getOwnedBasket(user.id, basketId);
-    if (owned) return owned;
-  }
-  return getOrCreateActiveBasket(user.id, {
-    isSubscriber: Boolean(user.subscriptionTierId),
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-  });
+/*
+ * Home's actions. None of them throws at the customer: each returns ok, or a
+ * sentence they can act on.
+ */
+
+export type Result = { ok: true } | { ok: false; error: string };
+const fail = (error: string): Result => ({ ok: false, error });
+
+async function mine(basketId: string) {
+  const user = await getCurrentUser();
+  if (!user) return { user: null, basket: null };
+  return { user, basket: await ownedDelivery(user.id, basketId) };
 }
 
-/**
- * "Subscribe & save" from a product page. Adds the item to the member's active
- * basket and records the cadence, then routes non-members to subscribe first.
- */
-export async function addToStandingBasket(
-  productId: string,
-  quantity: number,
-  frequencyWeeks: number,
-) {
-  const user = await getCurrentUser();
-  // "Subscribe & save" is a subscription funnel: it needs an account and a plan.
-  if (!user) redirect("/start");
-  if (!user.subscriptionTierId) redirect("/subscribe");
+const done = (): Result => {
+  revalidatePath("/basket");
+  return { ok: true };
+};
 
-  const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
-  if (!isOffered(product)) throw new Error("We don't sell that any more.");
-  if (!isBuyable(product)) throw new Error(`${product.name} is out of stock right now.`);
-  const basket = await resolveBasket(user, undefined);
-
-  await prisma.basket.update({
-    where: { id: basket.id },
-    data: { frequencyWeeks: frequencyWeeks === 2 ? 2 : 1 },
-  });
-
-  const qty = snapQuantity(quantity, product);
-  const existing = await prisma.basketItem.findUnique({
-    where: { basketId_productId: { basketId: basket.id, productId } },
-  });
-  await prisma.basketItem.upsert({
-    where: { basketId_productId: { basketId: basket.id, productId } },
-    update: { quantity: snapQuantity((existing?.quantity ?? 0) + qty, product) },
-    create: { basketId: basket.id, productId, quantity: qty },
-  });
-
+/** Look at another delivery (Home follows it, and so does everything added from other pages). */
+export async function selectDelivery(basketId: string) {
+  const { basket } = await mine(basketId);
+  if (basket) await rememberActiveDelivery(basket.id);
   redirect("/basket");
 }
 
-// The window lock is a subscriber-basket mechanic: a free-trial basket never
-// auto-recurs (Section 1 of the addendum), so it never locks either.
-async function assertWindowOpen(basket: { id: string; isFreeTrial: boolean }) {
-  if (basket.isFreeTrial) return;
-  const window = await getOrCreateCurrentWindow(basket.id);
-  if (windowState(window).locked) {
-    throw new Error("This week's shopping window is closed.");
-  }
-}
-
-export async function setShoppingWindowDay(basketId: string | undefined, day: ShoppingWindowDay) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await prisma.basket.update({ where: { id: basket.id }, data: { shoppingWindowDay: day } });
-  revalidatePath("/basket");
-}
-
-/** Move a basket's contents into the cart and send the customer to checkout. */
-export async function checkoutStandingBasket(basketId?: string) {
-  const user = await requireUser();
-  const basket = await prisma.basket.findFirst({
-    where: basketId ? { id: basketId, userId: user.id } : { userId: user.id },
-    orderBy: basketId ? undefined : { updatedAt: "desc" },
-    include: { items: true },
-  });
-  if (!basket || basket.items.length === 0) redirect("/basket");
-
-  const cart = await getOrCreateCart();
-  await clearCart(cart.id);
-  await prisma.cartItem.createMany({
-    data: basket.items.map((i) => ({ cartId: cart.id, productId: i.productId, quantity: i.quantity })),
-    skipDuplicates: true,
-  });
-
-  redirect(`/checkout?source=basket&basketId=${basket.id}`);
-}
-
-/**
- * "Buy these once": copies a delivered trial basket's items into the cart
- * without touching the basket itself or going straight to checkout, so the
- * customer lands on the cart screen able to add or remove things first.
- */
-export async function copyBasketToCart(basketId: string) {
-  const user = await requireUser();
-  const basket = await prisma.basket.findFirst({
-    where: { id: basketId, userId: user.id },
-    include: { items: true },
-  });
-  if (!basket || basket.items.length === 0) redirect("/basket");
-
-  const cart = await getOrCreateCart();
-  for (const item of basket.items) {
-    const existing = await prisma.cartItem.findUnique({
-      where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
-    });
-    await prisma.cartItem.upsert({
-      where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
-      update: { quantity: (existing?.quantity ?? 0) + item.quantity },
-      create: { cartId: cart.id, productId: item.productId, quantity: item.quantity },
-    });
-  }
-
-  redirect("/cart");
-}
-
-export async function setBasketItemQuantity(basketId: string | undefined, productId: string, quantity: number) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await assertWindowOpen(basket);
-  const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
-
-  if (quantity <= 0) {
-    await prisma.basketItem.deleteMany({ where: { basketId: basket.id, productId } });
-  } else {
-    if (!isOffered(product)) throw new Error("We don't sell that any more.");
-    if (!isBuyable(product)) throw new Error(`${product.name} is out of stock right now.`);
-    const snapped = snapQuantity(quantity, product);
-    await prisma.basketItem.upsert({
-      where: { basketId_productId: { basketId: basket.id, productId } },
-      update: { quantity: snapped },
-      create: { basketId: basket.id, productId, quantity: snapped },
-    });
-  }
-
-  revalidatePath("/basket");
-}
-
-export async function setBasketDeliveryDay(basketId: string | undefined, deliveryDay: DeliveryDay) {
-  if (!(["MONDAY", "WEDNESDAY", "FRIDAY"] as const).includes(deliveryDay)) throw new Error("Pick a delivery day.");
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await prisma.basket.update({ where: { id: basket.id }, data: { deliveryDay } });
-  revalidatePath("/basket");
-}
-
-export async function setWindowSkipped(basketId: string | undefined, skipped: boolean) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  const window = await getOrCreateCurrentWindow(basket.id);
-  if (windowState(window).locked) throw new Error("The window is already closed.");
-  await prisma.shoppingWindow.update({
-    where: { id: window.id },
-    data: { status: skipped ? "SKIPPED" : "OPEN" },
-  });
-  revalidatePath("/basket");
-}
-
-async function addProductAtMin(basketId: string, productId: string) {
-  const product = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
-  if (!isBuyable(product)) return;
-  const existing = await prisma.basketItem.findUnique({
-    where: { basketId_productId: { basketId, productId } },
-  });
-  if (existing) return;
-  await prisma.basketItem.create({
-    data: { basketId, productId, quantity: product.minOrderQty },
-  });
-}
-
-/** Tap a swap chip on a flagged item: remove one product, add another. */
-export async function swapBasketItem(basketId: string | undefined, fromProductId: string, toProductId: string) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await assertWindowOpen(basket);
-
-  await prisma.basketItem.deleteMany({ where: { basketId: basket.id, productId: fromProductId } });
-  await addProductAtMin(basket.id, toProductId);
-  revalidatePath("/basket");
-}
-
-/** Add the ingredients a suggested recipe needs that are not already in the basket. */
-export async function addRecipeIngredients(basketId: string | undefined, recipeSlug: string) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await assertWindowOpen(basket);
-
-  const recipe = await prisma.recipe.findFirst({ where: { slug: recipeSlug, status: "PUBLISHED" } });
-  if (!recipe) return;
-
-  const existing = new Set(
-    (await prisma.basketItem.findMany({ where: { basketId: basket.id } })).map((i) => i.productId),
-  );
-  for (const productId of recipe.ingredientProductIds) {
-    if (!existing.has(productId)) await addProductAtMin(basket.id, productId);
-  }
-  revalidatePath("/basket");
-}
-
-/** Add every pick from an Ideas starter set in one go, for the empty-basket case. */
-export async function applyStarterPicks(
-  basketId: string | undefined,
-  picks: { productId: string; quantity: number }[],
-) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await assertWindowOpen(basket);
-
-  // The picks come from the browser: keep only products we sell, at quantities they allow.
-  const wanted = picks.slice(0, 60);
-  const products = await prisma.product.findMany({ where: { id: { in: wanted.map((p) => p.productId) }, ...BUYABLE } });
-  const byId = new Map(products.map((p) => [p.id, p]));
-  const data = wanted.flatMap((p) => {
-    const product = byId.get(p.productId);
-    const quantity = product ? snapQuantity(p.quantity, product) : 0;
-    return product && quantity > 0 ? [{ basketId: basket.id, productId: product.id, quantity }] : [];
-  });
-  await prisma.basketItem.createMany({ data, skipDuplicates: true });
-  revalidatePath("/basket");
-}
-
-/** The onboarding-style explainer shows once on a member's first basket visit, then never again. */
-export async function markBasketIntroSeen() {
-  const user = await requireUser();
-  await prisma.user.update({ where: { id: user.id }, data: { basketIntroSeen: true } });
-}
-
-/** Restore the items from the member's most recent finalized order into this window. */
-export async function restoreLastWeek(basketId?: string) {
-  const user = await requireUser();
-  const basket = await resolveBasket(user, basketId);
-  await assertWindowOpen(basket);
-
-  const lastOrder = await prisma.order.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    include: { items: true },
-  });
-  if (!lastOrder || lastOrder.items.length === 0) return;
-
-  await prisma.basketItem.deleteMany({ where: { basketId: basket.id } });
-  await prisma.basketItem.createMany({
-    data: lastOrder.items.map((i) => ({
-      basketId: basket.id,
-      productId: i.productId,
-      quantity: i.quantity,
-    })),
-    skipDuplicates: true,
-  });
-  revalidatePath("/basket");
-}
-
-/**
- * Starts a new basket, up to the plan's limit (lib/basket.ts). At the cap,
- * pricing explains why: a used free basket, or Member's three.
- */
-export async function createBasket() {
-  const user = await requireUser();
+/** Another delivery: "For Mum", on Saturdays. */
+export async function newDelivery(input: { name: string; day: DeliveryDay }) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/basket");
   try {
-    const basket = await createUserBasket(user.id, {
-      isSubscriber: Boolean(user.subscriptionTierId),
-      tierSlug: user.subscriptionTier?.slug,
-      deliveryDay: user.deliveryDay ?? "WEDNESDAY",
-    });
-    redirect(`/basket?b=${basket.id}`);
-  } catch (err) {
-    if (err instanceof BasketCapReachedError) {
-      redirect(err.reason === "trial" ? "/subscribe?reason=free-basket-used" : "/subscribe?reason=basket-limit");
-    }
-    throw err;
+    const basket = await createDelivery(user, input);
+    await rememberActiveDelivery(basket.id);
+  } catch (e) {
+    if (e instanceof BasketCapReachedError) redirect(e.reason === "trial" ? "/subscribe?reason=free-basket-used" : "/subscribe?reason=basket-limit");
+    throw e;
   }
+  redirect("/basket");
+}
+
+export async function renameDelivery(basketId: string, name: string): Promise<Result> {
+  const { basket } = await mine(basketId);
+  if (!basket) return fail("We couldn't find that delivery.");
+  await prisma.basket.update({ where: { id: basket.id }, data: { name: name.trim().slice(0, 40) || null } });
+  return done();
+}
+
+/** Remove an extra delivery. The last one stays: it's where the customer's order lives. */
+export async function removeDelivery(basketId: string): Promise<Result> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that delivery.");
+  if ((await prisma.basket.count({ where: { userId: user.id } })) <= 1) return fail("This is your only delivery, so it stays.");
+  const open = await prisma.order.count({ where: { basketId: basket.id, status: { in: ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY"] } } });
+  if (open) return fail("This delivery has an order on its way. Remove it after that arrives.");
+  await prisma.basket.delete({ where: { id: basket.id } });
+  const next = await prisma.basket.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" } });
+  if (next) await rememberActiveDelivery(next.id);
+  return done();
+}
+
+/** Move a delivery to another of its area's days. Never starts a checkout. */
+export async function setDeliveryDay(basketId: string, day: DeliveryDay): Promise<Result> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that delivery.");
+  const zone = await zoneForUser(user.id);
+  if (!zone) return fail("Add your delivery address first, so we know which days we come to you.");
+  if (!zone.deliveryDays.includes(day)) return fail(`We don't come to ${zone.name} on that day.`);
+  await prisma.basket.update({ where: { id: basket.id }, data: { deliveryDay: day } });
+  return done();
+}
+
+/** "Remind me each week": the order stays ready and we message the customer before it closes. */
+export async function setWeeklyReminder(basketId: string, on: boolean): Promise<Result> {
+  const { basket } = await mine(basketId);
+  if (!basket) return fail("We couldn't find that delivery.");
+  await prisma.basket.update({ where: { id: basket.id }, data: { isStanding: on } });
+  return done();
+}
+
+/** Skip (or un-skip) one delivery date, any time before it closes. */
+export async function skipDate(basketId: string, dateIso: string, skip: boolean): Promise<Result> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that delivery.");
+  const zone = await zoneForUser(user.id);
+  if (!zone) return fail("Add your delivery address first.");
+  const date = new Date(dateIso);
+  if (Number.isNaN(date.getTime())) return fail("That date didn't look right.");
+  const cutoff = cutoffFor(date, zone.cutoffHour);
+  if (Date.now() >= cutoff.getTime()) return fail("That delivery has already closed.");
+  await setDateSkipped(basket, date, cutoff, skip);
+  return done();
+}
+
+/** Put a past order back in this delivery, replacing what's there ("Order these again"). */
+export async function orderAgain(basketId: string, orderId: string): Promise<Result> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that delivery.");
+  const order = await prisma.order.findFirst({ where: { id: orderId, userId: user.id }, include: { items: true } });
+  if (!order) return fail("We couldn't find that order.");
+  await prisma.basketItem.deleteMany({ where: { basketId: basket.id } });
+  const added = await addLinesToDelivery(basket.id, order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
+  if (added < order.items.length) {
+    revalidatePath("/basket");
+    return fail(`${order.items.length - added} of those aren't available this week, so we left them out.`);
+  }
+  return done();
+}
+
+/** An empty order: start from the set we'd suggest for the customer's goal and household. */
+export async function startFromGoal(basketId: string): Promise<Result> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that delivery.");
+  const goalSlug = user.preferences?.primaryGoal ?? MENU_GOALS[0].starterSlug;
+  const picks = buildStarterPicks({ goalSlug, producePreferences: user.preferences?.producePreferences ?? [], adults: user.householdAdults, kids: user.householdKids }, await getStarterCandidates());
+  if (!picks.length) return fail("We don't have enough in stock to put a set together right now. Browse the shop instead.");
+  await addLinesToDelivery(basket.id, picks.map((p) => ({ productId: p.productId, quantity: p.quantity })));
+  return done();
+}
+
+/** "Cook this week": add whatever a recipe needs that the order doesn't have. */
+export async function addRecipeMissing(basketId: string, recipeSlug: string): Promise<Result & { added?: number }> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that delivery.");
+  const recipe = (await getMenu()).find((r) => r.slug === recipeSlug);
+  if (!recipe) return fail("We couldn't find that recipe.");
+  const have = new Set((await prisma.basketItem.findMany({ where: { basketId: basket.id }, select: { product: { select: { slug: true } } } })).map((i) => i.product.slug));
+  const products = await prisma.product.findMany({ where: { slug: { in: recipe.basket.filter((s) => !have.has(s)) }, ...BUYABLE }, select: { id: true, minOrderQty: true } });
+  const added = await addLinesToDelivery(basket.id, products.map((p) => ({ productId: p.id, quantity: p.minOrderQty })));
+  revalidatePath("/basket");
+  return { ok: true, added };
+}
+
+/** Cancel an order before its delivery closes, so the customer can change it and confirm again. */
+export async function cancelOrder(orderId: string): Promise<Result> {
+  const user = await getCurrentUser();
+  if (!user) return fail("Sign in again to change this order.");
+  const order = await prisma.order.findFirst({ where: { id: orderId, userId: user.id }, include: { deliveryZone: { select: { cutoffHour: true } } } });
+  if (!order) return fail("We couldn't find that order.");
+  if (order.status !== "RECEIVED") return fail("We've already started on this order. Message us and we'll help.");
+  const cutoff = cutoffFor(order.deliveryDate, order.deliveryZone?.cutoffHour ?? 18);
+  if (Date.now() >= cutoff.getTime()) return fail("This order has closed. Message us and we'll help.");
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      status: "CANCELLED",
+      cancelledAt: new Date(),
+      cancelReason: "Cancelled by the customer",
+      version: { increment: 1 },
+      events: { create: { kind: "STATUS", fromStatus: "RECEIVED", toStatus: "CANCELLED", actorName: "Customer", note: "Cancelled by the customer before cutoff" } },
+    },
+  });
+  await audit({ actorType: "CUSTOMER", actorId: user.id, action: "order.cancelled_by_customer", targetType: "Order", targetId: order.id, summary: "Cancelled before cutoff" });
+  revalidatePath("/basket");
+  revalidatePath("/orders");
+  return { ok: true };
+}
+
+/** The next date this delivery can be ordered for, for the checkout link. */
+export async function nextDateFor(basketId: string) {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return null;
+  const cycle = await getDeliveryCycle(basket, await zoneForUser(user.id));
+  return cycle.date?.toISOString() ?? null;
+}
+
+/** Make sure a signed-in customer has a delivery (used by pages that need one to exist). */
+export async function ensureDelivery() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const d = await getOrCreateActiveDelivery(user);
+  return d.id;
 }

@@ -447,6 +447,25 @@ button:not(:disabled):active {
   }
 }
 
+/* Toasts: above the dock for signed-in customers, and above Home's order bar
+   when it's showing (the dock is a left rail from lg up). */
+.cart-toast {
+  bottom: 1.25rem;
+}
+.cart-toast[data-signed-in] {
+  bottom: calc(var(--dock-clearance) - 0.5rem);
+}
+@media (max-width: 1023px) {
+  body:has([data-order-bar]) .cart-toast[data-signed-in] {
+    bottom: calc(var(--dock-clearance) + 3.25rem);
+  }
+}
+@media (min-width: 1024px) {
+  .cart-toast[data-signed-in] {
+    bottom: 1.5rem;
+  }
+}
+
 @supports (corner-shape: squircle) {
   .squircle {
     corner-shape: squircle;

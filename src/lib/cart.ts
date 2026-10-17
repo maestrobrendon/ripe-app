@@ -33,6 +33,10 @@ export type CartLineView = {
   memberPrice: number;
   standardPrice: number;
   quantity: number;
+  /** Staff marked it out of stock (or stopped selling it): it won't be in the order. */
+  soldOut: boolean;
+  /** Short supply this week. */
+  limited: boolean;
 };
 
 export type CartView = {
@@ -92,6 +96,8 @@ function buildView(items: { quantity: number; product: import("@/generated/prism
     memberPrice: i.product.memberPrice,
     standardPrice: i.product.standardPrice,
     quantity: i.quantity,
+    soldOut: !isBuyable(i.product),
+    limited: i.product.availability === "LIMITED",
   }));
   const standardSubtotal = lines.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
   const memberSubtotal = lines.reduce((s, l) => s + l.memberPrice * l.quantity, 0);

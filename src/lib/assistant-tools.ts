@@ -7,8 +7,8 @@
 //
 // This is a convenience layer over the same rules the rest of the app
 // enforces, not a shortcut past them: item mutations go through the same
-// setBasketItemQuantity used by the basket UI, so window locks, the
-// free-trial pricing lock, and quantity snapping all apply identically here.
+// writeDeliveryLine used by the shop and Home, so stock checks and quantity
+// snapping apply identically here.
 
 import { prisma } from "@/lib/prisma";
 import { customerStatusLabel } from "@/lib/order-status";
@@ -19,7 +19,7 @@ import {
   createUserBasket,
   BasketCapReachedError,
 } from "@/lib/basket";
-import { setBasketItemQuantity } from "@/app/(site)/basket/actions";
+import { writeDeliveryLine } from "@/lib/order-container";
 import { getOrCreateCart, cartViewForCart, setCartItemQuantity } from "@/lib/cart";
 import type { CurrentUser } from "@/lib/session";
 
@@ -100,7 +100,7 @@ export async function toolAddItemToBasket(
     const nextQuantity = (existing?.quantity ?? 0) + Math.max(0, args.quantity);
     // Ownership already verified above, so this call's own resolveBasket
     // fallback never has a reason to trigger.
-    await setBasketItemQuantity(args.basket_id, args.product_id, nextQuantity);
+    await writeDeliveryLine(args.basket_id, args.product_id, nextQuantity, "set");
     return { productId: args.product_id, name: product.name, newQuantity: nextQuantity };
   });
 }
@@ -108,7 +108,7 @@ export async function toolAddItemToBasket(
 export async function toolRemoveItemFromBasket(user: CurrentUser, args: { basket_id: string; product_id: string }) {
   return run(user.id, "remove_item_from_basket", args, async () => {
     await requireOwnedBasket(user.id, args.basket_id);
-    await setBasketItemQuantity(args.basket_id, args.product_id, 0);
+    await writeDeliveryLine(args.basket_id, args.product_id, 0, "set");
     return { productId: args.product_id, removed: true };
   });
 }
@@ -121,7 +121,7 @@ export async function toolAdjustItemQuantity(
     await requireOwnedBasket(user.id, args.basket_id);
     const product = await prisma.product.findUnique({ where: { id: args.product_id } });
     if (!product) throw new Error("That product doesn't exist.");
-    await setBasketItemQuantity(args.basket_id, args.product_id, Math.max(0, args.quantity));
+    await writeDeliveryLine(args.basket_id, args.product_id, Math.max(0, args.quantity), "set");
     return { productId: args.product_id, name: product.name, quantity: Math.max(0, args.quantity) };
   });
 }
@@ -140,7 +140,7 @@ export async function toolAddItemsToBasket(
         where: { basketId_productId: { basketId: args.basket_id, productId: item.product_id } },
       });
       const nextQuantity = (existing?.quantity ?? 0) + Math.max(0, item.quantity);
-      await setBasketItemQuantity(args.basket_id, item.product_id, nextQuantity);
+      await writeDeliveryLine(args.basket_id, item.product_id, nextQuantity, "set");
       results.push({ productId: item.product_id, name: product.name, newQuantity: nextQuantity });
     }
     return { added: results };
