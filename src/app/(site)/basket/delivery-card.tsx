@@ -130,7 +130,7 @@ export function DeliveryCard(props: {
     });
 
   const subtitle = [
-    status === "running" ? `Every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used",
+    status === "running" ? `Delivery every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used",
     props.areaName,
   ]
     .filter(Boolean)
