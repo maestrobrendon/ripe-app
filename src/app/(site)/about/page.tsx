@@ -17,8 +17,8 @@ export default function AboutPage() {
         </p>
 
         <p>
-          Basket sources locally from trusted farmers and moves produce into a customer's basket on a fixed
-          weekly schedule, rather than through a chain of middlemen. Cutting out those steps is what makes
+          Basket sources locally from trusted farmers and brings produce straight to customers on fixed
+          delivery days, rather than through a chain of middlemen. Cutting out those steps is what makes
           member pricing possible. It is not a discount funded by volume, it is the result of a shorter,
           more direct supply chain.
         </p>

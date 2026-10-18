@@ -101,7 +101,7 @@ export const COACH_ANSWERS: CoachAnswer[] = [
     id: "payment-methods",
     keywords: ["payment method", "card", "transfer", "pay with", "bank"],
     answer:
-      "Card and bank transfer are both offered at checkout. Payment is in test mode for now, so no real money moves yet.",
+      "You pay when your order arrives, by transfer or card to the rider, or by bank transfer before it's packed. Paying by card online is coming.",
   },
   {
     id: "human",

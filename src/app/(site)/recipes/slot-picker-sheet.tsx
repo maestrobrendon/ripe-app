@@ -4,6 +4,13 @@ import { useState } from "react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { MEAL_PLAN_DAYS, MEAL_SLOTS, MEAL_SLOT_LABEL, type MealPlanDay, type MealSlotKey } from "@/lib/meal-plan-types";
 
+/** Today, or tomorrow once dinner time has passed: the day someone is most likely planning for. */
+function likelyDay(): MealPlanDay {
+  const now = new Date();
+  const index = (now.getDay() + 6) % 7; // Monday first
+  return MEAL_PLAN_DAYS[now.getHours() >= 20 ? (index + 1) % 7 : index];
+}
+
 const DAY_SHORT: Record<MealPlanDay, string> = {
   MONDAY: "Mon",
   TUESDAY: "Tue",
@@ -15,7 +22,7 @@ const DAY_SHORT: Record<MealPlanDay, string> = {
 };
 
 /**
- * The one day/slot picker, used both for "Add to my timetable" from a recipe
+ * The one day/slot picker, used both for "Add to my meal plan" from a recipe
  * sheet and for choosing where a new own meal goes. Always targets this
  * week (the timetable has no far-future picking in this design).
  */
@@ -30,7 +37,7 @@ export function SlotPickerSheet({
   mealName: string;
   onPick: (day: MealPlanDay, slot: MealSlotKey) => void;
 }) {
-  const [day, setDay] = useState<MealPlanDay>("MONDAY");
+  const [day, setDay] = useState<MealPlanDay>(likelyDay);
   const [slot, setSlot] = useState<MealSlotKey>("dinner");
 
   return (

@@ -20,22 +20,21 @@ export function SearchBar({
   onNavigate?: () => void;
 }) {
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<Result[]>([]);
+  const [found, setFound] = useState<Result[]>([]);
+  // Under two letters there's nothing to show, whatever the last search found.
+  const results = q.trim().length < 2 ? [] : found;
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (q.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+    if (q.trim().length < 2) return;
     const id = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`);
         if (res.ok) {
           const data = (await res.json()) as { results: Result[] };
-          setResults(data.results);
+          setFound(data.results);
           setOpen(true);
         }
       } catch {
