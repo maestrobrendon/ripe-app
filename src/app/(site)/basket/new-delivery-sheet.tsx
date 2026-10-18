@@ -13,7 +13,7 @@ export type DayOption = { day: DeliveryDay; dateIso: string; cutoffIso: string }
 const ALL_DAYS: DeliveryDay[] = ["THURSDAY", "FRIDAY", "SATURDAY"];
 const NAMES = ["For Mum", "Office", "Weekend"];
 
-/** Another delivery: a name the customer will recognise, and its day. */
+/** A new basket: a name the customer will recognise, and its day. */
 export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean; onClose: () => void; dayOptions: DayOption[] }) {
   const days = dayOptions.length ? dayOptions : ALL_DAYS.map((day) => ({ day, dateIso: null, cutoffIso: null }));
   const [name, setName] = useState("");
@@ -21,8 +21,8 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
   const [pending, start] = useTransition();
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Another delivery" desktopDialog>
-      <p className="text-sm text-muted">For someone else, or a second drop in the week. It has its own items and its own day.</p>
+    <BottomSheet open={open} onClose={onClose} title="New basket" desktopDialog>
+      <p className="text-sm text-muted">For someone else, like your mum, or a second drop in the week. It has its own produce and its own day, and comes every week until you pause it.</p>
 
       <label className="mt-4 block text-sm font-medium" htmlFor="delivery-name">
         What should we call it?
@@ -58,7 +58,7 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
               <b className="block font-semibold">{dayName(o.day)}s</b>
               {o.dateIso && o.cutoffIso && (
                 <small className="block text-[13px] text-muted">
-                  First one {shortDate(o.dateIso)} · change until {cutoffLabel(o.cutoffIso)}
+                  First one {shortDate(o.dateIso)} · confirm by {cutoffLabel(o.cutoffIso)}
                 </small>
               )}
             </span>
@@ -67,8 +67,8 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
         ))}
       </div>
 
-      <Button className="mt-5 w-full" size="lg" loading={pending} onClick={() => start(() => newDelivery({ name, day }))}>
-        Create delivery
+      <Button className="mt-5 w-full" size="lg" loading={pending} disabled={!name.trim()} onClick={() => start(() => newDelivery({ name, day }))}>
+        Create basket
       </Button>
     </BottomSheet>
   );

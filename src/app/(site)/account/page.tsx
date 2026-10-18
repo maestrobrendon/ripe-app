@@ -9,7 +9,8 @@ import { creditBalance } from "@/lib/credit";
 import { newReferralCode, REFERRAL_REWARD } from "@/lib/referrals";
 import { addressLine } from "@/lib/addresses";
 import { formatPhone } from "@/lib/phone";
-import { orderRef, shortDate } from "@/lib/delivery-labels";
+import { basketName, orderRef, shortDate } from "@/lib/delivery-labels";
+import { confirmRight } from "@/lib/basket-rules";
 import { AccountView } from "./account-view";
 
 export const metadata = { title: "Me" };
@@ -47,7 +48,7 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code] = await Promise.all([
+  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code, baskets, right] = await Promise.all([
     prisma.order.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } }),
     prisma.order.findFirst({ where: { userId: user.id, status: { in: OPEN_STATUSES } }, orderBy: { deliveryDate: "asc" }, select: { status: true, deliveryDate: true } }),
     prisma.order.count({ where: { userId: user.id } }),
@@ -60,6 +61,8 @@ export default async function AccountPage() {
     prisma.user.count({ where: { referredById: user.id, referralRewardedAt: { not: null } } }),
     getSiteSettings(),
     ensureReferralCode(user),
+    prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { name: true, isStanding: true } }),
+    confirmRight(user),
   ]);
 
   const tier = user.subscriptionTier;
@@ -89,7 +92,9 @@ export default async function AccountPage() {
               : null
       }
       orders={{ count: orderCount, live: liveOrder ? `${customerStatusLabel(liveOrder.status)} · ${shortDate(liveOrder.deliveryDate)}` : null }}
-      notify={{ whatsapp: user.notifyWhatsApp, email: user.notifyEmail }}
+      notify={{ whatsapp: user.notifyWhatsApp, email: user.notifyEmail, push: user.notifyPush }}
+      baskets={{ names: baskets.map(basketName), running: baskets.filter((b) => b.isStanding).length }}
+      trial={tier ? null : right.ok ? "available" : "used"}
       invite={{ code, reward: REFERRAL_REWARD, invited, rewarded, credit }}
       kachiReview={Boolean(user.kachiReviewConsentAt)}
       deletionRequested={user.deletionRequestedAt?.toISOString() ?? null}

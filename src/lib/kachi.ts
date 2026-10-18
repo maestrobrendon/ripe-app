@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateActiveDelivery, isMember, ownedDelivery } from "@/lib/order-container";
-import { dayIn, getDeliveryCycle, zoneForUser } from "@/lib/delivery";
+import { getDeliveryCycle, zoneForUser } from "@/lib/delivery";
 import { cutoffLabel, longDate, orderPhrase } from "@/lib/delivery-labels";
 import type { CurrentUser } from "@/lib/session";
 import { GOAL_LABEL, PRODUCE_PREFERENCE_LABEL } from "@/lib/format";
@@ -25,8 +25,7 @@ export async function resolveScope(user: CurrentUser, mode: KachiMode): Promise<
   if (mode.kind !== "basket") return null;
   const basket = await ownedDelivery(user.id, mode.basketId);
   if (!basket) return null;
-  const zone = await zoneForUser(user.id);
-  return { kind: "basket", basketId: basket.id, name: orderPhrase(basket, dayIn(zone, basket.deliveryDay)) };
+  return { kind: "basket", basketId: basket.id, name: orderPhrase(basket) };
 }
 
 /**
@@ -38,7 +37,7 @@ export async function deliveryScope(user: CurrentUser): Promise<{ scope: KachiSc
   const zone = await zoneForUser(user.id);
   const cycle = await getDeliveryCycle(delivery, zone);
   return {
-    scope: { kind: "basket", basketId: delivery.id, name: orderPhrase(delivery, cycle.day) },
+    scope: { kind: "basket", basketId: delivery.id, name: orderPhrase(delivery) },
     when: cycle.date && cycle.cutoff ? `${longDate(cycle.date)}; they can change it until ${cutoffLabel(cycle.cutoff)}` : null,
   };
 }

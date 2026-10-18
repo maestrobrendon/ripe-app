@@ -15,11 +15,12 @@ import { isMember, ownedDelivery, priceFor } from "@/lib/order-container";
 import { getDeliveryCycle } from "@/lib/delivery";
 import { ADDRESS_SELECT, addressLine, saveAddress, type AddressInput } from "@/lib/addresses";
 import { creditBalance } from "@/lib/credit";
+import { confirmRight } from "@/lib/basket-rules";
 import { sendOrderConfirmation } from "@/lib/customer-emails";
 import { notify } from "@/lib/notify";
 import { appOrigin } from "@/lib/site";
 import { formatNaira } from "@/lib/format";
-import { cutoffLabel, longDate, orderRef } from "@/lib/delivery-labels";
+import { basketName, cutoffLabel, longDate, orderRef } from "@/lib/delivery-labels";
 
 export type PaymentChoice = "POD" | "TRANSFER";
 
@@ -52,7 +53,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Sign in again to place this order." };
   const basket = await ownedDelivery(user.id, input.basketId);
-  if (!basket) return { ok: false, error: "We couldn't find that order. Go back to Home and try again." };
+  if (!basket) return { ok: false, error: "We couldn't find that basket. Go back to Home and try again." };
+  // A free account confirms one trial basket; after that, baskets are for members.
+  if (!(await confirmRight(user)).ok) return { ok: false, error: "Your trial basket has been used. Become a member to keep your baskets coming every week." };
 
   /* Contact */
   const name = input.name.trim().slice(0, 120);
@@ -126,12 +129,11 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       },
     });
   });
-  if (!order) return { ok: false, error: "You've already confirmed an order for that day. It's on Home.", addressId: address.id };
+  if (!order) return { ok: false, error: "You've already confirmed this basket for that day. It's on Home.", addressId: address.id };
 
   /* Tidy up around it */
   await Promise.all([
-    // A delivery on the weekly reminder keeps its items ready for next week; a one-off starts empty.
-    basket.isStanding ? null : prisma.basketItem.deleteMany({ where: { basketId: basket.id } }),
+    // A basket keeps its items: next week's delivery starts from the same produce.
     basket.deliveryDay !== cycle.day ? prisma.basket.update({ where: { id: basket.id }, data: { deliveryDay: cycle.day } }) : null,
     rememberContact(user, name, phone),
   ]);
@@ -150,7 +152,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       dedupeKey: `order.placed:${order.id}`,
       whatsapp: {
         to: phone,
-        text: `Basket: order ${ref} is confirmed for ${longDate(cycle.date)}, 9am to 5pm. ${snapshot.length} items, ${formatNaira(total)}. ${payLine} You can change it until ${cutoffLabel(cycle.cutoff)}. ${link}`,
+        text: `Basket: ${basketName(basket)} is confirmed for ${longDate(cycle.date)}, 9am to 5pm (order ${ref}). ${snapshot.length} items, ${formatNaira(total)}. ${payLine} You can change it until ${cutoffLabel(cycle.cutoff)}. ${link}`,
       },
     }).catch(() => {}),
   ]);

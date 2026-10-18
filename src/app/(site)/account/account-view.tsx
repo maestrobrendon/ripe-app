@@ -40,7 +40,11 @@ type Props = {
   dietaryNotes: string;
   membership: Membership | null;
   orders: { count: number; live: string | null };
-  notify: { whatsapp: boolean; email: boolean };
+  notify: { whatsapp: boolean; email: boolean; push: boolean };
+  /** The customer's baskets, by name, and how many come every week. */
+  baskets: { names: string[]; running: number };
+  /** Free accounts: whether the one trial basket is still to use. */
+  trial: "available" | "used" | null;
   invite: { code: string | null; reward: number; invited: number; rewarded: number; credit: number };
   kachiReview: boolean;
   deletionRequested: string | null;
@@ -143,7 +147,9 @@ export function AccountView(props: Props) {
                   ? `Waiting for payment: ${m.tierName}`
                   : m?.state === "declined"
                     ? "Your last request wasn't approved"
-                    : "Lower prices on everything"
+                    : props.trial === "used"
+                      ? "Join to keep your baskets coming"
+                      : "Your first basket is a free trial"
             }
           />
           <Tile
@@ -168,7 +174,13 @@ export function AccountView(props: Props) {
             sub={props.address ? `${props.address.label} · ${props.address.line}${props.address.count > 1 ? ` · +${props.address.count - 1}` : ""}` : "None yet"}
             href="/account/addresses"
           />
-          <Row icon="calendar" tint="sky" title="Delivery days and reminders" sub="On Home, from the ⋯ menu" href="/basket" />
+          <Row
+            icon="parcel"
+            tint="sky"
+            title={props.baskets.names.length === 1 ? "Your basket" : "Your baskets"}
+            sub={`${props.baskets.names.join(", ")}${props.baskets.running ? ` · ${props.baskets.running === props.baskets.names.length ? "every week" : `${props.baskets.running} every week`}` : ""}`}
+            href="/basket"
+          />
         </Group>
 
         <Group title="You">
@@ -182,7 +194,7 @@ export function AccountView(props: Props) {
           <Row icon="account" tint="mist" title="Name and contact" sub={[props.name, props.phone || props.email].filter(Boolean).join(" · ")} onClick={() => setSheet("profile")} />
         </Group>
 
-        <Group title="Notifications" footer="Order updates and the weekly reminder go to whichever you leave on. Password links always come through.">
+        <Group title="Notifications" footer="Your basket reminders, a few days before each delivery, and order updates go to whichever you leave on. Password links always come through.">
           <Toggle
             icon="whatsapp"
             tint="mint"
@@ -194,6 +206,7 @@ export function AccountView(props: Props) {
             onError={failed}
           />
           {props.email && <Toggle icon="send" tint="sky" title="Email" sub={props.email} on={props.notify.email} onChange={(on) => setNotifyChannel("email", on)} onError={failed} />}
+          <Toggle icon="bell" tint="sun" title="App notifications" sub="Reminders and updates from Basket" on={props.notify.push} onChange={(on) => setNotifyChannel("push", on)} onError={failed} />
         </Group>
 
         <Group title="Help">
@@ -554,7 +567,7 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
         <p className={`${LEDE} mt-4`}>Nothing is charged automatically: we message you when it&apos;s due, and you pay by transfer.</p>
         {asking ? (
           <div className="mt-5 rounded-2xl bg-soft-mist p-4">
-            <p className="text-[15px]">Member prices and any free delivery end straight away. Your deliveries stay, at standard prices.</p>
+            <p className="text-[15px]">Member prices and any free delivery end straight away, and your baskets stop coming every week. Their produce stays saved.</p>
             <Actions>
               <Button
                 size="lg"
@@ -625,7 +638,7 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
         </p>
       )}
       <ul className="divide-y divide-hairline rounded-2xl ring-1 ring-hairline">
-        {["Lower prices on everything", "Up to 3 deliveries, for family or the office", "Every recipe, with the method", "Free delivery on Member Plus"].map((perk) => (
+        {["Your baskets every week, at member prices", "Up to 3 baskets, like one for Mum", "A reminder before each delivery. Nothing is charged automatically", "Every recipe, with the method", "Free delivery on Member Plus"].map((perk) => (
           <li key={perk} className="flex items-center gap-3 px-4 py-3 text-[15px]">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mint-pop/40">
               <Icon name="checkPlain" size={13} weight="bold" />

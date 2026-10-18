@@ -57,12 +57,14 @@ export function timeLeft(ms: number): string {
   return `${days} day${days === 1 ? "" : "s"} left`;
 }
 
-/** What a delivery is called in a list: its own name, else its day ("Wednesdays"). */
-export const deliveryName = (b: { name: string | null }, day: DeliveryDay) => b.name?.trim() || `${dayName(day)}s`;
+/** A basket's name: what the customer called it, else "My basket". */
+export const basketName = (b: { name: string | null }) => b.name?.trim() || "My basket";
 
-/** How a delivery reads in a sentence: "your Wednesday order", "your Mum's order". */
-export const orderPhrase = (b: { name: string | null }, day: DeliveryDay) =>
-  b.name?.trim() ? `your ${b.name.trim()} order` : `your ${dayName(day)} order`;
+/** What a basket is called in a list (the day is shown beside it, not in the name). */
+export const deliveryName = (b: { name: string | null }) => basketName(b);
+
+/** How a basket reads in a sentence: "your basket", or its own name ("For Mum"). */
+export const orderPhrase = (b: { name: string | null }) => (b.name?.trim() ? b.name.trim() : "your basket");
 
 /** #ABCD1234, the reference customers see everywhere. */
 export const orderRef = (id: string) => `#${id.slice(-8).toUpperCase()}`;

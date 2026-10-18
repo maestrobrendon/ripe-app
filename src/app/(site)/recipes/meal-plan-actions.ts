@@ -206,7 +206,7 @@ async function addMissingToOrder(user: CurrentUser, productIds: string[]): Promi
   const added = await addLinesToDelivery(delivery.id, products.map((p) => ({ productId: p.id, quantity: p.minOrderQty })));
   revalidatePath("/basket");
   revalidatePath("/recipes");
-  return { added, label: orderPhrase(delivery, delivery.deliveryDay) };
+  return { added, label: orderPhrase(delivery) };
 }
 
 /** Sends a day's missing ingredients, across its three meals, to the order. */

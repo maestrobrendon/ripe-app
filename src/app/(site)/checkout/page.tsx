@@ -13,6 +13,8 @@ import { isBuyable } from "@/lib/product";
 import { formatPhone } from "@/lib/phone";
 import { listAddresses, addressLine } from "@/lib/addresses";
 import { creditBalance } from "@/lib/credit";
+import { confirmRight } from "@/lib/basket-rules";
+import { basketName } from "@/lib/delivery-labels";
 import { getSiteSettings } from "@/lib/site-settings";
 import { transferReady } from "@/lib/site-settings-schema";
 import { LinkButton } from "@/components/ui/button";
@@ -49,6 +51,31 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   const basket = (await ownedDelivery(user.id, b)) ?? (await readActiveDelivery(user.id));
   if (!basket) redirect("/basket");
+
+  // A free account confirms one trial basket; after that, it's membership that keeps baskets coming.
+  if (!(await confirmRight(user)).ok) {
+    return (
+      <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
+        <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6">
+          <p className="text-4xl" aria-hidden>
+            🧺
+          </p>
+          <h1 className="mt-4 text-[28px] leading-tight font-bold tracking-[-0.02em]">Keep your basket coming</h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted">
+            Your trial basket has been used. Members get their baskets every week at member prices, with a reminder before each delivery. Nothing is ever charged automatically.
+          </p>
+          <div className="mt-6 grid gap-2.5">
+            <LinkButton href="/subscribe" size="lg" className="flex justify-center">
+              See membership
+            </LinkButton>
+            <Link href="/basket" className="text-sm font-semibold underline underline-offset-2">
+              Back to your basket
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const [items, addresses, zones, credit, settings] = await Promise.all([
     prisma.basketItem.findMany({ where: { basketId: basket.id }, include: { product: true }, orderBy: { product: { name: "asc" } } }),
@@ -90,9 +117,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   return (
     <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
-      <BackButton fallback="/basket" label="Your order" />
-      <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Confirm your order</h1>
-      <p className="mt-1 text-[15px] text-muted">Nothing is charged now. You pay when it arrives.</p>
+      <BackButton fallback="/basket" label="Your basket" />
+      <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Confirm {basketName(basket)}</h1>
+      <p className="mt-1 text-[15px] text-muted">Nothing is charged automatically. You pay when it arrives.</p>
 
       <CheckoutFlow
         basketId={basket.id}

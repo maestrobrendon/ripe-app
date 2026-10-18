@@ -63,7 +63,7 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
       const r = await orderAgain(deliveryId, o.id);
       setConfirming(null);
       if (!r.ok) cart.announce(r.error, "error");
-      else cart.announce("Those items are back in your next order");
+      else cart.announce("Those items are back in your basket");
     });
 
   return (
@@ -97,7 +97,7 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
 
       {confirming ? (
         <div className="mt-3 rounded-xl bg-soft-mist p-3 text-sm">
-          <p>{confirming === "cancel" ? "Cancel this order? Your items stay here, so you can change them and confirm again." : "Put these items back in your next order? They replace what's there now."}</p>
+          <p>{confirming === "cancel" ? "Cancel this order? Your items stay here, so you can change them and confirm again." : "Put these items back in your basket? They replace what's there now."}</p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" variant={confirming === "cancel" ? "danger" : "primary"} loading={pending} onClick={confirming === "cancel" ? cancel : again}>
               {confirming === "cancel" ? "Cancel order" : "Yes, add them"}

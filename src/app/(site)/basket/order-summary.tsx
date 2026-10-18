@@ -5,7 +5,8 @@ import { useCart } from "@/components/cart-provider";
 import { LinkButton } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
-import { cutoffLabel } from "@/lib/delivery-labels";
+import { cutoffLabel, dayName } from "@/lib/delivery-labels";
+import type { DeliveryDay } from "@/generated/prisma/enums";
 
 /**
  * What the order comes to right now, from the live lines: sold-out items
@@ -38,6 +39,8 @@ export function useOrderTotals(credit = 0) {
 
 export function OrderSummary({
   deliveryId,
+  gated,
+  day,
   canConfirm,
   dateIso,
   cutoffIso,
@@ -45,6 +48,9 @@ export function OrderSummary({
   monthSaved,
 }: {
   deliveryId: string;
+  /** The free trial has been used: confirming needs a membership. */
+  gated: boolean;
+  day: DeliveryDay;
   canConfirm: boolean;
   dateIso: string | null;
   cutoffIso: string | null;
@@ -54,12 +60,13 @@ export function OrderSummary({
   const t = useOrderTotals(credit);
   const href = `/checkout?b=${deliveryId}`;
   const ready = canConfirm && t.count > 0 && Boolean(dateIso);
+  const label = `Confirm ${dayName(day)}'s basket`;
 
   return (
     <>
       <aside className="hidden lg:sticky lg:top-24 lg:block">
         <div className="rounded-2xl border border-hairline bg-surface p-5">
-          <h2 className="text-lg font-semibold">Order summary</h2>
+          <h2 className="text-lg font-semibold">This week</h2>
           <dl className="mt-3 grid gap-2 text-sm">
             <Row label={`Items (${t.count})`} value={formatNaira(t.subtotal)} />
             <Row label="Delivery" value={t.count === 0 ? "—" : t.fee ? formatNaira(t.fee) : "Free"} />
@@ -71,18 +78,23 @@ export function OrderSummary({
             </div>
           </dl>
 
-          {ready ? (
+          {gated ? (
+            <LinkButton href="/subscribe?reason=free-basket-used" size="lg" className="mt-4 flex w-full justify-center">
+              See membership
+            </LinkButton>
+          ) : ready ? (
             <LinkButton href={href} size="lg" className="mt-4 flex w-full justify-center">
-              Confirm order
+              {label}
             </LinkButton>
           ) : (
             <button type="button" disabled className="mt-4 w-full rounded-control bg-carbon/40 px-8 py-4 text-base font-semibold text-paper-white">
-              Confirm order
+              {label}
             </button>
           )}
           <p className="mt-3 text-xs text-muted">
-            Pay on delivery or by bank transfer. Nothing is charged now.
-            {cutoffIso ? ` You can change it until ${cutoffLabel(cutoffIso)}.` : ""}
+            {gated
+              ? "Your trial basket has been used. Members confirm their baskets every week and pay when they arrive."
+              : `Pay when it arrives, or by bank transfer. Nothing is charged automatically.${cutoffIso ? ` Confirm by ${cutoffLabel(cutoffIso)}.` : ""}`}
           </p>
 
           <Savings saving={t.saving} member={t.member} monthSaved={monthSaved} />
@@ -99,9 +111,13 @@ export function OrderSummary({
                 {t.creditUsed ? ` · ${formatNaira(t.creditUsed)} credit off` : ""}
               </p>
             </div>
-            {ready ? (
+            {gated ? (
+              <LinkButton href="/subscribe?reason=free-basket-used" size="sm" className="shrink-0 rounded-full py-3">
+                See membership
+              </LinkButton>
+            ) : ready ? (
               <LinkButton href={href} size="sm" className="shrink-0 rounded-full py-3">
-                Confirm order
+                Confirm basket
               </LinkButton>
             ) : (
               <LinkButton href="/account/addresses?next=/basket" size="sm" className="shrink-0 rounded-full py-3">
@@ -130,7 +146,7 @@ function Savings({ saving, member, monthSaved }: { saving: number; member: boole
     if (saving <= 0 && monthSaved <= 0) return null;
     return (
       <p className="mt-3 rounded-xl bg-mint-pop/20 px-3 py-2 text-xs">
-        {saving > 0 && <>Membership saves you {formatNaira(saving)} on this order.</>}
+        {saving > 0 && <>Membership saves you {formatNaira(saving)} on this basket.</>}
         {monthSaved > 0 && <> {formatNaira(monthSaved)} saved so far this month.</>}
       </p>
     );
@@ -138,7 +154,7 @@ function Savings({ saving, member, monthSaved }: { saving: number; member: boole
   if (saving <= 0) return null;
   return (
     <p className="mt-3 rounded-xl bg-soft-mist px-3 py-2 text-xs">
-      Members would pay {formatNaira(saving)} less for this order.{" "}
+      Members would pay {formatNaira(saving)} less for this basket.{" "}
       <Link href="/subscribe" className="font-semibold underline underline-offset-2">
         See membership
       </Link>

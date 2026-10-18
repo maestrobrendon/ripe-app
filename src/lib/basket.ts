@@ -52,7 +52,8 @@ export async function createUserBasket(
   const basket = await prisma.basket.create({
     data: {
       userId,
-      isStanding: true,
+      // Members' baskets come every week; a free account's is a one-delivery trial.
+      isStanding: isSubscriber,
       deliveryDay,
       isFreeTrial: !isSubscriber,
       pricingMode: isSubscriber ? "MEMBER" : "STANDARD",

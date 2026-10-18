@@ -302,7 +302,7 @@ export function CheckoutFlow(props: {
       )}
 
       <Button size="lg" className="w-full" loading={pending} disabled={!when} onClick={submit}>
-        Confirm order · {formatNaira(total)}
+        Confirm basket · {formatNaira(total)}
       </Button>
       <p className="-mt-1 text-center text-xs text-muted">
         {payment === "POD" ? "You pay when it arrives." : "Transfer once you see your order number."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.

@@ -40,10 +40,14 @@ export async function activatePlan(userId: string, tierId: string, deliveryDay?:
         subscribedAt: user.subscriptionTierId && user.subscribedAt ? user.subscribedAt : new Date(),
       },
     });
-    // Their first delivery follows the day they picked; they get one if they had none.
+    // Membership is what makes baskets repeat: every basket they have now
+    // comes every week. They get one if they had none.
     const first = await tx.basket.findFirst({ where: { userId }, orderBy: { createdAt: "asc" } });
     if (!first) await tx.basket.create({ data: { userId, isStanding: true, deliveryDay: day, pricingMode: "MEMBER" } });
-    else if (deliveryDay) await tx.basket.update({ where: { id: first.id }, data: { deliveryDay } });
+    else {
+      await tx.basket.updateMany({ where: { userId }, data: { isStanding: true } });
+      if (deliveryDay) await tx.basket.update({ where: { id: first.id }, data: { deliveryDay } });
+    }
     // Whatever they were waiting on is settled by this.
     await tx.planRequest.updateMany({ where: { userId, status: "PENDING", tierId: { not: tierId } }, data: { status: "WITHDRAWN", decidedAt: new Date() } });
   });
@@ -53,6 +57,8 @@ export async function activatePlan(userId: string, tierId: string, deliveryDay?:
 export async function endPlan(userId: string): Promise<void> {
   await prisma.$transaction([
     prisma.user.update({ where: { id: userId }, data: { subscriptionTierId: null, subscribedAt: null } }),
+    // Their baskets stay, with their items, but stop coming every week.
+    prisma.basket.updateMany({ where: { userId }, data: { isStanding: false } }),
     prisma.planRequest.updateMany({ where: { userId, status: "PENDING" }, data: { status: "WITHDRAWN", decidedAt: new Date() } }),
   ]);
 }

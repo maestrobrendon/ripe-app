@@ -7,7 +7,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getOrCreateActiveDelivery, readActiveDelivery, writeDeliveryLine, OrderError } from "@/lib/order-container";
-import { dayIn, zoneForUser } from "@/lib/delivery";
+import { zoneForUser } from "@/lib/delivery";
 import { orderPhrase } from "@/lib/delivery-labels";
 
 /*
@@ -128,8 +128,7 @@ async function deliveryView(user: NonNullable<Awaited<ReturnType<typeof getCurre
   const who = await whoFor(user);
   const basket = basketId ? await prisma.basket.findFirst({ where: { id: basketId, userId: user.id }, include: ITEMS_INCLUDE }) : null;
   if (!basket) return { ...EMPTY, ...who, container: "delivery", deliveryId: null, deliveryLabel: null };
-  const zone = await zoneForUser(user.id);
-  return buildView(basket.items, who, { container: "delivery", deliveryId: basket.id, deliveryLabel: orderPhrase(basket, dayIn(zone, basket.deliveryDay)) });
+  return buildView(basket.items, who, { container: "delivery", deliveryId: basket.id, deliveryLabel: orderPhrase(basket) });
 }
 
 /** The view for Server Components and the header. Never creates anything or sets a cookie. */

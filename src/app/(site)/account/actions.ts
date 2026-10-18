@@ -77,9 +77,10 @@ export async function savePreferences(input: { adults: number; kids: number; goa
 }
 
 /** Where order updates and weekly reminders go. Password links are always sent. */
-export async function setNotifyChannel(channel: "whatsapp" | "email", on: boolean): Promise<SaveResult> {
+export async function setNotifyChannel(channel: "whatsapp" | "email" | "push", on: boolean): Promise<SaveResult> {
   const user = await requireUser();
-  await prisma.user.update({ where: { id: user.id }, data: channel === "whatsapp" ? { notifyWhatsApp: on } : { notifyEmail: on } });
+  const data = channel === "whatsapp" ? { notifyWhatsApp: on } : channel === "email" ? { notifyEmail: on } : { notifyPush: on };
+  await prisma.user.update({ where: { id: user.id }, data });
   return done();
 }
 

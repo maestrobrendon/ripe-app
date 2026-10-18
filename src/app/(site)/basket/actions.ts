@@ -9,6 +9,7 @@ import {
   addLinesToDelivery,
   createDelivery,
   getOrCreateActiveDelivery,
+  isMember,
   ownedDelivery,
   rememberActiveDelivery,
 } from "@/lib/order-container";
@@ -48,7 +49,7 @@ export async function selectDelivery(basketId: string) {
   redirect("/basket");
 }
 
-/** Another delivery: "For Mum", on Saturdays. */
+/** Another basket: "For Mum", on Saturdays. Members only (the cap is in createDelivery). */
 export async function newDelivery(input: { name: string; day: DeliveryDay }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/basket");
@@ -64,28 +65,28 @@ export async function newDelivery(input: { name: string; day: DeliveryDay }) {
 
 export async function renameDelivery(basketId: string, name: string): Promise<Result> {
   const { basket } = await mine(basketId);
-  if (!basket) return fail("We couldn't find that delivery.");
+  if (!basket) return fail("We couldn't find that basket.");
   await prisma.basket.update({ where: { id: basket.id }, data: { name: name.trim().slice(0, 40) || null } });
   return done();
 }
 
-/** Remove an extra delivery. The last one stays: it's where the customer's order lives. */
+/** Remove an extra basket. The last one stays. */
 export async function removeDelivery(basketId: string): Promise<Result> {
   const { user, basket } = await mine(basketId);
-  if (!user || !basket) return fail("We couldn't find that delivery.");
-  if ((await prisma.basket.count({ where: { userId: user.id } })) <= 1) return fail("This is your only delivery, so it stays.");
+  if (!user || !basket) return fail("We couldn't find that basket.");
+  if ((await prisma.basket.count({ where: { userId: user.id } })) <= 1) return fail("This is your only basket, so it stays.");
   const open = await prisma.order.count({ where: { basketId: basket.id, status: { in: ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY"] } } });
-  if (open) return fail("This delivery has an order on its way. Remove it after that arrives.");
+  if (open) return fail("This basket has a delivery on its way. Remove it after that arrives.");
   await prisma.basket.delete({ where: { id: basket.id } });
   const next = await prisma.basket.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" } });
   if (next) await rememberActiveDelivery(next.id);
   return done();
 }
 
-/** Move a delivery to another of its area's days. Never starts a checkout. */
+/** Move a basket to another of its area's days. Never starts a checkout. */
 export async function setDeliveryDay(basketId: string, day: DeliveryDay): Promise<Result> {
   const { user, basket } = await mine(basketId);
-  if (!user || !basket) return fail("We couldn't find that delivery.");
+  if (!user || !basket) return fail("We couldn't find that basket.");
   const zone = await zoneForUser(user.id);
   if (!zone) return fail("Add your delivery address first, so we know which days we come to you.");
   if (!zone.deliveryDays.includes(day)) return fail(`We don't come to ${zone.name} on that day.`);
@@ -93,10 +94,15 @@ export async function setDeliveryDay(basketId: string, day: DeliveryDay): Promis
   return done();
 }
 
-/** "Remind me each week": the order stays ready and we message the customer before it closes. */
-export async function setWeeklyReminder(basketId: string, on: boolean): Promise<Result> {
-  const { basket } = await mine(basketId);
-  if (!basket) return fail("We couldn't find that delivery.");
+/**
+ * Pause or resume a basket. A running basket comes every week, with a
+ * reminder before each delivery; a paused one keeps its produce but stops
+ * until it's resumed. Running every week is what membership is for.
+ */
+export async function setRepeating(basketId: string, on: boolean): Promise<Result> {
+  const { user, basket } = await mine(basketId);
+  if (!user || !basket) return fail("We couldn't find that basket.");
+  if (on && !isMember(user)) return fail("Baskets come every week with a membership.");
   await prisma.basket.update({ where: { id: basket.id }, data: { isStanding: on } });
   return done();
 }
@@ -104,7 +110,7 @@ export async function setWeeklyReminder(basketId: string, on: boolean): Promise<
 /** Skip (or un-skip) one delivery date, any time before it closes. */
 export async function skipDate(basketId: string, dateIso: string, skip: boolean): Promise<Result> {
   const { user, basket } = await mine(basketId);
-  if (!user || !basket) return fail("We couldn't find that delivery.");
+  if (!user || !basket) return fail("We couldn't find that basket.");
   const zone = await zoneForUser(user.id);
   if (!zone) return fail("Add your delivery address first.");
   const date = new Date(dateIso);
@@ -118,7 +124,7 @@ export async function skipDate(basketId: string, dateIso: string, skip: boolean)
 /** Put a past order back in this delivery, replacing what's there ("Order these again"). */
 export async function orderAgain(basketId: string, orderId: string): Promise<Result> {
   const { user, basket } = await mine(basketId);
-  if (!user || !basket) return fail("We couldn't find that delivery.");
+  if (!user || !basket) return fail("We couldn't find that basket.");
   const order = await prisma.order.findFirst({ where: { id: orderId, userId: user.id }, include: { items: true } });
   if (!order) return fail("We couldn't find that order.");
   await prisma.basketItem.deleteMany({ where: { basketId: basket.id } });
@@ -133,7 +139,7 @@ export async function orderAgain(basketId: string, orderId: string): Promise<Res
 /** An empty order: start from the set we'd suggest for the customer's goal and household. */
 export async function startFromGoal(basketId: string): Promise<Result> {
   const { user, basket } = await mine(basketId);
-  if (!user || !basket) return fail("We couldn't find that delivery.");
+  if (!user || !basket) return fail("We couldn't find that basket.");
   const goalSlug = user.preferences?.primaryGoal ?? MENU_GOALS[0].starterSlug;
   const picks = buildStarterPicks({ goalSlug, producePreferences: user.preferences?.producePreferences ?? [], adults: user.householdAdults, kids: user.householdKids }, await getStarterCandidates());
   if (!picks.length) return fail("We don't have enough in stock to put a set together right now. Browse the shop instead.");
@@ -144,7 +150,7 @@ export async function startFromGoal(basketId: string): Promise<Result> {
 /** "Cook this week": add whatever a recipe needs that the order doesn't have. */
 export async function addRecipeMissing(basketId: string, recipeSlug: string): Promise<Result & { added?: number }> {
   const { user, basket } = await mine(basketId);
-  if (!user || !basket) return fail("We couldn't find that delivery.");
+  if (!user || !basket) return fail("We couldn't find that basket.");
   const recipe = (await getMenu()).find((r) => r.slug === recipeSlug);
   if (!recipe) return fail("We couldn't find that recipe.");
   const have = new Set((await prisma.basketItem.findMany({ where: { basketId: basket.id }, select: { product: { select: { slug: true } } } })).map((i) => i.product.slug));

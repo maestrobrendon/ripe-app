@@ -3,37 +3,38 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateActiveDelivery, isMember, priceFor } from "@/lib/order-container";
 import { basketLimitFor } from "@/lib/basket";
-import { dayIn, getDeliveryCycle, liveOrdersFor, zoneForUser } from "@/lib/delivery";
+import { getDeliveryCycle, liveOrdersFor, zoneForUser } from "@/lib/delivery";
 import { cutoffFor, lagosDate, nextDeliveryDate } from "@/lib/delivery-dates";
-import { deliveryName, orderRef, shortDate } from "@/lib/delivery-labels";
+import { basketName, deliveryName, orderRef } from "@/lib/delivery-labels";
+import { basketCycle, confirmRight } from "@/lib/basket-rules";
 import { customerStatusLabel } from "@/lib/order-status";
 import { creditBalance } from "@/lib/credit";
 import { getMenu } from "@/lib/menu";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { BUYABLE, toAddable, toCardData } from "@/lib/product";
 import { DeliverySwitcher } from "./delivery-switcher";
-import { DeliveryCard, type AreaState } from "./delivery-card";
+import { DeliveryCard, type AreaState, type BasketStatus } from "./delivery-card";
 import { LiveOrders, type LiveOrder } from "./live-orders";
 import { OrderLines } from "./order-lines";
 import { SuggestionRail } from "./suggestion-rail";
 import { CookThisWeek, type CookRecipe } from "./cook-this-week";
 import { OrderSummary } from "./order-summary";
 
-const DAY = 86_400_000;
 
 /*
- * Home: the order the customer is filling, and everything about it. Which
- * delivery (when there's more than one), when it comes and until when it can
- * change, orders already on their way, what's in it, and what to add. The
- * lines and the total come from the cart provider, so they move with every
- * tap; the rest is worked out here and refreshes quietly after changes.
+ * Home: the customer's basket, and everything about it. Which basket (they
+ * can run several, like "Mine" and "For Mum"), whether it comes every week,
+ * its next delivery and until when it can change, its 4-week cycle, what's
+ * on its way, what's in it and what to add. The lines and the total come
+ * from the cart provider, so they move with every tap; the rest is worked
+ * out here and refreshes quietly after changes. See lib/basket-rules.ts.
  */
 export default async function HomePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/basket");
 
   const member = isMember(user);
-  const [delivery, zone] = await Promise.all([getOrCreateActiveDelivery(user), zoneForUser(user.id)]);
+  const [delivery, zone, right] = await Promise.all([getOrCreateActiveDelivery(user), zoneForUser(user.id), confirmRight(user)]);
 
   const [deliveries, cycle, liveRows, items, lastOrder, credit, menu, monthOrders, ordered] = await Promise.all([
     prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { id: true, name: true, deliveryDay: true, _count: { select: { items: true } } } }),
@@ -126,26 +127,25 @@ export default async function HomePage() {
   const cookPicks = (withOverlap.length ? withOverlap : scored.filter((x) => !goal || x.r.goal === goal.id)).slice(0, 4);
   const cook: CookRecipe[] = cookPicks.map(({ r, have, need, needCost }) => ({ slug: r.slug, title: r.title, image: r.image, minutes: r.minutes, have, total: r.basket.length, need, needCost }));
 
-  /* -------------------------------- framing -------------------------------- */
+  /* ------------------------------ the basket ------------------------------ */
 
-  const today = lagosDate(new Date()).getTime();
-  const daysAway = cycle.date ? Math.round((cycle.date.getTime() - today) / DAY) : null;
-  // This delivery already has an order coming before its next date: the order being filled is next week's.
-  const earlierOrder = liveRows.some((o) => o.basketId === delivery.id && cycle.date && o.deliveryDate < cycle.date && o.status !== "DELIVERED");
-  const title = daysAway === null ? "Your order" : daysAway <= 7 && !earlierOrder ? "This week's order" : daysAway <= 14 ? "Next week's order" : `Order for ${shortDate(cycle.date!)}`;
+  // Members' baskets run in 4-week cycles from when they joined.
+  const weeks = member && delivery.isStanding && zone ? await basketCycle(delivery, cycle.day, zone, user.subscribedAt) : null;
+  const status: BasketStatus = !right.ok ? "trial-used" : right.trial ? "trial" : delivery.isStanding ? "running" : "paused";
 
-  const list = deliveries.map((d) => ({ id: d.id, label: deliveryName(d, dayIn(zone, d.deliveryDay)), itemCount: d._count.items }));
+  const list = deliveries.map((d) => ({ id: d.id, label: deliveryName(d), itemCount: d._count.items }));
   const limit = basketLimitFor(member, user.subscriptionTier?.slug);
   const canAddMore = limit === null || deliveries.length < limit;
   const monthSaved = monthOrders.reduce((s, o) => s + o.items.reduce((t, i) => t + Math.max(0, i.product.standardPrice - i.unitPrice) * i.quantity, 0), 0);
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 pb-28 sm:px-6 sm:pt-6 lg:pb-12">
-      {list.length > 1 && <DeliverySwitcher deliveries={list} activeId={delivery.id} canAddMore={canAddMore} member={member} dayOptions={dayOptions} />}
+      {(list.length > 1 || (member && canAddMore)) && <DeliverySwitcher deliveries={list} activeId={delivery.id} canAddMore={canAddMore} member={member} dayOptions={dayOptions} />}
 
       <DeliveryCard
-        title={title}
-        eyebrow={list.length > 1 ? list.find((d) => d.id === delivery.id)?.label ?? null : null}
+        title={basketName(delivery)}
+        status={status}
+        cycle={weeks ? { weekNumber: weeks.weekNumber, weeks: weeks.weeks } : null}
         deliveryId={delivery.id}
         name={delivery.name}
         day={cycle.day}
@@ -179,6 +179,8 @@ export default async function HomePage() {
 
         <OrderSummary
           deliveryId={delivery.id}
+          gated={status === "trial-used"}
+          day={cycle.day}
           canConfirm={Boolean(cycle.date) && area.state === "ok"}
           dateIso={cycle.date?.toISOString() ?? null}
           cutoffIso={cycle.cutoff?.toISOString() ?? null}

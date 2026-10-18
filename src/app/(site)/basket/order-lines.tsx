@@ -52,7 +52,7 @@ export function OrderLines({
     <section aria-labelledby="in-order">
       <div className="flex items-baseline justify-between">
         <h2 id="in-order" className="text-lg font-semibold">
-          In this order
+          In this basket
         </h2>
         <span className="text-sm text-muted">
           {cart.items.length} item{cart.items.length === 1 ? "" : "s"}
@@ -77,10 +77,10 @@ export function OrderLines({
       {t.saving > 0 && (
         <p className={`mt-3 rounded-xl px-3 py-2 text-xs lg:hidden ${t.member ? "bg-mint-pop/20" : "bg-soft-mist"}`}>
           {t.member ? (
-            <>Membership saves you {formatNaira(t.saving)} on this order.</>
+            <>Membership saves you {formatNaira(t.saving)} on this basket.</>
           ) : (
             <>
-              Members would pay {formatNaira(t.saving)} less for this order.{" "}
+              Members would pay {formatNaira(t.saving)} less for this basket.{" "}
               <Link href="/subscribe" className="font-semibold underline underline-offset-2">
                 See membership
               </Link>
@@ -123,7 +123,7 @@ function Line({ line: l, swap }: { line: CartLine; swap: AddableProduct | null }
         {l.soldOut ? (
           <div className="mt-2 rounded-xl bg-soft-mist p-2.5 text-xs">
             <p>
-              <b className="font-semibold">Sold out this week.</b> It won&apos;t be in this order.
+              <b className="font-semibold">Sold out this week.</b> It won&apos;t be in this delivery.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {swap && (
@@ -169,8 +169,8 @@ function EmptyOrder({ deliveryId, lastOrder, goalLabel }: { deliveryId: string; 
 
   return (
     <section className="rounded-2xl border border-dashed border-hairline p-5">
-      <h2 className="text-lg font-semibold">Nothing in this order yet</h2>
-      <p className="mt-1 text-sm text-muted">Add what you need for the week. Nothing is ordered until you confirm.</p>
+      <h2 className="text-lg font-semibold">Nothing in this basket yet</h2>
+      <p className="mt-1 text-sm text-muted">Fill it with the fruit and vegetables you want each week. It stays as it is from week to week, and nothing is ordered until you confirm.</p>
       <div className="mt-4 grid gap-2" aria-busy={pending}>
         {lastOrder && (
           <Option
@@ -189,7 +189,7 @@ function EmptyOrder({ deliveryId, lastOrder, goalLabel }: { deliveryId: string; 
           onClick={() => go(() => startFromGoal(deliveryId), "Added a starter set")}
         />
         <Option icon="shop" title="Browse the shop" sub="Fruit, vegetables and boxes" href="/shop" />
-        <Option icon="assistant" title="Ask Kachi" sub="Say what you're cooking and it fills the order" href="/assistant" />
+        <Option icon="assistant" title="Ask Kachi" sub="Say what you're cooking and it fills the basket" href="/assistant" />
       </div>
     </section>
   );
