@@ -61,7 +61,7 @@ export async function sendOrderConfirmation(o: OrderForEmail & { items: { name: 
 
 const STATUS_COPY: Partial<Record<OrderStatus, (o: OrderForEmail) => { subject: string; lines: string[] }>> = {
   OUT_FOR_DELIVERY: (o) => ({ subject: "Your order is on the way", lines: [`Your order left us and is heading to ${o.zoneName}. Please keep your phone close so the rider can reach you.`] }),
-  DELIVERED: () => ({ subject: "Your order was delivered", lines: ["Your order has been delivered. Enjoy cooking with it.", "If anything isn't right, tell us within 24 hours and we'll sort it."] }),
+  DELIVERED: () => ({ subject: "Your order was delivered", lines: ["Your order has been delivered. Enjoy cooking with it.", "If anything isn't right, tell us within 7 days from your order page and we'll put it right."] }),
   FAILED_DELIVERY: () => ({ subject: "We missed you", lines: ["We tried to deliver your order but couldn't complete it. We'll contact you to arrange another time."] }),
   CANCELLED: () => ({ subject: "Your order was cancelled", lines: ["Your order has been cancelled and won't be delivered. If you paid, we'll be in touch about your refund."] }),
 };

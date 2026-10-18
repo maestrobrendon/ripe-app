@@ -109,8 +109,8 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          If anything arrives damaged, spoiled or missing, tell us within 24 hours of delivery. Email{" "}
-          <SupportEmail /> with your order details and a photo.
+          If anything arrives damaged, spoiled or missing, tell us within 7 days of delivery from the
+          order page (&ldquo;Something wrong?&rdquo;), or email <SupportEmail /> with your order number and a photo.
           We&rsquo;ll replace the item on your next delivery or refund it, whichever you prefer.
         </p>
         <p>
@@ -127,24 +127,24 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>
           You never need a subscription to shop. It&rsquo;s an optional upgrade that adds every recipe,
-          member pricing, a standing weekly basket and a weekly meal plan, and on Member Plus, free
+          member pricing, up to three deliveries and a weekly meal plan, and on Member Plus, free
           delivery. The perks and monthly fee of
           each plan are on the <Link href="/subscribe">pricing page</Link>.
         </p>
         <ul>
           <li>
-            <strong>Billing.</strong> The membership fee is charged monthly from the day you join, until
-            you cancel.
+            <strong>Billing.</strong> The membership fee is due monthly from the day you join, until
+            you cancel. It&rsquo;s paid by transfer; nothing is charged automatically.
           </li>
           <li>
-            <strong>Your weekly basket.</strong> Each week your basket is open for changes until its
-            cutoff. Until then you can edit it or skip that week. After the cutoff it locks, gets packed,
-            and is charged.
+            <strong>Your weekly order.</strong> Nothing is ordered on its own. You confirm each
+            week&rsquo;s order, and can change it, cancel it or skip the week until its cutoff, the day
+            before delivery. After the cutoff it&rsquo;s packed.
           </li>
           <li>
             <strong>Cancelling.</strong> Cancel any time from your account. You won&rsquo;t pay any more
             membership fees, and member pricing and free delivery end straight away. Fees already paid
-            aren&rsquo;t refunded for the rest of the month. A basket that has already locked is still
+            aren&rsquo;t refunded for the rest of the month. An order past its cutoff is still
             delivered.
           </li>
           <li>
@@ -153,8 +153,7 @@ const SECTIONS: LegalSection[] = [
           </li>
         </ul>
         <p>
-          The free starter basket is a one-time trial at standard prices, limited to one per person and
-          household.
+          Without a membership you can have one delivery at standard prices. Members can have more.
         </p>
       </>
     ),
@@ -165,12 +164,10 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          Payment is in test mode right now: no real charge is taken. We&rsquo;ll update these terms and
-          let you know before live payments start.
-        </p>
-        <p>
-          We never store your full card number. We keep only the card brand, the last four digits, and
-          the expiry date, so you can see which card is on file.
+          You pay when your order arrives, by transfer or card to the rider, or by bank transfer before
+          it&rsquo;s packed, using your order number as the reference. Account credit (from invites or
+          to put a problem right) comes off your next order. We&rsquo;ll update these terms before card
+          payments online start.
         </p>
       </>
     ),
@@ -216,7 +213,7 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>Please don&rsquo;t:</p>
         <ul>
-          <li>use Basket for anything illegal or fraudulent, or open accounts to claim trials more than once</li>
+          <li>use Basket for anything illegal or fraudulent, or open accounts to claim invite credit more than once</li>
           <li>try to break, overload, or get around the security of the site</li>
           <li>scrape or copy our catalogue, recipes or content in bulk</li>
           <li>use Kachi to produce content that is harmful, abusive or unrelated to food</li>

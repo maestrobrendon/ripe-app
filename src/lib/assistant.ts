@@ -10,32 +10,32 @@ export type Goal = {
 export const GOALS: Goal[] = [
   {
     slug: "post-workout-recovery",
-    label: "Post-workout recovery",
+    label: "Train better",
     description: "Produce that people usually reach for after training.",
   },
   {
     slug: "family-household",
-    label: "Family and household eating",
+    label: "Feed the family",
     description: "Produce that works for a table of different ages and tastes.",
   },
   {
     slug: "general-wellness",
-    label: "General wellness",
+    label: "Eat well",
     description: "A steady spread of fruit and vegetables through the week.",
   },
   {
     slug: "weight-management",
-    label: "Weight management",
+    label: "Eat lighter",
     description: "Lower-calorie produce that is filling and easy to prep.",
   },
   {
     slug: "busy-weeks",
-    label: "Eating well on busy weeks",
+    label: "Eat well on busy weeks",
     description: "Produce that needs little or no cooking, for long days.",
   },
   {
     slug: "plant-based",
-    label: "More plant-based meals",
+    label: "More plants",
     description: "Greens, roots and fruit to build meals around plants.",
   },
   {

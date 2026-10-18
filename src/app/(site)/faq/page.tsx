@@ -3,11 +3,11 @@ export const metadata = { title: "FAQ. Basket" };
 const FAQS = [
   {
     q: "Do I need a subscription to order?",
-    a: "No. Anyone can browse, add to cart and check out with no account and no subscription. A subscription is an optional upgrade for regular customers.",
+    a: "No. Anyone can browse and fill a cart without an account. You sign up, free, to place the order. A subscription is an optional upgrade for regular customers.",
   },
   {
     q: "What does a subscription add?",
-    a: "Every recipe, member prices on everything, a standing weekly basket you can change until the night before, and a weekly meal plan built from the recipes. Member Plus adds free delivery, early access to seasonal produce and priority support on WhatsApp.",
+    a: "Every recipe, member prices on everything, up to three deliveries (for family or the office), and a weekly meal plan built from the recipes. Member Plus adds free delivery, early access to seasonal produce and priority support on WhatsApp.",
   },
   {
     q: "Is there a minimum order?",
@@ -18,12 +18,12 @@ const FAQS = [
     a: "Prices are grounded in what the same produce costs at a Lagos supermarket. Sourcing locally from trusted farmers, and cutting out middlemen, is what makes member pricing possible.",
   },
   {
-    q: "What is Ideas?",
-    a: "A guide in your basket, and inside Recipes, that reads your basket or a stated goal and suggests what to make and what to add. It gives food ideas, not medical or nutritional advice.",
+    q: "Who is Kachi?",
+    a: "Kachi is Basket's food assistant. Tell it what you're cooking or what you're after, and it suggests recipes and fills your order. It gives food ideas, not medical or nutritional advice.",
   },
   {
     q: "How is payment handled?",
-    a: "Payment is in test mode for now. No real charge is taken. A real payment gateway is planned.",
+    a: "You pay when your order arrives, by transfer or card to the rider. You can also pay by bank transfer before it's packed, using your order number as the reference. Paying by card online is coming.",
   },
 ];
 

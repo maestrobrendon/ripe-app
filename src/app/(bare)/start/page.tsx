@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cleanReferralCode } from "@/lib/referrals";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getStarterCandidates } from "@/lib/starter-basket";
@@ -16,8 +17,8 @@ import "../home-menu/home-menu.css";
 
 export const metadata = { title: "Get started. Basket" };
 
-export default async function StartPage({ searchParams }: { searchParams: Promise<{ next?: string; goal?: string; recipe?: string }> }) {
-  const { next, goal, recipe } = await searchParams;
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ next?: string; goal?: string; recipe?: string; ref?: string }> }) {
+  const { next, goal, recipe, ref } = await searchParams;
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
   const user = await getCurrentUser();
   if (user) redirect(safeNext ?? "/basket");
@@ -47,6 +48,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         initialRecipe={menu.some((r) => r.slug === recipe) ? recipe! : null}
         freeDeliveryThreshold={settings.delivery.freeThreshold}
         next={safeNext}
+        referralCode={cleanReferralCode(ref) || null}
       />
     </MenuProvider>
   );

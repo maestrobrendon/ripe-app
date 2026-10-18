@@ -20,12 +20,32 @@ export function useZone() {
   return useContext(ZoneContext);
 }
 
+const DISMISSED_KEY = "ripe_zone_dismissed_at";
+const QUIET_FOR = 30 * 86_400_000;
+
+/** Whether a guest closed the area question recently enough not to ask again. */
+function recentlyDismissed() {
+  try {
+    const at = Number(localStorage.getItem(DISMISSED_KEY));
+    return Number.isFinite(at) && Date.now() - at < QUIET_FOR;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The area question. It opens by itself only for guests who haven't told us
+ * their area, and once closed stays closed for a month. Signed-in customers
+ * are never interrupted: their area comes from their address.
+ */
 export function ZoneProvider({
   children,
   initialZoneName,
+  autoOpen = true,
 }: {
   children: React.ReactNode;
   initialZoneName: string | null;
+  autoOpen?: boolean;
 }) {
   const [zoneName, setZoneName] = useState(initialZoneName);
   const [open, setOpen] = useState(false);
@@ -40,11 +60,11 @@ export function ZoneProvider({
   useBodyScrollLock(open);
 
   useEffect(() => {
-    if (!zoneName) {
-      const dismissed = sessionStorage.getItem("ripe_zone_dismissed");
-      if (!dismissed) setOpen(true);
-    }
-  }, [zoneName]);
+    if (!autoOpen || zoneName || recentlyDismissed()) return;
+    // A beat after the page appears, so it reads as a question rather than a wall.
+    const t = window.setTimeout(() => setOpen(true), 800);
+    return () => window.clearTimeout(t);
+  }, [zoneName, autoOpen]);
 
   useEffect(() => {
     if (open && zones.length === 0) {
@@ -85,7 +105,11 @@ export function ZoneProvider({
   };
 
   const dismiss = useCallback(() => {
-    sessionStorage.setItem("ripe_zone_dismissed", "1");
+    try {
+      localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+    } catch {
+      // Private browsing: it may ask again next time, which is fine.
+    }
     setOpen(false);
   }, []);
 

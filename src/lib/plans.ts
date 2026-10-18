@@ -23,9 +23,10 @@ export function isDeliveryDay(v: unknown): v is DeliveryDay {
 }
 
 /**
- * Puts a customer on a plan: the tier, the delivery day, and the standing
- * basket that comes with membership. A switch between plans keeps the
- * original start date (it anchors the monthly renewal).
+ * Puts a customer on a plan: the tier and their delivery day. Prices follow
+ * membership live, so every delivery they have is at member prices from now
+ * on. A switch between plans keeps the original start date (it anchors the
+ * monthly renewal).
  */
 export async function activatePlan(userId: string, tierId: string, deliveryDay?: DeliveryDay | null): Promise<void> {
   await prisma.$transaction(async (tx) => {
@@ -39,15 +40,16 @@ export async function activatePlan(userId: string, tierId: string, deliveryDay?:
         subscribedAt: user.subscriptionTierId && user.subscribedAt ? user.subscribedAt : new Date(),
       },
     });
-    const standing = await tx.basket.findFirst({ where: { userId, isStanding: true } });
-    if (!standing) await tx.basket.create({ data: { userId, isStanding: true, deliveryDay: day } });
-    else if (deliveryDay) await tx.basket.update({ where: { id: standing.id }, data: { deliveryDay } });
+    // Their first delivery follows the day they picked; they get one if they had none.
+    const first = await tx.basket.findFirst({ where: { userId }, orderBy: { createdAt: "asc" } });
+    if (!first) await tx.basket.create({ data: { userId, isStanding: true, deliveryDay: day, pricingMode: "MEMBER" } });
+    else if (deliveryDay) await tx.basket.update({ where: { id: first.id }, data: { deliveryDay } });
     // Whatever they were waiting on is settled by this.
     await tx.planRequest.updateMany({ where: { userId, status: "PENDING", tierId: { not: tierId } }, data: { status: "WITHDRAWN", decidedAt: new Date() } });
   });
 }
 
-/** Back to paying as you go. Pending requests are withdrawn too. */
+/** Back to paying as you go: standard prices from now on, on every delivery. Pending requests are withdrawn too. */
 export async function endPlan(userId: string): Promise<void> {
   await prisma.$transaction([
     prisma.user.update({ where: { id: userId }, data: { subscriptionTierId: null, subscribedAt: null } }),

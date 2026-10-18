@@ -7,10 +7,12 @@ import { requireUser, destroySession, destroyAllSessions, endOtherSessions } fro
 import { verifyPassword } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendContactChangedEmail } from "@/lib/email";
-import { setZoneCookie } from "@/lib/zone";
-import { GOALS } from "@/lib/assistant";
+import { normalizePhone, phoneVariants } from "@/lib/phone";
+import { MENU_GOALS } from "@/lib/menu-types";
 import { PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
 import { audit } from "@/lib/admin/audit";
+import { getSiteSettings } from "@/lib/site-settings";
+import { notify } from "@/lib/notify";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -19,42 +21,32 @@ function done(): SaveResult {
   return { ok: true };
 }
 
-export async function saveAddress(input: { address: string; zoneSlug: string }): Promise<SaveResult> {
-  const user = await requireUser();
-  const address = input.address.trim().slice(0, 300);
-  if (!address) return { ok: false, error: "Add your street and area" };
-  const zone = input.zoneSlug ? await prisma.deliveryZone.findUnique({ where: { slug: input.zoneSlug } }) : null;
-  if (!zone || !zone.isServed) return { ok: false, error: "Add your street and area" };
-
-  await prisma.user.update({ where: { id: user.id }, data: { address, deliveryZoneId: zone.id } });
-  await setZoneCookie(zone.slug);
-  return done();
-}
+const GOAL_SLUGS = new Set(MENU_GOALS.map((g) => g.starterSlug));
 
 export async function saveContact(input: { name: string; phone: string; email: string; currentPassword?: string }): Promise<SaveResult> {
   const user = await requireUser();
-  const name = input.name.trim().slice(0, 120) || user.name;
-  const phone = input.phone.trim().slice(0, 32) || null;
-  const email = input.email.trim().toLowerCase().slice(0, 254) || user.email;
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "That email doesn't look right" };
+  const name = input.name.trim().slice(0, 120);
+  if (!name) return { ok: false, error: "Add your name, so riders know who to ask for." };
 
-  // Email and phone are how an account is recovered, so changing them needs
-  // the password: a stolen session alone can't redirect the reset emails.
-  const contactChanged = email !== user.email || phone !== user.phone;
+  const rawPhone = input.phone.trim();
+  const phone = rawPhone ? normalizePhone(rawPhone) : null;
+  if (rawPhone && !phone) return { ok: false, error: "That phone number doesn't look right. Try 0803 123 4567." };
+  const email = input.email.trim().toLowerCase().slice(0, 254) || null;
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "That email doesn't look right." };
+  // Phone and email are how you sign in and get your password back: keep at least one.
+  if (!phone && !email) return { ok: false, error: "Keep a phone number or an email, so you can still sign in." };
+
+  // Changing them needs the password: a stolen session alone can't take over the account.
+  const contactChanged = email !== (user.email ?? null) || phone !== (user.phone ?? null);
   if (contactChanged) {
     if (!rateLimit(`contact-change:${user.id}`, 5, 10 * 60 * 1000).ok) return { ok: false, error: "Too many tries. Wait a few minutes." };
     if (!user.passwordHash) return { ok: false, error: "Set a password first: use Forgot password on the sign-in page." };
-    if (!input.currentPassword || !(await verifyPassword(input.currentPassword, user.passwordHash))) {
-      return { ok: false, error: "That password isn't right" };
-    }
+    if (!input.currentPassword || !(await verifyPassword(input.currentPassword, user.passwordHash))) return { ok: false, error: "That password isn't right." };
   }
 
   const clash = await prisma.user.findFirst({
-    where: {
-      id: { not: user.id },
-      OR: [...(email ? [{ email }] : []), ...(phone ? [{ phone }] : [])],
-    },
-    select: { email: true },
+    where: { id: { not: user.id }, OR: [...(email ? [{ email }] : []), ...(phone ? [{ phone: { in: phoneVariants(phone) } }] : [])] },
+    select: { id: true },
   });
   // Neutral wording: this form shouldn't confirm whose details are registered.
   if (clash) return { ok: false, error: "That email or phone number can't be used. Try another." };
@@ -62,94 +54,67 @@ export async function saveContact(input: { name: string; phone: string; email: s
   await prisma.user.update({ where: { id: user.id }, data: { name, phone, email } });
   if (contactChanged) {
     await endOtherSessions(user.id);
-    // Tell the address being replaced, so a change you didn't make doesn't go unnoticed.
     if (user.email && user.email !== email) await sendContactChangedEmail(user.email).catch(() => {});
   }
   return done();
 }
 
-/**
- * The one food-preferences record: household size on the user, goal and
- * usual produce on UserPreferences. Kachi, the Produce list and the
- * onboarding survey all read these same fields.
- */
-export async function savePreferences(input: {
-  adults: number;
-  kids: number;
-  goal: string;
-  likes: string[];
-}): Promise<SaveResult> {
+/** Food and household: the six goals, who's eating, what they usually buy, and what to avoid. */
+export async function savePreferences(input: { adults: number; kids: number; goal: string; likes: string[]; dietaryNotes: string }): Promise<SaveResult> {
   const user = await requireUser();
-  if (!GOALS.some((g) => g.slug === input.goal)) return { ok: false, error: "Pick what you want most" };
+  if (!GOAL_SLUGS.has(input.goal)) return { ok: false, error: "Pick what you're after most." };
   const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.floor(Number(n) || 0)));
   const producePreferences = input.likes.filter((l) => PRODUCE_PREFERENCE_OPTIONS.includes(l as never));
+  const dietaryNotes = input.dietaryNotes.trim().slice(0, 400) || null;
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { householdAdults: clamp(input.adults, 1, 10), householdKids: clamp(input.kids, 0, 10) },
-  });
+  await prisma.user.update({ where: { id: user.id }, data: { householdAdults: clamp(input.adults, 1, 12), householdKids: clamp(input.kids, 0, 12) } });
   await prisma.userPreferences.upsert({
     where: { userId: user.id },
-    create: { userId: user.id, primaryGoal: input.goal, producePreferences },
-    update: { primaryGoal: input.goal, producePreferences },
+    create: { userId: user.id, primaryGoal: input.goal, producePreferences, dietaryNotes },
+    update: { primaryGoal: input.goal, producePreferences, dietaryNotes },
   });
   return done();
 }
 
-function cardBrand(digits: string) {
-  if (/^4/.test(digits)) return "VISA";
-  if (/^(5061|5078|5079|650)/.test(digits)) return "VERVE";
-  if (/^(5[1-5]|2[2-7])/.test(digits)) return "MC";
-  return "CARD";
-}
-
-/** Test mode: keeps only brand, last four and expiry. No payment provider, no money moves. */
-export async function addTestCard(input: { number: string; expiry: string }): Promise<SaveResult> {
+/** Where order updates and weekly reminders go. Password links are always sent. */
+export async function setNotifyChannel(channel: "whatsapp" | "email", on: boolean): Promise<SaveResult> {
   const user = await requireUser();
-  const digits = input.number.replace(/\D/g, "");
-  if (digits.length < 12 || digits.length > 19) return { ok: false, error: "That card number doesn't look right" };
-  const m = input.expiry.trim().match(/^(\d{1,2})\s*\/\s*(\d{2})$/);
-  const month = m ? Number(m[1]) : 0;
-  if (!m || month < 1 || month > 12) return { ok: false, error: "Use MM/YY for the expiry" };
-  const expiresEnd = new Date(2000 + Number(m[2]), month, 1);
-  if (expiresEnd <= new Date()) return { ok: false, error: "That card has expired" };
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      paymentCardBrand: cardBrand(digits),
-      paymentCardLast4: digits.slice(-4),
-      paymentCardExpiry: `${String(month).padStart(2, "0")}/${m[2]}`,
-    },
-  });
+  await prisma.user.update({ where: { id: user.id }, data: channel === "whatsapp" ? { notifyWhatsApp: on } : { notifyEmail: on } });
   return done();
 }
 
-export async function removeCard(): Promise<SaveResult> {
+export async function setKachiReviewConsent(on: boolean): Promise<SaveResult> {
   const user = await requireUser();
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { paymentCardBrand: null, paymentCardLast4: null, paymentCardExpiry: null },
-  });
+  await prisma.user.update({ where: { id: user.id }, data: { kachiReviewConsentAt: on ? new Date() : null } });
+  await audit({ actorType: "CUSTOMER", actorId: user.id, action: on ? "privacy.kachi_review_on" : "privacy.kachi_review_off", targetType: "User", targetId: user.id }).catch(() => {});
+  return done();
+}
+
+/**
+ * "Delete my account": a request staff complete within 30 days (open orders
+ * and payments are settled first). It can be withdrawn until then.
+ */
+export async function requestDeletion(): Promise<SaveResult> {
+  const user = await requireUser();
+  const open = await prisma.order.count({ where: { userId: user.id, status: { in: ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY"] } } });
+  if (open) return { ok: false, error: "You have an order on its way. Ask again after it arrives, or cancel it first." };
+  await prisma.user.update({ where: { id: user.id }, data: { deletionRequestedAt: new Date() } });
+  await audit({ actorType: "CUSTOMER", actorId: user.id, action: "privacy.deletion_requested", targetType: "User", targetId: user.id }).catch(() => {});
+  const settings = await getSiteSettings();
+  await notify({ userId: null, kind: "privacy.deletion_requested", dedupeKey: `deletion:${user.id}:${new Date().toISOString().slice(0, 10)}`, essential: true, email: { to: settings.support.email, subject: "Account deletion request", text: `Customer ${user.id} asked for their account to be deleted. Find them under Customers in the admin.` } }).catch(() => {});
+  return done();
+}
+
+export async function cancelDeletion(): Promise<SaveResult> {
+  const user = await requireUser();
+  await prisma.user.update({ where: { id: user.id }, data: { deletionRequestedAt: null } });
+  await audit({ actorType: "CUSTOMER", actorId: user.id, action: "privacy.deletion_withdrawn", targetType: "User", targetId: user.id }).catch(() => {});
   return done();
 }
 
 export async function signOut() {
   await destroySession();
   redirect("/");
-}
-
-/**
- * Whether the Basket team may read this customer's Kachi chats to improve
- * her. Off unless they turn it on; turning it off hides every chat from
- * staff at once. Recorded in the audit log by id only.
- */
-export async function setKachiReviewConsent(on: boolean): Promise<SaveResult> {
-  const user = await requireUser();
-  await prisma.user.update({ where: { id: user.id }, data: { kachiReviewConsentAt: on ? new Date() : null } });
-  await audit({ actorType: "CUSTOMER", actorId: user.id, action: on ? "privacy.kachi_review_on" : "privacy.kachi_review_off", targetType: "User", targetId: user.id }).catch(() => {});
-  revalidatePath("/account");
-  return { ok: true };
 }
 
 /** Sign out on every device: for a lost phone or a shared computer. */

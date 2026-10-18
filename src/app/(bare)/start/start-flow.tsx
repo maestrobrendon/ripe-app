@@ -78,6 +78,7 @@ export function StartFlow({
   initialRecipe,
   freeDeliveryThreshold,
   next,
+  referralCode,
 }: {
   candidates: StarterCandidate[];
   zones: Zone[];
@@ -87,6 +88,8 @@ export function StartFlow({
   initialRecipe: string | null;
   freeDeliveryThreshold: number;
   next: string | null;
+  /** From an invite link (/start?ref=CODE): both get credit after the first delivery. */
+  referralCode: string | null;
 }) {
   const MENU = useMenu();
   const [[index, direction], setIndex] = useState<[number, 1 | -1]>([0, 1]);
@@ -633,6 +636,7 @@ export function StartFlow({
                   <input type="hidden" name="recipes" value={JSON.stringify(recipeSlugs)} />
                   <input type="hidden" name="items" value={JSON.stringify(kept.map((l) => ({ productId: l.productId, quantity: l.quantity })))} />
                   {next && <input type="hidden" name="next" value={next} />}
+                  {referralCode && <input type="hidden" name="ref" value={referralCode} />}
 
                   <Field label="Your name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
                   <Field

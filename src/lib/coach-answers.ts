@@ -56,7 +56,7 @@ export const COACH_ANSWERS: CoachAnswer[] = [
     // FOUNDER REVIEW: conditioned per the addendum, Section 11; confirm the
     // qualifying window and process before this goes live.
     answer:
-      "Every order is quality checked by a person before it leaves us. If an item arrives damaged or not fresh, tell us within 24 hours with a photo of what you received, and we will look into it. That can mean a replacement, a credit, or a refund for that item, depending on what we find.",
+      "Every order is quality checked by a person before it leaves us. If an item arrives damaged or not fresh, tell us within 7 days from the order page (\"Something wrong?\"), with a photo if you can, and we will look into it. That can mean a replacement, a credit, or a refund for that item, depending on what we find.",
   },
   {
     id: "subscription",

@@ -2,83 +2,98 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/site-settings";
+import { supportHref, supportVerb } from "@/lib/support";
 import { customerStatusLabel, OPEN_STATUSES } from "@/lib/order-status";
-import { AccountView, type OrderRow } from "./account-view";
+import { pendingPlanRequest } from "@/lib/plans";
+import { creditBalance } from "@/lib/credit";
+import { newReferralCode, REFERRAL_REWARD } from "@/lib/referrals";
+import { addressLine } from "@/lib/addresses";
+import { formatPhone } from "@/lib/phone";
+import { orderRef, shortDate } from "@/lib/delivery-labels";
+import { AccountView } from "./account-view";
 
-
-function shortDate(d: Date) {
-  const weekday = d.toLocaleDateString("en-GB", { weekday: "short" });
-  const rest = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  return `${weekday}, ${rest}`;
-}
+export const metadata = { title: "Me" };
 
 /** The next monthly anniversary of the membership start, from today. */
 function nextRenewal(start: Date) {
   const now = new Date();
   const d = new Date(start);
   while (d <= now) d.setMonth(d.getMonth() + 1);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
+}
+
+/** A code to share, made the first time someone looks for it. */
+async function ensureReferralCode(user: { id: string; name: string | null; referralCode: string | null }) {
+  if (user.referralCode) return user.referralCode;
+  for (let i = 0; i < 4; i++) {
+    const code = newReferralCode(user.name);
+    try {
+      await prisma.user.update({ where: { id: user.id }, data: { referralCode: code } });
+      return code;
+    } catch {
+      // Taken: try another.
+    }
+  }
+  return null;
+}
+
+/** The latest plan request, if it was turned down in the last 30 days. */
+function recentlyDeclined<T extends { status: string; decidedAt: Date | null }>(request: T | null): T | null {
+  if (request?.status !== "DECLINED" || !request.decidedAt) return null;
+  return Date.now() - request.decidedAt.getTime() < 30 * 86_400_000 ? request : null;
 }
 
 export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [zones, orders, cheapestTier] = await Promise.all([
-    prisma.deliveryZone.findMany({ where: { isServed: true }, orderBy: { sortOrder: "asc" }, select: { slug: true, name: true } }),
-    // Baskets and cart orders together, newest first: one list, filtered on the page.
-    prisma.order.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-      select: { id: true, orderType: true, status: true, deliveryDate: true, total: true, _count: { select: { items: true } } },
-    }),
-    prisma.subscriptionTier.findFirst({ orderBy: { monthlyFee: "asc" }, select: { monthlyFee: true } }),
+  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code] = await Promise.all([
+    prisma.order.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } }),
+    prisma.order.findFirst({ where: { userId: user.id, status: { in: OPEN_STATUSES } }, orderBy: { deliveryDate: "asc" }, select: { status: true, deliveryDate: true } }),
+    prisma.order.count({ where: { userId: user.id } }),
+    pendingPlanRequest(user.id),
+    prisma.planRequest.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, include: { tier: { select: { name: true } } } }),
+    prisma.address.findFirst({ where: { userId: user.id }, orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }], select: { label: true, line1: true, estate: true, zone: { select: { name: true } } } }),
+    prisma.address.count({ where: { userId: user.id } }),
+    creditBalance(user.id),
+    prisma.user.count({ where: { referredById: user.id } }),
+    prisma.user.count({ where: { referredById: user.id, referralRewardedAt: { not: null } } }),
+    getSiteSettings(),
+    ensureReferralCode(user),
   ]);
 
-  const orderRows: OrderRow[] = orders.map((o) => {
-    const kind = o.orderType === "ONE_OFF" ? "cart" : "basket";
-    const live = OPEN_STATUSES.includes(o.status);
-    return {
-      id: o.id,
-      kind,
-      name: kind === "basket" ? "Basket order" : `Cart order, ${o._count.items} ${o._count.items === 1 ? "item" : "items"}`,
-      when: `${live ? "Arrives" : o.status === "DELIVERED" ? "Delivered" : "Was due"} ${shortDate(o.deliveryDate)}`,
-      total: o.total,
-      status: customerStatusLabel(o.status),
-      live,
-    };
-  });
-
   const tier = user.subscriptionTier;
+  const declined = recentlyDeclined(lastRequest);
+  const first = user.name?.split(" ")[0] ?? "";
+  const helpText = `Hi, it's ${first || "a Basket customer"}${user.phone ? ` (${formatPhone(user.phone)})` : ""}.${lastOrder ? ` My last order was ${orderRef(lastOrder.id)}.` : ""} `;
 
   return (
     <AccountView
-      name={user.name}
+      name={user.name ?? ""}
       email={user.email ?? ""}
-      phone={user.phone ?? ""}
-      address={user.address ?? ""}
-      zoneSlug={user.deliveryZone?.slug ?? ""}
-      zoneName={user.deliveryZone?.name ?? ""}
-      zones={zones}
-      card={
-        user.paymentCardLast4
-          ? { brand: user.paymentCardBrand ?? "CARD", last4: user.paymentCardLast4, expiry: user.paymentCardExpiry ?? "" }
-          : null
-      }
+      phone={user.phone ? formatPhone(user.phone) : ""}
+      hasPassword={Boolean(user.passwordHash)}
+      address={defaultAddress ? { label: defaultAddress.label, line: addressLine(defaultAddress), zone: defaultAddress.zone.name, count: addressCount } : null}
       adults={user.householdAdults}
       kids={user.householdKids}
       goal={user.preferences?.primaryGoal ?? ""}
       likes={user.preferences?.producePreferences ?? []}
+      dietaryNotes={user.preferences?.dietaryNotes ?? ""}
       membership={
         tier
-          ? { tierName: tier.name, monthlyFee: tier.monthlyFee, renews: user.subscribedAt ? nextRenewal(user.subscribedAt) : null }
-          : null
+          ? { state: "member", tierName: tier.name, monthlyFee: tier.monthlyFee, renews: user.subscribedAt ? nextRenewal(user.subscribedAt) : null }
+          : pending
+            ? { state: "pending", tierName: pending.tier.name, monthlyFee: pending.tier.monthlyFee, renews: null }
+            : declined
+              ? { state: "declined", tierName: declined.tier.name, monthlyFee: 0, renews: null, note: declined.decidedNote ?? null }
+              : null
       }
-      cheapestPlan={cheapestTier?.monthlyFee ?? null}
-      orders={orderRows}
+      orders={{ count: orderCount, live: liveOrder ? `${customerStatusLabel(liveOrder.status)} · ${shortDate(liveOrder.deliveryDate)}` : null }}
+      notify={{ whatsapp: user.notifyWhatsApp, email: user.notifyEmail }}
+      invite={{ code, reward: REFERRAL_REWARD, invited, rewarded, credit }}
       kachiReview={Boolean(user.kachiReviewConsentAt)}
-      whatsappHref={`https://wa.me/${(await getSiteSettings()).support.whatsapp}`}
+      deletionRequested={user.deletionRequestedAt?.toISOString() ?? null}
+      help={{ href: supportHref(settings.support, helpText, "Help with my account"), verb: supportVerb(settings.support) }}
     />
   );
 }

@@ -44,7 +44,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
       <main className="mx-auto w-[min(560px,calc(100%-32px))] pt-6 pb-16">
         <KachiMark className="h-14 w-14" />
         <h1 className="mt-5 text-[clamp(2rem,7vw,2.75rem)] leading-[1.04] font-semibold tracking-[-0.045em]">You&apos;re in, {firstName}.</h1>
-        <p className="hm-lede mt-3">Your week is saved. Change anything in your basket until the night before it goes out.</p>
+        <p className="hm-lede mt-3">Your first order is saved, not placed. Change anything, then confirm it on Home. You pay when it arrives.</p>
 
         {recipes.length > 0 && (
           <div className="mt-8">
@@ -65,7 +65,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
 
         <dl className="hm-panel mt-8 divide-y divide-(--hm-line) px-5 text-[14px]">
           <div className="flex justify-between gap-4 py-3">
-            <dt className="text-(--hm-ink-2)">Your basket</dt>
+            <dt className="text-(--hm-ink-2)">Your first order</dt>
             <dd className="text-right font-semibold">
               {items.length} items, {formatNaira(value)}
             </dd>
@@ -76,13 +76,13 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           </div>
           <div className="flex justify-between gap-4 py-3">
             <dt className="text-(--hm-ink-2)">Paying</dt>
-            <dd className="text-right font-semibold">Only when you check out</dd>
+            <dd className="text-right font-semibold">When it arrives</dd>
           </div>
         </dl>
 
         <div className="mt-8 grid gap-3">
           <Link href="/basket" className="flex h-14 items-center justify-center rounded-full bg-carbon text-[16px] font-semibold text-paper-white">
-            Open my basket
+            See my order
           </Link>
           <Link href="/recipes" className="flex h-14 items-center justify-center rounded-full bg-(--hm-tint-2) text-[16px] font-semibold">
             See every recipe

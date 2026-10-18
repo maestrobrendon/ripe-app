@@ -5,6 +5,7 @@ import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZone } from "@/lib/zone";
 import { readCart } from "@/lib/cart";
+import { zoneForUser } from "@/lib/delivery";
 import { CartProvider } from "@/components/cart-provider";
 import { ZoneProvider } from "@/components/zone-gate";
 import { SiteHeader } from "@/components/site-header";
@@ -16,11 +17,12 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
+import { OfflineBanner } from "@/components/offline-banner";
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
   description:
-    "Shop fruits and vegetables sourced locally from trusted farmers, delivered across Lagos. Subscribe for member pricing and a standing weekly basket.",
+    "Fruit and vegetables from trusted farmers, checked by hand and delivered across Lagos. Built around the recipes you want to cook.",
 };
 
 /**
@@ -30,6 +32,8 @@ export const metadata: Metadata = {
  */
 export default async function SiteRootLayout({ children }: { children: React.ReactNode }) {
   const [user, cart, zone, settings] = await Promise.all([getCurrentUser(), readCart(), getActiveZone(), getSiteSettings()]);
+  // A customer's area comes from their address, not the guest cookie.
+  const zoneName = user ? ((await zoneForUser(user.id))?.name ?? user.deliveryZone?.name ?? null) : (zone?.name ?? null);
 
   return (
     <html lang="en" className={`${fontVariables} h-full antialiased`}>
@@ -38,11 +42,12 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
       <body className="flex min-h-full flex-col" style={user ? undefined : ({ "--mobile-nav-h": "0px" } as React.CSSProperties)}>
         <MotionProvider>
           <SiteSettingsProvider settings={settings}>
-          <ZoneProvider initialZoneName={zone?.name ?? null}>
+          <ZoneProvider initialZoneName={zoneName} autoOpen={!user}>
             <CartProvider initial={cart}>
                 {/* The "Freshly selected..." banner is marketing for guests only. */}
                 {!user && <AnnouncementBar />}
                 <SiteHeader signedIn={Boolean(user)} />
+                <OfflineBanner />
                 {/* A signed-in visitor always gets the floating dock below,
                     whose real footprint is --dock-clearance (pb-dock zeroes
                     it on desktop, where the dock is a left rail instead of a

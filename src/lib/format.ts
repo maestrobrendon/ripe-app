@@ -28,13 +28,14 @@ export const ORDER_UNIT_LABEL: Record<string, string> = {
 };
 
 export const GOAL_LABEL: Record<string, string> = {
-  "general-wellness": "General wellness",
-  "weight-management": "Weight management",
-  "post-workout-recovery": "Post-workout recovery",
-  "family-household": "Family and household eating",
-  "busy-weeks": "Eating well on busy weeks",
-  "plant-based": "More plant-based meals",
+  "weight-management": "Eat lighter",
+  "post-workout-recovery": "Train better",
+  "family-household": "Feed the family",
+  "busy-weeks": "Eat well on busy weeks",
+  "plant-based": "More plants",
   "fresh-fruit": "Fresh fruit every week",
+  // Older accounts only; no longer offered.
+  "general-wellness": "Eat well",
   other: "Something else",
 };
 

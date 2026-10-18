@@ -10,6 +10,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { buildStarterPicks, getStarterCandidates } from "@/lib/starter-basket";
 import { createUserBasket } from "@/lib/basket";
 import { mergeGuestCartIntoBasket } from "@/lib/order-container";
+import { cleanReferralCode, newReferralCode } from "@/lib/referrals";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { appOrigin } from "@/lib/site";
 import { sendSignupAttemptEmail } from "@/lib/email";
@@ -88,6 +89,10 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
     return { error: "failed" };
   }
 
+  // Joined with a friend's invite link: remembered, and rewarded after the first delivery.
+  const refCode = cleanReferralCode(String(formData.get("ref") ?? ""));
+  const referrer = refCode ? await prisma.user.findUnique({ where: { referralCode: refCode }, select: { id: true } }) : null;
+
   let userId: string;
   try {
     const user = await prisma.user.create({
@@ -101,6 +106,8 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
         householdAdults: adults,
         householdKids: kids,
         onboardingCompleted: true,
+        referralCode: newReferralCode(name),
+        referredById: referrer?.id ?? null,
         preferences: { create: { primaryGoal: goalSlug, producePreferences: [], dietaryNotes } },
       },
     });
