@@ -17,7 +17,7 @@ import "@/app/(bare)/home-menu/home-menu.css";
  */
 export const MARKETING_LINKS: { label: string; href: string }[] = [
   { label: "Recipes", href: "/recipes" },
-  { label: "Fruits", href: "/shop" },
+  { label: "Fruit & veg", href: "/shop" },
   { label: "How it works", href: "/#how" },
   { label: "Pricing", href: "/subscribe" },
   { label: "Questions", href: "/#faq" },

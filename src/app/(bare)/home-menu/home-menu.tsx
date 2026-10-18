@@ -30,11 +30,11 @@ export function HomeMenu({ data }: { data: MenuData }) {
       <div className="hm">
         <MarketingNav variant="home" signedIn={data.signedIn} />
         <main>
-          <Hero signedIn={data.signedIn} onPickGoal={setGoal} />
+          <Hero signedIn={data.signedIn} onPickGoal={setGoal} zones={data.zones} />
           <Menu goal={goal} onGoal={setGoal} products={data.products} signedIn={data.signedIn} />
           <How goal={goal} deliveryDay={data.deliveryDay} products={data.products} signedIn={data.signedIn} />
           <Inside products={data.products} />
-          <Details />
+          <Details deliveryDay={data.deliveryDay} />
           <Price
             goal={goal}
             onGoal={setGoal}

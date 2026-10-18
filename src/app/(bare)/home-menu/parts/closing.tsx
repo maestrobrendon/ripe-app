@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
-import { useWhatsappHref } from "@/components/support-links";
+import { useSupportVerb, useWhatsappHref } from "@/components/support-links";
 import { MagneticLink, Reveal } from "../../home-next/parts/runtime";
 import { AvocadoHalf, Bowl, Carrot, Chilli, LimeSlice, Mushroom, Sparkle, Tomato, INK } from "./art";
 import { Eyebrow } from "./shared";
@@ -25,6 +25,7 @@ export function Faq({
   memberFee: number | null;
 }) {
   const whatsapp = useWhatsappHref();
+  const verb = useSupportVerb();
   const [open, setOpen] = useState<number | null>(0);
   const names = zones.map((z) => z.name);
   const days = [...new Set(zones.flatMap((z) => z.days))];
@@ -83,7 +84,7 @@ export function Faq({
     },
     {
       q: "Is Kachi a nutritionist?",
-      a: <>No. Kachi plans food: recipes, portions for your household, and the basket to match. She does not give medical advice. If you have a condition or a prescribed diet, follow your doctor first.</>,
+      a: <>No. Kachi plans food: recipes, portions for your household, and the basket to match. It doesn&apos;t give medical advice. If you have a condition or a prescribed diet, follow your doctor first.</>,
     },
     {
       q: "Where do you deliver?",
@@ -111,7 +112,7 @@ export function Faq({
       q: "What if something isn't fresh?",
       a: (
         <>
-          Tell us within 24 hours on WhatsApp or by email, with a photo of what arrived. Depending on what we find, that means a replacement, a credit, or a refund for that item.
+          Tell us within 7 days from your order page, with a photo of what arrived. Depending on what we find, that means a replacement, a credit, or a refund for that item.
         </>
       ),
     },
@@ -127,7 +128,7 @@ export function Faq({
             <p className="hm-lede mt-4">
               Anything else?{" "}
               <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
-                Message us on WhatsApp
+                {verb}
               </a>
               .
             </p>

@@ -54,7 +54,7 @@ function EditWidget() {
         </span>
       </div>
       <div className="mt-3 flex items-center justify-between border-t border-[var(--hm-line)] pt-3 text-[13px]">
-        <span className="text-[var(--hm-ink-3)]">Edits close the night before</span>
+        <span className="text-[var(--hm-ink-3)]">Change it until the evening before</span>
         <AnimatePresence>
           {i === 1 && (
             <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={spring.juicy} className="inline-flex items-center gap-1 font-semibold text-[#0f7a48]">
@@ -67,10 +67,13 @@ function EditWidget() {
   );
 }
 
-function weekLabels() {
+const DOW: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+
+function weekLabels(day: string) {
   const d = new Date();
-  // The next four Wednesdays, as the delivery weeks a customer would see.
-  d.setDate(d.getDate() + ((3 - d.getDay() + 7) % 7 || 7));
+  // The next four delivery days, as the weeks a customer would see.
+  const dow = DOW[day] ?? 5;
+  d.setDate(d.getDate() + ((dow - d.getDay() + 7) % 7 || 7));
   return Array.from({ length: 4 }, (_, i) => {
     const w = new Date(d);
     w.setDate(d.getDate() + i * 7);
@@ -78,14 +81,14 @@ function weekLabels() {
   });
 }
 
-function SkipWidget() {
+function SkipWidget({ day }: { day: string }) {
   const { ref, i } = useLoop(2, 2400);
   // Dates are filled in after mount, so the server and the browser agree on first paint.
   const [weeks, setWeeks] = useState(["Week 1", "Week 2", "Week 3", "Week 4"]);
   useEffect(() => {
-    const t = setTimeout(() => setWeeks(weekLabels()), 0);
+    const t = setTimeout(() => setWeeks(weekLabels(day)), 0);
     return () => clearTimeout(t);
-  }, []);
+  }, [day]);
   return (
     <div ref={ref} className="grid w-full max-w-[340px] grid-cols-4 gap-2">
       {weeks.map((w, k) => {
@@ -104,7 +107,7 @@ function SkipWidget() {
             >
               {!skipped && <Check className="h-3.5 w-3.5" />}
             </motion.span>
-            <span className={`text-[11px] font-semibold ${skipped ? "text-[var(--hm-ink-3)]" : ""}`}>{skipped ? "Skipped" : "Basket"}</span>
+            <span className={`text-[11px] font-semibold ${skipped ? "text-[var(--hm-ink-3)]" : ""}`}>{skipped ? "Skipped" : "Confirmed"}</span>
           </motion.div>
         );
       })}
@@ -158,7 +161,7 @@ function TrialWidget() {
   );
 }
 
-export function Details() {
+export function Details({ deliveryDay }: { deliveryDay: string }) {
   return (
     <section id="details" className="py-16 sm:py-24">
       <div className="hm-wrap grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
@@ -202,7 +205,7 @@ export function Details() {
             <EditWidget />
           </Detail>
           <Detail title="Skip a week when you're away" color="text-electric-blue" body="Travelling, or still working through last week's? Skip it and nothing comes. Nothing is ever charged automatically.">
-            <SkipWidget />
+            <SkipWidget day={deliveryDay} />
           </Detail>
           <Detail title="Checked by hand before it leaves" color="text-ember" body="Every order is looked over before it goes out. Anything bruised gets swapped, not shipped.">
             <CheckWidget />

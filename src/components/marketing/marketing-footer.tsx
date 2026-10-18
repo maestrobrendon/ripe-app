@@ -15,7 +15,7 @@ const columns = (support: { whatsapp: string; email: string }): { title: string;
     title: "Basket",
     links: [
       ["Recipes", "/recipes"],
-      ["Fruits", "/shop"],
+      ["Fruit & veg", "/shop"],
       ["How it works", "/#how"],
       ["Pricing", "/subscribe"],
     ],

@@ -135,6 +135,9 @@
 .hm-swap > span {
   grid-area: 1 / 1;
 }
+.hm-swap > span::before {
+  content: attr(data-word);
+}
 .hm-swap > span + span {
   transform: translateY(120%);
 }
