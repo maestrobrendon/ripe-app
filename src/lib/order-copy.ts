@@ -1,6 +1,12 @@
 import type { OrderStatus } from "@/generated/prisma/enums";
 import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
 
+/** Whether a stored delivery date (UTC midnight) is today in Lagos. */
+function isToday(dateIso: string) {
+  const lagos = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
+  return dateIso.slice(0, 10) === lagos;
+}
+
 /*
  * How an order's state reads to the customer, wherever it's shown (Home,
  * Orders, the order page). Client-safe. "Delivered" is only ever said once
@@ -28,7 +34,10 @@ export function orderHeadline(o: OrderForCopy): { title: string; body: string } 
     case "PACKED":
       return { title: `Being packed for ${day}`, body: "Checked by hand before it leaves." };
     case "OUT_FOR_DELIVERY":
-      return { title: "On its way to you", body: o.rider ? `${o.rider.name} is bringing it today, ${DELIVERY_WINDOW}.` : `Arriving today, ${DELIVERY_WINDOW}.` };
+    {
+      const when = isToday(o.deliveryDateIso) ? "today" : longDate(o.deliveryDateIso);
+      return { title: "On its way to you", body: o.rider ? `${o.rider.name} is bringing it ${when}, ${DELIVERY_WINDOW}.` : `Arriving ${when}, ${DELIVERY_WINDOW}.` };
+    }
     case "FAILED_DELIVERY":
       return { title: "We missed you", body: "We couldn't hand it over. We'll be in touch to arrange another time." };
     case "DELIVERED":
@@ -42,6 +51,8 @@ export function orderHeadline(o: OrderForCopy): { title: string; body: string } 
 
 /** What an order's payment looks like to the customer. */
 export function paymentLine(o: { paidAt: Date | string | null; paymentMethod: string; total: number; status: OrderStatus }, naira: (n: number) => string): string {
+  // Orders from before payments were real carry a "(test mode)" label.
+  o = { ...o, paymentMethod: o.paymentMethod.replace(/\s*\(test mode\)/i, "") };
   if (o.paidAt) return `Paid · ${o.paymentMethod}`;
   if (o.status === "CANCELLED" || o.status === "REFUNDED") return o.paymentMethod;
   if (/transfer/i.test(o.paymentMethod)) return `Bank transfer · waiting for ${naira(o.total)}`;

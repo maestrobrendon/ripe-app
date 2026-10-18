@@ -68,11 +68,23 @@ async function main() {
     }
   }
 
+  // An older version stored weighed produce in grams (500 for 500g of ugu);
+  // a line now counts packs (1 = one 250g bag). Lines still in grams become
+  // the nearest number of packs. Past orders are left as they were.
+  let weighed = 0;
+  const gramLines = await prisma.basketItem.findMany({ where: { quantity: { gte: 50 }, product: { soldAs: "WEIGHT" } }, select: { id: true, quantity: true, product: { select: { referenceWeightG: true } } } });
+  for (const line of gramLines) {
+    const packG = line.product.referenceWeightG;
+    if (!packG || line.quantity % 50 !== 0) continue;
+    await prisma.basketItem.update({ where: { id: line.id }, data: { quantity: Math.max(1, Math.round(line.quantity / packG)) } });
+    weighed++;
+  }
+
   const hidden = await prisma.product.updateMany({ where: { slug: "smoothie-box", availability: { not: "HIDDEN" } }, data: { availability: "HIDDEN", inSeason: false } });
   const freshCutRecipes = await prisma.recipe.updateMany({ where: { slug: { in: ["coleslaw"] }, status: "PUBLISHED" }, data: { status: "DRAFT", onMenu: false } });
 
   console.log(
-    `${prod ? "PRODUCTION" : "Development"}: ${phones} phones normalised (${phoneClashes} left as they were: another account has that number), ${addresses} saved addresses, ${days} deliveries moved to an area day, ${codes} invite codes, ${hidden.count} drink box hidden, ${freshCutRecipes.count} Fresh Cuts recipe unpublished.`,
+    `${prod ? "PRODUCTION" : "Development"}: ${phones} phones normalised (${phoneClashes} left as they were: another account has that number), ${addresses} saved addresses, ${days} deliveries moved to an area day, ${codes} invite codes, ${weighed} weighed lines turned from grams into packs, ${hidden.count} drink box hidden, ${freshCutRecipes.count} Fresh Cuts recipe unpublished.`,
   );
   await prisma.$disconnect();
 }

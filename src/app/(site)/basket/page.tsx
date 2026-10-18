@@ -33,13 +33,12 @@ export default async function HomePage() {
   if (!user) redirect("/login?next=/basket");
 
   const member = isMember(user);
-  const delivery = await getOrCreateActiveDelivery(user);
-  const zone = await zoneForUser(user.id);
+  const [delivery, zone] = await Promise.all([getOrCreateActiveDelivery(user), zoneForUser(user.id)]);
 
-  const [deliveries, cycle, liveRows, items, lastOrder, credit, menu, monthOrders] = await Promise.all([
+  const [deliveries, cycle, liveRows, items, lastOrder, credit, menu, monthOrders, ordered] = await Promise.all([
     prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { id: true, name: true, deliveryDay: true, _count: { select: { items: true } } } }),
     getDeliveryCycle(delivery, zone),
-    liveOrdersFor(delivery.id),
+    liveOrdersFor(user.id),
     prisma.basketItem.findMany({ where: { basketId: delivery.id }, select: { productId: true, product: { select: { slug: true, category: true, availability: true } } } }),
     prisma.order.findFirst({
       where: { userId: user.id, status: { notIn: ["CANCELLED", "REFUNDED"] } },
@@ -54,6 +53,13 @@ export default async function HomePage() {
           select: { items: { select: { quantity: true, unitPrice: true, product: { select: { standardPrice: true } } } } },
         })
       : Promise.resolve([]),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: { order: { userId: user.id, status: { notIn: ["CANCELLED", "REFUNDED"] } } },
+      _count: { productId: true },
+      orderBy: { _count: { productId: "desc" } },
+      take: 24,
+    }),
   ]);
 
   /* --------------------------------- area -------------------------------- */
@@ -78,13 +84,6 @@ export default async function HomePage() {
   const inOrder = new Set(items.map((i) => i.productId));
   const inOrderSlugs = new Set(items.map((i) => i.product.slug));
 
-  const ordered = await prisma.orderItem.groupBy({
-    by: ["productId"],
-    where: { order: { userId: user.id, status: { notIn: ["CANCELLED", "REFUNDED"] } } },
-    _count: { productId: true },
-    orderBy: { _count: { productId: "desc" } },
-    take: 24,
-  });
   const usualRank = [...new Set([...(user.preferences?.favoriteProductIds ?? []), ...ordered.map((o) => o.productId)])].filter((id) => !inOrder.has(id));
   const rank = new Map(usualRank.map((id, i) => [id, i]));
 
@@ -131,7 +130,8 @@ export default async function HomePage() {
 
   const today = lagosDate(new Date()).getTime();
   const daysAway = cycle.date ? Math.round((cycle.date.getTime() - today) / DAY) : null;
-  const earlierOrder = live.some((o) => cycle.date && new Date(o.deliveryDateIso) < cycle.date && o.status !== "DELIVERED");
+  // This delivery already has an order coming before its next date: the order being filled is next week's.
+  const earlierOrder = liveRows.some((o) => o.basketId === delivery.id && cycle.date && o.deliveryDate < cycle.date && o.status !== "DELIVERED");
   const title = daysAway === null ? "Your order" : daysAway <= 7 && !earlierOrder ? "This week's order" : daysAway <= 14 ? "Next week's order" : `Order for ${shortDate(cycle.date!)}`;
 
   const list = deliveries.map((d) => ({ id: d.id, label: deliveryName(d, dayIn(zone, d.deliveryDay)), itemCount: d._count.items }));

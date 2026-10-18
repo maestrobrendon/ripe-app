@@ -39,11 +39,21 @@ export function CheckoutFlow(props: {
   contact: { name: string; phone: string; email: string };
   credit: number;
   transfer: { bankName: string; accountName: string; accountNumber: string } | null;
+  /** For a first address: what the account already knows. */
+  draftDefaults?: { line1: string; zoneId: string | null };
 }) {
   const usable = props.addresses.filter((a) => a.zone.served);
   const [addressId, setAddressId] = useState<string | null>((usable.find((a) => a.isDefault) ?? usable[0])?.id ?? null);
   const [adding, setAdding] = useState(usable.length === 0);
-  const [draft, setDraft] = useState({ label: "Home", line1: "", estate: "", landmark: "", instructions: "", altPhone: "", zoneId: props.zones[0]?.id ?? "" });
+  const [draft, setDraft] = useState({
+    label: "Home",
+    line1: props.draftDefaults?.line1 ?? "",
+    estate: "",
+    landmark: "",
+    instructions: "",
+    altPhone: "",
+    zoneId: props.draftDefaults?.zoneId ?? props.zones[0]?.id ?? "",
+  });
   const [contact, setContact] = useState(props.contact);
   const [editContact, setEditContact] = useState(!props.contact.name || !props.contact.phone);
   const [payment, setPayment] = useState<PaymentChoice>("POD");

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { cutoffFor, nextDeliveryDate } from "@/lib/delivery-dates";
 import type { Basket, DeliveryZone } from "@/generated/prisma/client";
@@ -31,13 +32,16 @@ export type DeliveryCycle = {
   skippedDate: Date | null;
 };
 
-/** The area a customer's deliveries go to: their default address's area, else the area on their account. */
-export async function zoneForUser(userId: string): Promise<CycleZone | null> {
+/** The area a customer's deliveries go to: their default address's area, else the area on their account. Once per render. */
+export const zoneForUser = cache(async (userId: string): Promise<CycleZone | null> => {
   const select = { id: true, slug: true, name: true, area: true, deliveryDays: true, cutoffHour: true, deliveryFee: true, isServed: true };
-  const address = await prisma.address.findFirst({ where: { userId }, orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }], select: { zone: { select } } });
-  const zone = address?.zone ?? (await prisma.user.findUnique({ where: { id: userId }, select: { deliveryZone: { select } } }))?.deliveryZone ?? null;
+  const [address, account] = await Promise.all([
+    prisma.address.findFirst({ where: { userId }, orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }], select: { zone: { select } } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { deliveryZone: { select } } }),
+  ]);
+  const zone = address?.zone ?? account?.deliveryZone ?? null;
   return zone && zone.isServed ? zone : null;
-}
+});
 
 /** The day a delivery runs on in this area: its own, if the area has it, else the area's first. */
 export function dayIn(zone: CycleZone | null, day: DeliveryDay): DeliveryDay {
@@ -74,11 +78,14 @@ export async function setDateSkipped(basket: Pick<Basket, "id" | "userId">, date
   else if (skipped) await prisma.shoppingWindow.create({ data: { basketId: basket.id, userId: basket.userId, opensAt: date, closesAt: cutoff, status: "SKIPPED" } });
 }
 
-/** Orders from this delivery the customer still cares about: not finished, or delivered in the last two days. */
-export function liveOrdersFor(basketId: string, now = new Date()) {
+/**
+ * The customer's orders they still care about, from any delivery (or from
+ * before deliveries existed): not finished, or delivered in the last two days.
+ */
+export function liveOrdersFor(userId: string, now = new Date()) {
   return prisma.order.findMany({
     where: {
-      basketId,
+      userId,
       OR: [
         { status: { in: ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY", "FAILED_DELIVERY"] } },
         { status: "DELIVERED", deliveredAt: { gte: new Date(now.getTime() - 2 * 86_400_000) } },

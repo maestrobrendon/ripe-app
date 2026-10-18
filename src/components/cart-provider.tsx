@@ -255,6 +255,7 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
                 </button>
               )}
               {notice.showView &&
+                pathname !== "/basket" &&
                 (signedIn ? (
                   <Link href="/basket" className="shrink-0 font-semibold text-mint-pop underline-offset-2 hover:underline" onClick={() => setNotice(null)}>
                     View

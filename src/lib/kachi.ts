@@ -161,7 +161,7 @@ export async function recipeLibrary() {
       const uses = r.ingredientProductIds.map((id) => `${names.get(id) ?? "?"} (${id})`).join(", ");
       const time = r.minutes ? ` ${r.minutes} min.` : "";
       const other = r.elsewhere.length ? ` From elsewhere: ${r.elsewhere.join(", ")}.` : "";
-      return `[[${r.slug}]] ${r.title}: ${r.summary}${time} Goals: ${r.goalLabel}. Basket ingredients: ${uses}.${other}`;
+      return `[[${r.slug}]] ${r.title}: ${r.summary}${time} Goals: ${r.goalLabel}. Ingredients we bring: ${uses}.${other}`;
     })
     .join("\n");
   return { lines: lines || "No recipes yet.", bySlug: new Map(recipes.map((r) => [r.slug, r])) };
@@ -213,7 +213,8 @@ export function toKachiOrder(o: { id: string; status: KachiOrder["status"]; deli
   return { id: o.id, status: o.status, deliveryDate: o.deliveryDate.toISOString() };
 }
 
-export const ORDER_INTENT = /\b(order|orders|deliver|delivery|delivered|arriv)/i;
+// Asking where an order is, not just mentioning "my order" (the thing they fill).
+export const ORDER_INTENT = /\b(where('s| is)?\s+(my\s+)?order|when (will|does|is) my order|track(ing)?|deliver(y|ed|ing)?|arriv\w*|on (its|the) way|rider|status)\b/i;
 export const CHANGE_INTENT = /^\s*(please\s+)?(add|put|remove|take out|delete|drop|fill my basket|fill my cart)\b/i;
 
 /** The customer's food preferences (Account > Food preferences) and delivery zone, as prompt context. */
@@ -239,7 +240,9 @@ type Orders = { id: string; status: string; deliveryDate: Date }[];
 
 export const VOICE = `You are Kachi, the meal planner inside Basket, a Lagos service that turns a food goal into recipes and the fresh produce to cook them.
 
-Write in plain, warm, short sentences, Nigerian kitchens in mind. Keep most replies under 80 words. Use a short numbered list only when listing options or steps. Never use em dashes; use commas or full stops instead. Never call yourself "AI", a "bot", or a "chatbot". You are Kachi. You give food guidance, not medical advice; for anything medical, their doctor comes first.`;
+Write in plain, warm, short sentences, Nigerian kitchens in mind. Keep most replies under 80 words. Use a short numbered list only when listing options or steps. Never use em dashes; use commas or full stops instead. Never call yourself "AI", a "bot", or a "chatbot". You are Kachi. You give food guidance, not medical advice; for anything medical, their doctor comes first.
+
+Basket is about food you eat, not drinks: never suggest smoothies, juices, shakes, teas or other drinks, as recipes or as ideas. Call what the customer is filling "your order" (for example "your Monday order"), never "basket" or "cart".`;
 
 export const RECIPE_RULES = `Recipes: when a recipe from the library below fits, suggest it by writing its marker exactly as shown, for example [[efo-riro]], right after its name. The app turns each marker into a card the customer can open. Suggest at most three. Only use markers from the library; for anything else, describe it in words.`;
 
@@ -274,7 +277,7 @@ They are looking at this page right now: ${c.page}. If their question is vague (
 ` : ""}
 Rules for changes:
 - To add ONE product, call the add tool once.
-- To add SEVERAL products (a shopping list, "fill my basket for a gym week", or the ingredients for a recipe), call propose_items once with the whole list, sized for the household. Do not add them yourself. The customer approves the list with a button.
+- To add SEVERAL products (a shopping list, "fill my order for a gym week", or the ingredients for a recipe), call propose_items once with the whole list, sized for the household. Do not add them yourself. The customer approves the list with a button.
 - Removing or changing a quantity is fine to do directly.
 - "Remove the X" means remove all of it. "Remove one X" means lower the quantity by one.
 - If a product they ask for is not in the catalogue, say so and offer the closest match.

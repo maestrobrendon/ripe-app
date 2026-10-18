@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { isBuyable, isOffered, snapQuantity } from "@/lib/product";
@@ -32,15 +33,15 @@ export const isMember = (u: Pick<CurrentUser, "subscriptionTierId"> | null | und
 /** The price this customer pays for a product, now. */
 export const priceFor = (p: { memberPrice: number; standardPrice: number }, member: boolean) => (member ? p.memberPrice : p.standardPrice);
 
-/** The delivery the customer is looking at: the one in the cookie if it's theirs, else the most recently touched. Never creates one. */
-export async function readActiveDelivery(userId: string) {
+/** The delivery the customer is looking at: the one in the cookie if it's theirs, else the most recently touched. Never creates one. Once per render. */
+export const readActiveDelivery = cache(async (userId: string) => {
   const wanted = (await cookies()).get(ACTIVE_DELIVERY_COOKIE)?.value;
   if (wanted) {
     const owned = await prisma.basket.findFirst({ where: { id: wanted, userId } });
     if (owned) return owned;
   }
   return prisma.basket.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } });
-}
+});
 
 /** Remember which delivery the customer is looking at. Route handlers and server actions only. */
 export async function rememberActiveDelivery(basketId: string) {

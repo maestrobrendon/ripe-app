@@ -114,6 +114,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         contact={{ name: user.name ?? "", phone: user.phone ? formatPhone(user.phone) : "", email: user.email ?? "" }}
         credit={credit}
         transfer={transferReady(settings.transfer) ? settings.transfer : null}
+        draftDefaults={{ line1: user.address ?? "", zoneId: zones.some((z) => z.id === user.deliveryZoneId) ? user.deliveryZoneId : null }}
       />
     </div>
   );

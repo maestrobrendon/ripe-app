@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -82,7 +83,8 @@ export async function getCurrentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-export async function getCurrentUser() {
+/** The signed-in customer, looked up once per page render however many components ask. */
+export const getCurrentUser = cache(async () => {
   const token = await readToken();
   if (!token) return null;
 
@@ -95,7 +97,7 @@ export async function getCurrentUser() {
   // Suspended (or erased) by staff: every existing session stops working at once.
   if (session.user.suspendedAt || session.user.erasedAt) return null;
   return session.user;
-}
+});
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
