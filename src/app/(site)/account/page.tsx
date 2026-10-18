@@ -61,7 +61,7 @@ export default async function AccountPage() {
     prisma.user.count({ where: { referredById: user.id, referralRewardedAt: { not: null } } }),
     getSiteSettings(),
     ensureReferralCode(user),
-    prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { name: true, isStanding: true } }),
+    prisma.basket.findMany({ where: { userId: user.id, oneOff: false }, orderBy: { createdAt: "asc" }, select: { name: true, isStanding: true } }),
     confirmRight(user),
     prisma.savedRecipe.count({ where: { userId: user.id } }),
     prisma.pushSubscription.count({ where: { userId: user.id } }),

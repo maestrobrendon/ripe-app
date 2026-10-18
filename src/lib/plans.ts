@@ -45,7 +45,7 @@ export async function activatePlan(userId: string, tierId: string, deliveryDay?:
     const first = await tx.basket.findFirst({ where: { userId }, orderBy: { createdAt: "asc" } });
     if (!first) await tx.basket.create({ data: { userId, isStanding: true, deliveryDay: day, pricingMode: "MEMBER" } });
     else {
-      await tx.basket.updateMany({ where: { userId }, data: { isStanding: true } });
+      await tx.basket.updateMany({ where: { userId, oneOff: false }, data: { isStanding: true } });
       if (deliveryDay) await tx.basket.update({ where: { id: first.id }, data: { deliveryDay } });
     }
     // Whatever they were waiting on is settled by this.

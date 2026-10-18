@@ -5,8 +5,7 @@ import { getOrCreateActiveDelivery, isMember } from "@/lib/order-container";
 import { basketLimitFor } from "@/lib/basket";
 import { getDeliveryCycle, liveOrdersFor, zoneForUser } from "@/lib/delivery";
 import { cutoffFor, lagosDate, nextDeliveryDate } from "@/lib/delivery-dates";
-import { dayName, deliveryName, orderRef } from "@/lib/delivery-labels";
-import type { DeliveryDay } from "@/generated/prisma/enums";
+import { basketLabels, deliveryName, orderRef } from "@/lib/delivery-labels";
 import { basketCycle, confirmRight } from "@/lib/basket-rules";
 import { customerStatusLabel } from "@/lib/order-status";
 import { creditBalance } from "@/lib/credit";
@@ -39,7 +38,7 @@ export default async function HomePage() {
   const [delivery, zone, right] = await Promise.all([getOrCreateActiveDelivery(user), zoneForUser(user.id), confirmRight(user)]);
 
   const [deliveries, cycle, liveRows, items, lastOrder, credit, menu, monthOrders, ordered] = await Promise.all([
-    prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { id: true, name: true, deliveryDay: true, _count: { select: { items: true } } } }),
+    prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { id: true, name: true, deliveryDay: true, oneOff: true, _count: { select: { items: true } } } }),
     getDeliveryCycle(delivery, zone),
     liveOrdersFor(user.id),
     prisma.basketItem.findMany({ where: { basketId: delivery.id }, select: { productId: true, product: { select: { slug: true, category: true, availability: true } } } }),
@@ -80,15 +79,8 @@ export default async function HomePage() {
 
   /* -------------------------------- names -------------------------------- */
 
-  // Unnamed baskets are "My basket"; with more than one, each is called by its day.
-  // Two on the same day are numbered: "Saturday basket", "Saturday basket 2".
-  const unnamed = deliveries.filter((d) => !d.name?.trim());
-  const labelOf = (d: { id: string; name: string | null; deliveryDay: DeliveryDay }) => {
-    if (d.name?.trim() || unnamed.length < 2) return deliveryName(d);
-    const sameDay = unnamed.filter((u) => u.deliveryDay === d.deliveryDay);
-    const n = sameDay.findIndex((u) => u.id === d.id);
-    return `${dayName(d.deliveryDay)} basket${n > 0 ? ` ${n + 1}` : ""}`;
-  };
+  const labels = basketLabels(deliveries);
+  const labelOf = (d: { id: string; name: string | null; oneOff?: boolean }) => labels.get(d.id) ?? deliveryName(d);
 
   /* ------------------------------ live orders ------------------------------ */
 
@@ -135,12 +127,15 @@ export default async function HomePage() {
   /* ------------------------------ the basket ------------------------------ */
 
   // Members' baskets run in 4-week cycles from when they joined.
-  const weeks = member && delivery.isStanding && zone ? await basketCycle(delivery, cycle.day, zone, user.subscribedAt) : null;
-  const status: BasketStatus = !right.ok ? "trial-used" : right.trial ? "trial" : delivery.isStanding ? "running" : "paused";
+  const weeks = member && delivery.isStanding && !delivery.oneOff && zone ? await basketCycle(delivery, cycle.day, zone, user.subscribedAt) : null;
+  const status: BasketStatus = delivery.oneOff && right.ok ? "oneoff" : !right.ok ? "trial-used" : right.trial ? "trial" : delivery.isStanding ? "running" : "paused";
 
-  const list = deliveries.map((d) => ({ id: d.id, label: labelOf(d), itemCount: d._count.items }));
+  // An empty one-time order stays out of the way unless it's the one open.
+  const list = deliveries
+    .filter((d) => !d.oneOff || d._count.items > 0 || d.id === delivery.id)
+    .map((d) => ({ id: d.id, label: labelOf(d), itemCount: d._count.items, oneOff: d.oneOff }));
   const limit = basketLimitFor(member, user.subscriptionTier?.slug);
-  const canAddMore = limit === null || deliveries.length < limit;
+  const canAddMore = limit === null || deliveries.filter((d) => !d.oneOff).length < limit;
   const monthSaved = monthOrders.reduce((s, o) => s + o.items.reduce((t, i) => t + Math.max(0, i.product.standardPrice - i.unitPrice) * i.quantity, 0), 0);
 
   return (

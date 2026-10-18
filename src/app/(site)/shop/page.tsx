@@ -6,6 +6,7 @@ import { formatNaira } from "@/lib/format";
 import { OFFERED, toCardData } from "@/lib/product";
 import { ProductCard } from "@/components/product-card";
 import { Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
+import { AddTargetChip } from "@/components/add-target";
 import type { Prisma, Product, ProductCategory } from "@/generated/prisma/client";
 import "@/app/(bare)/home-menu/home-menu.css";
 
@@ -78,7 +79,10 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       {user ? (
         // A customer already knows how pricing works: a plain page title, then the shelves.
         <div className="hm-wrap pt-6 sm:pt-8">
-          <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Shop</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Shop</h1>
+            <AddTargetChip />
+          </div>
           <p className="mt-1 text-[15px] text-[var(--hm-ink-2)]">
             {produceCount} fruits and vegetables, plus ready-made boxes.
             {!isSubscriber && avgSaving > 0 && (

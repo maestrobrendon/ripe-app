@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getOrCreateActiveDelivery, readActiveDelivery, writeDeliveryLine, OrderError } from "@/lib/order-container";
 import { zoneForUser } from "@/lib/delivery";
-import { orderPhrase } from "@/lib/delivery-labels";
+import { basketLabels, orderPhrase } from "@/lib/delivery-labels";
 
 /*
  * What the customer is filling, as one view for every page and the header.
@@ -126,9 +126,14 @@ async function whoFor(user: Awaited<ReturnType<typeof getCurrentUser>>): Promise
 
 async function deliveryView(user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>, basketId: string | null): Promise<CartView> {
   const who = await whoFor(user);
-  const basket = basketId ? await prisma.basket.findFirst({ where: { id: basketId, userId: user.id }, include: ITEMS_INCLUDE }) : null;
+  const [basket, all] = await Promise.all([
+    basketId ? prisma.basket.findFirst({ where: { id: basketId, userId: user.id }, include: ITEMS_INCLUDE }) : null,
+    prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { id: true, name: true, deliveryDay: true, oneOff: true } }),
+  ]);
   if (!basket) return { ...EMPTY, ...who, container: "delivery", deliveryId: null, deliveryLabel: null };
-  return buildView(basket.items, who, { container: "delivery", deliveryId: basket.id, deliveryLabel: orderPhrase(basket) });
+  // With one basket it's "your basket"; with several, the name Home shows, so "Add to …" is never ambiguous.
+  const label = basket.oneOff || all.length < 2 ? orderPhrase(basket) : (basketLabels(all).get(basket.id) ?? orderPhrase(basket));
+  return buildView(basket.items, who, { container: "delivery", deliveryId: basket.id, deliveryLabel: label });
 }
 
 /** The view for Server Components and the header. Never creates anything or sets a cookie. */

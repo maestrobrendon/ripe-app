@@ -11,7 +11,7 @@ import { transferReady } from "@/lib/site-settings-schema";
 import { isBuyable } from "@/lib/product";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { normalizePhone, phoneVariants } from "@/lib/phone";
-import { isMember, ownedDelivery, priceFor } from "@/lib/order-container";
+import { isMember, ownedDelivery, priceFor, rememberActiveDelivery } from "@/lib/order-container";
 import { getDeliveryCycle } from "@/lib/delivery";
 import { ADDRESS_SELECT, addressLine, saveAddress, type AddressInput } from "@/lib/addresses";
 import { creditBalance } from "@/lib/credit";
@@ -134,9 +134,19 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   /* Tidy up around it */
   await Promise.all([
     // A basket keeps its items: next week's delivery starts from the same produce.
-    basket.deliveryDay !== cycle.day ? prisma.basket.update({ where: { id: basket.id }, data: { deliveryDay: cycle.day } }) : null,
+    // A one-time order is done once it's confirmed: it empties, ready for next time.
+    basket.oneOff
+      ? prisma.basketItem.deleteMany({ where: { basketId: basket.id } })
+      : basket.deliveryDay !== cycle.day
+        ? prisma.basket.update({ where: { id: basket.id }, data: { deliveryDay: cycle.day } })
+        : null,
     rememberContact(user, name, phone),
   ]);
+  // After a one-time order, Home and the shop go back to the customer's regular basket.
+  if (basket.oneOff) {
+    const regular = await prisma.basket.findFirst({ where: { userId: user.id, oneOff: false }, orderBy: { updatedAt: "desc" }, select: { id: true } });
+    if (regular) await rememberActiveDelivery(regular.id);
+  }
 
   const ref = orderRef(order.id);
   const link = `${appOrigin()}/orders/${order.id}?t=${encodeURIComponent(order.accessToken)}`;

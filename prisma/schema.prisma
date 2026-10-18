@@ -660,6 +660,9 @@ model Basket {
   goalTag           String?
   // What the customer calls this delivery: "Home", "For Mum". Null: the day names it.
   name              String?
+  /// A one-time order: delivered once on any delivery day, never repeats or reminds,
+  /// doesn't count toward the basket limit, and empties after it's confirmed.
+  oneOff            Boolean            @default(false)
   items             BasketItem[]
   windows           ShoppingWindow[]
   orders            Order[]

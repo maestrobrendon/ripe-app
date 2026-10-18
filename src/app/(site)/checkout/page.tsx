@@ -118,11 +118,12 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
       <BackButton fallback="/basket" label="Your basket" />
-      <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{basket.name?.trim() ? `Confirm ${basketName(basket)}` : "Confirm your basket"}</h1>
+      <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{basket.oneOff ? "Confirm your one-time order" : basket.name?.trim() ? `Confirm ${basketName(basket)}` : "Confirm your basket"}</h1>
       <p className="mt-1 text-[15px] text-muted">Nothing is charged automatically. You pay when it arrives.</p>
 
       <CheckoutFlow
         basketId={basket.id}
+        oneOff={basket.oneOff}
         lines={lines.map((i) => ({
           productId: i.productId,
           name: i.product.name,

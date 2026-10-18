@@ -57,14 +57,32 @@ export function timeLeft(ms: number): string {
   return `${days} day${days === 1 ? "" : "s"} left`;
 }
 
-/** A basket's name: what the customer called it, else "My basket". */
-export const basketName = (b: { name: string | null }) => b.name?.trim() || "My basket";
+type Named = { name: string | null; oneOff?: boolean };
+
+/** A basket's name: what the customer called it, else "My basket". A one-time order is always "One-time order". */
+export const basketName = (b: Named) => (b.oneOff ? "One-time order" : b.name?.trim() || "My basket");
 
 /** What a basket is called in a list (the day is shown beside it, not in the name). */
-export const deliveryName = (b: { name: string | null }) => basketName(b);
+export const deliveryName = (b: Named) => basketName(b);
 
-/** How a basket reads in a sentence: "your basket", or its own name ("For Mum"). */
-export const orderPhrase = (b: { name: string | null }) => (b.name?.trim() ? b.name.trim() : "your basket");
+/** How a basket reads in a sentence: "your basket", its own name ("For Mum"), or "your one-time order". */
+export const orderPhrase = (b: Named) => (b.oneOff ? "your one-time order" : b.name?.trim() ? b.name.trim() : "your basket");
+
+/**
+ * What each of a customer's baskets is called in lists. Named ones keep their
+ * name and a one-time order is "One-time order"; with more than one unnamed
+ * basket, each is called by its day ("Saturday basket", "Saturday basket 2").
+ */
+export function basketLabels(baskets: { id: string; name: string | null; deliveryDay: DeliveryDay; oneOff?: boolean }[]) {
+  const unnamed = baskets.filter((b) => !b.oneOff && !b.name?.trim());
+  return new Map(
+    baskets.map((b) => {
+      if (b.oneOff || b.name?.trim() || unnamed.length < 2) return [b.id, basketName(b)];
+      const n = unnamed.filter((u) => u.deliveryDay === b.deliveryDay).findIndex((u) => u.id === b.id);
+      return [b.id, `${dayName(b.deliveryDay)} basket${n > 0 ? ` ${n + 1}` : ""}`];
+    }),
+  );
+}
 
 /** #ABCD1234, the reference customers see everywhere. */
 export const orderRef = (id: string) => `#${id.slice(-8).toUpperCase()}`;

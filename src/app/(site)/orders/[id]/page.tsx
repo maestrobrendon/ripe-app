@@ -37,6 +37,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       deliveryRun: { include: { rider: true } },
       deliveryZone: { select: { cutoffHour: true } },
       issues: { orderBy: { createdAt: "desc" } },
+      basket: { select: { oneOff: true } },
     },
   });
   if (!order) notFound();
@@ -68,6 +69,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
       {placed && !stopped && (
         <PlacedMoment
+          title={order.basket?.oneOff ? "Order confirmed" : "Basket confirmed"}
           when={`${longDate(order.deliveryDate)}, ${DELIVERY_WINDOW}`}
           pay={paymentLine({ paidAt: order.paidAt, paymentMethod: order.paymentMethod, total: order.total, status: order.status }, formatNaira)}
           receiptTo={order.customerEmail}

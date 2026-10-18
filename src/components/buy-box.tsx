@@ -9,6 +9,8 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { flyToCart } from "@/components/ui/fly-to-cart";
+import { AddTargetSheet } from "@/components/add-target";
+import { haptic } from "@/lib/haptics";
 
 /**
  * The product page's buy box: one price (the one this customer pays), how many,
@@ -28,6 +30,7 @@ export function BuyBox({
 }) {
   const cart = useCart();
   const [qty, setQty] = useState(product.minOrderQty);
+  const [choosing, setChoosing] = useState(false);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const signedIn = cart.container === "delivery";
   const already = cart.quantityOf(product.id);
@@ -69,9 +72,30 @@ export function BuyBox({
       </div>
 
       <div className="mt-4">
-        <Button ref={ctaRef} onClick={add} disabled={product.soldOut || cart.loadingProductId === product.id} size="lg" className="w-full">
-          {product.soldOut ? "Sold out" : signedIn ? `Add to ${target}` : "Add to cart"}
-        </Button>
+        {signedIn && !product.soldOut ? (
+          // Split button: add here, or ⌄ to choose another basket or a one-time order.
+          <div className="flex overflow-hidden rounded-control bg-carbon">
+            <Button ref={ctaRef} onClick={add} disabled={cart.loadingProductId === product.id} size="lg" className="min-w-0 flex-1 rounded-none!">
+              <span className="truncate">Add to {target}</span>
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                haptic("selection");
+                setChoosing(true);
+              }}
+              aria-label="Choose which basket to add to"
+              className="flex w-14 shrink-0 items-center justify-center border-l border-white/20 text-paper-white transition-colors active:bg-white/10"
+            >
+              <Icon name="caretDown" size={18} weight="bold" />
+            </button>
+          </div>
+        ) : (
+          <Button ref={ctaRef} onClick={add} disabled={product.soldOut || cart.loadingProductId === product.id} size="lg" className="w-full">
+            {product.soldOut ? "Sold out" : "Add to cart"}
+          </Button>
+        )}
+        <AddTargetSheet open={choosing} onClose={() => setChoosing(false)} />
         {already > 0 && (
           <p className="mt-2 text-center text-sm text-muted">
             Already in {target}: {quantityLabel(already, product.unit)}.{" "}

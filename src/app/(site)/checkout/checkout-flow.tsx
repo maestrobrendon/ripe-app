@@ -30,6 +30,8 @@ const field =
 
 export function CheckoutFlow(props: {
   basketId: string;
+  /** A one-time order reads as an order, not a basket. */
+  oneOff?: boolean;
   lines: Line[];
   leftOut: string[];
   subtotal: number;
@@ -305,7 +307,7 @@ export function CheckoutFlow(props: {
       )}
 
       <Button size="lg" className="w-full" loading={pending} disabled={!when} onClick={submit}>
-        Confirm basket · {formatNaira(total)}
+        {props.oneOff ? "Confirm order" : "Confirm basket"} · {formatNaira(total)}
       </Button>
       <p className="-mt-1 text-center text-xs text-muted">
         {payment === "POD" ? "You pay when it arrives." : "Transfer once you see your order number."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.

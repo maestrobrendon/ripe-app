@@ -11,13 +11,13 @@ import { haptic } from "@/lib/haptics";
  * window, how it's paid), and one useful next step, putting it in the
  * calendar. The order's details follow underneath.
  */
-export function PlacedMoment({ when, pay, receiptTo, calendarHref }: { when: string; pay: string; receiptTo: string | null; calendarHref: string }) {
+export function PlacedMoment({ title, when, pay, receiptTo, calendarHref }: { title: string; when: string; pay: string; receiptTo: string | null; calendarHref: string }) {
   const rise = (i: number) => ({ initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { ...spring.smooth, delay: 0.35 + i * 0.07 } });
   return (
     <section className="mt-2 flex flex-col items-center rounded-[28px] bg-surface px-6 pt-8 pb-6 text-center ring-1 ring-hairline" aria-live="polite">
       <SuccessMark />
       <motion.h2 {...rise(0)} className="mt-5 text-[26px] leading-tight font-bold tracking-[-0.02em]">
-        Basket confirmed
+        {title}
       </motion.h2>
       <motion.p {...rise(1)} className="mt-1.5 text-[16px]">
         {when}

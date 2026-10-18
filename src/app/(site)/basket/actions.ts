@@ -9,10 +9,13 @@ import {
   addLinesToDelivery,
   createDelivery,
   getOrCreateActiveDelivery,
+  getOrCreateOneOff,
   isMember,
   ownedDelivery,
+  readActiveDelivery,
   rememberActiveDelivery,
 } from "@/lib/order-container";
+import { basketLabels, dayName } from "@/lib/delivery-labels";
 import { getDeliveryCycle, setDateSkipped, zoneForUser } from "@/lib/delivery";
 import { cutoffFor } from "@/lib/delivery-dates";
 import { buildStarterPicks } from "@/lib/starter-basket-core";
@@ -49,6 +52,50 @@ export async function selectDelivery(basketId: string) {
   redirect("/basket");
 }
 
+/* ------------------------- where the shop adds things ------------------------- */
+
+export type AddTarget = { id: string; label: string; sub: string; itemCount: number; oneOff: boolean };
+
+/** The places the shop can add to: each basket, and the one-time order (members). */
+export async function listAddTargets(): Promise<{ activeId: string | null; targets: AddTarget[]; member: boolean } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const [baskets, active] = await Promise.all([
+    prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { id: true, name: true, deliveryDay: true, oneOff: true, isStanding: true, _count: { select: { items: true } } } }),
+    readActiveDelivery(user.id),
+  ]);
+  const labels = basketLabels(baskets);
+  // Regular baskets first; the one-time order last.
+  const targets = [...baskets.filter((b) => !b.oneOff), ...baskets.filter((b) => b.oneOff)].map((b) => ({
+    id: b.id,
+    label: labels.get(b.id) ?? "My basket",
+    sub: b.oneOff ? `Delivered once, ${dayName(b.deliveryDay)}` : b.isStanding ? `Every ${dayName(b.deliveryDay)}` : dayName(b.deliveryDay),
+    itemCount: b._count.items,
+    oneOff: b.oneOff,
+  }));
+  return { activeId: active?.id ?? null, targets, member: isMember(user) };
+}
+
+/** Add things to this basket from now on (the shop, recipes and Kachi follow it). */
+export async function chooseAddTarget(basketId: string): Promise<Result> {
+  const { basket } = await mine(basketId);
+  if (!basket) return fail("We couldn't find that basket.");
+  await rememberActiveDelivery(basket.id);
+  revalidatePath("/basket");
+  return { ok: true };
+}
+
+/** Start (or go back to) the member's one-time order and add to it. */
+export async function startOneOff(): Promise<Result & { id?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return fail("Sign in again.");
+  if (!isMember(user)) return fail("One-time orders come with a membership.");
+  const basket = await getOrCreateOneOff(user);
+  await rememberActiveDelivery(basket.id);
+  revalidatePath("/basket");
+  return { ok: true, id: basket.id };
+}
+
 /** Another basket: "For Mum", on Saturdays. Members only (the cap is in createDelivery). */
 export async function newDelivery(input: { name: string; day: DeliveryDay }) {
   const user = await getCurrentUser();
@@ -74,11 +121,13 @@ export async function renameDelivery(basketId: string, name: string): Promise<Re
 export async function removeDelivery(basketId: string): Promise<Result> {
   const { user, basket } = await mine(basketId);
   if (!user || !basket) return fail("We couldn't find that basket.");
-  if ((await prisma.basket.count({ where: { userId: user.id } })) <= 1) return fail("This is your only basket, so it stays.");
-  const open = await prisma.order.count({ where: { basketId: basket.id, status: { in: ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY"] } } });
+  // A one-time order can always go; a basket only if another regular basket is left.
+  if (!basket.oneOff && (await prisma.basket.count({ where: { userId: user.id, oneOff: false } })) <= 1) return fail("This is your only basket, so it stays.");
+  // A confirmed order keeps its own copy of what's in it, so a one-time order can be discarded any time.
+  const open = basket.oneOff ? 0 : await prisma.order.count({ where: { basketId: basket.id, status: { in: ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY"] } } });
   if (open) return fail("This basket has a delivery on its way. Remove it after that arrives.");
   await prisma.basket.delete({ where: { id: basket.id } });
-  const next = await prisma.basket.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: "desc" } });
+  const next = await prisma.basket.findFirst({ where: { userId: user.id }, orderBy: [{ oneOff: "asc" }, { updatedAt: "desc" }] });
   if (next) await rememberActiveDelivery(next.id);
   return done();
 }

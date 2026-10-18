@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isBuyable, isOffered, snapQuantity } from "@/lib/product";
 import { basketLimitFor, BasketCapReachedError } from "@/lib/basket";
 import { dayIn, zoneForUser } from "@/lib/delivery";
+import { nextDeliveryDate } from "@/lib/delivery-dates";
 import type { CurrentUser } from "@/lib/session";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
@@ -40,7 +41,8 @@ export const readActiveDelivery = cache(async (userId: string) => {
     const owned = await prisma.basket.findFirst({ where: { id: wanted, userId } });
     if (owned) return owned;
   }
-  return prisma.basket.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" } });
+  // A regular basket before the one-time order, then the most recently touched.
+  return prisma.basket.findFirst({ where: { userId }, orderBy: [{ oneOff: "asc" }, { updatedAt: "desc" }] });
 });
 
 /** Remember which delivery the customer is looking at. Route handlers and server actions only. */
@@ -81,7 +83,8 @@ export async function ownedDelivery(userId: string, basketId: string | null | un
  */
 export async function createDelivery(user: UserLike, input: { name: string; day: DeliveryDay }) {
   const limit = basketLimitFor(isMember(user), user.subscriptionTier?.slug);
-  if (limit !== null && (await prisma.basket.count({ where: { userId: user.id } })) >= limit) {
+  // A one-time order isn't a basket: it doesn't count toward the limit.
+  if (limit !== null && (await prisma.basket.count({ where: { userId: user.id, oneOff: false } })) >= limit) {
     throw new BasketCapReachedError(isMember(user) ? "member" : "trial");
   }
   const zone = await zoneForUser(user.id);
@@ -93,6 +96,24 @@ export async function createDelivery(user: UserLike, input: { name: string; day:
       deliveryDay: dayIn(zone, input.day),
       pricingMode: isMember(user) ? "MEMBER" : "STANDARD",
     },
+  });
+}
+
+/**
+ * The member's one-time order: produce delivered once, on any delivery day,
+ * outside their baskets. There's at most one; it's reused (and emptied after
+ * each checkout), so this finds it or makes it.
+ */
+export async function getOrCreateOneOff(user: UserLike) {
+  const existing = await prisma.basket.findFirst({ where: { userId: user.id, oneOff: true } });
+  if (existing) return existing;
+  const zone = await zoneForUser(user.id);
+  // The soonest day the area delivers, so it can come this week.
+  const day = zone?.deliveryDays.length
+    ? zone.deliveryDays.map((d) => ({ d, at: nextDeliveryDate(d, zone.cutoffHour).getTime() })).sort((a, b) => a.at - b.at)[0].d
+    : (user.deliveryDay ?? "FRIDAY");
+  return prisma.basket.create({
+    data: { userId: user.id, oneOff: true, isStanding: false, deliveryDay: day, pricingMode: isMember(user) ? "MEMBER" : "STANDARD" },
   });
 }
 

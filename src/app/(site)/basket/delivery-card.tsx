@@ -13,7 +13,7 @@ import { useCart } from "@/components/cart-provider";
 import { DELIVERY_WINDOW, cutoffLabel, dayName, longDate, shortDate, timeLeft } from "@/lib/delivery-labels";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import type { CycleWeek, CycleWeekState } from "@/lib/basket-rules";
-import { removeDelivery, renameDelivery, setDeliveryDay, setRepeating, skipDate, type Result } from "./actions";
+import { removeDelivery, renameDelivery, setDeliveryDay, setRepeating, skipDate, startOneOff, type Result } from "./actions";
 import { NewDeliverySheet, type DayOption } from "./new-delivery-sheet";
 
 export type AreaState = { state: "ok" } | { state: "none" } | { state: "unserved"; name: string };
@@ -23,7 +23,7 @@ export type AreaState = { state: "ok" } | { state: "none" } | { state: "unserved
  * every week, one they've paused, a free account's trial basket, or a trial
  * that's been used (the produce stays, confirming needs a membership).
  */
-export type BasketStatus = "running" | "paused" | "trial" | "trial-used";
+export type BasketStatus = "running" | "paused" | "trial" | "trial-used" | "oneoff";
 
 type Sheet = null | "menu" | "day" | "skip" | "rename" | "remove" | "new";
 
@@ -130,7 +130,7 @@ export function DeliveryCard(props: {
     });
 
   const subtitle = [
-    status === "running" ? `Delivery every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used",
+    status === "oneoff" ? `One-time · Delivery ${dayName(props.day)}` : status === "running" ? `Delivery every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used",
     props.areaName,
   ]
     .filter(Boolean)
@@ -244,6 +244,10 @@ export function DeliveryCard(props: {
             </div>
           )}
 
+          {status === "oneoff" && area.state === "ok" && (
+            <p className="mt-2 px-1 text-[13px] text-muted">Comes once, then it&apos;s cleared. Your baskets aren&apos;t touched.</p>
+          )}
+
           {status === "trial" && area.state === "ok" && (
             <p className="mt-2 px-1 text-[13px] text-muted">
               Your trial basket comes once.{" "}
@@ -262,13 +266,34 @@ export function DeliveryCard(props: {
             <MenuRow icon="calendar" title={`Skip ${shortDate(dateIso)}`} sub="Nothing comes that day. Your produce stays for the week after." onClick={() => setSheet("skip")} />
           )}
           {props.member &&
+            status !== "oneoff" &&
             (props.isStanding ? (
               <MenuRow icon="recurring" title="Pause this basket" sub="It stops coming and we stop reminding you. Your produce stays here." onClick={() => run(() => setRepeating(deliveryId, false), "Paused", true, { action: () => setRepeating(deliveryId, true), ok: `Every ${dayName(props.day)} again` })} />
             ) : (
               <MenuRow icon="recurring" title="Resume every week" sub={`Every ${dayName(props.day)}, with a reminder before each one`} onClick={() => run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`, true)} />
             ))}
-          <MenuRow icon="edit" title="Rename" sub={props.name ? `Called "${props.name}"` : "Give it a name, like “For Mum”"} onClick={() => setSheet("rename")} />
-          {props.member && props.canAddMore ? (
+          {status !== "oneoff" && (
+            <MenuRow icon="edit" title="Rename" sub={props.name ? `Called "${props.name}"` : "Give it a name, like “For Mum”"} onClick={() => setSheet("rename")} />
+          )}
+          {props.member && status !== "oneoff" && (
+            <MenuRow
+              icon="box"
+              title="Start a one-time order"
+              sub="Something extra, delivered once. This basket isn't touched."
+              onClick={() =>
+                start(async () => {
+                  const r = await startOneOff();
+                  if (!r.ok) return cart.announce(r.error, "error");
+                  setSheet(null);
+                  haptic("success");
+                  await cart.refresh();
+                  router.refresh();
+                  cart.announce("One-time order open. Add what you'd like from the shop.");
+                })
+              }
+            />
+          )}
+          {status === "oneoff" ? null : props.member && props.canAddMore ? (
             <MenuRow icon="plus" title="New basket" sub="For someone else, like your mum, on its own day" onClick={() => setSheet("new")} />
           ) : (
             <MenuLink
@@ -278,7 +303,14 @@ export function DeliveryCard(props: {
               href={props.member ? "/subscribe?reason=basket-limit" : "/subscribe?reason=free-basket-used"}
             />
           )}
-          {props.canRemove && <MenuRow icon="trash" title="Remove this basket" sub="Its produce goes with it" onClick={() => setSheet("remove")} />}
+          {props.canRemove && (
+            <MenuRow
+              icon="trash"
+              title={status === "oneoff" ? "Discard this one-time order" : "Remove this basket"}
+              sub={status === "oneoff" ? "Its produce goes with it. Your baskets aren't touched." : "Its produce goes with it"}
+              onClick={() => setSheet("remove")}
+            />
+          )}
         </div>
       </BottomSheet>
 

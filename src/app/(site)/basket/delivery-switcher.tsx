@@ -17,7 +17,7 @@ export function DeliverySwitcher({
   member,
   dayOptions,
 }: {
-  deliveries: { id: string; label: string; itemCount: number }[];
+  deliveries: { id: string; label: string; itemCount: number; oneOff?: boolean }[];
   activeId: string;
   canAddMore: boolean;
   member: boolean;
@@ -44,6 +44,7 @@ export function DeliverySwitcher({
             }}
             className={`flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${on ? "border-carbon bg-carbon text-paper-white" : "border-hairline bg-surface"} ${going === d.id && pending ? "opacity-60" : ""}`}
           >
+            {d.oneOff && <Icon name="box" size={14} weight="bold" />}
             {d.label}
             <span className={`rounded-full px-1.5 text-xs ${on ? "bg-paper-white/20" : "bg-soft-mist"}`}>{d.itemCount}</span>
           </button>
