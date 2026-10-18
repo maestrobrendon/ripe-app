@@ -1,262 +1,321 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { useCart } from "@/components/cart-provider";
-import { StepIndicator } from "@/components/step-indicator";
 import { ProductImage } from "@/components/product-image";
 import { Button } from "@/components/ui/button";
-import { RadioCard } from "@/components/ui/radio-card";
-import { RollingNumber } from "@/components/ui/rolling-number";
-import { spring } from "@/lib/motion/tokens";
-import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
+import { Icon } from "@/components/ui/icon";
+import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
-import { nextDeliveryDate } from "@/lib/delivery-dates";
-import { placeOrder, type CheckoutInput } from "./actions";
-import type { DeliveryDay } from "@/generated/prisma/enums";
+import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
+import { placeOrder, type PaymentChoice } from "./actions";
 
-const STEPS = ["Address", "Delivery window", "Payment", "Review"];
-const DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
-const hourLabel = (h: number) => (h === 0 ? "midnight" : h === 12 ? "noon" : h < 12 ? `${h}am` : `${h - 12}pm`);
+type SavedAddress = {
+  id: string;
+  label: string;
+  line: string;
+  landmark: string | null;
+  isDefault: boolean;
+  zone: { id: string; name: string; served: boolean; fee: number };
+  dateIso: string | null;
+  cutoffIso: string | null;
+};
+type ZoneOption = { id: string; name: string; area: string; fee: number; dateIso: string; cutoffIso: string };
+type Line = { productId: string; name: string; quantity: string; total: number; emoji: string; publicId: string | null };
 
-export function CheckoutFlow({
-  zones,
-  defaults,
-  source,
-  basketId,
-  shoppingWindowLabel,
-}: {
-  zones: { slug: string; name: string; area: string; deliveryFee: number; deliveryDays: DeliveryDay[]; cutoffHour: number }[];
-  defaults: {
-    name: string;
-    phone: string;
-    email: string;
-    address: string;
-    zoneSlug: string;
-    deliveryDay: DeliveryDay;
-  };
-  source?: "basket";
-  basketId?: string;
-  shoppingWindowLabel?: string | null;
+const LABELS = ["Home", "Work", "Family"];
+const field = "h-12 w-full rounded-control border border-border bg-surface px-4 text-base outline-none focus:border-carbon";
+
+export function CheckoutFlow(props: {
+  basketId: string;
+  lines: Line[];
+  leftOut: string[];
+  subtotal: number;
+  memberSaving: number;
+  freePlan: boolean;
+  freeThreshold: number;
+  addresses: SavedAddress[];
+  zones: ZoneOption[];
+  contact: { name: string; phone: string; email: string };
+  credit: number;
+  transfer: { bankName: string; accountName: string; accountNumber: string } | null;
 }) {
-  const cart = useCart();
-  const isBasket = source === "basket";
-  const [[step, direction], setStepState] = useState<[number, 1 | -1]>([1, 1]);
-  const goTo = (next: number) => setStepState([next, next > step ? 1 : -1]);
-  const [form, setForm] = useState<CheckoutInput>({
-    name: defaults.name,
-    phone: defaults.phone,
-    email: defaults.email,
-    address: defaults.address,
-    zoneSlug: defaults.zoneSlug || zones[0]?.slug || "",
-    deliveryDay: defaults.deliveryDay,
-    paymentMethod: "card",
-    source,
-    basketId,
-  });
+  const usable = props.addresses.filter((a) => a.zone.served);
+  const [addressId, setAddressId] = useState<string | null>((usable.find((a) => a.isDefault) ?? usable[0])?.id ?? null);
+  const [adding, setAdding] = useState(usable.length === 0);
+  const [draft, setDraft] = useState({ label: "Home", line1: "", estate: "", landmark: "", instructions: "", altPhone: "", zoneId: props.zones[0]?.id ?? "" });
+  const [contact, setContact] = useState(props.contact);
+  const [editContact, setEditContact] = useState(!props.contact.name || !props.contact.phone);
+  const [payment, setPayment] = useState<PaymentChoice>("POD");
+  const [useCredit, setUseCredit] = useState(props.credit > 0);
+  const [showItems, setShowItems] = useState(props.lines.length <= 4);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [pending, start] = useTransition();
 
-  const set = <K extends keyof CheckoutInput>(key: K, value: CheckoutInput[K]) =>
-    setForm((f) => ({ ...f, [key]: value }));
-
-  const zone = zones.find((z) => z.slug === form.zoneSlug) ?? null;
-  // Only the days this area gets; if the chosen day isn't one, the first that is.
-  const days = DAYS.filter((d) => !zone || zone.deliveryDays.includes(d));
-  const deliveryDay = days.includes(form.deliveryDay) ? form.deliveryDay : (days[0] ?? form.deliveryDay);
-  const delivery = quoteDelivery(cart.subtotal, cart.freeDelivery, zone?.deliveryFee ?? cart.deliveryFee, cart.freeDeliveryThreshold);
-  const total = cart.subtotal + delivery.fee;
-
-  const addressValid = form.name && form.phone && form.address && form.zoneSlug;
+  // Where it's going decides the date and the fee.
+  const picked = adding ? null : props.addresses.find((a) => a.id === addressId) ?? null;
+  const draftZone = props.zones.find((z) => z.id === draft.zoneId) ?? null;
+  const when = adding ? (draftZone ? { dateIso: draftZone.dateIso, cutoffIso: draftZone.cutoffIso } : null) : picked?.dateIso && picked.cutoffIso ? { dateIso: picked.dateIso, cutoffIso: picked.cutoffIso } : null;
+  const areaFee = adding ? draftZone?.fee : picked?.zone.fee;
+  const quote = quoteDelivery(props.subtotal, props.freePlan, areaFee ?? 0, props.freeThreshold);
+  const creditUsed = useCredit ? Math.min(props.credit, props.subtotal + quote.fee) : 0;
+  const total = props.subtotal + quote.fee - creditUsed;
 
   const submit = () => {
     setError(null);
-    startTransition(async () => {
-      try {
-        await placeOrder({ ...form, deliveryDay });
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong.");
+    start(async () => {
+      const r = await placeOrder({
+        basketId: props.basketId,
+        addressId: adding ? null : addressId,
+        newAddress: adding ? { ...draft, isDefault: usable.length === 0 } : null,
+        name: contact.name,
+        phone: contact.phone,
+        email: contact.email,
+        payment,
+        useCredit,
+      });
+      // Success navigates to the order. Anything else comes back as a sentence.
+      if (r && !r.ok) {
+        setError(r.error);
+        if (r.addressId && adding) {
+          setAdding(false);
+          setAddressId(r.addressId);
+        }
       }
     });
   };
 
   return (
-    <>
-      <div className="mt-6">
-        <StepIndicator steps={STEPS} currentStep={step} />
-      </div>
+    <div className="mt-6 grid gap-4">
+      {/* When */}
+      <Section title="When">
+        {when ? (
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-mint-pop/30">
+              <Icon name="calendar" size={18} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">{longDate(when.dateIso)}</p>
+              <p className="text-sm text-muted">
+                {DELIVERY_WINDOW} · change until {cutoffLabel(when.cutoffIso)}
+              </p>
+            </div>
+            <Link href="/basket" className="shrink-0 text-sm font-semibold underline underline-offset-2">
+              Change day
+            </Link>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">Pick where we&apos;re delivering and we&apos;ll show the date.</p>
+        )}
+      </Section>
 
-      <div className="mt-8 overflow-hidden rounded-card border border-border bg-surface p-6">
-        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-          <motion.div
-            key={step}
-            custom={direction}
-            variants={{
-              enter: (d: number) => ({ x: 40 * d, opacity: 0 }),
-              center: { x: 0, opacity: 1 },
-              exit: (d: number) => ({ x: -40 * d, opacity: 0 }),
-            }}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={spring.smooth}
-          >
-            {step === 1 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-medium">Delivery address</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Full name">
-                    <input className={input} value={form.name} onChange={(e) => set("name", e.target.value)} />
-                  </Field>
-                  <Field label="Phone number">
-                    <input className={input} value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="080..." />
-                  </Field>
-                </div>
-                <Field label="Email (optional)">
-                  <input className={input} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
-                </Field>
-                <Field label="Delivery address">
-                  <textarea className={input} rows={2} value={form.address} onChange={(e) => set("address", e.target.value)} />
-                </Field>
-                <Field label="Delivery zone">
-                  <select className={input} value={form.zoneSlug} onChange={(e) => set("zoneSlug", e.target.value)}>
-                    {zones.map((z) => (
-                      <option key={z.slug} value={z.slug}>{z.name} ({z.area})</option>
-                    ))}
-                  </select>
-                </Field>
-                <Button disabled={!addressValid} onClick={() => goTo(2)} size="md">
-                  Continue
-                </Button>
-              </div>
-            )}
+      {/* Where */}
+      <Section title="Where">
+        {props.addresses.length > 0 && (
+          <div className="grid gap-2">
+            {props.addresses.map((a) => {
+              const on = !adding && a.id === addressId;
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  disabled={!a.zone.served}
+                  onClick={() => {
+                    setAdding(false);
+                    setAddressId(a.id);
+                  }}
+                  aria-pressed={on}
+                  className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-55 ${on ? "border-carbon bg-mint-pop/15" : "border-border bg-surface"}`}
+                >
+                  <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-border"}`} />
+                  <span className="min-w-0 flex-1">
+                    <b className="block font-semibold">{a.label}</b>
+                    <span className="block text-sm">{a.line}</span>
+                    <small className="block text-[13px] text-muted">
+                      {a.landmark ? `Near ${a.landmark} · ` : ""}
+                      {a.zone.name}
+                      {!a.zone.served && " · we don't deliver here yet"}
+                    </small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-            {step === 2 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-medium">Delivery window</h2>
-                {isBasket ? (
-                  <p className="rounded-lg border border-border p-3 text-sm">
-                    This basket is scheduled to ship on{" "}
-                    <span className="font-medium">{shoppingWindowLabel ?? "your chosen day"}</span>. Change it
-                    on the basket page.
-                  </p>
-                ) : (
-                  <>
-                    <p className="text-sm text-muted">
-                      We deliver on these days in {zone?.name ?? "your zone"}. Orders close at {hourLabel(zone?.cutoffHour ?? 18)} the day before.
-                    </p>
-                    <div className="space-y-2">
-                      {days.map((d) => (
-                        <RadioCard key={d} selected={deliveryDay === d} onSelect={() => set("deliveryDay", d)} groupId="delivery-day">
-                          {DELIVERY_DAY_LABEL[d]}{" "}
-                          {nextDeliveryDate(d, zone?.cutoffHour ?? 18).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} · 9am to 5pm
-                        </RadioCard>
-                      ))}
-                    </div>
-                  </>
-                )}
-                <div className="flex gap-3">
-                  <Button variant="secondary" onClick={() => goTo(1)}>Back</Button>
-                  <Button onClick={() => goTo(3)}>Continue</Button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-medium">Payment method</h2>
-                {process.env.NODE_ENV !== "production" && (
-                  <p className="inline-flex rounded-full border border-border bg-sky-wash px-2.5 py-1 text-xs font-medium text-carbon">
-                    Test mode. No real payment is taken
-                  </p>
-                )}
-                <div className="space-y-2">
-                  {(["card", "transfer"] as const).map((m) => (
-                    <RadioCard key={m} selected={form.paymentMethod === m} onSelect={() => set("paymentMethod", m)} groupId="payment-method">
-                      {m === "card" ? "Card" : "Bank transfer"}
-                      {process.env.NODE_ENV !== "production" && " (test mode)"}
-                    </RadioCard>
+        {adding ? (
+          <div className={props.addresses.length ? "mt-4 border-t border-border pt-4" : ""}>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Call this address">
+              {LABELS.map((l) => (
+                <button key={l} type="button" onClick={() => setDraft({ ...draft, label: l })} aria-pressed={draft.label === l} className={`rounded-full border px-3 py-1 text-sm ${draft.label === l ? "border-carbon bg-carbon text-paper-white" : "border-border"}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-3">
+              <Field label="House number and street">
+                <input className={field} autoComplete="address-line1" value={draft.line1} onChange={(e) => setDraft({ ...draft, line1: e.target.value })} placeholder="12 Admiralty Way" />
+              </Field>
+              <Field label="Estate or building" optional>
+                <input className={field} autoComplete="address-line2" value={draft.estate} onChange={(e) => setDraft({ ...draft, estate: e.target.value })} placeholder="Lekki Gardens, Block C, Flat 4" />
+              </Field>
+              <Field label="Nearest bus stop or landmark" optional>
+                <input className={field} value={draft.landmark} onChange={(e) => setDraft({ ...draft, landmark: e.target.value })} placeholder="Opposite the Total filling station" />
+              </Field>
+              <Field label="Area">
+                <select className={field} value={draft.zoneId} onChange={(e) => setDraft({ ...draft, zoneId: e.target.value })}>
+                  {props.zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name} ({z.area})
+                    </option>
                   ))}
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="secondary" onClick={() => goTo(2)}>Back</Button>
-                  <Button onClick={() => goTo(4)}>Continue</Button>
-                </div>
-              </div>
+                </select>
+              </Field>
+              <Field label="Gate or delivery notes" optional>
+                <textarea className={`${field} h-auto py-3`} rows={2} value={draft.instructions} onChange={(e) => setDraft({ ...draft, instructions: e.target.value })} placeholder="Tell the gate man it's for flat 4. Call on arrival." />
+              </Field>
+              <Field label="Another number we can call" optional>
+                <input className={field} type="tel" inputMode="tel" autoComplete="tel" value={draft.altPhone} onChange={(e) => setDraft({ ...draft, altPhone: e.target.value })} placeholder="0803 123 4567" />
+              </Field>
+            </div>
+            {usable.length > 0 && (
+              <button type="button" onClick={() => setAdding(false)} className="mt-3 text-sm font-semibold underline underline-offset-2">
+                Use a saved address
+              </button>
             )}
+          </div>
+        ) : (
+          <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
+            <Icon name="plus" size={14} weight="bold" />
+            Add a new address
+          </button>
+        )}
+      </Section>
 
-            {step === 4 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-medium">Review your order</h2>
-                <ul className="divide-y divide-border">
-                  {cart.items.map((i) => {
-                    const price = cart.isSubscriber ? i.memberPrice : i.standardPrice;
-                    return (
-                      <li key={i.productId} className="flex items-center gap-3 py-2 text-sm">
-                        <ProductImage
-                          publicId={i.cloudinaryPublicId}
-                          alt={i.name}
-                          emoji={i.imageEmoji}
-                          className="h-9 w-9 shrink-0"
-                          rounded="rounded-lg"
-                          emojiClassName="text-base"
-                          sizes="36px"
-                        />
-                        <span className="min-w-0 flex-1 truncate">{i.name} × {i.quantity}</span>
-                        <span className="shrink-0">{formatNaira(price * i.quantity)}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <div className="space-y-1 border-t border-border pt-4 text-sm">
-                  <Row label="Subtotal" value={formatNaira(cart.subtotal)} />
-                  <Row label="Delivery" value={delivery.isFree ? "Free" : formatNaira(delivery.fee)} />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span>
-                      <RollingNumber value={total} format={formatNaira} />
-                    </span>
-                  </div>
-                  <Row
-                    label="Delivers"
-                    value={
-                      isBasket
-                        ? `${shoppingWindowLabel ?? "Your chosen day"}, 9am to 5pm`
-                        : `${DELIVERY_DAY_LABEL[form.deliveryDay]}, 9am to 5pm`
-                    }
-                  />
-                  <Row label="To" value={`${form.address} (${zones.find((z) => z.slug === form.zoneSlug)?.name ?? ""})`} />
-                  <Row
-                    label="Payment"
-                    value={
-                      form.paymentMethod === "card"
-                        ? process.env.NODE_ENV !== "production" ? "Card (test mode)" : "Card"
-                        : process.env.NODE_ENV !== "production" ? "Bank transfer (test mode)" : "Bank transfer"
-                    }
-                  />
-                </div>
-                {error && <p className="rounded-input border border-border bg-ember/12 p-3 text-sm text-carbon">{error}</p>}
-                <div className="flex gap-3">
-                  <Button variant="secondary" onClick={() => goTo(3)} disabled={isPending}>Back</Button>
-                  <Button onClick={submit} disabled={isPending}>
-                    {isPending ? "Placing order…" : "Place order"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </>
+      {/* Contact */}
+      <Section title="Who to ask for">
+        {editContact ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Name">
+              <input className={field} autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
+            </Field>
+            <Field label="Phone">
+              <input className={field} type="tel" inputMode="tel" autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="0803 123 4567" />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Email for your receipt" optional>
+                <input className={field} type="email" inputMode="email" autoComplete="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
+              </Field>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm">
+              <b className="block font-semibold">{contact.name}</b>
+              {contact.phone}
+              {contact.email ? ` · ${contact.email}` : ""}
+            </p>
+            <button type="button" onClick={() => setEditContact(true)} className="shrink-0 text-sm font-semibold underline underline-offset-2">
+              Edit
+            </button>
+          </div>
+        )}
+      </Section>
+
+      {/* Payment */}
+      <Section title="How you'll pay">
+        <div className="grid gap-2">
+          <PayOption on={payment === "POD"} onClick={() => setPayment("POD")} title="Pay on delivery" sub="Pay the rider by transfer or card when it arrives. Nothing to pay now." />
+          {props.transfer && (
+            <PayOption on={payment === "TRANSFER"} onClick={() => setPayment("TRANSFER")} title="Bank transfer" sub="Pay into our account before it's packed. We'll show the details next." />
+          )}
+          <PayOption on={false} disabled title="Card" sub="Coming soon" />
+        </div>
+        {payment === "TRANSFER" && props.transfer && (
+          <p className="mt-3 rounded-xl bg-soft-mist p-3 text-sm">
+            {props.transfer.bankName} · {props.transfer.accountNumber} · {props.transfer.accountName}. Use your order number as the reference; you&apos;ll see it on the next page.
+          </p>
+        )}
+      </Section>
+
+      {/* Items and total */}
+      <Section title={`${props.lines.length} item${props.lines.length === 1 ? "" : "s"}`}>
+        {showItems ? (
+          <ul className="divide-y divide-border">
+            {props.lines.map((l) => (
+              <li key={l.productId} className="flex items-center gap-3 py-2 text-sm">
+                <ProductImage publicId={l.publicId} alt={l.name} emoji={l.emoji} className="size-10 shrink-0" rounded="rounded-lg" emojiClassName="text-lg" sizes="40px" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{l.name}</span>
+                  <small className="text-muted">{l.quantity}</small>
+                </span>
+                <span className="shrink-0">{formatNaira(l.total)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <button type="button" onClick={() => setShowItems(true)} className="text-sm font-semibold underline underline-offset-2">
+            Show items
+          </button>
+        )}
+        {props.leftOut.length > 0 && (
+          <p className="mt-3 rounded-xl bg-soft-mist p-3 text-xs">
+            <b className="font-semibold">Sold out this week, left out:</b> {props.leftOut.join(", ")}.
+          </p>
+        )}
+
+        <dl className="mt-4 grid gap-1.5 border-t border-border pt-4 text-sm">
+          <Row label="Items" value={formatNaira(props.subtotal)} />
+          <Row label="Delivery" value={areaFee === undefined ? "—" : quote.fee ? formatNaira(quote.fee) : "Free"} />
+          {props.credit > 0 && (
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-muted">
+                <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} className="size-4 accent-carbon" />
+                Use {formatNaira(Math.min(props.credit, props.subtotal + quote.fee))} account credit
+              </label>
+              {creditUsed > 0 && <dd className="font-medium">−{formatNaira(creditUsed)}</dd>}
+            </div>
+          )}
+          <div className="mt-1 flex items-baseline justify-between border-t border-border pt-3">
+            <dt className="font-semibold">Total</dt>
+            <dd className="text-xl font-semibold">{formatNaira(total)}</dd>
+          </div>
+          {props.memberSaving > 0 && <p className="text-xs text-muted">Membership saves you {formatNaira(props.memberSaving)} on this order.</p>}
+        </dl>
+      </Section>
+
+      {error && (
+        <p role="alert" className="rounded-xl border border-border bg-ember/12 p-3 text-sm">
+          {error}
+        </p>
+      )}
+
+      <Button size="lg" className="w-full" loading={pending} disabled={!when} onClick={submit}>
+        Confirm order · {formatNaira(total)}
+      </Button>
+      <p className="-mt-1 text-center text-xs text-muted">
+        {payment === "POD" ? "You pay when it arrives." : "Transfer once you see your order number."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.
+      </p>
+    </div>
   );
 }
 
-const input = "w-full rounded-input border border-border px-3 py-2 text-sm";
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium">{label}</span>
+      <span className="mb-1 block text-sm font-medium">
+        {label}
+        {optional && <span className="font-normal text-muted"> (optional)</span>}
+      </span>
       {children}
     </label>
   );
@@ -264,9 +323,27 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between text-muted">
-      <span>{label}</span>
-      <span className="text-right">{value}</span>
+    <div className="flex items-baseline justify-between">
+      <dt className="text-muted">{label}</dt>
+      <dd className="font-medium">{value}</dd>
     </div>
+  );
+}
+
+function PayOption({ on, onClick, title, sub, disabled }: { on: boolean; onClick?: () => void; title: string; sub: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={on}
+      className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-50 ${on ? "border-carbon bg-mint-pop/15" : "border-border bg-surface"}`}
+    >
+      <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-border"}`} />
+      <span>
+        <b className="block font-semibold">{title}</b>
+        <small className="block text-[13px] text-muted">{sub}</small>
+      </span>
+    </button>
   );
 }

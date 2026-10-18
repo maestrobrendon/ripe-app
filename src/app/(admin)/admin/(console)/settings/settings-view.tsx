@@ -53,6 +53,26 @@ export function SettingsView({ settings, defaults, changed, canManage }: { setti
           <Input id="s-free" name="freeThreshold" type="number" min={0} max={10000000} required defaultValue={settings.delivery.freeThreshold} disabled={!canManage} />
         </Field>
       </SettingCard>
+
+      <SettingCard
+        k="transfer"
+        title="Bank transfer"
+        hint="Customers who choose bank transfer at checkout pay into this account, with their order number as the reference. Mark those orders paid once the money arrives. Leave it empty to offer pay on delivery only."
+        changed={changed.transfer}
+        canManage={canManage}
+        warn={!settings.transfer.accountNumber ? "No account yet, so checkout offers pay on delivery only." : undefined}
+        read={(f) => ({ bankName: String(f.get("bankName") ?? ""), accountName: String(f.get("accountName") ?? ""), accountNumber: String(f.get("accountNumber") ?? "").replace(/\D/g, "") })}
+      >
+        <Field label="Bank" htmlFor="s-bank">
+          <Input id="s-bank" name="bankName" maxLength={60} defaultValue={settings.transfer.bankName} disabled={!canManage} />
+        </Field>
+        <Field label="Account name" htmlFor="s-acct-name">
+          <Input id="s-acct-name" name="accountName" maxLength={80} defaultValue={settings.transfer.accountName} disabled={!canManage} />
+        </Field>
+        <Field label="Account number" htmlFor="s-acct-no" hint="10 digits">
+          <Input id="s-acct-no" name="accountNumber" inputMode="numeric" maxLength={10} defaultValue={settings.transfer.accountNumber} disabled={!canManage} />
+        </Field>
+      </SettingCard>
     </div>
   );
 }

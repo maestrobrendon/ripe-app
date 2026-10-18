@@ -9,7 +9,7 @@ import { useCart } from "@/components/cart-provider";
 import { useSupportVerb, useWhatsappHref } from "@/components/support-links";
 import { formatNaira } from "@/lib/format";
 import { CUSTOMER_STEPS, customerStep } from "@/lib/order-status";
-import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
+import { orderHeadline, paymentLine } from "@/lib/order-copy";
 import type { OrderStatus } from "@/generated/prisma/enums";
 import { cancelOrder, orderAgain } from "./actions";
 
@@ -41,34 +41,11 @@ export function LiveOrders({ deliveryId, orders }: { deliveryId: string; orders:
   );
 }
 
-function heading(o: LiveOrder): { title: string; body: string } {
-  const day = longDate(o.deliveryDateIso);
-  switch (o.status) {
-    case "RECEIVED":
-    case "CONFIRMED":
-      return {
-        title: `Confirmed for ${day}`,
-        body: o.canCancel ? `Need a change? Cancel before ${cutoffLabel(o.cutoffIso)}, edit, and confirm again.` : "We're getting it ready. It's checked by hand before it leaves.",
-      };
-    case "PICKING":
-    case "PACKED":
-      return { title: `Being packed for ${day}`, body: "Checked by hand before it leaves." };
-    case "OUT_FOR_DELIVERY":
-      return { title: "On its way to you", body: o.rider ? `${o.rider.name} is bringing it today, ${DELIVERY_WINDOW}.` : `Arriving today, ${DELIVERY_WINDOW}.` };
-    case "FAILED_DELIVERY":
-      return { title: "We missed you", body: "We couldn't hand it over. We'll be in touch to arrange another time." };
-    case "DELIVERED":
-      return { title: "Delivered", body: "Everything right? If anything is bruised, wrong or missing, tell us and we'll put it right." };
-    default:
-      return { title: o.statusLabel, body: "" };
-  }
-}
-
 function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOrder }) {
   const cart = useCart();
   const [pending, start] = useTransition();
   const [confirming, setConfirming] = useState<null | "cancel" | "again">(null);
-  const { title, body } = heading(o);
+  const { title, body } = orderHeadline(o);
   const step = customerStep(o.status);
   const helpHref = useWhatsappHref(`Hi, it's about order ${o.ref}.`);
   const helpVerb = useSupportVerb();
@@ -115,7 +92,7 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
       )}
 
       <p className="mt-3 text-xs text-muted">
-        {o.ref} · {o.itemCount} item{o.itemCount === 1 ? "" : "s"} · {formatNaira(o.total)} · {o.paid ? "Paid" : o.paymentMethod}
+        {o.ref} · {o.itemCount} item{o.itemCount === 1 ? "" : "s"} · {paymentLine({ paidAt: o.paid ? o.deliveryDateIso : null, paymentMethod: o.paymentMethod, total: o.total, status: o.status }, formatNaira)}
       </p>
 
       {confirming ? (

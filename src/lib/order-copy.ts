@@ -1,0 +1,62 @@
+import type { OrderStatus } from "@/generated/prisma/enums";
+import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
+
+/*
+ * How an order's state reads to the customer, wherever it's shown (Home,
+ * Orders, the order page). Client-safe. "Delivered" is only ever said once
+ * it has been.
+ */
+
+export type OrderForCopy = {
+  status: OrderStatus;
+  deliveryDateIso: string;
+  cutoffIso: string;
+  canCancel: boolean;
+  rider: { name: string } | null;
+};
+
+export function orderHeadline(o: OrderForCopy): { title: string; body: string } {
+  const day = longDate(o.deliveryDateIso);
+  switch (o.status) {
+    case "RECEIVED":
+    case "CONFIRMED":
+      return {
+        title: `Confirmed for ${day}`,
+        body: o.canCancel ? `Need a change? Cancel before ${cutoffLabel(o.cutoffIso)}, edit, and confirm again.` : "We're getting it ready. It's checked by hand before it leaves.",
+      };
+    case "PICKING":
+    case "PACKED":
+      return { title: `Being packed for ${day}`, body: "Checked by hand before it leaves." };
+    case "OUT_FOR_DELIVERY":
+      return { title: "On its way to you", body: o.rider ? `${o.rider.name} is bringing it today, ${DELIVERY_WINDOW}.` : `Arriving today, ${DELIVERY_WINDOW}.` };
+    case "FAILED_DELIVERY":
+      return { title: "We missed you", body: "We couldn't hand it over. We'll be in touch to arrange another time." };
+    case "DELIVERED":
+      return { title: "Delivered", body: "Everything right? If anything is bruised, wrong or missing, tell us and we'll put it right." };
+    case "CANCELLED":
+      return { title: "Cancelled", body: "This order won't be delivered." };
+    case "REFUNDED":
+      return { title: "Refunded", body: "We've refunded this order." };
+  }
+}
+
+/** What an order's payment looks like to the customer. */
+export function paymentLine(o: { paidAt: Date | string | null; paymentMethod: string; total: number; status: OrderStatus }, naira: (n: number) => string): string {
+  if (o.paidAt) return `Paid · ${o.paymentMethod}`;
+  if (o.status === "CANCELLED" || o.status === "REFUNDED") return o.paymentMethod;
+  if (/transfer/i.test(o.paymentMethod)) return `Bank transfer · waiting for ${naira(o.total)}`;
+  if (/delivery/i.test(o.paymentMethod)) return `Pay ${naira(o.total)} when it arrives`;
+  return o.paymentMethod;
+}
+
+/** The kinds of problem a customer can report, in their words. */
+export const ISSUE_KINDS = [
+  { id: "missing", label: "Something's missing" },
+  { id: "damaged", label: "Bruised or damaged" },
+  { id: "wrong", label: "Wrong item" },
+  { id: "quality", label: "Not fresh enough" },
+  { id: "late", label: "Late or no-show" },
+  { id: "other", label: "Something else" },
+] as const;
+
+export type IssueKind = (typeof ISSUE_KINDS)[number]["id"];

@@ -9,6 +9,7 @@ import { ZONE_COOKIE } from "@/lib/zone";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { buildStarterPicks, getStarterCandidates } from "@/lib/starter-basket";
 import { createUserBasket } from "@/lib/basket";
+import { mergeGuestCartIntoBasket } from "@/lib/order-container";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { appOrigin } from "@/lib/site";
 import { sendSignupAttemptEmail } from "@/lib/email";
@@ -146,6 +147,8 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   }
 
   await createSession(userId);
+  // Anything they put in a cart before signing up goes into their order too.
+  await mergeGuestCartIntoBasket(userId).catch(() => {});
 
   // The welcome screen shows the week they picked; recipe slugs are not personal.
   const menuSlugs = new Set((await getMenu()).map((r) => r.slug));

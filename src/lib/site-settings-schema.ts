@@ -22,6 +22,12 @@ export const SETTING_SCHEMAS = {
     /** Cart value at or above which delivery is free for everyone. */
     freeThreshold: z.number().int().min(0).max(10_000_000),
   }),
+  transfer: z.object({
+    /** The account customers who pick "Bank transfer" pay into. All empty: transfer isn't offered. */
+    bankName: z.string().trim().max(60),
+    accountName: z.string().trim().max(80),
+    accountNumber: z.string().regex(/^(\d{10})?$/, "A 10-digit NUBAN, or empty"),
+  }),
 } as const;
 
 export type SettingKey = keyof typeof SETTING_SCHEMAS;
@@ -31,6 +37,10 @@ export const SETTING_DEFAULTS: SiteSettings = {
   announcement: { text: "Freshly selected fruit and vegetables, delivered across Lagos." },
   support: { whatsapp: SUPPORT_WHATSAPP, email: SUPPORT_EMAIL },
   delivery: { freeThreshold: FREE_DELIVERY_THRESHOLD },
+  transfer: { bankName: "", accountName: "", accountNumber: "" },
 };
+
+/** Whether there's an account to pay into, so checkout can offer bank transfer. */
+export const transferReady = (t: SiteSettings["transfer"]) => Boolean(t.bankName && t.accountName && t.accountNumber);
 
 export const SETTING_KEYS = Object.keys(SETTING_SCHEMAS) as SettingKey[];

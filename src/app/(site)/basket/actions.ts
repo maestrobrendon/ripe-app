@@ -158,7 +158,7 @@ export async function addRecipeMissing(basketId: string, recipeSlug: string): Pr
 export async function cancelOrder(orderId: string): Promise<Result> {
   const user = await getCurrentUser();
   if (!user) return fail("Sign in again to change this order.");
-  const order = await prisma.order.findFirst({ where: { id: orderId, userId: user.id }, include: { deliveryZone: { select: { cutoffHour: true } } } });
+  const order = await prisma.order.findFirst({ where: { id: orderId, userId: user.id }, include: { deliveryZone: { select: { cutoffHour: true } }, items: true } });
   if (!order) return fail("We couldn't find that order.");
   if (order.status !== "RECEIVED") return fail("We've already started on this order. Message us and we'll help.");
   const cutoff = cutoffFor(order.deliveryDate, order.deliveryZone?.cutoffHour ?? 18);
@@ -174,6 +174,11 @@ export async function cancelOrder(orderId: string): Promise<Result> {
     },
   });
   await audit({ actorType: "CUSTOMER", actorId: user.id, action: "order.cancelled_by_customer", targetType: "Order", targetId: order.id, summary: "Cancelled before cutoff" });
+  // A one-off delivery emptied at checkout: put the items back so they can be changed and confirmed again.
+  const basket = order.basketId ? await ownedDelivery(user.id, order.basketId) : null;
+  if (basket && (await prisma.basketItem.count({ where: { basketId: basket.id } })) === 0) {
+    await addLinesToDelivery(basket.id, order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
+  }
   revalidatePath("/basket");
   revalidatePath("/orders");
   return { ok: true };

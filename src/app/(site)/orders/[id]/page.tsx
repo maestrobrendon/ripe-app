@@ -8,6 +8,16 @@ import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { CUSTOMER_STEPS, customerStep } from "@/lib/order-status";
 import { getSiteSettings } from "@/lib/site-settings";
+import { transferReady } from "@/lib/site-settings-schema";
+import { supportHref } from "@/lib/support";
+import { cutoffFor } from "@/lib/delivery-dates";
+import { DELIVERY_WINDOW, longDate, orderRef, quantityLabel } from "@/lib/delivery-labels";
+import { orderHeadline, paymentLine, ISSUE_KINDS } from "@/lib/order-copy";
+import { formatPhone } from "@/lib/phone";
+import { getOrCreateActiveDelivery } from "@/lib/order-container";
+import { OrderControls } from "./order-controls";
+
+export const metadata = { title: "Your order" };
 
 function tokenMatches(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -15,20 +25,19 @@ function tokenMatches(a: string, b: string): boolean {
   return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
 }
 
-export default async function OrderPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ t?: string }>;
-}) {
-  const [{ id }, { t }, user] = await Promise.all([params, searchParams, getCurrentUser()]);
+/** One order: where it is, what's in it, how it's paid, and what can still be done about it. */
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ t?: string; placed?: string; report?: string }> }) {
+  const [{ id }, { t, placed, report }, user] = await Promise.all([params, searchParams, getCurrentUser()]);
 
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { items: { include: { product: true } } },
+    include: {
+      items: { include: { product: true } },
+      deliveryRun: { include: { rider: true } },
+      deliveryZone: { select: { cutoffHour: true } },
+      issues: { orderBy: { createdAt: "desc" } },
+    },
   });
-
   if (!order) notFound();
 
   const ownsIt = Boolean(user && order.userId && order.userId === user.id);
@@ -36,111 +45,176 @@ export default async function OrderPage({
   // Same response as "not found" so the endpoint does not confirm the order exists.
   if (!ownsIt && !hasValidToken) notFound();
 
-  const currentIndex = customerStep(order.status) ?? -1;
+  const settings = await getSiteSettings();
+  const ref = orderRef(order.id);
+  const cutoff = cutoffFor(order.deliveryDate, order.deliveryZone?.cutoffHour ?? 18);
+  const canCancel = ownsIt && order.status === "RECEIVED" && checkOpen(cutoff);
+  const rider = order.status === "OUT_FOR_DELIVERY" && order.deliveryRun?.rider ? order.deliveryRun.rider : null;
+  const { title, body } = orderHeadline({ status: order.status, deliveryDateIso: order.deliveryDate.toISOString(), cutoffIso: cutoff.toISOString(), canCancel, rider });
+  const step = customerStep(order.status) ?? -1;
   const stopped = order.status === "CANCELLED" || order.status === "REFUNDED";
-  const isBasket = order.orderType === "SUBSCRIPTION" || order.orderType === "BASKET";
+  const canReport = ownsIt && (order.status === "DELIVERED" || order.status === "FAILED_DELIVERY") && withinDays(order.deliveredAt ?? order.deliveryDate, 7);
+  const activeDelivery = ownsIt && user ? await getOrCreateActiveDelivery(user) : null;
+  const activeCount = activeDelivery ? await prisma.basketItem.count({ where: { basketId: activeDelivery.id } }) : 0;
+  const unpaidTransfer = !order.paidAt && /transfer/i.test(order.paymentMethod) && !stopped && transferReady(settings.transfer);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <p className="text-sm text-muted">Order #{order.id.slice(-8)}</p>
-      <h1 className="mt-1 text-3xl font-semibold">
-        {stopped ? (order.status === "REFUNDED" ? "Order refunded" : "Order cancelled") : isBasket ? "Basket order confirmed" : "Order confirmed"}
-      </h1>
-      <p className="mt-2 text-sm text-muted">
-        Delivering {order.deliveryDate.toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" })} to{" "}
-        {order.address} ({order.zoneName})
-      </p>
+    <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
+      {ownsIt && (
+        <Link href="/orders" className="text-sm font-semibold underline underline-offset-2">
+          All orders
+        </Link>
+      )}
 
-      {stopped ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-6 text-sm">
-          <p className="font-medium">{order.status === "REFUNDED" ? "This order was refunded." : "This order was cancelled and won't be delivered."}</p>
-          {order.cancelReason && <p className="mt-1 text-muted">{order.cancelReason}</p>}
-          <p className="mt-3 text-muted">
-            Questions?{" "}
-            <a href={`https://wa.me/${(await getSiteSettings()).support.whatsapp}`} className="font-medium text-carbon underline">
-              Message us on WhatsApp
-            </a>
-            .
+      {placed && !stopped && (
+        <div className="mt-3 flex items-start gap-3 rounded-2xl bg-mint-pop/25 p-4">
+          <Check size={20} weight="bold" className="mt-0.5 shrink-0" aria-hidden />
+          <p className="text-sm">
+            <b className="font-semibold">Order confirmed.</b> We&apos;ll message you when it&apos;s on its way.
+            {order.customerEmail ? ` A receipt is on its way to ${order.customerEmail}.` : ""}
           </p>
         </div>
-      ) : (
-      <div className="mt-8 rounded-card border border-border bg-surface p-6">
-        {order.status === "FAILED_DELIVERY" && (
-          <p className="mb-5 rounded-lg bg-soft-mist px-3 py-2 text-sm">
-            We couldn&apos;t complete your delivery. We&apos;ll be in touch to arrange another time.
-          </p>
-        )}
-        <ol className="flex items-start justify-between">
+      )}
+
+      <p className="mt-4 text-sm text-muted">Order {ref}</p>
+      <h1 className="mt-1 text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">{title}</h1>
+      <p className="mt-1 text-sm text-muted">{body}</p>
+
+      {!stopped && step >= 0 && (
+        <ol className="mt-5 flex items-start justify-between" aria-label="Progress">
           {CUSTOMER_STEPS.map((label, i) => (
             <li key={label} className="relative flex flex-1 flex-col items-center text-center">
-              {/* Connector sits between this circle's centre and the next one's,
-                  vertically centred on the circle (top: half its height) — not
-                  layered over the circles themselves. */}
-              {i < CUSTOMER_STEPS.length - 1 && (
-                <span
-                  aria-hidden
-                  className={`absolute top-4 left-1/2 h-px w-full ${i < currentIndex ? "bg-carbon" : "bg-border"}`}
-                />
-              )}
-              <span
-                className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
-                  i <= currentIndex ? "bg-carbon text-white" : "border border-border bg-surface text-muted"
-                }`}
-              >
-                {i <= currentIndex ? <Check size={14} weight="bold" aria-hidden /> : i + 1}
+              {i < CUSTOMER_STEPS.length - 1 && <span aria-hidden className={`absolute top-4 left-1/2 h-px w-full ${i < step ? "bg-carbon" : "bg-border"}`} />}
+              <span className={`relative z-10 flex size-8 items-center justify-center rounded-full text-xs font-medium ${i <= step ? "bg-carbon text-white" : "border border-border bg-surface text-muted"}`}>
+                {i <= step ? <Check size={14} weight="bold" aria-hidden /> : i + 1}
               </span>
-              <span className={`mt-2 text-xs ${i <= currentIndex ? "font-medium" : "text-muted"}`}>
-                {label}
-              </span>
+              <span className={`mt-2 text-xs ${i <= step ? "font-medium" : "text-muted"}`}>{label}</span>
             </li>
           ))}
         </ol>
-      </div>
       )}
 
-      <div className="mt-8">
-        <h2 className="mb-3 text-lg font-medium">Items</h2>
-        <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+      {rider && (
+        <div className="mt-5 flex items-center gap-3 rounded-2xl border border-carbon bg-mint-pop/15 p-4">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">{rider.name}</p>
+            <p className="text-sm text-muted">Your rider · {formatPhone(rider.phone)}</p>
+          </div>
+          <a href={`tel:${rider.phone}`} className="shrink-0 rounded-full bg-carbon px-4 py-2 text-sm font-semibold text-paper-white">
+            Call
+          </a>
+        </div>
+      )}
+
+      {unpaidTransfer && (
+        <div className="mt-5 rounded-2xl border border-border bg-surface p-4 text-sm">
+          <p className="font-semibold">Transfer {formatNaira(order.total)} to</p>
+          <p className="mt-1">
+            {settings.transfer.accountName}
+            <br />
+            {settings.transfer.bankName} · <b className="font-semibold">{settings.transfer.accountNumber}</b>
+          </p>
+          <p className="mt-2 text-muted">Use {ref} as the reference. We&apos;ll pack it once the money arrives, and mark it paid here.</p>
+        </div>
+      )}
+
+      {ownsIt && (
+        <OrderControls
+          orderId={order.id}
+          ref_={ref}
+          canCancel={canCancel}
+          canReport={canReport}
+          openReport={Boolean(report) && canReport}
+          canOrderAgain={order.status === "DELIVERED" || stopped}
+          activeDeliveryId={activeDelivery?.id ?? null}
+          activeHasItems={activeCount > 0}
+          itemNames={order.items.map((i) => i.product.name)}
+          helpHref={supportHref(settings.support, `Hi, it's about order ${ref}.`, `Order ${ref}`)}
+        />
+      )}
+
+      {order.issues.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">What you told us</h2>
+          <ul className="mt-2 grid gap-2">
+            {order.issues.map((i) => (
+              <li key={i.id} className="rounded-2xl border border-border bg-surface p-3 text-sm">
+                <p className="font-semibold">{ISSUE_KINDS.find((k) => k.id === i.kind)?.label ?? i.kind}</p>
+                {i.items.length > 0 && <p className="text-muted">{i.items.join(", ")}</p>}
+                {i.note && <p className="mt-1">&ldquo;{i.note}&rdquo;</p>}
+                <p className="mt-2 text-xs">{i.status === "RESOLVED" ? `Sorted: ${i.resolution ?? "resolved"}` : "We're on it. We'll message you shortly."}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="mt-6 grid gap-3 rounded-2xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
+        <Detail label="When">
+          {longDate(order.deliveryDate)}, {DELIVERY_WINDOW}
+        </Detail>
+        <Detail label="Where">
+          {order.address} ({order.zoneName})
+          {order.landmark && <span className="block text-muted">Near {order.landmark}</span>}
+          {order.deliveryNote && <span className="block text-muted">{order.deliveryNote}</span>}
+        </Detail>
+        <Detail label="Contact">
+          {order.customerName} · {formatPhone(order.customerPhone)}
+          {order.altPhone && <span className="block text-muted">Also {formatPhone(order.altPhone)}</span>}
+        </Detail>
+        <Detail label="Payment">{paymentLine(order, formatNaira)}</Detail>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Items</h2>
+        <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
           {order.items.map((i) => (
-            <li key={i.id} className="flex items-center gap-3 p-4 text-sm">
-              <ProductImage
-                publicId={i.product.cloudinaryPublicId}
-                alt={i.product.name}
-                emoji={i.product.imageEmoji}
-                className="h-10 w-10 shrink-0"
-                rounded="rounded-lg"
-                emojiClassName="text-lg"
-                sizes="40px"
-              />
-              <span className="min-w-0 flex-1 truncate">{i.product.name} × {i.quantity}</span>
+            <li key={i.id} className="flex items-center gap-3 p-3 text-sm">
+              <ProductImage publicId={i.product.cloudinaryPublicId} alt={i.product.name} emoji={i.product.imageEmoji} className="size-10 shrink-0" rounded="rounded-lg" emojiClassName="text-lg" sizes="40px" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{i.product.name}</span>
+                <small className="text-muted">{quantityLabel(i.quantity, i.product.unit)}</small>
+              </span>
               <span className="shrink-0">{formatNaira(i.unitPrice * i.quantity)}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-3 space-y-1 px-1 text-sm">
-          <div className="flex justify-between text-muted">
-            <span>Subtotal</span>
-            <span>{formatNaira(order.subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-muted">
-            <span>Delivery</span>
-            <span>{order.deliveryFee === 0 ? "Free" : formatNaira(order.deliveryFee)}</span>
-          </div>
+        <dl className="mt-3 grid gap-1 px-1 text-sm">
+          <Row label="Items" value={formatNaira(order.subtotal)} />
+          <Row label="Delivery" value={order.deliveryFee === 0 ? "Free" : formatNaira(order.deliveryFee)} />
+          {order.creditApplied > 0 && <Row label="Account credit" value={`−${formatNaira(order.creditApplied)}`} />}
           <div className="flex justify-between font-semibold">
-            <span>Total</span>
-            <span>{formatNaira(order.total)}</span>
+            <dt>Total</dt>
+            <dd>{formatNaira(order.total)}</dd>
           </div>
-          <div className="flex justify-between text-muted">
-            <span>Payment</span>
-            <span>{order.paymentMethod}</span>
-          </div>
-        </div>
-      </div>
+        </dl>
+      </section>
+    </div>
+  );
+}
 
-      <div className="mt-8 flex gap-4">
-        <Link href="/shop" className="text-sm font-medium text-carbon underline">Keep shopping</Link>
-        <Link href="/account" className="text-sm font-medium text-carbon underline">Your account</Link>
-      </div>
+function checkOpen(cutoff: Date) {
+  return Date.now() < cutoff.getTime();
+}
+
+function withinDays(d: Date, days: number) {
+  return Date.now() - d.getTime() <= days * 86_400_000;
+}
+
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-0.5">{children}</p>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-muted">
+      <dt>{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
 }
