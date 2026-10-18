@@ -54,7 +54,10 @@ export default async function RecipesPage({
   const { tab: tabParam, goal, ingredient, saved, week: weekParam, for: forParam } = await searchParams;
 
   const [user, allProducts, menuCards, MENU] = await Promise.all([getCurrentUser(), prisma.product.findMany(), getMenuCards(), getMenu()]);
-  const HEADER_DISHES = pickDishes(MENU, HEADER_SLUGS);
+  // Signed in, "Picked for you" means their goal's recipes come first.
+  const userGoal = MENU_GOALS.find((g) => g.starterSlug === (user?.preferences?.primaryGoal ?? ""))?.id ?? null;
+  const byGoal = <T extends { goal: string }>(list: T[]) => (userGoal ? [...list.filter((r) => r.goal === userGoal), ...list.filter((r) => r.goal !== userGoal)] : list);
+  const HEADER_DISHES = userGoal ? byGoal(MENU.filter((r) => r.image)).slice(0, 3) : pickDishes(MENU, HEADER_SLUGS);
   const bySlug = new Map(allProducts.map((p) => [p.slug, p]));
   const byId = new Map(allProducts.map((p) => [p.id, p]));
 
@@ -81,13 +84,17 @@ export default async function RecipesPage({
     prisma.recipe.findMany({
       where: {
         status: "PUBLISHED",
+        // The menu above already shows its recipes, and one without a photo isn't ready.
+        onMenu: false,
+        image: { not: null },
+        NOT: { image: "" },
         ...(goal ? { goalTags: { has: goal } } : {}),
         ...(ingredientProduct ? { ingredientProductIds: { has: ingredientProduct.id } } : {}),
         ...(isSavedFilter ? { id: { in: Array.from(savedRecipeIds) } } : {}),
       },
       orderBy: { title: "asc" },
     }),
-    prisma.recipe.count(),
+    prisma.recipe.count({ where: { status: "PUBLISHED", onMenu: false, image: { not: null }, NOT: { image: "" } } }),
   ]);
 
   const prefs = user?.preferences;
@@ -185,7 +192,13 @@ export default async function RecipesPage({
             <p className="mt-1.5 text-[15px] text-[var(--hm-ink-2)]">Open a recipe for amounts, tools and steps, then add what it needs in one tap.</p>
           </div>
         )}
-        <MenuBrowser recipes={menuCards} ingredientNames={ingredientNames} initialGoal={initialMenuGoal} />
+        <MenuBrowser
+          recipes={user ? byGoal(menuCards) : menuCards}
+          ingredientNames={ingredientNames}
+          initialGoal={initialMenuGoal}
+          savedIds={user ? Array.from(savedRecipeIds) : undefined}
+          signedIn={Boolean(user)}
+        />
       </div>
     </section>
   );
@@ -228,7 +241,7 @@ export default async function RecipesPage({
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-heading-lg">Quick produce ideas</h2>
+          <h2 className="text-heading-lg">More ideas</h2>
           <p className="mt-2 text-muted">
             {isFiltered
               ? `${recipes.length} of ${totalRecipes} recipes match.`
@@ -295,7 +308,8 @@ export default async function RecipesPage({
               slug: r.slug,
               title: r.title,
               summary: r.summary,
-              instructions: r.instructions,
+              instructions: r.membersOnly && !isSubscriber ? "" : r.instructions,
+              methodLocked: r.membersOnly && !isSubscriber,
               ingredients: r.ingredientProductIds
                 .map((id) => byId.get(id))
                 .filter((p): p is NonNullable<typeof p> => Boolean(p))
@@ -305,7 +319,7 @@ export default async function RecipesPage({
                   imageEmoji: p.imageEmoji,
                   cloudinaryPublicId: p.cloudinaryPublicId,
                   price: isSubscriber ? p.memberPrice : p.standardPrice,
-                  have: isSubscriber && activeBasketProductIds.has(p.id),
+                  have: activeBasketProductIds.has(p.id),
                 })),
             }),
           )}
@@ -366,7 +380,6 @@ export default async function RecipesPage({
             defaultGoal={prefs?.primaryGoal ?? "general-wellness"}
             defaultServings={defaultServings}
             signedIn={Boolean(user)}
-            isSubscriber={isSubscriber}
           />
         </div>
       </div>
@@ -385,7 +398,7 @@ export default async function RecipesPage({
               </h1>
               <p className="hm-lede mt-4 max-w-2xl">
                 Bowls, wraps, salads and quick pans from around the world, rebuilt around Lagos produce. Every recipe shows what
-                comes in your basket, how much you need and how to cook it, step by step.
+                we bring, how much you need and how to cook it, step by step.
               </p>
             </div>
             <div className="hidden grid-cols-2 grid-rows-2 gap-3 lg:grid lg:h-[360px]" aria-hidden>
@@ -502,7 +515,7 @@ export default async function RecipesPage({
           {tab === "library" && (
             <>
               {menuSection}
-              {librarySection}
+              {(recipes.length > 0 || isFiltered) && librarySection}
             </>
           )}
           {tab === "planner" && plannerSection}

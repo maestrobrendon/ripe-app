@@ -1,27 +1,19 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserBaskets } from "@/lib/basket";
-import { basketDisplayNames } from "@/lib/kachi-types";
+import { readCart } from "@/lib/cart";
 import { KachiChat } from "./assistant-chat";
 
 export const metadata = { title: "Kachi. Basket" };
 
 /**
- * Kachi: opens in "Just chatting" every time (nothing can change), and only
- * acts on a basket or the cart once the customer picks one with the mode
- * pill. See src/app/api/assistant/route.ts for how each mode is scoped.
+ * Kachi: one assistant for food questions and for changes to the order the
+ * customer is filling. Every change shows as a card with Undo; Kachi never
+ * places or pays for an order. See src/app/api/assistant/route.ts.
  */
 export default async function AssistantPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/assistant");
+  const cart = await readCart();
 
-  const baskets = await getUserBaskets(user.id);
-  const names = basketDisplayNames(baskets);
-
-  return (
-    <KachiChat
-      firstName={user.name.trim().split(/\s+/)[0] || "there"}
-      baskets={baskets.map((b) => ({ id: b.id, name: names.get(b.id) ?? "Your basket" }))}
-    />
-  );
+  return <KachiChat firstName={user.name.trim().split(/\s+/)[0] || "there"} deliveryLabel={cart.deliveryLabel ?? "your order"} />;
 }

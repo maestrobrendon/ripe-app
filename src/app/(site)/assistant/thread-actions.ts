@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/session";
 import { listThreadsForUser, getOwnedThread, deleteThread, appendMessage } from "@/lib/assistant-threads";
-import { toolAddItemsToBasket, toolAddItemsToCart, toolAdjustCartItemQuantity, toolAdjustItemQuantity } from "@/lib/assistant-tools";
+import { toolAddItemsToBasket, toolAdjustItemQuantity } from "@/lib/assistant-tools";
 import { resolveScope, snapshot, diffSnapshots } from "@/lib/kachi";
 import type { KachiCard, KachiChange, KachiListItem, KachiMode, KachiScope } from "@/lib/kachi-types";
 
@@ -56,14 +56,11 @@ export async function approveKachiList(
 ): Promise<{ card: KachiCard | null; error?: string }> {
   const user = await requireUser();
   const resolved = await resolveScope(user, modeFor(scope));
-  if (!resolved) return { card: null, error: "That basket isn't available any more." };
+  if (!resolved || resolved.kind !== "basket") return { card: null, error: "That order isn't available any more." };
 
   const before = await snapshot(resolved);
   const lines = items.map((i) => ({ product_id: i.productId, quantity: i.quantity }));
-  const result =
-    resolved.kind === "basket"
-      ? await toolAddItemsToBasket(user, { basket_id: resolved.basketId, items: lines })
-      : await toolAddItemsToCart(user, { items: lines });
+  const result = await toolAddItemsToBasket(user, { basket_id: resolved.basketId, items: lines });
   if (!result.ok) return { card: null, error: result.error };
 
   const changes = await diffSnapshots(before, await snapshot(resolved));
@@ -72,7 +69,6 @@ export async function approveKachiList(
     await appendMessage(threadId, "ASSISTANT", "All in.", { cards: [card] });
   }
   revalidatePath("/basket");
-  revalidatePath("/cart");
   return { card };
 }
 
@@ -80,17 +76,13 @@ export async function approveKachiList(
 export async function undoKachiChanges(scope: KachiScope, changes: KachiChange[]): Promise<{ ok: boolean; error?: string }> {
   const user = await requireUser();
   const resolved = await resolveScope(user, modeFor(scope));
-  if (!resolved) return { ok: false, error: "That basket isn't available any more." };
+  if (!resolved || resolved.kind !== "basket") return { ok: false, error: "That order isn't available any more." };
 
   for (const c of changes) {
     const quantity = Math.max(0, Math.round(c.before));
-    const result =
-      resolved.kind === "basket"
-        ? await toolAdjustItemQuantity(user, { basket_id: resolved.basketId, product_id: c.productId, quantity })
-        : await toolAdjustCartItemQuantity(user, { product_id: c.productId, quantity });
+    const result = await toolAdjustItemQuantity(user, { basket_id: resolved.basketId, product_id: c.productId, quantity });
     if (!result.ok) return { ok: false, error: result.error };
   }
   revalidatePath("/basket");
-  revalidatePath("/cart");
   return { ok: true };
 }

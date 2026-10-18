@@ -15,6 +15,7 @@ const GOALS = new Set<string>(MENU_GOALS.map((g) => g.id));
 
 export function toMenuRecipe(r: Recipe): MenuRecipe {
   return {
+    id: r.id,
     slug: r.slug,
     title: r.title,
     hook: r.summary,

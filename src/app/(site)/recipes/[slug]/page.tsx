@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getActiveBasketReadOnly, getBasketView } from "@/lib/basket";
+import { prisma } from "@/lib/prisma";
+import { readActiveDelivery } from "@/lib/order-container";
 import { ProductImage } from "@/components/product-image";
 import { Clock, People, ShareMeter } from "@/app/(bare)/home-menu/parts/shared";
 import { getRecipeView, getRelatedCards, MENU_GOAL_LABEL } from "../recipe-data";
@@ -11,6 +12,7 @@ import { RecipeCard } from "../recipe-card";
 import { Ingredients } from "./ingredients";
 import { CookSteps } from "./cook-steps";
 import { RecipeCta } from "./recipe-cta";
+import { SaveRecipeButton } from "../save-recipe-button";
 
 // The recipe pages share the homepage's look: soft tints, photo first.
 import "@/app/(bare)/home-menu/home-menu.css";
@@ -38,16 +40,17 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
   const user = await getCurrentUser();
   const isSubscriber = Boolean(user?.subscriptionTierId);
 
-  // A subscriber's recipe knows what's already coming in their basket.
+  // Signed in, the recipe knows what's already in this week's order.
   let basketProductIds: Set<string> | undefined;
-  if (isSubscriber && user) {
-    const active = await getActiveBasketReadOnly(user.id);
-    const view = active ? await getBasketView(active.id) : null;
-    basketProductIds = new Set((view?.basket.items ?? []).map((i) => i.productId));
+  let saved = false;
+  if (user) {
+    const active = await readActiveDelivery(user.id);
+    basketProductIds = new Set(active ? (await prisma.basketItem.findMany({ where: { basketId: active.id }, select: { productId: true } })).map((i) => i.productId) : []);
   }
 
   const recipe = await getRecipeView(slug, { isSubscriber, basketProductIds });
   if (!recipe) notFound();
+  if (user && recipe.recipeId) saved = Boolean(await prisma.savedRecipe.findFirst({ where: { userId: user.id, recipeId: recipe.recipeId }, select: { id: true } }));
   const related = await getRelatedCards(recipe.slug, recipe.goal);
 
   const total = recipe.basket.length + recipe.elsewhere.length;
@@ -141,6 +144,11 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
               </ul>
             )}
             <h1 className="hm-h2 mt-4">{recipe.title}</h1>
+            {recipe.recipeId && (
+              <div className="mt-3">
+                <SaveRecipeButton recipeId={recipe.recipeId} initialSaved={saved} signedIn={Boolean(user)} inline />
+              </div>
+            )}
             <p className="hm-lede mt-4">{recipe.hook}</p>
 
             <dl className="mt-6 grid grid-cols-3 divide-x divide-[var(--hm-line)] rounded-[22px] bg-[var(--hm-tint)] py-4 text-center">
@@ -180,7 +188,7 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
         {/* The recipe, with the ask beside it on wide screens. */}
         <div className="mt-12 grid gap-12 lg:mt-16 lg:grid-cols-[1fr_340px] lg:gap-14">
           <div className="min-w-0 space-y-14">
-            <Ingredients basket={basket} elsewhere={elsewhere} serves={recipe.serves} showHave={isSubscriber} />
+            <Ingredients basket={basket} elsewhere={elsewhere} serves={recipe.serves} showHave={Boolean(user)} />
             {locked ? (
               <section aria-labelledby="method-locked" className="rounded-[28px] bg-[var(--hm-tint)] p-7 sm:p-9">
                 <h2 id="method-locked" className="hm-h3 text-[1.5rem]!">
@@ -188,7 +196,7 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
                 </h2>
                 <p className="mt-3 max-w-xl text-[16px] text-[var(--hm-ink-2)]">
                   {recipe.steps.length} steps with amounts for every ingredient, scaled to how many you&apos;re feeding. Members get every recipe, pay less on
-                  everything and get a basket that turns up each week.
+                  everything and can keep up to three deliveries.
                 </p>
                 <Link href="/subscribe" className="mt-6 inline-flex h-12 items-center rounded-full bg-carbon px-6 text-[15px] font-semibold text-paper-white">
                   See membership

@@ -15,7 +15,7 @@ export type LibraryRecipe = RecipeSheetData;
 /**
  * The "All recipes" grid: tapping a card opens the recipe sheet (one
  * consistent recipe experience across the app) instead of navigating to a
- * separate page. "Add to my timetable" hands off to the day/slot picker,
+ * separate page. "Add to my meal plan" hands off to the day/slot picker,
  * then lands the customer on the Meal Plan tab so they can see it landed.
  */
 export function RecipeLibrary({

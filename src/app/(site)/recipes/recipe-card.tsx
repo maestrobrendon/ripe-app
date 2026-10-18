@@ -2,14 +2,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, People, ShareMeter } from "@/app/(bare)/home-menu/parts/shared";
 import type { RecipeCardView } from "./recipe-data";
+import { SaveRecipeButton } from "./save-recipe-button";
 
 /**
  * A menu recipe as a card that opens its page. The same anatomy as the
  * homepage menu card (photo, time on the photo, how much Basket covers), so a
  * recipe looks the same wherever someone meets it.
  */
-export function RecipeCard({ recipe, priority = false, large = false }: { recipe: RecipeCardView; priority?: boolean; large?: boolean }) {
-  return (
+export function RecipeCard({
+  recipe,
+  priority = false,
+  large = false,
+  save,
+}: {
+  recipe: RecipeCardView;
+  priority?: boolean;
+  large?: boolean;
+  /** Show the save heart (signed-in pages). */
+  save?: { saved: boolean; signedIn: boolean };
+}) {
+  const card = (
     <Link
       href={`/recipes/${recipe.slug}`}
       className="group hm-photo flex h-full flex-col overflow-hidden rounded-[26px] bg-[var(--hm-tint)] transition-shadow duration-(--dur-base) hover:shadow-[0_18px_40px_-24px_rgb(0_0_0/0.35)]"
@@ -27,7 +39,7 @@ export function RecipeCard({ recipe, priority = false, large = false }: { recipe
           <Clock className="h-4 w-4" />
           {recipe.minutes} min
         </span>
-        <span className="absolute top-3 right-3 inline-flex h-8 items-center rounded-full bg-carbon/80 px-3 text-[12px] font-semibold text-paper-white backdrop-blur-sm">
+        <span className={`absolute top-3 inline-flex h-8 items-center rounded-full bg-carbon/80 px-3 text-[12px] font-semibold text-paper-white backdrop-blur-sm ${save && recipe.id ? "right-14" : "right-3"}`}>
           {recipe.goalLabel}
         </span>
       </div>
@@ -40,10 +52,10 @@ export function RecipeCard({ recipe, priority = false, large = false }: { recipe
           <ShareMeter have={recipe.fromBasket} total={recipe.total} />
           <p className="mt-2 flex items-center justify-between gap-3 text-[13px] font-medium text-[var(--hm-ink-2)]">
             <span>
+              We bring{" "}
               <b className="font-semibold text-carbon">
                 {recipe.fromBasket} of {recipe.total}
-              </b>{" "}
-              from your basket
+              </b>
             </span>
             <span className="inline-flex items-center gap-1">
               <People className="h-4 w-4" /> {recipe.serves}
@@ -52,5 +64,14 @@ export function RecipeCard({ recipe, priority = false, large = false }: { recipe
         </div>
       </div>
     </Link>
+  );
+  if (!save || !recipe.id) return card;
+  return (
+    <div className="relative h-full [&>a]:h-full">
+      {card}
+      <div className="absolute top-1 right-1">
+        <SaveRecipeButton recipeId={recipe.id} initialSaved={save.saved} signedIn={save.signedIn} />
+      </div>
+    </div>
   );
 }

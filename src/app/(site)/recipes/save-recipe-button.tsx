@@ -14,16 +14,20 @@ export function SaveRecipeButton({
   recipeId,
   initialSaved,
   signedIn,
+  inline = false,
 }: {
   recipeId: string;
   initialSaved: boolean;
   signedIn: boolean;
+  /** A labelled pill in the page's flow, instead of a heart over a card. */
+  inline?: boolean;
 }) {
   const [saved, setSaved] = useState(initialSaved);
   const [isPending, startTransition] = useTransition();
 
-  const baseClass =
-    "tap-target absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface/90 backdrop-blur-sm";
+  const baseClass = inline
+    ? "tap-target inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold"
+    : "tap-target absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface/90 backdrop-blur-sm";
 
   if (!signedIn) {
     // Visibly present, not absent: a guest sees saving exists, just gated,
@@ -36,6 +40,7 @@ export function SaveRecipeButton({
         className={`${baseClass} text-muted`}
       >
         <Icon name="favourite" size={16} strokeWidth={1.75} />
+        {inline && "Save"}
       </Link>
     );
   }
@@ -55,6 +60,7 @@ export function SaveRecipeButton({
       className={`${baseClass} disabled:opacity-60 ${saved ? "text-ember" : "text-muted hover:text-carbon"}`}
     >
       <Icon name="favourite" size={16} strokeWidth={1.75} className={saved ? "fill-current" : undefined} />
+      {inline && <span className="text-carbon">{saved ? "Saved" : "Save"}</span>}
     </button>
   );
 }

@@ -8,6 +8,7 @@ import { formatNaira } from "@/lib/format";
 import { PREP_GROUP_LABEL, type PrepGroup } from "@/lib/produce-variety";
 import type { ProduceListLine } from "@/lib/produce-list";
 import { getProduceList, addProduceListItems } from "./produce-list-actions";
+import { useCart } from "@/components/cart-provider";
 
 const GOAL_OPTIONS: { slug: string; label: string; emoji: string }[] = [
   { slug: "weight-management", label: "Eat lighter", emoji: "⚖️" },
@@ -29,39 +30,37 @@ export function ProduceListTab({
   defaultGoal,
   defaultServings,
   signedIn,
-  isSubscriber,
 }: {
   defaultGoal: string;
   defaultServings: number;
   signedIn: boolean;
-  isSubscriber: boolean;
 }) {
   const [people, setPeople] = useState(defaultServings);
   // Older accounts may carry a goal that's no longer offered; start them on the first.
   const [goal, setGoal] = useState(GOAL_OPTIONS.some((g) => g.slug === defaultGoal) ? defaultGoal : GOAL_OPTIONS[0].slug);
   const [lines, setLines] = useState<ProduceListLine[] | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [added, setAdded] = useState<"cart" | "basket" | null>(null);
+  const cart = useCart();
+  const [added, setAdded] = useState(false);
 
   const makeList = () =>
     startTransition(async () => {
       const result = await getProduceList(goal, people);
       setLines(result);
-      setAdded(null);
+      setAdded(false);
     });
 
   const remove = (productId: string) => setLines((l) => l && l.filter((line) => line.productId !== productId));
 
   const total = lines?.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0) ?? 0;
 
-  const addTo = (destination: "cart" | "basket") =>
+  const where = cart.deliveryLabel ?? "your order";
+  const addAll = () =>
     startTransition(async () => {
       if (!lines) return;
-      await addProduceListItems(
-        lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
-        destination,
-      );
-      setAdded(destination);
+      const { added: n } = await addProduceListItems(lines.map((l) => ({ productId: l.productId, quantity: l.quantity })));
+      setAdded(true);
+      cart.announce(n ? `Added ${n} to ${where}` : "Those are already in your order");
     });
 
   if (!lines) {
@@ -179,20 +178,11 @@ export function ProduceListTab({
         ) : added ? (
           <p className="flex items-center gap-2 text-sm font-semibold text-carbon">
             <Icon name="check" size={16} />
-            Added to your {added}.
+            Added to {where}.
           </p>
-        ) : isSubscriber ? (
-          <div className="flex gap-2">
-            <button disabled={isPending} onClick={() => addTo("cart")} className="rounded-full border border-border px-4 py-2.5 text-sm font-semibold disabled:opacity-60">
-              Add to cart
-            </button>
-            <button disabled={isPending} onClick={() => addTo("basket")} className="rounded-full bg-carbon px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-              Add to basket
-            </button>
-          </div>
         ) : (
-          <button disabled={isPending} onClick={() => addTo("cart")} className="tap-target rounded-full bg-carbon px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-            Get these
+          <button disabled={isPending} onClick={addAll} className="tap-target rounded-full bg-carbon px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            Add to {where}
           </button>
         )}
       </div>

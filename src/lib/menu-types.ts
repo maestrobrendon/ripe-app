@@ -15,6 +15,8 @@
 export type MenuGoal = "lighter" | "training" | "family" | "busy" | "plants" | "fruit";
 
 export type MenuRecipe = {
+  /** The Recipe row, when it came from the database (for saving). */
+  id?: string;
   slug: string;
   title: string;
   /** One line, what makes it worth cooking. */

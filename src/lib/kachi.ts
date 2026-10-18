@@ -1,11 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getOwnedBasket, getUserBaskets } from "@/lib/basket";
-import { getOrCreateCart } from "@/lib/cart";
+import { getOrCreateActiveDelivery, isMember, ownedDelivery } from "@/lib/order-container";
+import { dayIn, getDeliveryCycle, zoneForUser } from "@/lib/delivery";
+import { cutoffLabel, longDate, orderPhrase } from "@/lib/delivery-labels";
 import type { CurrentUser } from "@/lib/session";
 import { GOAL_LABEL, PRODUCE_PREFERENCE_LABEL } from "@/lib/format";
 import {
-  basketDisplayNames,
   type KachiChange,
   type KachiListItem,
   type KachiMode,
@@ -17,20 +17,30 @@ import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
 
 /**
- * Resolves a requested mode into a scope the server trusts: a basket only if
- * it really belongs to this user, the cart as this browser's cart. Returns
- * null for "chat" (nothing can change) or a basket that isn't theirs.
+ * A scope from an earlier card (Undo, Add all), trusted only if that delivery
+ * really belongs to this customer. Signed-in customers have no cart, so an
+ * old cart card resolves to nothing.
  */
 export async function resolveScope(user: CurrentUser, mode: KachiMode): Promise<(KachiScope & { cartId?: string }) | null> {
-  if (mode.kind === "chat") return null;
-  if (mode.kind === "cart") {
-    const cart = await getOrCreateCart();
-    return { kind: "cart", name: "your cart", cartId: cart.id };
-  }
-  const basket = await getOwnedBasket(user.id, mode.basketId);
+  if (mode.kind !== "basket") return null;
+  const basket = await ownedDelivery(user.id, mode.basketId);
   if (!basket) return null;
-  const names = basketDisplayNames(await getUserBaskets(user.id));
-  return { kind: "basket", basketId: basket.id, name: names.get(basket.id) ?? "Your basket" };
+  const zone = await zoneForUser(user.id);
+  return { kind: "basket", basketId: basket.id, name: orderPhrase(basket, dayIn(zone, basket.deliveryDay)) };
+}
+
+/**
+ * Where Kachi works: the delivery the customer is filling (the same one the
+ * shop and recipes add to), and when it comes.
+ */
+export async function deliveryScope(user: CurrentUser): Promise<{ scope: KachiScope & { kind: "basket" }; when: string | null }> {
+  const delivery = await getOrCreateActiveDelivery(user);
+  const zone = await zoneForUser(user.id);
+  const cycle = await getDeliveryCycle(delivery, zone);
+  return {
+    scope: { kind: "basket", basketId: delivery.id, name: orderPhrase(delivery, cycle.day) },
+    when: cycle.date && cycle.cutoff ? `${longDate(cycle.date)}; they can change it until ${cutoffLabel(cycle.cutoff)}` : null,
+  };
 }
 
 /** Quantity per product in the scoped basket or cart, used to diff before and after a turn. */
@@ -75,11 +85,8 @@ export async function buildListItems(
   const products = await prisma.product.findMany({ where: { id: { in: items.map((i) => i.product_id) } } });
   const byId = new Map(products.map((p) => [p.id, p]));
 
-  let memberPriced = Boolean(user.subscriptionTierId);
-  if (scope.kind === "basket") {
-    const basket = await prisma.basket.findUnique({ where: { id: scope.basketId }, select: { pricingMode: true } });
-    memberPriced = basket?.pricingMode === "MEMBER";
-  }
+  // Prices follow membership, the same as checkout.
+  const memberPriced = isMember(user);
 
   const seen = new Set<string>();
   const lines: KachiListItem[] = [];
@@ -112,14 +119,6 @@ export async function contentsContext(contents: Map<string, number>) {
     select: { id: true, name: true, unit: true },
   });
   return products.map((p) => `${p.id} :: ${p.name}, ${contents.get(p.id)} x ${p.unit}`).join("\n");
-}
-
-/** The active basket's contents for chat mode, where Kachi can look but not touch. */
-export async function activeBasketContext(userId: string) {
-  const basket = await prisma.basket.findFirst({ where: { userId }, orderBy: { updatedAt: "desc" }, select: { id: true } });
-  if (!basket) return { basketId: null, lines: "This customer has no basket yet." };
-  const rows = await prisma.basketItem.findMany({ where: { basketId: basket.id } });
-  return { basketId: basket.id, lines: await contentsContext(new Map(rows.map((r) => [r.productId, r.quantity]))) };
 }
 
 /** The recipe library as prompt lines. It is small enough to hand over whole. */
@@ -251,49 +250,28 @@ function ordersContext(orders: Orders) {
     .join("\n");
 }
 
-/** Just chatting: Kachi can see the active basket but change nothing. */
-export function chatSystemPrompt(c: { firstName: string; profile: string; orders: Orders; basketLines: string; recipeLines: string; page?: string | null }) {
+/** Kachi's one mode: food help, with tools pinned to the order the customer is filling. */
+export function actingSystemPrompt(c: {
+  firstName: string;
+  profile: string;
+  scope: KachiScope;
+  when: string | null;
+  page?: string | null;
+  catalogueLines: string;
+  orders: Orders;
+  contentsLines: string;
+  recipeLines: string;
+}) {
+  const where = c.scope.name;
   return `${VOICE}
 
-You are chatting with ${c.firstName}. Help with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal, and questions about their basket and orders.
+You are helping ${c.firstName} with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal, and their orders. You can also read and change ${where}${c.when ? ` (it comes ${c.when})` : ""}, and nothing else. Use the tools to make real changes; never say something was changed unless a tool did it. You never place, confirm or pay for an order: the customer confirms it themselves on Home, and pays when it arrives. Only change the order when they ask for something to be added, removed or changed.
 
 About ${c.firstName}:
 ${c.profile}
 ${c.page ? `
 They are looking at this page right now: ${c.page}. If their question is vague ("this", "it"), it is probably about that.
 ` : ""}
-In this mode you can see their basket but cannot change anything. If they ask you to add, remove, swap or change something in their basket or cart, reply with one short sentence saying you can do it, and end the reply with the marker [[where]]. The app then asks them where it should go. Never say a change was made.
-
-${RECIPE_RULES}
-
-Their current basket (id :: name, quantity x unit):
-${c.basketLines}
-
-Recent orders (id :: status, delivery date):
-${ordersContext(c.orders)}
-
-Recipe library:
-${c.recipeLines}`;
-}
-
-/** Basket or cart mode: tools scoped to exactly one destination. */
-export function actingSystemPrompt(c: {
-  firstName: string;
-  profile: string;
-  scope: KachiScope;
-  catalogueLines: string;
-  orders: Orders;
-  contentsLines: string;
-  recipeLines: string;
-}) {
-  const where = c.scope.kind === "basket" ? `their basket "${c.scope.name}"` : "their cart (a one-time purchase)";
-  return `${VOICE}
-
-You are working on ${where} for ${c.firstName}. You can read and change ${where}, and nothing else. Use the tools to make real changes; never say something was changed unless a tool did it.
-
-About ${c.firstName}:
-${c.profile}
-
 Rules for changes:
 - To add ONE product, call the add tool once.
 - To add SEVERAL products (a shopping list, "fill my basket for a gym week", or the ingredients for a recipe), call propose_items once with the whole list, sized for the household. Do not add them yourself. The customer approves the list with a button.

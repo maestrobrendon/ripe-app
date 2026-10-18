@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ProductImage } from "@/components/product-image";
@@ -15,6 +16,8 @@ export type RecipeSheetData = {
   title: string;
   summary: string;
   instructions: string;
+  /** A members-only recipe seen by someone who isn't one: the method stays off the page. */
+  methodLocked?: boolean;
   ingredients: {
     productId: string;
     name: string;
@@ -27,12 +30,10 @@ export type RecipeSheetData = {
 
 /**
  * The one recipe sheet, opened from a tap anywhere a recipe shows up: the
- * All recipes grid or the Meal Plan tab's "See the recipe". "Get the ones
- * I'm missing" goes to the basket for a subscriber (diffed against what's
- * already there) or the cart for a free account (every ingredient, since a
- * free account has no recurring basket to diff against). "Add to my
- * timetable" is subscriber-only and handed back to the caller, which opens
- * the day/slot picker next — recipe sheet and slot picker never nest.
+ * All recipes grid or the Meal Plan tab's "See the recipe". "Add the N you
+ * don't have" adds what this week's order is missing. "Add to my meal plan"
+ * is for members and handed back to the caller, which opens the day/slot
+ * picker next — recipe sheet and slot picker never nest.
  */
 export function RecipeSheet({
   open,
@@ -94,6 +95,14 @@ export function RecipeSheet({
       </div>
 
       <h5 className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted">How to make it</h5>
+      {recipe.methodLocked && (
+        <p className="mt-2 rounded-xl bg-soft-mist p-3 text-sm">
+          The method for this one is for members.{" "}
+          <Link href="/subscribe" className="font-semibold underline underline-offset-2">
+            See membership
+          </Link>
+        </p>
+      )}
       <ol className="mt-2 space-y-2.5">
         {steps.map((step, i) => (
           <li key={i} className="flex gap-3 text-sm leading-relaxed">
@@ -127,7 +136,7 @@ export function RecipeSheet({
             onClick={() => onAddToTimetable(recipe)}
             className="tap-target w-full rounded-full bg-soft-mist py-3 text-sm font-semibold text-carbon"
           >
-            Add to my timetable
+            Add to my meal plan
           </button>
         )}
       </div>

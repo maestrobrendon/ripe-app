@@ -48,6 +48,7 @@ export type RecipeView = {
 };
 
 export type RecipeCardView = {
+  id?: string;
   slug: string;
   title: string;
   hook: string;
@@ -87,12 +88,14 @@ const slugLabel = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
 export async function getMenuCards(): Promise<RecipeCardView[]> {
   const [menu, slugs] = await Promise.all([getMenu(), getMenuSlugs()]);
   const stocked = new Set((await prisma.product.findMany({ where: { slug: { in: slugs } }, select: { slug: true } })).map((p) => p.slug));
-  return menu.map((r) => toCard(r, stocked));
+  // A recipe without its photo isn't ready to show.
+  return menu.filter((r) => r.image).map((r) => toCard(r, stocked));
 }
 
 function toCard(r: MenuRecipe, stocked: Set<string>): RecipeCardView {
   const fromBasket = r.basket.filter((s) => stocked.has(s)).length;
   return {
+    id: r.id,
     slug: r.slug,
     title: r.title,
     hook: r.hook,
@@ -108,7 +111,7 @@ function toCard(r: MenuRecipe, stocked: Set<string>): RecipeCardView {
 }
 
 export async function getRecipeView(slug: string, viewer: Viewer): Promise<RecipeView | null> {
-  const has = (id: string) => Boolean(viewer.isSubscriber && viewer.basketProductIds?.has(id));
+  const has = (id: string) => Boolean(viewer.basketProductIds?.has(id));
   const row = await getRecipeRow(slug);
   if (!row) return null;
 

@@ -25,12 +25,18 @@ export function MenuBrowser({
   recipes,
   ingredientNames,
   initialGoal,
+  savedIds,
+  signedIn = false,
 }: {
   recipes: RecipeCardView[];
+  /** Recipe ids this customer saved; omitted for guests. */
+  savedIds?: string[];
+  signedIn?: boolean;
   /** Per recipe slug, the names of everything in it, so search finds "mango" in a salad. */
   ingredientNames: Record<string, string[]>;
   initialGoal: MenuGoal | null;
 }) {
+  const saveFor = (r: RecipeCardView) => (savedIds ? { saved: Boolean(r.id && savedIds.includes(r.id)), signedIn } : undefined);
   const [goal, setGoal] = useState<MenuGoal | null>(initialGoal);
   const [maxMinutes, setMaxMinutes] = useState<number | null>(null);
   const [query, setQuery] = useState("");
@@ -118,7 +124,7 @@ export function MenuBrowser({
         <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((r, i) => (
             <li key={r.slug}>
-              <RecipeCard recipe={r} priority={i < 3} />
+              <RecipeCard recipe={r} priority={i < 3} save={saveFor(r)} />
             </li>
           ))}
         </ul>
@@ -126,16 +132,16 @@ export function MenuBrowser({
         <>
           <div className="mt-4 grid gap-5 lg:grid-cols-[1.4fr_1fr] lg:grid-rows-2">
             <div className="lg:row-span-2">
-              <RecipeCard recipe={lead} priority large />
+              <RecipeCard recipe={lead} priority large save={saveFor(lead)} />
             </div>
             {rest.slice(0, 2).map((r) => (
-              <RecipeCard key={r.slug} recipe={r} priority />
+              <RecipeCard key={r.slug} recipe={r} priority save={saveFor(r)} />
             ))}
           </div>
           <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {rest.slice(2).map((r) => (
               <li key={r.slug}>
-                <RecipeCard recipe={r} />
+                <RecipeCard recipe={r} save={saveFor(r)} />
               </li>
             ))}
           </ul>

@@ -4,6 +4,11 @@ import { ProductGrid } from "@/components/product-grid";
 import { CATEGORY_LABEL } from "@/lib/format";
 import type { Prisma, ProductCategory } from "@/generated/prisma/client";
 import { OFFERED } from "@/lib/product";
+import { getCurrentUser } from "@/lib/session";
+import { getMenu } from "@/lib/menu";
+import { getMenuCards } from "@/app/(site)/recipes/recipe-data";
+import { RecipeCard } from "@/app/(site)/recipes/recipe-card";
+import "@/app/(bare)/home-menu/home-menu.css";
 
 const CATEGORIES = ["FRUIT", "VEGETABLE", "BOX_BUNDLE", "SEASONAL"] as const;
 
@@ -18,8 +23,9 @@ export default async function SearchPage({
     max?: string;
   }>;
 }) {
-  const sp = await searchParams;
+  const [sp, user] = await Promise.all([searchParams, getCurrentUser()]);
   const q = sp.q?.trim() ?? "";
+  const member = Boolean(user?.subscriptionTierId);
 
   const where: Prisma.ProductWhereInput = {};
   if (q) {
@@ -32,11 +38,15 @@ export default async function SearchPage({
   if (sp.season === "in-season") where.inSeason = true;
   const min = Number(sp.min) || undefined;
   const max = Number(sp.max) || undefined;
-  if (min || max) where.standardPrice = { gte: min, lte: max };
+  // Price bands use the price this customer pays.
+  if (min || max) where[member ? "memberPrice" : "standardPrice"] = { gte: min, lte: max };
 
   const products = q || sp.category || sp.season || min || max
     ? await prisma.product.findMany({ where: { ...where, ...OFFERED }, orderBy: { name: "asc" } })
     : [];
+
+  // Recipes match on their name, their one-liner, or anything that goes in them.
+  const recipes = q ? await matchingRecipes(q) : [];
 
   const buildHref = (patch: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
@@ -55,7 +65,7 @@ export default async function SearchPage({
         <input
           name="q"
           defaultValue={q}
-          placeholder="Search produce"
+          placeholder="Fruit, veg or a recipe"
           className="w-64 rounded-full border border-border px-4 py-2 text-sm"
         />
         <button className="rounded-full bg-carbon px-5 py-2 text-sm font-medium text-white">Search</button>
@@ -99,7 +109,19 @@ export default async function SearchPage({
         ))}
       </div>
 
+      {recipes.length > 0 && (
+        <section className="hm mt-8" aria-label="Recipes">
+          <h2 className="text-lg font-semibold">Recipes</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recipes.slice(0, 6).map((r) => (
+              <RecipeCard key={r.slug} recipe={r} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="mt-8">
+        {recipes.length > 0 && products.length > 0 && <h2 className="mb-3 text-lg font-semibold">Produce</h2>}
         {q || sp.category || sp.season || min || max ? (
           <ProductGrid products={products} />
         ) : (
@@ -108,4 +130,12 @@ export default async function SearchPage({
       </div>
     </div>
   );
+}
+
+async function matchingRecipes(q: string) {
+  const needle = q.toLowerCase();
+  const [cards, menu, products] = await Promise.all([getMenuCards(), getMenu(), prisma.product.findMany({ where: OFFERED, select: { slug: true, name: true } })]);
+  const nameBySlug = new Map(products.map((p) => [p.slug, p.name]));
+  const words = new Map(menu.map((r) => [r.slug, [r.title, r.hook, ...r.basket.map((s) => nameBySlug.get(s) ?? s.replace(/-/g, " ")), ...r.elsewhere].join(" ").toLowerCase()]));
+  return cards.filter((c) => words.get(c.slug)?.includes(needle));
 }
