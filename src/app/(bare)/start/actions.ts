@@ -73,7 +73,7 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   const zone = found?.isServed ? found : null;
   const requestedDay = String(formData.get("deliveryDay") ?? "") as DeliveryDay;
   const deliveryDay: DeliveryDay =
-    zone && zone.deliveryDays.includes(requestedDay) ? requestedDay : (zone?.deliveryDays[0] ?? "WEDNESDAY");
+    zone && zone.deliveryDays.includes(requestedDay) ? requestedDay : (zone?.deliveryDays[0] ?? "FRIDAY");
 
   const { email, phone } = normalizeContact(contact);
 

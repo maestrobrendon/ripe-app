@@ -14,6 +14,10 @@ enum DeliveryDay {
   MONDAY
   WEDNESDAY
   FRIDAY
+  TUESDAY
+  THURSDAY
+  SATURDAY
+  SUNDAY
 }
 
 enum ProductCategory {
@@ -228,6 +232,8 @@ model User {
   // How we may message them: order updates and weekly reminders.
   notifyWhatsApp            Boolean              @default(true)
   notifyEmail               Boolean              @default(true)
+  // App (push) notifications: sent once a provider is connected, logged until then.
+  notifyPush                Boolean              @default(true)
   // Their own invite code, and who invited them (a user id), if anyone.
   referralCode              String?              @unique
   referredById              String?

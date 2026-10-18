@@ -6,6 +6,8 @@ import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { press, spring } from "@/lib/motion/tokens";
 import { DELIVERY_DAY_LABEL, formatNaira } from "@/lib/format";
+import { nextDeliveryDate } from "@/lib/delivery-dates";
+import { inWeekOrder, shortDate } from "@/lib/delivery-labels";
 import { quoteDelivery } from "@/lib/pricing";
 import type { StarterCandidate } from "@/lib/starter-basket-core";
 import type { DeliveryDay } from "@/generated/prisma/enums";
@@ -19,7 +21,7 @@ import { shortName } from "../home-menu/parts/shared";
 import { buildRecipeBasket, snapQuantity } from "./recipe-basket";
 import { createAccountFromOnboarding, type StartState } from "./actions";
 
-type Zone = { slug: string; name: string; area: string; isServed: boolean; deliveryDays: DeliveryDay[] };
+type Zone = { slug: string; name: string; area: string; isServed: boolean; deliveryDays: DeliveryDay[]; cutoffHour: number };
 type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
 
 /**
@@ -43,14 +45,16 @@ const DIETARY: [Dietary, string][] = [
   ["allergies", "Allergies or dislikes"],
 ];
 
-const DAY_INDEX: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
+/** The first delivery on that day the area can still take, by its real cutoff: the same date Home will show. */
+function firstDelivery(day: DeliveryDay, cutoffHour: number) {
+  return shortDate(nextDeliveryDate(day, cutoffHour));
+}
 
-/** The first delivery on that weekday at least two days out, so the night-before cutoff has passed for nobody. */
-function firstDelivery(day: DeliveryDay) {
-  const d = new Date();
-  d.setDate(d.getDate() + 2);
-  while (d.getDay() !== DAY_INDEX[day]) d.setDate(d.getDate() + 1);
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+/** The area's day that comes soonest, which is the one to suggest. */
+function soonestDay(z: Zone): DeliveryDay | null {
+  const days = inWeekOrder(z.deliveryDays);
+  if (!days.length) return null;
+  return days.reduce((best, d) => (nextDeliveryDate(d, z.cutoffHour) < nextDeliveryDate(best, z.cutoffHour) ? d : best));
 }
 
 /** "Monday, Wednesday and Friday". */
@@ -122,7 +126,10 @@ export function StartFlow({
   const [zone, setZone] = useState<string | null>(served.some((z) => z.slug === initialZone) ? initialZone : null);
   const [notListed, setNotListed] = useState(false);
   const [locating, setLocating] = useState<"idle" | "finding" | "denied" | "outside">("idle");
-  const [day, setDay] = useState<DeliveryDay | null>(served.find((z) => z.slug === initialZone)?.deliveryDays[0] ?? null);
+  const [day, setDay] = useState<DeliveryDay | null>(() => {
+    const z = served.find((x) => x.slug === initialZone);
+    return z ? soonestDay(z) : null;
+  });
 
   const recipeSlugs = picked ?? MENU.filter((r) => r.goal === goal).map((r) => r.slug);
   const recipes = MENU.filter((r) => recipeSlugs.includes(r.slug));
@@ -140,7 +147,7 @@ export function StartFlow({
     setNotListed(false);
     setLocating("idle");
     setZone(z.slug);
-    if (!day || !z.deliveryDays.includes(day)) setDay(z.deliveryDays[0] ?? null);
+    if (!day || !z.deliveryDays.includes(day)) setDay(soonestDay(z));
     fetch("/api/zone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: z.slug }) }).catch(() => {});
   };
   const useMyLocation = () => {
@@ -516,7 +523,7 @@ export function StartFlow({
                             <span className="block truncate text-[13px] text-(--hm-ink-2)">{z.area}</span>
                           </span>
                           <span className="relative shrink-0 text-[13px] text-(--hm-ink-3)">
-                            {z.deliveryDays.map((d) => (DELIVERY_DAY_LABEL[d] ?? d).slice(0, 3)).join(", ")}
+                            {inWeekOrder(z.deliveryDays).map((d) => (DELIVERY_DAY_LABEL[d] ?? d).slice(0, 3)).join(", ")}
                           </span>
                           <Tick on={on} />
                         </motion.button>
@@ -554,14 +561,14 @@ export function StartFlow({
                 <Kachi>Last thing before your account: which day should it arrive?</Kachi>
                 <Title>Which day suits you?</Title>
                 <p className="mt-2 text-[15px] text-(--hm-ink-2)">
-                  {chosenZone.name} gets deliveries on {listDays(chosenZone.deliveryDays)}.{" "}
+                  {chosenZone.name} gets deliveries on {listDays(inWeekOrder(chosenZone.deliveryDays))}.{" "}
                   <button type="button" onClick={() => go(STEPS.indexOf("area"))} className="font-semibold text-carbon underline underline-offset-2">
                     Change area
                   </button>
                 </p>
                 <LayoutGroup id="start-day">
                   <div className="mt-6 grid gap-2.5" role="radiogroup" aria-label="Delivery day">
-                    {chosenZone.deliveryDays.map((d) => {
+                    {inWeekOrder(chosenZone.deliveryDays).map((d) => {
                       const on = day === d;
                       return (
                         <motion.button
@@ -577,7 +584,7 @@ export function StartFlow({
                           {on && <motion.span layoutId="day-ring" transition={spring.indicator} className="pointer-events-none absolute inset-0 rounded-[20px] ring-2 ring-carbon" aria-hidden />}
                           <span className="relative min-w-0 flex-1">
                             <b className="block text-[16px] font-semibold">{DELIVERY_DAY_LABEL[d] ?? d}s</b>
-                            <span className="block text-[13px] text-(--hm-ink-2)">First one {firstDelivery(d)}, 9am to 5pm</span>
+                            <span className="block text-[13px] text-(--hm-ink-2)">First one {firstDelivery(d, chosenZone.cutoffHour)}, 9am to 5pm</span>
                           </span>
                           <Tick on={on} />
                         </motion.button>
@@ -585,7 +592,7 @@ export function StartFlow({
                     })}
                   </div>
                 </LayoutGroup>
-                <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-2)">Change it until the night before, or skip a week.</p>
+                <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-2)">Change your basket or skip a week until the evening before.</p>
               </>
             )}
 

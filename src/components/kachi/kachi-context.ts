@@ -49,7 +49,7 @@ export function kachiContext(pathname: string, signedIn: boolean, pageTitle: str
     return {
       key: "shop",
       greeting: "Tell me what you're cooking this week and I'll tell you exactly what to get, and what it costs.",
-      starters: ["What's in season?", "What do I need for jollof?", "Is membership worth it for me?"],
+      starters: ["What's in season?", "What can I make with mango?", "Is membership worth it for me?"],
       nudge: { text: "Shopping for something in particular? Tell me the dish and I'll list what to get.", chips: ["What's in season?", "Plan a week of dinners"] },
     };
   }

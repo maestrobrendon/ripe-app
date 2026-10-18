@@ -48,7 +48,7 @@ export async function makeThisMyBasket(items: { productId: string; quantity: num
   const user = await requireUser();
   const basket = await getOrCreateActiveBasket(user.id, {
     isSubscriber: Boolean(user.subscriptionTierId),
-    deliveryDay: user.deliveryDay ?? "WEDNESDAY",
+    deliveryDay: user.deliveryDay ?? "FRIDAY",
   });
   const result = await toolAddItemsToBasket(user, {
     basket_id: basket.id,

@@ -75,11 +75,11 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
   },
   "general-wellness": {
     recipes: [
-      { title: "Soup pot vegetables", uses: ["ugu", "spinach", "tomato", "bell-pepper", "onion"], note: "What people usually put in a pot of soup during the week." },
+      { title: "A big garden salad", uses: ["romaine-lettuce", "cucumber", "tomato", "carrot"], note: "A bowl of greens alongside whatever's for dinner." },
       { title: "Mixed fruit through the week", uses: ["apple", "orange", "banana"], note: "Spread across a few days rather than eaten in one sitting." },
-      { title: "Soup box, as packed", uses: ["soup-box"], note: "Ugu, spinach, tomato, pepper and onion in one pack." },
+      { title: "Sautéed greens on the side", uses: ["spinach", "tomato", "onion"], note: "Two minutes in a pan, next to eggs, plantain or a wrap." },
     ],
-    addOns: ["ugu", "spinach", "orange"],
+    addOns: ["spinach", "cucumber", "orange"],
   },
   "weight-management": {
     recipes: [
@@ -99,7 +99,7 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
   },
   "plant-based": {
     recipes: [
-      { title: "Greens for the week", uses: ["spinach", "ugu", "tomato"], note: "Wilted into stews, eggs or rice through the week." },
+      { title: "Greens for the week", uses: ["spinach", "ugu", "tomato"], note: "Sautéed into eggs, wraps and sides through the week." },
       { title: "Roast sweet potato and spinach", uses: ["sweet-potato", "spinach"], note: "A filling plate built around vegetables." },
       { title: "Avocado on everything", uses: ["avocado", "tomato"], note: "Makes a plant-based plate feel like a meal." },
     ],

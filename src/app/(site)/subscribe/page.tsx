@@ -7,7 +7,6 @@ import { OFFERED } from "@/lib/product";
 import { MEMBER_BASKET_LIMIT } from "@/lib/basket";
 import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { startSubscription } from "./actions";
-import { DeliveryDayField } from "./delivery-day-field";
 import { CancelMembershipButton, SwitchPlanButton, WithdrawRequestButton } from "./plan-buttons";
 import { pendingPlanRequest } from "@/lib/plans";
 import "@/app/(bare)/home-menu/home-menu.css";
@@ -210,11 +209,9 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                   ) : (
                     <form action={startSubscription} className={`space-y-2 ${featured ? "text-carbon" : ""}`}>
                       <input type="hidden" name="tier" value={tier.slug} />
-                      <p className={`text-[13px] font-semibold ${featured ? "text-paper-white/70" : "text-[var(--hm-ink-2)]"}`}>Your delivery day</p>
-                      <DeliveryDayField groupId={`delivery-day-${tier.slug}`} />
                       <button className={`${solid} ${featured ? "bg-paper-white text-carbon" : "bg-carbon text-paper-white"}`}>Join {tier.name}</button>
                       <p className={`text-center text-[12px] ${featured ? "text-paper-white/60" : "text-[var(--hm-ink-2)]"}`}>
-                        We&apos;ll confirm payment by email before your plan starts.
+                        We&apos;ll send payment details, and your plan starts once it arrives. Your baskets keep their days.
                       </p>
                     </form>
                   )}

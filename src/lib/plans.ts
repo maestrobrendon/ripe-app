@@ -12,7 +12,7 @@ import type { DeliveryDay } from "@/generated/prisma/enums";
  * experience can be tested without the admin. It is ignored in production.
  */
 
-export const DELIVERY_DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
+export const DELIVERY_DAYS: DeliveryDay[] = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
 export function selfServePlans(): boolean {
   return process.env.NODE_ENV !== "production" && process.env.PLAN_SELF_SERVE === "1";
@@ -31,7 +31,7 @@ export function isDeliveryDay(v: unknown): v is DeliveryDay {
 export async function activatePlan(userId: string, tierId: string, deliveryDay?: DeliveryDay | null): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { subscribedAt: true, subscriptionTierId: true, deliveryDay: true } });
-    const day = deliveryDay ?? user.deliveryDay ?? "WEDNESDAY";
+    const day = deliveryDay ?? user.deliveryDay ?? "FRIDAY";
     await tx.user.update({
       where: { id: userId },
       data: {

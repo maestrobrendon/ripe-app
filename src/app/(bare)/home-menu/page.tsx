@@ -43,7 +43,7 @@ export default async function HomeMenuPage() {
   const served = zones.filter((z) => z.isServed);
   const dayCounts = new Map<string, number>();
   for (const z of served) for (const d of z.deliveryDays) dayCounts.set(d, (dayCounts.get(d) ?? 0) + 1);
-  const commonDay = [...dayCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "WEDNESDAY";
+  const commonDay = [...dayCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "FRIDAY";
 
   const data: MenuData = {
     signedIn: Boolean(user),
@@ -52,7 +52,7 @@ export default async function HomeMenuPage() {
     estimatorCandidates: candidates.filter((c) => !cutSlugs.has(c.slug)),
     zones: served.map((z) => ({ name: z.name, days: z.deliveryDays.map((d) => DELIVERY_DAY_LABEL[d] ?? d) })),
     comingSoon: zones.filter((z) => !z.isServed).map((z) => z.name),
-    deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Wednesday",
+    deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Friday",
     memberFee: tier?.monthlyFee ?? null,
   };
 

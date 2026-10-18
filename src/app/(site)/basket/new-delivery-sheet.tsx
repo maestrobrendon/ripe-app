@@ -10,7 +10,7 @@ import { newDelivery } from "./actions";
 /** One of the area's delivery days, with its next date and when that closes. */
 export type DayOption = { day: DeliveryDay; dateIso: string; cutoffIso: string };
 
-const ALL_DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
+const ALL_DAYS: DeliveryDay[] = ["THURSDAY", "FRIDAY", "SATURDAY"];
 const NAMES = ["For Mum", "Office", "Weekend"];
 
 /** Another delivery: a name the customer will recognise, and its day. */

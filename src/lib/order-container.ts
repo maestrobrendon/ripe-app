@@ -63,7 +63,7 @@ export async function getOrCreateActiveDelivery(user: UserLike) {
     data: {
       userId: user.id,
       isStanding: isMember(user),
-      deliveryDay: dayIn(zone, user.deliveryDay ?? zone?.deliveryDays[0] ?? "WEDNESDAY"),
+      deliveryDay: dayIn(zone, user.deliveryDay ?? zone?.deliveryDays[0] ?? "FRIDAY"),
       pricingMode: isMember(user) ? "MEMBER" : "STANDARD",
     },
   });

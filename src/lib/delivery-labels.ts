@@ -8,8 +8,22 @@ import type { DeliveryDay } from "@/generated/prisma/enums";
 
 export const DELIVERY_WINDOW = "9am to 5pm";
 
-const DAY_NAME: Record<DeliveryDay, string> = { MONDAY: "Monday", WEDNESDAY: "Wednesday", FRIDAY: "Friday" };
+/** Every weekday a delivery can run on, in week order. Which ones an area uses is set per area in the admin. */
+export const WEEK_DAYS: DeliveryDay[] = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
+const DAY_NAME: Record<DeliveryDay, string> = {
+  MONDAY: "Monday",
+  TUESDAY: "Tuesday",
+  WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
+  FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
+};
 export const dayName = (d: DeliveryDay) => DAY_NAME[d] ?? d;
+export const dayShort = (d: DeliveryDay) => dayName(d).slice(0, 3);
+/** An area's days in week order, whatever order the admin ticked them in. */
+export const inWeekOrder = (days: DeliveryDay[]) => WEEK_DAYS.filter((d) => days.includes(d));
 
 const asDate = (d: Date | string) => (typeof d === "string" ? new Date(d) : d);
 

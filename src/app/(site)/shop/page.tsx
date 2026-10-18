@@ -19,7 +19,7 @@ const GROUPS: { id: ProductCategory; label: string; blurb: string }[] = [
   { id: "FRUIT", label: "Fruits", blurb: "For breakfasts, lunchboxes and snacking." },
   { id: "VEGETABLE", label: "Vegetables", blurb: "The base of every recipe on the menu." },
   { id: "SEASONAL", label: "Seasonal specials", blurb: "Only around for a few weeks of the year." },
-  { id: "BOX_BUNDLE", label: "Ready-made boxes", blurb: "Pre-picked mixes for a purpose, like a pot of soup or a week of breakfasts." },
+  { id: "BOX_BUNDLE", label: "Ready-made boxes", blurb: "Pre-picked mixes for a purpose, like a week of breakfasts or salad nights." },
 ];
 
 type Search = { category?: string; season?: string; q?: string };

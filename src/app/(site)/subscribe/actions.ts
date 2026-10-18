@@ -44,8 +44,9 @@ export async function startSubscription(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/start");
   const slug = String(formData.get("tier") ?? "").slice(0, 60);
-  const day = String(formData.get("deliveryDay") ?? "WEDNESDAY");
-  const deliveryDay = isDeliveryDay(day) ? day : "WEDNESDAY";
+  // Days belong to each basket now; joining doesn't change them.
+  const day = formData.get("deliveryDay");
+  const deliveryDay = isDeliveryDay(day) ? day : null;
 
   const tier = await prisma.subscriptionTier.findUnique({ where: { slug } });
   if (!tier) redirect("/subscribe?error=tier");

@@ -181,7 +181,7 @@ const zoneSchema = z.object({
   name: z.string().trim().min(2).max(60),
   area: z.string().trim().min(2).max(200),
   isServed: z.boolean(),
-  deliveryDays: z.array(z.enum(["MONDAY", "WEDNESDAY", "FRIDAY"])).max(3),
+  deliveryDays: z.array(z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"])).max(7),
   deliveryFee: z.number().int().min(0).max(100_000),
   cutoffHour: z.number().int().min(0).max(23),
   sortOrder: z.number().int().min(0).max(1000),
@@ -205,5 +205,23 @@ export async function saveZone(input: { id: string } & z.input<typeof zoneSchema
     // Checkout, the cart and sign-up read these.
     revalidatePath("/", "layout");
     return { ok: true, data: undefined };
+  });
+}
+
+/**
+ * One set of delivery days for every area we serve: how operations move the
+ * whole city (say, from Thursday-Saturday to Friday-Sunday) in one step.
+ * Customers whose basket ran on a dropped day move to the area's first day.
+ */
+export async function setDaysForAllAreas(input: { deliveryDays: string[] }): Promise<ActionResult<{ updated: number }>> {
+  return staffAction("zones.manage", async (ctx) => {
+    const parsed = z.object({ deliveryDays: zoneSchema.shape.deliveryDays.min(1) }).safeParse(input);
+    if (!parsed.success) return { ok: false, code: "INVALID", error: "Pick at least one day." };
+    const days = parsed.data.deliveryDays;
+    const { count } = await prisma.deliveryZone.updateMany({ where: { isServed: true }, data: { deliveryDays: days } });
+    await auditStaff(ctx, { action: "zones.days_all", targetType: "DeliveryZone", targetId: "all", summary: `Every served area now delivers ${days.join(", ")}`, diff: { deliveryDays: days } });
+    revalidatePath("/zones");
+    revalidatePath("/", "layout");
+    return { ok: true, data: { updated: count } };
   });
 }

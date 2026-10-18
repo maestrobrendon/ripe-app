@@ -10,8 +10,12 @@ export function formatNaira(amount: number): string {
 
 export const DELIVERY_DAY_LABEL: Record<string, string> = {
   MONDAY: "Monday",
+  TUESDAY: "Tuesday",
   WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
   FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {

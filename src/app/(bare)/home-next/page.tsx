@@ -35,7 +35,7 @@ const SHOWCASE: Omit<ShowcaseGoal, "picks" | "standardTotal" | "memberTotal">[] 
     slug: "family-household",
     tab: "Family",
     title: "The family table",
-    body: "Fruit the children will actually eat, and the base for the week's stew. Sized for four.",
+    body: "Fruit the children will actually eat, and vegetables for every plate. Sized for four.",
     adults: 2,
     kids: 2,
   },
@@ -90,7 +90,7 @@ export default async function HomeNextPage() {
   // says it "comes every", so the story matches what a new customer can pick.
   const dayCounts = new Map<string, number>();
   for (const z of served) for (const d of z.deliveryDays) dayCounts.set(d, (dayCounts.get(d) ?? 0) + 1);
-  const commonDay = [...dayCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "WEDNESDAY";
+  const commonDay = [...dayCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "FRIDAY";
 
   const goals: ShowcaseGoal[] = SHOWCASE.map((g) => {
     const picks = buildStarterPicks({ goalSlug: g.slug, producePreferences: [], adults: g.adults, kids: g.kids }, candidates);
@@ -110,7 +110,7 @@ export default async function HomeNextPage() {
     farm,
     zones: served.map((z) => ({ name: z.name, days: z.deliveryDays.map((d) => DELIVERY_DAY_LABEL[d] ?? d) })),
     comingSoon: zones.filter((z) => !z.isServed).map((z) => z.name),
-    deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Wednesday",
+    deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Friday",
     memberFee: tier?.monthlyFee ?? null,
     freeDeliveryThreshold: (await getSiteSettings()).delivery.freeThreshold,
     deliveryFee: BASE_DELIVERY_FEE,

@@ -218,7 +218,7 @@ const IDEAS: IdeaDef[] = [
     slug: "everyday-greens-saute",
     name: "Everyday greens sauté",
     kind: "saute",
-    aliases: ["sauteed greens", "greens saute", "greens for soup", "wilted greens"],
+    aliases: ["sauteed greens", "greens saute", "wilted greens"],
     baseServings: 4,
     timeMinutes: 15,
     produce: [
@@ -262,23 +262,6 @@ const IDEAS: IdeaDef[] = [
     pantry: ["oil", "salt"],
     method: "Fry the plantain gold, then a quick sauté of the greens with tomato and onion alongside.",
     tags: ["dinner", "family"],
-  },
-  {
-    slug: "pepper-base-batch",
-    name: "Pepper base to batch",
-    kind: "prep",
-    aliases: ["pepper base", "stew base", "blended pepper", "ata", "obe", "base for jollof", "base for stew"],
-    baseServings: 6,
-    timeMinutes: 15,
-    produce: [
-      { productSlug: "tomato", packs: 2 },
-      { productSlug: "bell-pepper", packs: 1 },
-      { productSlug: "chilli", packs: 1 },
-      { productSlug: "onion", packs: 1 },
-    ],
-    pantry: [],
-    method: "Blend it all smooth, cook down until the water goes, then portion and freeze.",
-    tags: ["batch", "prep"],
   },
   {
     slug: "washed-greens-chopped-veg",
@@ -380,12 +363,12 @@ const REDIRECTS: { match: string[]; message: string }[] = [
   {
     match: ["jollof", "fried rice", "coconut rice", "ofada rice"],
     message:
-      "We stick to fruit and vegetables, so we don't plan the whole rice dish. We can sort the pepper base and a vegetable side. Try “pepper base” or “garden salad”.",
+      "We're all about fruit and vegetables, so we don't plan rice dishes. A fresh side goes well with it: try “garden salad” or “everyday greens”.",
   },
   {
     match: ["egusi", "ogbono", "efo riro", "edikang", "oha", "afang", "bitterleaf", "banga", "okra", "okro", "draw soup", "vegetable soup", "soup"],
     message:
-      "We plan the produce, not the whole pot. We can handle your greens and pepper base. Try “greens for soup” or “pepper base”.",
+      "We don't do soups or stews: Basket is about fruit and vegetables you enjoy fresh. Try “garden salad”, “roast vegetables” or “fruit plate”.",
   },
   {
     match: ["moi moi", "moimoi", "akara", "beans", "ewa", "gari", "eba", "amala", "fufu", "pounded yam", "semo", "swallow", "tuwo", "porridge", "pottage"],
@@ -651,7 +634,7 @@ export function planFromText(text: string, products: Product[]): PlanResponse {
     if (plan) return { plan };
   }
 
-  // A direct idea match ("garden salad", "greens for soup", "pepper base")
+  // A direct idea match ("garden salad", "everyday greens", "fruit plate")
   const idea = IDEAS.find((d) => d.aliases.some((a) => t.includes(a)));
   if (idea) {
     const map = new Map(products.map((p) => [p.slug, p]));

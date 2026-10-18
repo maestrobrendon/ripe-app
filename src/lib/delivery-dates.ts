@@ -11,7 +11,7 @@ import type { DeliveryDay } from "@/generated/prisma/enums";
 
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 const DAY_MS = 86_400_000;
-export const DOW: Record<DeliveryDay, number> = { MONDAY: 1, WEDNESDAY: 3, FRIDAY: 5 };
+export const DOW: Record<DeliveryDay, number> = { SUNDAY: 0, MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, FRIDAY: 5, SATURDAY: 6 };
 
 /** The Lagos calendar date of an instant, as UTC midnight of that date. */
 export function lagosDate(now: Date): Date {

@@ -28,7 +28,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     prisma.product.findMany({ where: { tags: { has: FRESH_CUTS_TAG } }, select: { slug: true } }),
     prisma.deliveryZone.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { slug: true, name: true, area: true, isServed: true, deliveryDays: true },
+      select: { slug: true, name: true, area: true, isServed: true, deliveryDays: true, cutoffHour: true },
     }),
     cookies(),
     getGuestMenu(),

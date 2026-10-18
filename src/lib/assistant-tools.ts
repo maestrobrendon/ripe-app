@@ -165,7 +165,7 @@ export async function toolCreateBasket(user: CurrentUser) {
       const basket = await createUserBasket(user.id, {
         isSubscriber: Boolean(user.subscriptionTierId),
         tierSlug: user.subscriptionTier?.slug,
-        deliveryDay: user.deliveryDay ?? "WEDNESDAY",
+        deliveryDay: user.deliveryDay ?? "FRIDAY",
       });
       return { basketId: basket.id, isFreeTrial: basket.isFreeTrial, pricingMode: basket.pricingMode };
     } catch (err) {

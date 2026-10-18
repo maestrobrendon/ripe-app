@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import { useAdminAction } from "../step-up";
 import { Alert, Badge, Button, Card, Field, Input } from "../../_ui/kit";
-import { saveZone } from "../delivery/actions";
+import { saveZone, setDaysForAllAreas } from "../delivery/actions";
 
 type Zone = {
   id: string;
@@ -19,7 +19,8 @@ type Zone = {
   customers: number;
   orders: number;
 };
-const DAYS: DeliveryDay[] = ["MONDAY", "WEDNESDAY", "FRIDAY"];
+// Any day of the week; the customer site follows whatever is ticked here.
+const DAYS: DeliveryDay[] = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 const dayShort = (d: DeliveryDay) => d.charAt(0) + d.slice(1, 3).toLowerCase();
 const hourLabel = (h: number) => (h === 0 ? "midnight" : h === 12 ? "noon" : h < 12 ? `${h}am` : `${h - 12}pm`);
 
@@ -34,6 +35,38 @@ export function ZonesView({ canManage, zones, waitlist }: { canManage: boolean; 
     <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
       <div className="space-y-5">
         {notice && <Alert tone={notice.tone}>{notice.text}</Alert>}
+        {canManage && (
+          <Card title="Delivery days for every area">
+            <p className="-mt-2 mb-3 text-[12px] text-carbon/55">
+              Sets the same days on every area you deliver to. Sign-up, Home and checkout follow at once. Customers on a day you drop move to the area&apos;s first day.
+            </p>
+            <form
+              className="flex flex-wrap items-center gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const f = new FormData(e.currentTarget);
+                const deliveryDays = DAYS.filter((d) => f.get(`all-${d}`) === "on");
+                start(async () => {
+                  setNotice(null);
+                  const r = await run(() => setDaysForAllAreas({ deliveryDays }));
+                  if (r.ok) {
+                    setNotice({ tone: "success", text: "Every area now delivers on those days." });
+                    router.refresh();
+                  } else if (r.code !== "AUTH" && r.code !== "STEP_UP") setNotice({ tone: "error", text: r.error });
+                });
+              }}
+            >
+              {DAYS.map((d) => (
+                <label key={d} className="flex items-center gap-1.5 text-[13px]">
+                  <input type="checkbox" name={`all-${d}`} defaultChecked={zones.filter((z) => z.isServed).every((z) => z.deliveryDays.includes(d))} /> {dayShort(d)}
+                </label>
+              ))}
+              <Button size="sm" disabled={pending}>
+                Apply to every area
+              </Button>
+            </form>
+          </Card>
+        )}
         <Card className="p-0! overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-[13px]">
