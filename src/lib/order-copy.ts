@@ -64,6 +64,7 @@ export function paymentLine(o: { paidAt: Date | string | null; paymentMethod: st
   o = { ...o, paymentMethod: o.paymentMethod.replace(/\s*\(test mode\)/i, "") };
   if (o.paidAt) return `Paid · ${o.paymentMethod}`;
   if (o.status === "CANCELLED" || o.status === "REFUNDED") return o.paymentMethod;
+  if (o.status === "DELIVERED") return `${naira(o.total)} to pay · ${o.paymentMethod}`;
   if (/transfer/i.test(o.paymentMethod)) return `Bank transfer · waiting for ${naira(o.total)}`;
   if (/delivery/i.test(o.paymentMethod)) return `Pay ${naira(o.total)} when it arrives`;
   return o.paymentMethod;

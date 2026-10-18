@@ -5,7 +5,7 @@ import { useCart } from "@/components/cart-provider";
 import { LinkButton } from "@/components/ui/button";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
-import { cutoffLabel, dayName } from "@/lib/delivery-labels";
+import { cutoffLabel, dayName, shortDate } from "@/lib/delivery-labels";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 /**
@@ -66,7 +66,7 @@ export function OrderSummary({
     <>
       <aside className="hidden lg:sticky lg:top-24 lg:block">
         <div className="rounded-2xl border border-hairline bg-surface p-5">
-          <h2 className="text-lg font-semibold">This week</h2>
+          <h2 className="text-lg font-semibold">{dateIso ? `For ${shortDate(dateIso)}` : "Your basket"}</h2>
           <dl className="mt-3 grid gap-2 text-sm">
             <Row label={`Items (${t.count})`} value={formatNaira(t.subtotal)} />
             <Row label="Delivery" value={t.count === 0 ? "—" : t.fee ? formatNaira(t.fee) : "Free"} />

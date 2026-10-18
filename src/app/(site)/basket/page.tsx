@@ -151,6 +151,7 @@ export default async function HomePage() {
         canRemove={list.length > 1}
         canAddMore={canAddMore}
         member={member}
+        hasLiveOrder={liveRows.some((o) => o.basketId === delivery.id && o.status !== "DELIVERED")}
       />
 
       {live.length > 0 && <LiveOrders deliveryId={delivery.id} orders={live} />}

@@ -95,6 +95,6 @@ export async function basketCycle(
   });
 
   const today = lagosDate(now).getTime();
-  const weekNumber = Math.min(4, Math.floor((today - start.getTime()) / (7 * DAY)) + 1);
+  const weekNumber = Math.min(4, Math.max(1, Math.floor((today - start.getTime()) / (7 * DAY)) + 1));
   return { start, weeks, weekNumber };
 }

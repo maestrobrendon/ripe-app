@@ -170,7 +170,7 @@ function EmptyOrder({ deliveryId, lastOrder, goalLabel }: { deliveryId: string; 
   return (
     <section className="rounded-2xl border border-dashed border-hairline p-5">
       <h2 className="text-lg font-semibold">Nothing in this basket yet</h2>
-      <p className="mt-1 text-sm text-muted">Fill it with the fruit and vegetables you want each week. It stays as it is from week to week, and nothing is ordered until you confirm.</p>
+      <p className="mt-1 text-sm text-muted">Fill it with the fruit and vegetables you want. It stays as you leave it, and nothing is ordered until you confirm.</p>
       <div className="mt-4 grid gap-2" aria-busy={pending}>
         {lastOrder && (
           <Option

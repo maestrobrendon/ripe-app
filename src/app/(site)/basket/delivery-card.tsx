@@ -69,6 +69,8 @@ export function DeliveryCard(props: {
   canRemove: boolean;
   canAddMore: boolean;
   member: boolean;
+  /** An order from this basket is confirmed or on its way. */
+  hasLiveOrder: boolean;
 }) {
   const { deliveryId, dateIso, cutoffIso, skippedDateIso, area, status } = props;
   const router = useRouter();
@@ -90,8 +92,9 @@ export function DeliveryCard(props: {
     }
   }, [left, router]);
 
-  const run = (action: () => Promise<Result>, ok?: string) =>
+  const run = (action: () => Promise<Result>, ok?: string, closeFirst = false) =>
     start(async () => {
+      if (closeFirst) setSheet(null);
       const r = await action();
       if (!r.ok) {
         cart.announce(r.error, "error");
@@ -102,7 +105,7 @@ export function DeliveryCard(props: {
     });
 
   const eyebrow =
-    status === "running" ? `Every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket · comes once" : "Trial basket · used";
+    status === "running" ? `Every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket · comes once" : props.hasLiveOrder ? "Trial basket · confirmed" : "Trial basket · used";
 
   return (
     <section>
@@ -119,11 +122,19 @@ export function DeliveryCard(props: {
         </button>
       </div>
 
-      {status === "trial-used" ? (
+      {status === "trial-used" && props.hasLiveOrder ? (
+        <p className="mt-3 rounded-2xl bg-soft-mist px-4 py-3 text-sm">
+          Your trial basket is confirmed. To have it every week at member prices,{" "}
+          <Link href="/subscribe?reason=free-basket-used" className="font-semibold underline underline-offset-2">
+            see membership
+          </Link>
+          .
+        </p>
+      ) : status === "trial-used" ? (
         <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
           <p className="font-semibold">Keep this basket coming</p>
           <p className="mt-1 text-sm text-muted">
-            Your trial basket has been delivered, and its produce is saved here. Members get their baskets every week at member prices: we remind you before each one, you confirm, and you pay when it arrives. Nothing is charged automatically.
+            Your trial basket has been used, and this basket&apos;s produce is saved here. Members get their baskets every week at member prices: we remind you before each one, you confirm, and you pay when it arrives. Nothing is charged automatically.
           </p>
           <LinkButton href="/subscribe?reason=free-basket-used" size="sm" className="mt-3">
             See membership
@@ -227,9 +238,9 @@ export function DeliveryCard(props: {
           )}
           {props.member &&
             (props.isStanding ? (
-              <MenuRow icon="recurring" title="Pause this basket" sub="It stops coming and we stop reminding you. Your produce stays here." onClick={() => run(() => setRepeating(deliveryId, false), "Paused")} />
+              <MenuRow icon="recurring" title="Pause this basket" sub="It stops coming and we stop reminding you. Your produce stays here." onClick={() => run(() => setRepeating(deliveryId, false), "Paused", true)} />
             ) : (
-              <MenuRow icon="recurring" title="Resume every week" sub={`Every ${dayName(props.day)}, with a reminder before each one`} onClick={() => run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`)} />
+              <MenuRow icon="recurring" title="Resume every week" sub={`Every ${dayName(props.day)}, with a reminder before each one`} onClick={() => run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`, true)} />
             ))}
           <MenuRow icon="edit" title="Rename" sub={props.name ? `Called "${props.name}"` : "Give it a name, like “For Mum”"} onClick={() => setSheet("rename")} />
           {props.member && props.canAddMore ? (

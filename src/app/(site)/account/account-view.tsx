@@ -178,8 +178,12 @@ export function AccountView(props: Props) {
           <Row
             icon="parcel"
             tint="sky"
-            title={props.baskets.names.length === 1 ? "Your basket" : "Your baskets"}
-            sub={`${props.baskets.names.join(", ")}${props.baskets.running ? ` · ${props.baskets.running === props.baskets.names.length ? "every week" : `${props.baskets.running} every week`}` : ""}`}
+            title={props.baskets.names.length > 1 ? "Your baskets" : "Your basket"}
+            sub={
+              props.baskets.names.length === 0
+                ? "Start one on Home"
+                : `${props.baskets.names.join(", ")}${props.baskets.running ? ` · ${props.baskets.running === props.baskets.names.length ? "every week" : `${props.baskets.running} every week`}` : ""}`
+            }
             href="/basket"
           />
         </Group>

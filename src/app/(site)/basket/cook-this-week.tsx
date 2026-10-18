@@ -72,7 +72,13 @@ export function RecipeRow({ deliveryId, recipe: r, saved }: { deliveryId: string
     <article className="relative flex gap-3.5 rounded-2xl border border-hairline bg-surface p-3">
       {saved !== null && r.id && <SaveRecipeButton recipeId={r.id} initialSaved={saved} signedIn />}
       <Link href={`/recipes/${r.slug}`} className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-soft-mist">
-        <Image src={r.image} alt="" fill sizes="96px" className="object-cover transition-transform duration-300 hover:scale-[1.04]" />
+        {r.image ? (
+          <Image src={r.image} alt="" fill sizes="96px" className="object-cover transition-transform duration-300 hover:scale-[1.04]" />
+        ) : (
+          <span className="flex size-full items-center justify-center text-muted">
+            <Icon name="recipes" size={24} />
+          </span>
+        )}
       </Link>
       <div className="flex min-w-0 flex-1 flex-col">
         <Link href={`/recipes/${r.slug}`} className={`line-clamp-2 text-[15px] leading-[1.3] font-semibold tracking-[-0.01em] hover:underline ${saved !== null ? "pr-9" : ""}`}>
