@@ -270,15 +270,10 @@ export default async function RecipesPage({
             {GOAL_LABEL[g.slug] ?? g.label}
           </Link>
         ))}
-        {showSavedFilter && (
-          <Link
-            href="/recipes?saved=1"
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
-              isSavedFilter ? "bg-carbon text-white" : "border border-border hover:bg-sky-wash"
-            }`}
-          >
+        {user && (
+          <Link href="/recipes/saved" className="flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-sky-wash">
             <Icon name="favourite" size={14} strokeWidth={1.75} />
-            Saved
+            Saved{savedRecipeIds.size > 0 ? ` · ${savedRecipeIds.size}` : ""}
           </Link>
         )}
       </div>

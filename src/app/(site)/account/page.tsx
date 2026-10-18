@@ -48,7 +48,7 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code, baskets, right] = await Promise.all([
+  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code, baskets, right, savedRecipes] = await Promise.all([
     prisma.order.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } }),
     prisma.order.findFirst({ where: { userId: user.id, status: { in: OPEN_STATUSES } }, orderBy: { deliveryDate: "asc" }, select: { status: true, deliveryDate: true } }),
     prisma.order.count({ where: { userId: user.id } }),
@@ -63,6 +63,7 @@ export default async function AccountPage() {
     ensureReferralCode(user),
     prisma.basket.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: { name: true, isStanding: true } }),
     confirmRight(user),
+    prisma.savedRecipe.count({ where: { userId: user.id } }),
   ]);
 
   const tier = user.subscriptionTier;
@@ -94,6 +95,7 @@ export default async function AccountPage() {
       orders={{ count: orderCount, live: liveOrder ? `${customerStatusLabel(liveOrder.status)} · ${shortDate(liveOrder.deliveryDate)}` : null }}
       notify={{ whatsapp: user.notifyWhatsApp, email: user.notifyEmail, push: user.notifyPush }}
       baskets={{ names: baskets.map(basketName), running: baskets.filter((b) => b.isStanding).length }}
+      savedRecipes={savedRecipes}
       trial={tier ? null : right.ok ? "available" : "used"}
       invite={{ code, reward: REFERRAL_REWARD, invited, rewarded, credit }}
       kachiReview={Boolean(user.kachiReviewConsentAt)}

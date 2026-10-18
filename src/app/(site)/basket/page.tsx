@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateActiveDelivery, isMember, priceFor } from "@/lib/order-container";
+import { getOrCreateActiveDelivery, isMember } from "@/lib/order-container";
 import { basketLimitFor } from "@/lib/basket";
 import { getDeliveryCycle, liveOrdersFor, zoneForUser } from "@/lib/delivery";
 import { cutoffFor, lagosDate, nextDeliveryDate } from "@/lib/delivery-dates";
@@ -10,6 +10,7 @@ import { basketCycle, confirmRight } from "@/lib/basket-rules";
 import { customerStatusLabel } from "@/lib/order-status";
 import { creditBalance } from "@/lib/credit";
 import { getMenu } from "@/lib/menu";
+import { buyableFor, fitRecipe } from "@/lib/recipe-fit";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { BUYABLE, toAddable, toCardData } from "@/lib/product";
 import { DeliverySwitcher } from "./delivery-switcher";
@@ -89,7 +90,7 @@ export default async function HomePage() {
   const usualRank = [...new Set([...(user.preferences?.favoriteProductIds ?? []), ...ordered.map((o) => o.productId)])].filter((id) => !inOrder.has(id));
   const rank = new Map(usualRank.map((id, i) => [id, i]));
 
-  const [usualRows, seasonRows, swapPool, menuProducts] = await Promise.all([
+  const [usualRows, seasonRows, swapPool, buyable, savedRows] = await Promise.all([
     usualRank.length ? prisma.product.findMany({ where: { id: { in: usualRank }, ...BUYABLE } }) : Promise.resolve([]),
     prisma.product.findMany({
       where: { ...BUYABLE, availability: "AVAILABLE", id: { notIn: [...inOrder, ...usualRank] } },
@@ -100,7 +101,8 @@ export default async function HomePage() {
     items.some((i) => i.product.availability === "OUT_OF_STOCK")
       ? prisma.product.findMany({ where: { ...BUYABLE, availability: "AVAILABLE", category: { in: items.map((i) => i.product.category) }, id: { notIn: [...inOrder] } }, orderBy: [{ featured: "desc" }, { name: "asc" }] })
       : Promise.resolve([]),
-    prisma.product.findMany({ where: { slug: { in: [...new Set(menu.flatMap((r) => r.basket))] }, ...BUYABLE }, select: { slug: true, memberPrice: true, standardPrice: true, minOrderQty: true } }),
+    buyableFor(menu),
+    prisma.savedRecipe.findMany({ where: { userId: user.id }, select: { recipeId: true } }),
   ]);
   const usuals = usualRows.sort((a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99)).slice(0, 10);
 
@@ -111,22 +113,11 @@ export default async function HomePage() {
     if (s) swaps[i.productId] = toAddable(s);
   }
 
-  const buyable = new Map(menuProducts.map((p) => [p.slug, p]));
   const goal = MENU_GOALS.find((g) => g.starterSlug === user.preferences?.primaryGoal) ?? null;
-  const scored = menu
-    .filter((r) => r.image)
-    .map((r) => {
-      const have = r.basket.filter((s) => inOrderSlugs.has(s)).length;
-      const missing = r.basket.filter((s) => !inOrderSlugs.has(s) && buyable.has(s));
-      const needCost = missing.reduce((sum, s) => {
-        const p = buyable.get(s)!;
-        return sum + priceFor(p, member) * p.minOrderQty;
-      }, 0);
-      return { r, have, need: missing.length, needCost };
-    });
-  const withOverlap = scored.filter((x) => x.have > 0).sort((a, b) => b.have - a.have || a.need - b.need);
-  const cookPicks = (withOverlap.length ? withOverlap : scored.filter((x) => !goal || x.r.goal === goal.id)).slice(0, 4);
-  const cook: CookRecipe[] = cookPicks.map(({ r, have, need, needCost }) => ({ slug: r.slug, title: r.title, image: r.image, minutes: r.minutes, have, total: r.basket.length, need, needCost }));
+  const scored = menu.filter((r) => r.image).map((r) => ({ goal: r.goal, fit: fitRecipe(r, inOrderSlugs, buyable, member) }));
+  const withOverlap = scored.filter((x) => x.fit.have > 0).sort((a, b) => b.fit.have - a.fit.have || a.fit.need - b.fit.need);
+  const cook: CookRecipe[] = (withOverlap.length ? withOverlap : scored.filter((x) => !goal || x.goal === goal.id)).slice(0, 4).map((x) => x.fit);
+  const savedIds = savedRows.map((s) => s.recipeId);
 
   /* ------------------------------ the basket ------------------------------ */
 
@@ -173,7 +164,7 @@ export default async function HomePage() {
             goalLabel={goal?.label ?? null}
           />
 
-          {cook.length > 0 && <CookThisWeek deliveryId={delivery.id} recipes={cook} fromOrder={withOverlap.length > 0} />}
+          {cook.length > 0 && <CookThisWeek deliveryId={delivery.id} recipes={cook} fromOrder={withOverlap.length > 0} savedIds={savedIds} hasSaved={savedIds.length > 0} />}
           {usuals.length > 0 && <SuggestionRail title="Your usuals" subtitle="What you buy most, and your favourites." products={usuals.map(toCardData)} />}
           {seasonRows.length > 0 && <SuggestionRail title="Good this week" subtitle="In stock and at its best right now." products={seasonRows.map(toCardData)} />}
         </div>

@@ -45,6 +45,7 @@ type Props = {
   baskets: { names: string[]; running: number };
   /** Free accounts: whether the one trial basket is still to use. */
   trial: "available" | "used" | null;
+  savedRecipes: number;
   invite: { code: string | null; reward: number; invited: number; rewarded: number; credit: number };
   kachiReview: boolean;
   deletionRequested: string | null;
@@ -191,6 +192,7 @@ export function AccountView(props: Props) {
             sub={props.goal ? `${people} ${people === 1 ? "person" : "people"} · ${GOAL_LABEL[props.goal] ?? props.goal}` : "Tell us what you're after"}
             onClick={() => setSheet("prefs")}
           />
+          <Row icon="favourite" tint="ember" title="Saved recipes" sub={props.savedRecipes ? `${props.savedRecipes} saved` : "Tap the heart on a recipe to keep it"} href="/recipes/saved" />
           <Row icon="account" tint="mist" title="Name and contact" sub={[props.name, props.phone || props.email].filter(Boolean).join(" · ")} onClick={() => setSheet("profile")} />
         </Group>
 

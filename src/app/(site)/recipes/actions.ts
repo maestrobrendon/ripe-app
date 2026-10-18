@@ -21,4 +21,7 @@ export async function toggleSavedRecipe(recipeId: string) {
   }
 
   revalidatePath("/recipes");
+  revalidatePath("/recipes/saved");
+  revalidatePath("/basket");
+  revalidatePath("/account");
 }
