@@ -61,6 +61,35 @@ export function platform(): Platform {
   return "desktop";
 }
 
+/**
+ * The browser built into another app (Instagram, Facebook, TikTok and the
+ * like, or an Android app's web view). It can't add Basket to the home screen:
+ * the customer has to open the page in Safari or Chrome first. Returns the
+ * app's name when it can tell.
+ *
+ * WhatsApp is the exception it can't see: on iPhone it opens links in a
+ * Safari sheet that reports itself as Safari, so the iPhone steps carry a
+ * line for that case too.
+ */
+export function inAppBrowser(): string | null {
+  const ua = navigator.userAgent;
+  const apps: [RegExp, string][] = [
+    [/Instagram/, "Instagram"],
+    [/FBAN|FBAV|FB_IAB|FBIOS/, "Facebook"],
+    [/WhatsApp/, "WhatsApp"],
+    [/musical_ly|TikTok|BytedanceWebview/, "TikTok"],
+    [/Snapchat/, "Snapchat"],
+    [/Twitter/, "X"],
+    [/LinkedInApp/, "LinkedIn"],
+    [/\bLine\//, "LINE"],
+    [/Telegram/, "Telegram"],
+  ];
+  for (const [re, name] of apps) if (re.test(ua)) return name;
+  // An Android app's web view says "; wv)".
+  if (/Android/.test(ua) && /; wv\)/.test(ua)) return "this app";
+  return null;
+}
+
 /** iOS browsers other than Safari keep Share at the top right instead of the bottom. */
 export const iosShareAtTop = () => /CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
 

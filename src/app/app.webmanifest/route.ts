@@ -3,10 +3,13 @@ import type { MetadataRoute } from "next";
 /*
  * Basket as an app on the customer's phone (and desktop). Installed, it opens
  * straight to Home without the browser's bars, has its own icon in the app
- * list, and can receive notifications (public/sw.js). Kachi offers to install
- * it once a customer is signed in (components/app/app-setup.tsx).
+ * list, and can receive notifications (public/sw.js).
+ *
+ * Only signed-in pages link to it (generateMetadata in (site)/layout.tsx), so
+ * a browser only offers to install Basket once someone has an account; Kachi
+ * then offers it too (components/app/app-setup.tsx).
  */
-export default function manifest(): MetadataRoute.Manifest {
+function manifest(): MetadataRoute.Manifest {
   return {
     id: "/basket",
     name: "Basket",
@@ -31,4 +34,10 @@ export default function manifest(): MetadataRoute.Manifest {
       { name: "Orders", url: "/orders?source=app-shortcut", icons: [{ src: "/app-icon/192", sizes: "192x192" }] },
     ],
   };
+}
+
+export function GET() {
+  return new Response(JSON.stringify(manifest()), {
+    headers: { "Content-Type": "application/manifest+json", "Cache-Control": "public, max-age=3600" },
+  });
 }

@@ -8,8 +8,6 @@ import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
 
 export const metadata: Metadata = {
-  // Installed on an iPhone's home screen, Basket opens full screen under its own name.
-  appleWebApp: { capable: true, title: "Basket", statusBarStyle: "default" },
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
   description:
     "Shop fruits and vegetables sourced locally from trusted farmers, delivered across Lagos. Subscribe for member pricing and a standing weekly basket.",

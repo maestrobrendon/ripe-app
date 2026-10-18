@@ -20,13 +20,26 @@ import { KachiBubble } from "@/components/kachi/kachi-bubble";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppSetup } from "@/components/app/app-setup";
 
-export const metadata: Metadata = {
-  // Installed on an iPhone's home screen, Basket opens full screen under its own name.
-  appleWebApp: { capable: true, title: "Basket", statusBarStyle: "default" },
-  title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-  description:
-    "Fruit and vegetables from trusted farmers, checked by hand and delivered across Lagos. Built around the recipes you want to cook.",
-};
+/**
+ * Basket offers itself as an installable app only to signed-in customers:
+ * visitors get no manifest, so browsers don't suggest installing it before
+ * there's an account.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const user = await getCurrentUser();
+  return {
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description:
+      "Fruit and vegetables from trusted farmers, checked by hand and delivered across Lagos. Built around the recipes you want to cook.",
+    ...(user
+      ? {
+          manifest: "/app.webmanifest",
+          // Installed on an iPhone's home screen, Basket opens full screen under its own name.
+          appleWebApp: { capable: true, title: "Basket", statusBarStyle: "default" as const },
+        }
+      : {}),
+  };
+}
 
 export const viewport: Viewport = { themeColor: "#ffffff" };
 

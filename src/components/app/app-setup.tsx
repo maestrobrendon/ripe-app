@@ -9,6 +9,7 @@ import { KachiMark } from "@/components/kachi-mark";
 import {
   canPromptInstall,
   enablePush,
+  inAppBrowser,
   iosShareAtTop,
   isInstalled,
   onInstallChange,
@@ -127,7 +128,49 @@ function AppTile() {
 
 function InstallBody({ promptReady, onInstalled, onLater }: { promptReady: boolean; onInstalled: () => void; onLater: () => void }) {
   const [p] = useState<Platform>(() => (typeof window === "undefined" ? "android" : platform()));
+  const [inApp] = useState<string | null>(() => (typeof window === "undefined" ? null : inAppBrowser()));
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/basket`);
+      setCopied(true);
+    } catch {
+      /* the steps still work without it */
+    }
+  };
+
+  // Inside Instagram, Facebook and the like: first get out into the real browser.
+  if (inApp) {
+    const browser = p === "ios" ? "Safari" : "Chrome";
+    return (
+      <div>
+        <KachiSays>
+          You&apos;re in {inApp}&apos;s browser, which can&apos;t add apps to your home screen. Open Basket in {browser} first, then I&apos;ll show you the rest.
+        </KachiSays>
+        <ol className="mt-6 grid gap-2">
+          <Step n={1} icon="more">
+            Tap the <b className="font-semibold">menu</b> ({p === "ios" ? "•••" : "⋮"}) {p === "ios" ? "or the share button" : "at the top right"}
+          </Step>
+          <Step n={2} icon="share">
+            Choose <b className="font-semibold">Open in {browser}</b> (or Open in browser)
+          </Step>
+          <Step n={3} icon="checkPlain">
+            You&apos;re still signed in there. I&apos;ll pop up to help you add it.
+          </Step>
+        </ol>
+        <div className="mt-5 grid gap-2">
+          <Button size="lg" variant="secondary" className="w-full" onClick={copyLink}>
+            {copied ? "Link copied. Paste it into " + browser : "Copy the link instead"}
+          </Button>
+          <Button size="lg" variant="secondary" className="w-full" onClick={onLater}>
+            Not now
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const install = async () => {
     setBusy(true);
@@ -166,6 +209,9 @@ function InstallBody({ promptReady, onInstalled, onLater }: { promptReady: boole
                 <Step n={3} icon="checkPlain">
                   Tap <b className="font-semibold">Add</b>. Basket is on your home screen.
                 </Step>
+                <p className="px-1 pt-1 text-[13px] text-muted">
+                  No &quot;Add to Home Screen&quot;? You may be in WhatsApp&apos;s browser: tap the compass or &quot;Open in Safari&quot; first.
+                </p>
               </>
             ) : p === "android" ? (
               <>
@@ -175,6 +221,9 @@ function InstallBody({ promptReady, onInstalled, onLater }: { promptReady: boole
                 <Step n={2} icon="addSquare">
                   Choose <b className="font-semibold">Install app</b> or <b className="font-semibold">Add to Home screen</b>
                 </Step>
+                <p className="px-1 pt-1 text-[13px] text-muted">
+                  Don&apos;t see it? Tap <b className="font-semibold">Open in Chrome</b> in the menu first.
+                </p>
               </>
             ) : (
               <>
