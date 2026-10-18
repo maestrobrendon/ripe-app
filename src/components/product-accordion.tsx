@@ -31,7 +31,7 @@ export function ProductAccordion({ sections }: { sections: AccordionSection[] })
     });
 
   return (
-    <div className="divide-y divide-border border-y border-border">
+    <div className="divide-y divide-hairline border-y border-hairline">
       {visible.map((s) => {
         const isOpen = open.has(s.title);
         return (

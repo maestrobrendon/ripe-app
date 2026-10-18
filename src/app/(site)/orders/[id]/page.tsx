@@ -59,6 +59,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const unpaidTransfer = !order.paidAt && /transfer/i.test(order.paymentMethod) && !stopped && transferReady(settings.transfer);
 
   return (
+    <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
       {ownsIt && (
         <BackButton fallback="/orders" label="Orders" />
@@ -75,11 +76,11 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       )}
 
       <p className="mt-4 text-sm text-muted">Order {ref}</p>
-      <h1 className="mt-1 text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">{title}</h1>
+      <h1 className="mt-1 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{title}</h1>
       <p className="mt-1 text-sm text-muted">{body}</p>
 
       {!stopped && step >= 0 && (
-        <ol className="mt-5 flex items-start justify-between" aria-label="Progress">
+        <ol className="mt-5 flex items-start justify-between rounded-2xl bg-surface px-2 py-4 ring-1 ring-hairline" aria-label="Progress">
           {CUSTOMER_STEPS.map((label, i) => (
             <li key={label} className="relative flex flex-1 flex-col items-center text-center">
               {i < CUSTOMER_STEPS.length - 1 && <span aria-hidden className={`absolute top-4 left-1/2 h-px w-full ${i < step ? "bg-carbon" : "bg-border"}`} />}
@@ -147,7 +148,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </section>
       )}
 
-      <section className="mt-6 grid gap-3 rounded-2xl border border-hairline bg-surface p-4 text-sm sm:grid-cols-2">
+      <section className="mt-6 grid gap-4 rounded-2xl bg-surface p-4 text-sm shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline sm:grid-cols-2">
         <Detail label="When">
           {longDate(order.deliveryDate)}, {DELIVERY_WINDOW}
         </Detail>
@@ -164,8 +165,9 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       </section>
 
       <section className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Items</h2>
-        <ul className="divide-y divide-hairline rounded-2xl border border-hairline bg-surface">
+        <h2 className="mb-2 px-4 text-[13px] font-semibold tracking-[0.02em] text-carbon/55 uppercase">Items</h2>
+        <div className="overflow-hidden rounded-2xl bg-surface shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline">
+        <ul className="divide-y divide-hairline">
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 p-3 text-sm">
               <ProductImage publicId={i.product.cloudinaryPublicId} alt={i.product.name} emoji={i.product.imageEmoji} className="size-10 shrink-0" rounded="rounded-lg" emojiClassName="text-lg" sizes="40px" />
@@ -177,16 +179,18 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             </li>
           ))}
         </ul>
-        <dl className="mt-3 grid gap-1 px-1 text-sm">
+        <dl className="grid gap-1.5 border-t border-hairline bg-black/[0.015] px-4 py-3.5 text-sm">
           <Row label="Items" value={formatNaira(order.subtotal)} />
           <Row label="Delivery" value={order.deliveryFee === 0 ? "Free" : formatNaira(order.deliveryFee)} />
           {order.creditApplied > 0 && <Row label="Account credit" value={`−${formatNaira(order.creditApplied)}`} />}
-          <div className="flex justify-between font-semibold">
+          <div className="mt-1 flex items-baseline justify-between border-t border-hairline pt-2.5 font-semibold">
             <dt>Total</dt>
-            <dd>{formatNaira(order.total)}</dd>
+            <dd className="text-[17px]">{formatNaira(order.total)}</dd>
           </div>
         </dl>
+        </div>
       </section>
+    </div>
     </div>
   );
 }

@@ -43,7 +43,7 @@ export function RecipeCard({
           {recipe.goalLabel}
         </span>
       </div>
-      <div className={`flex flex-1 flex-col gap-3 ${large ? "p-6 sm:p-7" : "p-5"}`}>
+      <div className={`flex flex-col gap-3 ${large ? "p-6 sm:p-7" : "flex-1 p-5"}`}>
         <div>
           <h3 className={large ? "hm-h3" : "text-[17px] leading-snug font-semibold tracking-[-0.02em] group-hover:underline"}>{recipe.title}</h3>
           <p className={`mt-1.5 leading-relaxed text-[var(--hm-ink-2)] ${large ? "text-[15px]" : "line-clamp-2 text-[14px]"}`}>{recipe.hook}</p>

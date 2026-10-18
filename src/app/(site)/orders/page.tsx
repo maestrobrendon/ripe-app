@@ -36,11 +36,12 @@ export default async function OrdersPage() {
   const past = orders.filter((o) => !OPEN_STATUSES.includes(o.status));
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
-      <h1 className="text-[26px] font-extrabold tracking-tight sm:text-[30px]">Orders</h1>
+    <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
+    <div className="mx-auto max-w-2xl px-4 pt-6 pb-10 sm:px-6 sm:pt-8">
+      <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Orders</h1>
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-hairline p-6 text-center">
+        <div className="mt-6 rounded-2xl bg-surface p-8 text-center ring-1 ring-hairline">
           <p className="font-semibold">No orders yet</p>
           <p className="mt-1 text-sm text-muted">When you confirm an order, it shows up here with its progress.</p>
           <LinkButton href="/basket" size="sm" className="mt-4">
@@ -53,6 +54,7 @@ export default async function OrdersPage() {
           {past.length > 0 && <Group title="Past orders" orders={past} />}
         </>
       )}
+    </div>
     </div>
   );
 }
@@ -71,11 +73,11 @@ type Row = {
 function Group({ title, orders }: { title: string; orders: Row[] }) {
   return (
     <section className="mt-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
-      <ul className="mt-2 divide-y divide-hairline rounded-2xl border border-hairline bg-surface">
+      <h2 className="mb-2 px-4 text-[13px] font-semibold tracking-[0.02em] text-carbon/55 uppercase">{title}</h2>
+      <ul className="divide-y divide-hairline overflow-hidden rounded-2xl bg-surface shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline">
         {orders.map((o) => (
           <li key={o.id}>
-            <Link href={`/orders/${o.id}`} className="flex items-center gap-3 p-3 hover:bg-sky-wash">
+            <Link href={`/orders/${o.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
               <div className="flex shrink-0 -space-x-3">
                 {o.items.map((i, n) => (
                   <ProductImage key={n} publicId={i.product.cloudinaryPublicId} alt="" emoji={i.product.imageEmoji} sizes="40px" rounded="rounded-full" className="size-10 border-2 border-surface" emojiClassName="text-lg" />

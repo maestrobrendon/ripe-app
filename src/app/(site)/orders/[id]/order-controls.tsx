@@ -94,7 +94,7 @@ export function OrderControls(props: {
               Order these again
             </Button>
           )}
-          <a href={props.helpHref} target="_blank" rel="noreferrer" className="ml-auto text-sm font-semibold underline underline-offset-2">
+          <a href={props.helpHref} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold ring-1 ring-hairline transition-colors hover:bg-black/[0.03]">
             Get help
           </a>
         </div>

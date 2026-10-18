@@ -270,7 +270,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     <div>
       <div className="mx-auto flex h-[calc(100svh-69px-var(--dock-clearance))] max-w-2xl flex-col lg:h-[calc(100svh-69px)]">
         {/* Chat bar */}
-        <div className="flex flex-none items-center gap-2 border-b border-border px-3 py-2.5">
+        <div className="flex flex-none items-center gap-2 border-b border-hairline px-3 py-2.5">
           <button
             onClick={() => {
               setHistoryOpen(true);
@@ -441,7 +441,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
         </main>
 
         {/* Composer */}
-        <div className="flex-none border-t border-border bg-surface px-3 pb-3 pt-2.5">
+        <div className="flex-none border-t border-hairline bg-surface px-3 pb-3 pt-2.5">
           <Link href="/basket" className="mb-2 ml-1 inline-flex h-8 items-center gap-1.5 rounded-full bg-mint-pop/45 px-3 text-[13px]">
             <span className="h-2 w-2 rounded-full bg-[#0f7a48]" />
             <span>
@@ -503,7 +503,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
             <div key={g.label}>
               <p className="mb-1.5 mt-4 text-[13px] font-semibold text-muted">{g.label}</p>
               {g.threads.map((t) => (
-                <div key={t.id} className="flex items-center gap-2 border-b border-border">
+                <div key={t.id} className="flex items-center gap-2 border-b border-hairline">
                   <button onClick={() => openThread(t.id)} className="min-w-0 flex-1 py-3.5 text-left text-base">
                     <span className="block truncate">{t.title}</span>
                     <small className="mt-0.5 block text-[13px] text-muted">{t.messageCount} messages</small>
@@ -540,13 +540,13 @@ function KachiCardView({
   onSkip: () => void;
   onSend: (text: string) => void;
 }) {
-  const shell = "mt-2.5 overflow-hidden rounded-2xl border border-border";
+  const shell = "mt-2.5 overflow-hidden rounded-2xl border border-hairline";
 
   if (card.type === "recipes") {
     return (
       <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
         {card.recipes.map((r, idx) => (
-          <div key={r.slug} className={`px-3.5 py-3 ${idx ? "border-t border-border" : ""}`}>
+          <div key={r.slug} className={`px-3.5 py-3 ${idx ? "border-t border-hairline" : ""}`}>
             <Link href={`/recipes/${r.slug}`} className="group flex items-start gap-3">
               <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-soft-mist">
                 <Icon name="recipes" size={20} />
@@ -619,7 +619,7 @@ function KachiCardView({
     return (
       <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
         {card.items.map((i, idx) => (
-          <div key={i.productId} className={`flex items-center gap-3 px-3.5 py-2.5 ${idx ? "border-t border-border" : ""}`}>
+          <div key={i.productId} className={`flex items-center gap-3 px-3.5 py-2.5 ${idx ? "border-t border-hairline" : ""}`}>
             <ProductImage
               publicId={i.cloudinaryPublicId}
               alt={i.name}

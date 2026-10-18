@@ -24,7 +24,8 @@ type ZoneOption = { id: string; name: string; area: string; fee: number; dateIso
 type Line = { productId: string; name: string; quantity: string; total: number; emoji: string; publicId: string | null };
 
 const LABELS = ["Home", "Work", "Family"];
-const field = "h-12 w-full rounded-control border border-hairline bg-surface px-4 text-base outline-none focus:border-carbon";
+const field =
+  "h-12 w-full rounded-xl border border-hairline bg-surface px-3.5 text-[16px] outline-none transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-carbon focus:shadow-[0_0_0_3px_rgb(0_0_0/0.08)]";
 
 export function CheckoutFlow(props: {
   basketId: string;
@@ -312,8 +313,8 @@ export function CheckoutFlow(props: {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-hairline bg-surface p-4 sm:p-5">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
+    <section className="rounded-2xl bg-surface p-4 shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline sm:p-5">
+      <h2 className="mb-3 text-[13px] font-semibold tracking-[0.02em] text-carbon/55 uppercase">{title}</h2>
       {children}
     </section>
   );

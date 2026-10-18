@@ -10,7 +10,6 @@ import { ProductAccordion } from "@/components/product-accordion";
 import { BrandStoryBand } from "@/components/brand-story-band";
 import { CompleteYourBasket } from "@/components/complete-your-basket";
 import { ProductImage } from "@/components/product-image";
-import { flavourFor } from "@/lib/flavour";
 import { FRESH_CUTS_TAG, OFFERED } from "@/lib/product";
 
 export default async function ProductPage({
@@ -63,10 +62,10 @@ export default async function ProductPage({
               publicId={product.cloudinaryPublicId}
               alt={product.name}
               emoji={product.imageEmoji}
-              flavour={flavourFor(product.category, product.tags)}
+              flavour="bg-soft-mist"
               rounded="rounded-3xl"
               sizes="(min-width: 1024px) 480px, 90vw"
-              className="aspect-square w-full border border-border"
+              className="aspect-square w-full"
               emojiClassName="text-[9rem]"
             />
           </div>

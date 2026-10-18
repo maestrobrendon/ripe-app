@@ -56,25 +56,25 @@ export default async function SearchPage({
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold">
-        {q ? `Results for "${q}"` : "Search"}
-      </h1>
+    <div className="mx-auto max-w-5xl px-4 pt-6 pb-12 sm:px-6 sm:pt-8">
+      <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{q ? `Results for “${q}”` : "Search"}</h1>
 
-      <form action="/search" className="mt-4 flex flex-wrap gap-2">
+      <form action="/search" role="search" className="mt-4 flex gap-2 sm:max-w-lg">
         <input
           name="q"
+          type="search"
           defaultValue={q}
           placeholder="Fruit, veg or a recipe"
-          className="w-64 rounded-full border border-border px-4 py-2 text-sm"
+          aria-label="Search"
+          className="h-11 min-w-0 flex-1 rounded-xl bg-black/[0.05] px-4 text-[16px] outline-none placeholder:text-carbon/45 focus:bg-surface focus:shadow-[0_0_0_1px_var(--color-hairline),0_0_0_4px_rgb(0_0_0/0.06)]"
         />
-        <button className="rounded-full bg-carbon px-5 py-2 text-sm font-medium text-white">Search</button>
+        <button className="h-11 rounded-full bg-carbon px-5 text-[15px] font-semibold text-paper-white active:scale-[0.97]">Search</button>
       </form>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+      <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 text-[14px] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
         <Link
           href={buildHref({ category: undefined })}
-          className={`rounded-full px-3 py-1 ${!sp.category ? "bg-carbon text-white" : "border border-border"}`}
+          className={`inline-flex h-9 shrink-0 items-center rounded-full px-3.5 font-semibold transition-colors ${!sp.category ? "bg-carbon text-paper-white" : "bg-black/[0.05] text-carbon/80 hover:bg-black/[0.08]"}`}
         >
           All categories
         </Link>
@@ -82,18 +82,18 @@ export default async function SearchPage({
           <Link
             key={c}
             href={buildHref({ category: sp.category === c ? undefined : c })}
-            className={`rounded-full px-3 py-1 ${sp.category === c ? "bg-carbon text-white" : "border border-border"}`}
+            className={`inline-flex h-9 shrink-0 items-center rounded-full px-3.5 font-semibold transition-colors ${sp.category === c ? "bg-carbon text-paper-white" : "bg-black/[0.05] text-carbon/80 hover:bg-black/[0.08]"}`}
           >
             {CATEGORY_LABEL[c]}
           </Link>
         ))}
         <Link
           href={buildHref({ season: sp.season === "in-season" ? undefined : "in-season" })}
-          className={`rounded-full px-3 py-1 ${sp.season === "in-season" ? "bg-carbon text-white" : "border border-border"}`}
+          className={`inline-flex h-9 shrink-0 items-center rounded-full px-3.5 font-semibold transition-colors ${sp.season === "in-season" ? "bg-carbon text-paper-white" : "bg-black/[0.05] text-carbon/80 hover:bg-black/[0.08]"}`}
         >
           In season
         </Link>
-        <span className="mx-1 h-4 w-px bg-border" />
+        <span className="mx-1 w-px shrink-0 self-stretch bg-hairline" aria-hidden />
         {[
           ["Under ₦1,000", { min: undefined, max: "1000" }],
           ["₦1,000 to ₦3,000", { min: "1000", max: "3000" }],
@@ -102,7 +102,7 @@ export default async function SearchPage({
           <Link
             key={label as string}
             href={buildHref(patch as Record<string, string | undefined>)}
-            className="rounded-full border border-border px-3 py-1"
+            className="inline-flex h-9 shrink-0 items-center rounded-full px-3.5 font-semibold transition-colors bg-black/[0.05] text-carbon/80 hover:bg-black/[0.08]"
           >
             {label as string}
           </Link>
@@ -111,7 +111,7 @@ export default async function SearchPage({
 
       {recipes.length > 0 && (
         <section className="hm mt-8" aria-label="Recipes">
-          <h2 className="text-lg font-semibold">Recipes</h2>
+          <h2 className="text-xl font-semibold tracking-[-0.015em]">Recipes</h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recipes.slice(0, 6).map((r) => (
               <RecipeCard key={r.slug} recipe={r} />
@@ -121,7 +121,7 @@ export default async function SearchPage({
       )}
 
       <div className="mt-8">
-        {recipes.length > 0 && products.length > 0 && <h2 className="mb-3 text-lg font-semibold">Produce</h2>}
+        {recipes.length > 0 && products.length > 0 && <h2 className="mb-3 text-xl font-semibold tracking-[-0.015em]">Produce</h2>}
         {q || sp.category || sp.season || min || max ? (
           <ProductGrid products={products} />
         ) : (

@@ -16,10 +16,10 @@ export const metadata: Metadata = {
 
 /** The groups, in the order the page shows them. Boxes come last: they're a shortcut, not the catalogue. */
 const GROUPS: { id: ProductCategory; label: string; blurb: string }[] = [
-  { id: "FRUIT", label: "Fruits", blurb: "For breakfast bowls, smoothies and snacking." },
+  { id: "FRUIT", label: "Fruits", blurb: "For breakfasts, lunchboxes and snacking." },
   { id: "VEGETABLE", label: "Vegetables", blurb: "The base of every recipe on the menu." },
   { id: "SEASONAL", label: "Seasonal specials", blurb: "Only around for a few weeks of the year." },
-  { id: "BOX_BUNDLE", label: "Ready-made boxes", blurb: "Pre-picked mixes for a purpose, like smoothies or a pot of soup." },
+  { id: "BOX_BUNDLE", label: "Ready-made boxes", blurb: "Pre-picked mixes for a purpose, like a pot of soup or a week of breakfasts." },
 ];
 
 type Search = { category?: string; season?: string; q?: string };
@@ -75,14 +75,31 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="hm">
+      {user ? (
+        // A customer already knows how pricing works: a plain page title, then the shelves.
+        <div className="hm-wrap pt-6 sm:pt-8">
+          <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Shop</h1>
+          <p className="mt-1 text-[15px] text-[var(--hm-ink-2)]">
+            {produceCount} fruits and vegetables, plus ready-made boxes.
+            {!isSubscriber && avgSaving > 0 && (
+              <>
+                {" "}Members pay about {avgSaving}% less.{" "}
+                <Link href="/subscribe" className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+                  See membership
+                </Link>
+              </>
+            )}
+          </p>
+        </div>
+      ) : (
       <section className="bg-[var(--hm-tint)]">
         <div className="hm-wrap grid gap-8 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-14">
           <div>
             <Eyebrow>Fruits</Eyebrow>
             <h1 className="hm-h2 max-w-[18ch]">Every fruit and vegetable, priced up front.</h1>
             <p className="hm-lede mt-4 max-w-xl">
-              {produceCount} fruits and vegetables, plus ready-made boxes. Look around without an account. Every item shows two
-              prices: what anyone pays, and what members pay.
+              {produceCount} fruits and vegetables, plus ready-made boxes. Look around without an account. Every item shows what
+              anyone pays, and what members pay.
             </p>
           </div>
 
@@ -117,8 +134,9 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
           </div>
         </div>
       </section>
+      )}
 
-      <div className="hm-wrap py-10 sm:py-12">
+      <div className={`hm-wrap ${user ? "pt-5 pb-12" : "py-10 sm:py-12"}`}>
         <div className="flex flex-col gap-4">
           <form action="/shop" className="relative w-full sm:max-w-md" role="search">
             {category && <input type="hidden" name="category" value={category} />}
@@ -154,9 +172,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               Hide off-season
             </Link>
           </nav>
-        </div>
-
-        <div className="mt-6">
         </div>
 
         {products.length === 0 ? (
@@ -225,7 +240,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
 
 function Grid({ products }: { products: Product[] }) {
   return (
-    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+    <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 lg:gap-x-5">
       {products.map((p) => (
         <ProductCard key={p.id} product={toCardData(p)} />
       ))}

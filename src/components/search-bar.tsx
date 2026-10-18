@@ -77,7 +77,7 @@ export function SearchBar({
           autoFocus={autoFocus}
           placeholder="Search produce, boxes, recipes"
           aria-label="Search produce"
-          className="w-full rounded-full border border-border bg-surface py-2.5 pl-11 pr-4 text-sm"
+          className="h-10 w-full rounded-xl bg-black/[0.05] pr-4 pl-11 text-[15px] outline-none transition-[background-color,box-shadow] placeholder:text-carbon/45 focus:bg-surface focus:shadow-[0_0_0_1px_var(--color-hairline),0_0_0_4px_rgb(0_0_0/0.06)]"
         />
       </form>
 
@@ -88,7 +88,7 @@ export function SearchBar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={spring.snappy}
-            className="absolute z-(--z-overlay) mt-2 w-full origin-top overflow-hidden rounded-card border border-border bg-surface"
+            className="absolute z-(--z-overlay) mt-2 w-full origin-top overflow-hidden rounded-2xl bg-surface shadow-[0_20px_50px_-20px_rgb(0_0_0/0.35)] ring-1 ring-hairline"
           >
             {results.map((r) => (
               <li key={r.slug}>
@@ -98,7 +98,7 @@ export function SearchBar({
                     setOpen(false);
                     onNavigate?.();
                   }}
-                  className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-sky-wash"
+                  className="flex items-center gap-3 px-4 py-2.5 text-[15px] hover:bg-black/[0.04]"
                 >
                   <span className="text-xl">{r.imageEmoji}</span>
                   <span className="flex-1">{r.name}</span>

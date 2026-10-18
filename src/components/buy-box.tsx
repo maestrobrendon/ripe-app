@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
 import { formatNaira } from "@/lib/format";
 import { quantityLabel, unitPriceLabel } from "@/lib/delivery-labels";
-import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { flyToCart } from "@/components/ui/fly-to-cart";
@@ -43,11 +43,11 @@ export function BuyBox({
   const freeAt = cart.freeDeliveryThreshold;
 
   return (
-    <Card>
-      <p className="text-xs font-medium uppercase tracking-wide text-carbon">Freshly selected · Checked by hand</p>
-      <h1 className="text-heading-lg mt-2">{name}</h1>
+    <div className="rounded-3xl bg-surface p-5 shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline sm:p-6">
+      <p className="text-[12px] font-semibold tracking-[0.06em] text-carbon/55 uppercase">Freshly selected · Checked by hand</p>
+      <h1 className="mt-1.5 text-[30px] leading-[1.1] font-bold tracking-[-0.02em] sm:text-[34px]">{name}</h1>
 
-      <p className="mt-3 text-2xl font-semibold">{unitPriceLabel(formatNaira(price), product.unit)}</p>
+      <p className="mt-3 text-[24px] font-semibold tracking-[-0.01em]">{unitPriceLabel(formatNaira(price), product.unit)}</p>
       {hasMemberSaving && !isSubscriber && (
         <p className="mt-1 text-sm text-muted">
           Members pay {formatNaira(product.memberPrice)}.{" "}
@@ -87,11 +87,22 @@ export function BuyBox({
         {product.soldOut ? "Sold out right now. We'll have more soon." : inSeason ? "In stock" : "Limited this week"}
       </p>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-4 text-[11px] text-muted">
-        <span>Checked by hand before it leaves</span>
-        <span>Bruised or wrong? We put it right</span>
-        <span>Pay on delivery</span>
-      </div>
-    </Card>
+      <ul className="mt-5 grid gap-2.5 border-t border-hairline pt-4 text-[14px]">
+        {(
+          [
+            ["quality", "Checked by hand before it leaves"],
+            ["undo", "Bruised or wrong? We put it right"],
+            ["payment", "Pay when it arrives"],
+          ] as const
+        ).map(([icon, text]) => (
+          <li key={text} className="flex items-center gap-2.5">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-soft-mist">
+              <Icon name={icon} size={14} weight="bold" />
+            </span>
+            {text}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

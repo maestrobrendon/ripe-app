@@ -7,7 +7,7 @@ import { readCart } from "@/lib/cart";
 import { isMember, ownedDelivery, priceFor, readActiveDelivery } from "@/lib/order-container";
 import { dayIn, getDeliveryCycle } from "@/lib/delivery";
 import { cutoffFor, nextDeliveryDate } from "@/lib/delivery-dates";
-import { deliveryName, quantityLabel } from "@/lib/delivery-labels";
+import { quantityLabel } from "@/lib/delivery-labels";
 import { hasFreeDelivery } from "@/lib/pricing";
 import { isBuyable } from "@/lib/product";
 import { formatPhone } from "@/lib/phone";
@@ -88,10 +88,11 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const standard = lines.reduce((s, i) => s + i.product.standardPrice * i.quantity, 0);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-6 pb-10 sm:px-6">
+    <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
+    <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
       <BackButton fallback="/basket" label="Your order" />
-      <h1 className="text-heading-lg mt-3">Confirm your order</h1>
-      <p className="mt-1 text-sm text-muted">{deliveryName(basket, basket.deliveryDay)} · nothing is charged now</p>
+      <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Confirm your order</h1>
+      <p className="mt-1 text-[15px] text-muted">Nothing is charged now. You pay when it arrives.</p>
 
       <CheckoutFlow
         basketId={basket.id}
@@ -115,6 +116,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         transfer={transferReady(settings.transfer) ? settings.transfer : null}
         draftDefaults={{ line1: user.address ?? "", zoneId: zones.some((z) => z.id === user.deliveryZoneId) ? user.deliveryZoneId : null }}
       />
+    </div>
     </div>
   );
 }
