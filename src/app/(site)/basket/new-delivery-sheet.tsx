@@ -5,6 +5,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { cutoffLabel, dayName, shortDate } from "@/lib/delivery-labels";
 import type { DeliveryDay } from "@/generated/prisma/enums";
+import { haptic } from "@/lib/haptics";
 import { newDelivery } from "./actions";
 
 /** One of the area's delivery days, with its next date and when that closes. */
@@ -67,7 +68,15 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
         ))}
       </div>
 
-      <Button className="mt-5 w-full" size="lg" loading={pending} disabled={!name.trim()} onClick={() => start(() => newDelivery({ name, day }))}>
+      <Button className="mt-5 w-full" size="lg" loading={pending} disabled={!name.trim()} onClick={() => {
+          haptic("light");
+          try {
+            sessionStorage.setItem("basket.created", name.trim());
+          } catch {
+            /* the message is a nicety */
+          }
+          start(() => newDelivery({ name, day }));
+        }}>
         Create basket
       </Button>
     </BottomSheet>

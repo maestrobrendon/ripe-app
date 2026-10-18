@@ -15,6 +15,7 @@
  */
 
 import type { Transition } from "motion/react";
+import { haptic as playHaptic } from "@/lib/haptics";
 
 /* ---------------------------------- time ---------------------------------- */
 
@@ -118,15 +119,11 @@ export function rubberband(overshoot: number, dimension: number, constant = 0.55
 
 /**
  * Tiny haptic tick for meaningful commits only (add to cart, snap, toggle).
- * Android Chrome supports it; iOS Safari ignores it silently.
+ * Android vibrates; iPhone (iOS 18+) plays the system tick. See lib/haptics.ts.
  */
 export function haptic(pattern: number | number[] = 8) {
-  if (typeof navigator === "undefined" || !("vibrate" in navigator)) return;
-  try {
-    navigator.vibrate(pattern);
-  } catch {
-    /* no-op */
-  }
+  // Small taps are selection ticks; anything longer is a firmer tap. iPhone included (lib/haptics.ts).
+  playHaptic(typeof pattern === "number" && pattern <= 6 ? "selection" : "light");
 }
 
 /* ------------------------------ budget ----------------------------------- */

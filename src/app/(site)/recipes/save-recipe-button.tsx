@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { Icon } from "@/components/ui/icon";
+import { spring } from "@/lib/motion/tokens";
+import { haptic } from "@/lib/haptics";
 import { toggleSavedRecipe } from "./actions";
 
 /**
@@ -52,6 +55,7 @@ export function SaveRecipeButton({
       aria-pressed={saved}
       aria-label={saved ? "Remove from saved recipes" : "Save this recipe"}
       onClick={() => {
+        haptic(saved ? "selection" : "light");
         setSaved((s) => !s);
         startTransition(async () => {
           await toggleSavedRecipe(recipeId);
@@ -59,7 +63,10 @@ export function SaveRecipeButton({
       }}
       className={`${baseClass} disabled:opacity-60 ${saved ? "text-ember" : "text-muted hover:text-carbon"}`}
     >
-      <Icon name="favourite" size={16} strokeWidth={1.75} className={saved ? "fill-current" : undefined} />
+      {/* A saved heart fills and pops; unsaving just settles back. */}
+      <motion.span key={String(saved)} initial={saved ? { scale: 0.5 } : false} animate={{ scale: 1 }} transition={spring.juicy} className="inline-flex">
+        <Icon name="favourite" size={16} weight={saved ? "fill" : "regular"} />
+      </motion.span>
       {inline && <span className="text-carbon">{saved ? "Saved" : "Save"}</span>}
     </button>
   );

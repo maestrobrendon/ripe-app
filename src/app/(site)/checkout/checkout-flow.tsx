@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
+import { haptic } from "@/lib/haptics";
 import { placeOrder, type PaymentChoice } from "./actions";
 
 type SavedAddress = {
@@ -73,6 +74,7 @@ export function CheckoutFlow(props: {
   const total = props.subtotal + quote.fee - creditUsed;
 
   const submit = () => {
+    haptic("light");
     setError(null);
     start(async () => {
       const r = await placeOrder({
@@ -87,6 +89,7 @@ export function CheckoutFlow(props: {
       });
       // Success navigates to the order. Anything else comes back as a sentence.
       if (r && !r.ok) {
+        haptic("error");
         setError(r.error);
         if (r.addressId && adding) {
           setAdding(false);
@@ -236,9 +239,9 @@ export function CheckoutFlow(props: {
       {/* Payment */}
       <Section title="How you'll pay">
         <div className="grid gap-2">
-          <PayOption on={payment === "POD"} onClick={() => setPayment("POD")} title="Pay on delivery" sub="Pay the rider by transfer or card when it arrives. Nothing to pay now." />
+          <PayOption on={payment === "POD"} onClick={() => setPayment("POD")} title="Pay when it arrives" sub="Transfer or card to the rider at your door. Nothing to pay now." />
           {props.transfer && (
-            <PayOption on={payment === "TRANSFER"} onClick={() => setPayment("TRANSFER")} title="Bank transfer" sub="Pay into our account before it's packed. We'll show the details next." />
+            <PayOption on={payment === "TRANSFER"} onClick={() => setPayment("TRANSFER")} title="Pay now by transfer" sub="Into our bank account, before it's packed. The details come next." />
           )}
           <PayOption on={false} disabled title="Card" sub="Coming soon" />
         </div>
@@ -345,10 +348,13 @@ function PayOption({ on, onClick, title, sub, disabled }: { on: boolean; onClick
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        if (!on) haptic("selection");
+        onClick?.();
+      }}
       disabled={disabled}
       aria-pressed={on}
-      className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-50 ${on ? "border-carbon bg-mint-pop/15" : "border-hairline bg-surface"}`}
+      className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-[background-color,border-color,transform] duration-200 active:scale-[0.99] disabled:opacity-50 ${on ? "border-carbon bg-mint-pop/15" : "border-hairline bg-surface"}`}
     >
       <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-hairline"}`} />
       <span>

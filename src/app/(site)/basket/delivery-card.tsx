@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
+import { spring } from "@/lib/motion/tokens";
+import { haptic } from "@/lib/haptics";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -84,6 +87,23 @@ export function DeliveryCard(props: {
   const cutoff = cutoffIso ? new Date(cutoffIso).getTime() : null;
   const left = cutoff ? cutoff - now : null;
 
+  // A basket just made in the New basket sheet: say so once it's on screen.
+  useEffect(() => {
+    let created: string | null = null;
+    try {
+      created = sessionStorage.getItem("basket.created");
+      sessionStorage.removeItem("basket.created");
+    } catch {
+      /* nothing to announce */
+    }
+    if (created) {
+      haptic("success");
+      cart.announce(`${created} is ready. Add what it needs.`);
+    }
+    // Once, when the card first appears.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // The week closed while the page was open: move on to the next date.
   useEffect(() => {
     if (left !== null && left <= 0 && !refreshed.current) {
@@ -92,7 +112,11 @@ export function DeliveryCard(props: {
     }
   }, [left, router]);
 
-  const run = (action: () => Promise<Result>, ok?: string, closeFirst = false) =>
+  /**
+   * Do something to the basket. Success is felt and said; anything that can be
+   * taken back offers Undo in the same message.
+   */
+  const run = (action: () => Promise<Result>, ok?: string, closeFirst = false, undo?: { action: () => Promise<Result>; ok: string }) =>
     start(async () => {
       if (closeFirst) setSheet(null);
       const r = await action();
@@ -101,142 +125,135 @@ export function DeliveryCard(props: {
         return;
       }
       setSheet(null);
-      if (ok) cart.announce(ok);
+      haptic("success");
+      if (ok) cart.announce(ok, "ok", undo ? { label: "Undo", run: () => run(undo.action, undo.ok) } : undefined);
     });
 
-  const eyebrow =
-    status === "running" ? `Every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket · comes once" : props.hasLiveOrder ? "Trial basket · confirmed" : "Trial basket · used";
+  const subtitle = [
+    status === "running" ? `Every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used",
+    props.areaName,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const urgent = left !== null && left < 6 * 3_600_000;
+  const canChangeDay = props.dayOptions.length > 1;
 
   return (
     <section>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{eyebrow}</p>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="min-w-0 truncate text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">{props.title}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-[28px] leading-tight font-extrabold tracking-[-0.02em] sm:text-[32px]">{props.title}</h1>
+          <p className="mt-0.5 truncate text-[15px] text-muted">{subtitle}</p>
+        </div>
         <button
           type="button"
-          onClick={() => setSheet("menu")}
+          onClick={() => {
+            haptic("selection");
+            setSheet("menu");
+          }}
           aria-label={`More for ${props.title}`}
-          className="tap-target flex size-10 shrink-0 items-center justify-center rounded-full border border-hairline bg-surface"
+          className="tap-target mt-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-soft-mist transition-transform active:scale-95"
         >
           <Icon name="more" size={20} weight="bold" />
         </button>
       </div>
 
       {status === "trial-used" && props.hasLiveOrder ? (
-        <p className="mt-3 rounded-2xl bg-soft-mist px-4 py-3 text-sm">
-          Your trial basket is confirmed. To have it every week at member prices,{" "}
+        <p className="mt-4 rounded-2xl bg-soft-mist px-4 py-3 text-sm">
+          Your trial basket is confirmed.{" "}
           <Link href="/subscribe?reason=free-basket-used" className="font-semibold underline underline-offset-2">
-            see membership
+            Get it every week
           </Link>
-          .
         </p>
       ) : status === "trial-used" ? (
-        <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
-          <p className="font-semibold">Keep this basket coming</p>
-          <p className="mt-1 text-sm text-muted">
-            Your trial basket has been used, and this basket&apos;s produce is saved here. Members get their baskets every week at member prices: we remind you before each one, you confirm, and you pay when it arrives. Nothing is charged automatically.
-          </p>
+        <div className="mt-4 rounded-[22px] bg-surface p-4 ring-1 ring-hairline">
+          <p className="text-[17px] font-semibold">Keep this basket coming</p>
+          <p className="mt-1 text-sm text-muted">Your trial is used and your produce is saved. Members get it every week, at member prices.</p>
           <LinkButton href="/subscribe?reason=free-basket-used" size="sm" className="mt-3">
             See membership
           </LinkButton>
         </div>
       ) : (
         <>
-          {status === "paused" && (
-            <div className="mt-3 flex items-center gap-3 rounded-2xl bg-soft-mist px-4 py-3 text-sm">
-              <Icon name="recurring" size={18} className="shrink-0" />
-              <p className="min-w-0 flex-1">Paused. It won&apos;t come every week and we won&apos;t remind you, but you can still confirm a single delivery.</p>
-              <button type="button" disabled={pending} onClick={() => run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`)} className="shrink-0 font-semibold underline underline-offset-2">
-                Resume
-              </button>
-            </div>
-          )}
-
-          {skippedDateIso && (
-            <div className="mt-3 flex items-center gap-3 rounded-2xl bg-soft-mist px-4 py-3 text-sm">
-              <Icon name="calendar" size={18} className="shrink-0" />
-              <p className="min-w-0 flex-1">
-                You&apos;re skipping <b className="font-semibold">{longDate(skippedDateIso)}</b>. Nothing comes that day.
+          {(status === "paused" || skippedDateIso) && (
+            <div className="mt-4 flex items-center gap-3 rounded-full bg-soft-mist py-1.5 pr-1.5 pl-4 text-sm">
+              <Icon name={status === "paused" ? "recurring" : "calendar"} size={16} className="shrink-0 text-muted" />
+              <p className="min-w-0 flex-1 truncate">
+                {status === "paused" ? "Paused. No reminders, no repeats." : <>Skipping {shortDate(skippedDateIso!)}</>}
               </p>
-              <button type="button" disabled={pending} onClick={() => run(() => skipDate(deliveryId, skippedDateIso, false), `${shortDate(skippedDateIso)} is back on`)} className="shrink-0 font-semibold underline underline-offset-2">
-                Undo
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  status === "paused"
+                    ? run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`)
+                    : run(() => skipDate(deliveryId, skippedDateIso!, false), `${shortDate(skippedDateIso!)} is back on`)
+                }
+                className="shrink-0 rounded-full bg-surface px-3.5 py-1.5 text-[13px] font-semibold shadow-sm transition-transform active:scale-95"
+              >
+                {status === "paused" ? "Resume" : "Undo"}
               </button>
             </div>
           )}
 
           {area.state === "ok" && dateIso && cutoffIso && left !== null ? (
-            <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
-              <div className="flex items-center gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-mint-pop/30">
-                  <Icon name="calendar" size={18} />
+            <div className="mt-4 overflow-hidden rounded-[22px] bg-surface ring-1 ring-hairline">
+              <button
+                type="button"
+                disabled={!canChangeDay}
+                onClick={() => {
+                  haptic("selection");
+                  setSheet("day");
+                }}
+                aria-label={canChangeDay ? `Delivery ${longDate(dateIso)}. Change day` : undefined}
+                className="flex w-full items-start gap-3 p-4 text-left transition-colors enabled:active:bg-soft-mist"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5 text-[20px] leading-tight font-semibold tracking-[-0.01em]">
+                    {longDate(dateIso)}
+                    {canChangeDay && <Icon name="caretDown" size={14} weight="bold" className="text-muted" />}
+                  </span>
+                  <span className="mt-1 block text-[14px] text-muted">
+                    {DELIVERY_WINDOW} · confirm by {cutoffLabel(cutoffIso)}
+                  </span>
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-muted">Delivery</p>
-                  <p className="text-[17px] leading-tight font-semibold">{longDate(dateIso)}</p>
-                  <p className="mt-0.5 truncate text-[13px] text-muted">
-                    {DELIVERY_WINDOW}
-                    {props.areaName ? ` · ${props.areaName}` : ""}
-                  </p>
-                </div>
-                {props.dayOptions.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setSheet("day")}
-                    aria-label="Change delivery day"
-                    className="shrink-0 rounded-full border border-hairline px-3 py-1.5 text-[13px] font-semibold"
-                  >
-                    Change
-                  </button>
-                )}
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-hairline pt-3 text-sm">
-                <span className={`size-2 rounded-full ${left < 6 * 3_600_000 ? "bg-ember" : "bg-mint-pop"}`} aria-hidden />
-                <span>
-                  Confirm by <b className="font-semibold">{cutoffLabel(cutoffIso)}</b>
+                <span
+                  suppressHydrationWarning
+                  className={`mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold tabular-nums ${urgent ? "bg-ember/12 text-ember" : "bg-mint-pop/25 text-[#0f7a48]"}`}
+                >
+                  {timeLeft(left)}
                 </span>
-                <span className="text-muted" suppressHydrationWarning>
-                  · {timeLeft(left)}
-                </span>
-              </div>
-              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
-                {status === "running" ? (
-                  <>
-                    <Icon name="bell" size={13} className="shrink-0" />
-                    We&apos;ll remind you. You pay when it arrives.
-                  </>
-                ) : status === "trial" ? (
-                  <>
-                    Trial: comes once.{" "}
-                    <Link href="/subscribe" className="font-semibold text-carbon underline underline-offset-2">
-                      Every week with membership
-                    </Link>
-                  </>
-                ) : (
-                  "You pay when it arrives."
-                )}
-              </p>
+              </button>
+              {props.cycle && <CycleBars weekNumber={props.cycle.weekNumber} weeks={props.cycle.weeks} />}
             </div>
           ) : area.state === "unserved" ? (
-            <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
+            <div className="mt-4 rounded-[22px] bg-surface p-4 ring-1 ring-hairline">
               <p className="font-semibold">We don&apos;t deliver to {area.name} yet</p>
-              <p className="mt-1 text-sm text-muted">We&apos;re growing area by area and we&apos;ll tell you when we reach you. You can still fill this basket, or use an address in an area we cover.</p>
+              <p className="mt-1 text-sm text-muted">We&apos;ll tell you when we reach you. You can still fill this basket.</p>
               <LinkButton href="/account/addresses?next=/basket" variant="secondary" size="sm" className="mt-3">
                 Use another address
               </LinkButton>
             </div>
           ) : (
-            <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
+            <div className="mt-4 rounded-[22px] bg-surface p-4 ring-1 ring-hairline">
               <p className="font-semibold">Where should we deliver?</p>
-              <p className="mt-1 text-sm text-muted">Add your address and we&apos;ll show the days we come to you.</p>
+              <p className="mt-1 text-sm text-muted">Add your address to see the days we come to you.</p>
               <LinkButton href="/account/addresses?next=/basket" size="sm" className="mt-3">
                 Add your address
               </LinkButton>
             </div>
           )}
+
+          {status === "trial" && area.state === "ok" && (
+            <p className="mt-2 px-1 text-[13px] text-muted">
+              Your trial basket comes once.{" "}
+              <Link href="/subscribe" className="font-semibold text-carbon underline underline-offset-2">
+                Every week with membership
+              </Link>
+            </p>
+          )}
         </>
       )}
-
-      {props.cycle && <CycleStrip weekNumber={props.cycle.weekNumber} weeks={props.cycle.weeks} />}
 
       {/* ⋯ for this basket */}
       <BottomSheet open={sheet === "menu"} onClose={() => setSheet(null)} title={props.title}>
@@ -246,7 +263,7 @@ export function DeliveryCard(props: {
           )}
           {props.member &&
             (props.isStanding ? (
-              <MenuRow icon="recurring" title="Pause this basket" sub="It stops coming and we stop reminding you. Your produce stays here." onClick={() => run(() => setRepeating(deliveryId, false), "Paused", true)} />
+              <MenuRow icon="recurring" title="Pause this basket" sub="It stops coming and we stop reminding you. Your produce stays here." onClick={() => run(() => setRepeating(deliveryId, false), "Paused", true, { action: () => setRepeating(deliveryId, true), ok: `Every ${dayName(props.day)} again` })} />
             ) : (
               <MenuRow icon="recurring" title="Resume every week" sub={`Every ${dayName(props.day)}, with a reminder before each one`} onClick={() => run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`, true)} />
             ))}
@@ -297,7 +314,7 @@ export function DeliveryCard(props: {
       <BottomSheet open={sheet === "skip"} onClose={() => setSheet(null)} title={dateIso ? `Skip ${longDate(dateIso)}?` : "Skip"}>
         <p className="text-sm text-muted">Nothing comes that day and nothing is charged. Your produce stays ready for the week after, and you can undo this until it closes.</p>
         <div className="mt-5 grid gap-2">
-          <Button size="lg" loading={pending} onClick={() => dateIso && run(() => skipDate(deliveryId, dateIso, true), `Skipped ${shortDate(dateIso)}`)}>
+          <Button size="lg" loading={pending} onClick={() => dateIso && run(() => skipDate(deliveryId, dateIso, true), `Skipped ${shortDate(dateIso)}`, false, { action: () => skipDate(deliveryId, dateIso, false), ok: `${shortDate(dateIso)} is back on` })}>
             Skip this week
           </Button>
           <Button size="lg" variant="secondary" onClick={() => setSheet(null)}>
@@ -348,46 +365,53 @@ export function DeliveryCard(props: {
   );
 }
 
-/** Each week's colour, so the strip reads at a glance; the word underneath confirms it. */
-const WEEK_TONE: Record<CycleWeekState, { cell: string; dot: string; label: string }> = {
-  delivered: { cell: "bg-mint-pop/30", dot: "bg-[#0f7a48]", label: "text-[#0f7a48]" },
-  confirmed: { cell: "bg-mint-pop/15 ring-1 ring-mint-pop", dot: "bg-mint-pop", label: "text-[#0f7a48]" },
-  "on-the-way": { cell: "bg-electric-blue/15", dot: "bg-electric-blue", label: "text-[#1f6fd1]" },
-  "to-confirm": { cell: "bg-sunburst/30 ring-1 ring-sunburst", dot: "bg-sunburst", label: "text-carbon" },
-  skipped: { cell: "bg-soft-mist", dot: "bg-carbon/25", label: "text-muted" },
-  missed: { cell: "bg-ember/10", dot: "bg-ember", label: "text-ember" },
-  upcoming: { cell: "bg-surface ring-1 ring-hairline", dot: "bg-carbon/15", label: "text-muted" },
-  before: { cell: "bg-surface ring-1 ring-hairline opacity-50", dot: "bg-carbon/10", label: "text-muted" },
+/** Each week's colour: the bar says it at a glance, the date under it is tinted to match. */
+const WEEK_TONE: Record<CycleWeekState, { bar: string; date: string }> = {
+  delivered: { bar: "bg-[#1f9d55]", date: "text-[#0f7a48]" },
+  confirmed: { bar: "bg-mint-pop", date: "text-[#0f7a48]" },
+  "on-the-way": { bar: "bg-electric-blue", date: "text-[#1f6fd1]" },
+  "to-confirm": { bar: "bg-sunburst", date: "text-carbon font-semibold" },
+  skipped: { bar: "bg-carbon/25", date: "text-muted line-through" },
+  missed: { bar: "bg-ember", date: "text-ember" },
+  upcoming: { bar: "bg-carbon/10", date: "text-muted" },
+  before: { bar: "bg-carbon/[0.05]", date: "text-carbon/30" },
 };
 
-/** The four weeks of the membership cycle, each with what happened or what's needed. */
-function CycleStrip({ weekNumber, weeks }: { weekNumber: number; weeks: CycleWeek[] }) {
+/** The four weeks of the membership cycle, as one quiet row inside the delivery card. */
+function CycleBars({ weekNumber, weeks }: { weekNumber: number; weeks: CycleWeek[] }) {
+  const missed = weeks.filter((w) => w.state === "missed").length;
+  const delivered = weeks.filter((w) => w.state === "delivered").length;
+  const summary = missed ? `${missed} missed` : delivered ? `${delivered} delivered` : "On track";
   return (
-    <div className="mt-4">
-      <p className="text-xs font-medium text-muted">Week {weekNumber} of 4</p>
-      <ol className="mt-1.5 grid grid-cols-4 gap-1.5">
-        {weeks.map((w) => {
+    <div className="border-t border-hairline px-4 pt-3 pb-4">
+      <p className="flex items-baseline justify-between text-[12px] text-muted">
+        <span className="font-medium">Week {weekNumber} of 4</span>
+        <span>{summary}</span>
+      </p>
+      <ol className="mt-2 grid grid-cols-4 gap-1.5">
+        {weeks.map((w, i) => {
           const t = WEEK_TONE[w.state];
-          const d = new Date(w.dateIso);
+          const date = new Date(w.dateIso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
           const body = (
             <>
-              <span className="block text-[11px] text-muted">{d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" })}</span>
-              <span className="block text-[15px] leading-tight font-semibold tabular-nums">{d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}</span>
-              <span className={`mt-1 flex items-center gap-1 text-[11px] leading-tight font-medium ${t.label}`}>
-                <span className={`size-1.5 shrink-0 rounded-full ${t.dot}`} aria-hidden />
-                <span className="truncate">{WEEK_LABEL[w.state]}</span>
-              </span>
+              <motion.span
+                className={`block h-1.5 origin-left rounded-full ${t.bar}`}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ ...spring.smooth, delay: 0.08 + i * 0.07 }}
+              />
+              <span className={`mt-1.5 block text-[12px] tabular-nums ${t.date}`}>{date}</span>
             </>
           );
-          const cls = `block h-full rounded-xl px-2 py-2 ${t.cell}`;
+          const label = `${date}: ${WEEK_LABEL[w.state] === "—" ? "before this basket" : WEEK_LABEL[w.state].toLowerCase()}`;
           return (
-            <li key={w.dateIso}>
+            <li key={w.dateIso} aria-label={label}>
               {w.orderId ? (
-                <Link href={`/orders/${w.orderId}`} className={cls}>
+                <Link href={`/orders/${w.orderId}`} className="block">
                   {body}
                 </Link>
               ) : (
-                <div className={cls}>{body}</div>
+                body
               )}
             </li>
           );

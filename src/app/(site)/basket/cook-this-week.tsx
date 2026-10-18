@@ -7,6 +7,7 @@ import { useCart } from "@/components/cart-provider";
 import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { SaveRecipeButton } from "@/app/(site)/recipes/save-recipe-button";
+import { haptic } from "@/lib/haptics";
 import { addRecipeMissing } from "./actions";
 
 export type CookRecipe = {
@@ -60,13 +61,15 @@ export function RecipeRow({ deliveryId, recipe: r, saved }: { deliveryId: string
   const [pending, start] = useTransition();
   const [added, setAdded] = useState(false);
 
-  const add = () =>
+  const add = () => {
+    haptic("light");
     start(async () => {
       const res = await addRecipeMissing(deliveryId, r.slug);
       if (!res.ok) return cart.announce(res.error, "error");
       setAdded(true);
       cart.announce(`Added ${res.added ?? r.need} for ${r.title}`);
     });
+  };
 
   return (
     <article className="relative flex gap-3.5 rounded-2xl border border-hairline bg-surface p-3">

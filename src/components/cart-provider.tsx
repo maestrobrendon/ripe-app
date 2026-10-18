@@ -5,6 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
+import { haptic } from "@/lib/haptics";
+import { ProductImage } from "@/components/product-image";
+import { Icon } from "@/components/ui/icon";
 
 /*
  * What the customer is filling, on every page: a guest's cart, or a signed-in
@@ -69,7 +72,15 @@ export type AddableProduct = {
   soldOut?: boolean;
 };
 
-type Notice = { id: number; tone: "ok" | "error"; text: string; showView: boolean; action?: { label: string; run: () => void } };
+type Notice = {
+  id: number;
+  tone: "ok" | "error";
+  text: string;
+  showView: boolean;
+  action?: { label: string; run: () => void };
+  /** The product just added, shown as a thumbnail instead of the check. */
+  image?: { publicId: string | null; emoji: string; name: string };
+};
 
 type CartContextValue = CartSnapshot & {
   isOpen: boolean;
@@ -82,7 +93,8 @@ type CartContextValue = CartSnapshot & {
   quantityOf: (productId: string) => number;
   refresh: () => Promise<void>;
   /** Show a toast from elsewhere (bulk adds from recipes, Kachi). */
-  announce: (text: string, tone?: "ok" | "error") => void;
+  /** A short confirmation (or error) at the bottom of the screen, with an optional action like Undo. */
+  announce: (text: string, tone?: "ok" | "error", action?: { label: string; run: () => void }) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -121,9 +133,10 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
     setState(initial);
   }, [initialKey, initial]);
 
-  const announce = useCallback((text: string, tone: "ok" | "error" = "ok", showView = tone === "ok", action?: Notice["action"]) => {
+  const announce = useCallback((text: string, tone: "ok" | "error" = "ok", showView = tone === "ok", action?: Notice["action"], image?: Notice["image"]) => {
     window.clearTimeout(timer.current);
-    setNotice({ id: Date.now(), tone, text, showView, action });
+    if (tone === "error") haptic("error");
+    setNotice({ id: Date.now(), tone, text, showView, action, image });
     timer.current = window.setTimeout(() => setNotice(null), tone === "error" ? 5000 : action ? 5000 : 3200);
   }, []);
   useEffect(
@@ -185,7 +198,8 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
         if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "That didn't go through. Try again.");
         setState(data as CartSnapshot);
         const where = (data as CartSnapshot).deliveryLabel ?? "your cart";
-        if (before === 0 && quantity > 0) announce(`${product.name} added to ${where}`);
+        if (before === 0 && quantity > 0)
+          announce(`${product.name} added to ${where}`, "ok", true, undefined, { publicId: product.cloudinaryPublicId ?? null, emoji: product.imageEmoji, name: product.name });
         else if (quantity <= 0 && before > 0)
           announce(`${product.name} removed`, "ok", false, { label: "Undo", run: () => void setQuantityRef.current?.(product, before) });
         settle();
@@ -220,7 +234,7 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
       setQuantity,
       quantityOf,
       refresh,
-      announce: (text: string, tone: "ok" | "error" = "ok") => announce(text, tone),
+      announce: (text: string, tone: "ok" | "error" = "ok", action?: Notice["action"]) => announce(text, tone, false, action),
     }),
     [state, isOpen, loadingProductId, setQuantity, quantityOf, refresh, announce],
   );
@@ -234,13 +248,33 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
           {notice && (
             <motion.div
               key={notice.id}
-              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              initial={{ opacity: 0, y: 24, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={spring.snappy}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={spring.juicy}
+              // Swipe it down to dismiss, like a notification.
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0.05, bottom: 0.6 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 36 || info.velocity.y > 400) setNotice(null);
+              }}
               role={notice.tone === "error" ? "alert" : "status"}
-              className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-full px-4 py-2.5 text-sm shadow-lg ${notice.tone === "error" ? "bg-ember text-white" : "bg-carbon text-white"}`}
+              className={`pointer-events-auto flex max-w-md touch-none items-center gap-3 rounded-full py-2 pr-4 pl-2 text-sm shadow-[0_12px_32px_-8px_rgb(0_0_0/0.35)] ${notice.tone === "error" ? "bg-ember text-white" : "bg-carbon text-white"}`}
             >
+              {notice.tone === "error" ? (
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/20">
+                  <Icon name="warning" size={16} weight="bold" />
+                </span>
+              ) : notice.image ? (
+                <motion.span initial={{ scale: 0.4, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={spring.juicy} className="shrink-0">
+                  <ProductImage publicId={notice.image.publicId} alt="" emoji={notice.image.emoji} sizes="28px" rounded="rounded-full" className="size-7 bg-white" emojiClassName="text-sm" />
+                </motion.span>
+              ) : (
+                <motion.span initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={spring.juicy} className="flex size-7 shrink-0 items-center justify-center rounded-full bg-mint-pop text-carbon">
+                  <Icon name="checkPlain" size={15} weight="bold" />
+                </motion.span>
+              )}
               <span className="min-w-0">{notice.text}</span>
               {notice.action && (
                 <button

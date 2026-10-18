@@ -16,6 +16,7 @@ import { orderHeadline, paymentLine, ISSUE_KINDS } from "@/lib/order-copy";
 import { formatPhone } from "@/lib/phone";
 import { getOrCreateActiveDelivery } from "@/lib/order-container";
 import { OrderControls } from "./order-controls";
+import { PlacedMoment } from "./placed-moment";
 
 export const metadata = { title: "Your order" };
 
@@ -66,17 +67,17 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       )}
 
       {placed && !stopped && (
-        <div className="mt-3 flex items-start gap-3 rounded-2xl bg-mint-pop/25 p-4">
-          <Check size={20} weight="bold" className="mt-0.5 shrink-0" aria-hidden />
-          <p className="text-sm">
-            <b className="font-semibold">Order confirmed.</b> We&apos;ll message you when it&apos;s on its way.
-            {order.customerEmail ? ` A receipt is on its way to ${order.customerEmail}.` : ""}
-          </p>
-        </div>
+        <PlacedMoment
+          when={`${longDate(order.deliveryDate)}, ${DELIVERY_WINDOW}`}
+          pay={paymentLine({ paidAt: order.paidAt, paymentMethod: order.paymentMethod, total: order.total, status: order.status }, formatNaira)}
+          receiptTo={order.customerEmail}
+          calendarHref={`/orders/${order.id}/calendar${hasValidToken && !ownsIt ? `?t=${encodeURIComponent(t!)}` : ""}`}
+        />
       )}
 
       <p className="mt-4 text-sm text-muted">Order {ref}</p>
-      <h1 className="mt-1 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{title}</h1>
+      {/* Just confirmed: the moment above already says it, so the heading is for screen readers only. */}
+      <h1 className={placed && !stopped ? "sr-only" : "mt-1 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]"}>{title}</h1>
       <p className="mt-1 text-sm text-muted">{body}</p>
 
       {!stopped && step >= 0 && (
