@@ -8,7 +8,11 @@ import { ImageResponse } from "next/og";
  * drawing at every size (browser tab, home screen, favicon.ico), so the
  * proportions below are fractions of the side.
  */
-export async function iconMark(size: number, { rounded = true }: { rounded?: boolean } = {}) {
+/**
+ * glyph shrinks the "B" for a maskable app icon, which Android crops to a
+ * circle or squircle: everything important has to sit in the middle 80%.
+ */
+export async function iconMark(size: number, { rounded = true, glyph = 1 }: { rounded?: boolean; glyph?: number } = {}) {
   const font = await readFile(join(process.cwd(), "src/fonts/DrKabel.otf"));
   return new ImageResponse(
     (
@@ -24,9 +28,9 @@ export async function iconMark(size: number, { rounded = true }: { rounded?: boo
           borderRadius: rounded ? size * 0.22 : 0,
           color: "#fff",
           fontFamily: "Dr Kabel",
-          fontSize: size * 0.78,
+          fontSize: size * 0.78 * glyph,
           // The display face sits a little high in its box; nudge it to the optical centre.
-          paddingTop: size * 0.08,
+          paddingTop: size * 0.08 * glyph,
           lineHeight: 1,
         }}
       >

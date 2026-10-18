@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "../globals.css";
 import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
@@ -18,12 +18,17 @@ import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
 import { OfflineBanner } from "@/components/offline-banner";
+import { AppSetup } from "@/components/app/app-setup";
 
 export const metadata: Metadata = {
+  // Installed on an iPhone's home screen, Basket opens full screen under its own name.
+  appleWebApp: { capable: true, title: "Basket", statusBarStyle: "default" },
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
   description:
     "Fruit and vegetables from trusted farmers, checked by hand and delivered across Lagos. Built around the recipes you want to cook.",
 };
+
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 /**
  * Root layout for every page with the shop chrome. The homepage and sign-up
@@ -64,6 +69,8 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
                 {/* Members already have Kachi in the app (her tab, "Get ideas",
                     the planners); the floating one is for visitors. */}
                 {!user && <KachiBubble />}
+                {/* Kachi's offer to install Basket as an app, and app notifications. */}
+                {user && <AppSetup />}
             </CartProvider>
           </ZoneProvider>
           </SiteSettingsProvider>

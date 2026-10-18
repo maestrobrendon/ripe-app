@@ -54,6 +54,9 @@ import {
   Bell,
   DownloadSimple,
   Clock,
+  Export,
+  DeviceMobile,
+  PlusSquare,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
@@ -121,6 +124,10 @@ export const ICONS = {
   bell: Bell,
   download: DownloadSimple,
   clock: Clock,
+  /** iOS Safari's share button: a square with an arrow out of the top. */
+  share: Export,
+  device: DeviceMobile,
+  addSquare: PlusSquare,
 } as const;
 
 export type IconName = keyof typeof ICONS;

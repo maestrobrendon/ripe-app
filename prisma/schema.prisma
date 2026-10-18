@@ -255,6 +255,7 @@ model User {
   addresses                 Address[]
   orderIssues               OrderIssue[]
   notifications             NotificationLog[]
+  pushSubscriptions         PushSubscription[]
 }
 
 // A saved delivery address. Lagos addresses are found by landmark as much as
@@ -1163,4 +1164,21 @@ model NotificationLog {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// One device that can receive app notifications (Web Push). A customer can
+// have several (phone, laptop). Rows whose push service says "gone" are
+// deleted when a send fails with 404 or 410.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastSentAt DateTime?
+
+  @@index([userId])
 }

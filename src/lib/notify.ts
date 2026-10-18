@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { pushConfigured, sendWebPush } from "@/lib/web-push";
 
 /*
  * Every message to a customer goes through here: order updates, the
@@ -12,8 +13,9 @@ import { sendEmail } from "@/lib/email";
  *   approved by Meta; until WHATSAPP_PROVIDER is set, messages are written to
  *   NotificationLog as LOGGED, and connecting it means sending from
  *   sendWhatsApp below. Nothing else changes.
- * - App (push) notifications, the same way: logged until PUSH_PROVIDER is set
- *   and sendPush below talks to it.
+ * - App notifications (Web Push, lib/web-push.ts) to every device the
+ *   customer turned them on for. Logged instead until the VAPID keys are set,
+ *   or while the customer has no device subscribed.
  *
  * Each message has a dedupeKey, so a scheduled reminder goes out once per
  * channel however often the job runs. Customers' channel choices
@@ -52,11 +54,11 @@ async function sendWhatsApp(to: string, text: string): Promise<"SENT" | "LOGGED"
   return "LOGGED";
 }
 
-/** Whatever push provider is connected (web push or an app service). None yet, so it's logged. */
-async function sendPush(userId: string, title: string, body: string): Promise<"SENT" | "LOGGED" | "FAILED"> {
-  if (!process.env.PUSH_PROVIDER) return "LOGGED";
-  console.warn(JSON.stringify({ scope: "push", note: "provider not implemented", userId, length: title.length + body.length }));
-  return "LOGGED";
+/** App notifications: sent to the customer's devices, or logged if there are none (or no keys). */
+async function sendPush(userId: string, push: { title: string; body: string; url: string }, kind: string): Promise<"SENT" | "LOGGED" | "FAILED"> {
+  if (!pushConfigured()) return "LOGGED";
+  const sent = await sendWebPush(userId, { ...push, tag: kind }).catch(() => -1);
+  return sent > 0 ? "SENT" : sent < 0 ? "FAILED" : "LOGGED";
 }
 
 export async function notify(m: Message): Promise<void> {
@@ -82,6 +84,6 @@ export async function notify(m: Message): Promise<void> {
   if (m.push && m.userId && (m.essential || prefs?.notifyPush !== false)) {
     const row = await claim(`${m.dedupeKey}:push`, { userId: m.userId, channel: "PUSH", kind: m.kind, to: m.push.url, body: `${m.push.title}
 ${m.push.body}` });
-    if (row) await prisma.notificationLog.update({ where: { id: row.id }, data: { status: await sendPush(m.userId, m.push.title, m.push.body) } });
+    if (row) await prisma.notificationLog.update({ where: { id: row.id }, data: { status: await sendPush(m.userId, m.push, m.kind) } });
   }
 }

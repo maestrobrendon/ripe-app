@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useCart } from "@/components/cart-provider";
+import { disablePush, enablePush, isInstalled, openGetApp, pushNeedsInstall } from "@/components/app/pwa";
 import { formatNaira, GOAL_LABEL, PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { cancelSubscription, withdrawPlanRequest } from "@/app/(site)/subscribe/actions";
@@ -46,6 +47,8 @@ type Props = {
   /** Free accounts: whether the one trial basket is still to use. */
   trial: "available" | "used" | null;
   savedRecipes: number;
+  /** Devices with app notifications turned on. */
+  pushDevices: number;
   invite: { code: string | null; reward: number; invited: number; rewarded: number; credit: number };
   kachiReview: boolean;
   deletionRequested: string | null;
@@ -91,6 +94,30 @@ export function AccountView(props: Props) {
     cart.announce(message);
   };
   const failed = (message: string) => cart.announce(message, "error");
+
+  // Known only in the browser: is Basket installed on this device, and can it get notifications here yet?
+  const [device, setDevice] = useState<{ installed: boolean; needsInstall: boolean } | null>(null);
+  useEffect(() => {
+    const t = window.setTimeout(() => setDevice({ installed: isInstalled(), needsInstall: pushNeedsInstall() }), 0);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  /** App notifications: on means this device is subscribed too, not just the setting. */
+  const setPush = async (on: boolean): Promise<SaveResult> => {
+    if (!on) {
+      await disablePush();
+      return setNotifyChannel("push", false);
+    }
+    const r = await enablePush();
+    if (r === "on") return { ok: true };
+    if (r === "needs-install") {
+      openGetApp();
+      return { ok: false, error: "On iPhone, add Basket to your home screen first." };
+    }
+    if (r === "denied") return { ok: false, error: "Notifications are blocked for Basket in this browser's settings." };
+    if (r === "unsupported") return { ok: false, error: "This browser can't show notifications." };
+    return { ok: false, error: "That didn't work. Try again in a moment." };
+  };
 
   const people = props.adults + props.kids;
   const m = props.membership;
@@ -200,6 +227,12 @@ export function AccountView(props: Props) {
           <Row icon="account" tint="mist" title="Name and contact" sub={[props.name, props.phone || props.email].filter(Boolean).join(" · ")} onClick={() => setSheet("profile")} />
         </Group>
 
+        {device && !device.installed && (
+          <Group title="App">
+            <Row icon="device" tint="mint" title="Get the app" sub="Basket on your home screen, one tap away" onClick={openGetApp} />
+          </Group>
+        )}
+
         <Group title="Notifications" footer="Your basket reminders, a few days before each delivery, and order updates go to whichever you leave on. Password links always come through.">
           <Toggle
             icon="whatsapp"
@@ -212,7 +245,15 @@ export function AccountView(props: Props) {
             onError={failed}
           />
           {props.email && <Toggle icon="send" tint="sky" title="Email" sub={props.email} on={props.notify.email} onChange={(on) => setNotifyChannel("email", on)} onError={failed} />}
-          <Toggle icon="bell" tint="sun" title="App notifications" sub="Reminders and updates from Basket" on={props.notify.push} onChange={(on) => setNotifyChannel("push", on)} onError={failed} />
+          <Toggle
+            icon="bell"
+            tint="sun"
+            title="App notifications"
+            sub={device?.needsInstall ? "Add Basket to your home screen first" : "On this device"}
+            on={props.notify.push && props.pushDevices > 0}
+            onChange={setPush}
+            onError={failed}
+          />
         </Group>
 
         <Group title="Help">

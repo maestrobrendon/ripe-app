@@ -1,6 +1,6 @@
 import { SiteSettingsProvider } from "@/components/site-settings-provider";
 import { getSiteSettings } from "@/lib/site-settings";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "../globals.css";
 import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
@@ -8,10 +8,14 @@ import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
 
 export const metadata: Metadata = {
+  // Installed on an iPhone's home screen, Basket opens full screen under its own name.
+  appleWebApp: { capable: true, title: "Basket", statusBarStyle: "default" },
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
   description:
     "Shop fruits and vegetables sourced locally from trusted farmers, delivered across Lagos. Subscribe for member pricing and a standing weekly basket.",
 };
+
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 /**
  * Root layout for the pages that draw their own navigation and footer: the

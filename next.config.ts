@@ -29,6 +29,15 @@ const nextConfig: NextConfig = {
         ...(adminHost ? { missing: [{ type: "host" as const, value: adminHost.split(":")[0] }] } : {}),
         headers: SECURITY_HEADERS,
       },
+      // The service worker (app notifications) must never be cached, or an update could take days to reach phones.
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
     ];
   },
   // The old storefront collections now live on one page, /shop, as filters.
