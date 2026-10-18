@@ -306,9 +306,6 @@ export function Footer() {
       <div className="mx-auto mt-14 flex w-[min(1180px,calc(100%-32px))] flex-wrap justify-between gap-2.5 border-t border-paper-white/15 pt-6 text-[13px] text-paper-white/55 sm:w-[min(1180px,calc(100%-48px))]">
         <span>Basket, Lagos. {new Date().getFullYear()}.</span>
         <span>Made for people who train, cook and care.</span>
-        <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">
-          Photography from Pexels
-        </a>
       </div>
 
       <div className="mt-8 overflow-hidden" aria-hidden>

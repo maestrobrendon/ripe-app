@@ -74,9 +74,6 @@ export function MarketingFooter() {
       </div>
       <div className="hm-wrap mt-12 flex flex-wrap justify-between gap-2 text-[13px] text-[var(--hm-ink-3)]">
         <span>© {new Date().getFullYear()} Basket</span>
-        <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="hover:text-carbon">
-          Food photography from Pexels
-        </a>
       </div>
     </footer>
   );
