@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSiteSettings } from "@/components/site-settings-provider";
+import { supportHref, whatsappReady } from "@/lib/support";
 import "@/app/(bare)/home-menu/home-menu.css";
 
 /**
@@ -32,7 +33,7 @@ const columns = (support: { whatsapp: string; email: string }): { title: string;
   {
     title: "Help",
     links: [
-      ["WhatsApp us", `https://wa.me/${support.whatsapp}`],
+      ...(whatsappReady(support) ? ([["WhatsApp us", supportHref(support)]] as [string, string][]) : []),
       [support.email, `mailto:${support.email}`],
       ["Your account", "/account"],
     ],

@@ -80,12 +80,12 @@ const SECTIONS: LegalSection[] = [
             delivery day, and whether you edited or skipped a week.
           </li>
           <li>
-            <strong>Subscription and streaks:</strong> your plan, when you joined, your weekly streak and
-            any rewards.
+            <strong>Membership, invites and credit:</strong> your plan, when you joined, who invited you
+            (or whom you invited), and any account credit.
           </li>
           <li>
-            <strong>Payment card:</strong> only the card brand, last four digits and expiry date. We never
-            see or store your full card number.
+            <strong>Payments:</strong> how you chose to pay each order and whether it has been paid. We
+            don&rsquo;t take or store card details.
           </li>
           <li>
             <strong>Technical data:</strong> your IP address, browser and device type, kept briefly in

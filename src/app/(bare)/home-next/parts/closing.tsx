@@ -7,6 +7,7 @@ import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
 import { useSiteSettings } from "@/components/site-settings-provider";
+import { supportHref, whatsappReady } from "@/lib/support";
 import { MagneticLink, Reveal } from "./runtime";
 import { ProduceSticker } from "./produce";
 import type { FarmProduct } from "../types";
@@ -244,7 +245,7 @@ const columns = (support: { whatsapp: string; email: string }): { title: string;
     title: "Support",
     links: [
       [support.email, `mailto:${support.email}`],
-      ["WhatsApp us", `https://wa.me/${support.whatsapp}`],
+      ...(whatsappReady(support) ? ([["WhatsApp us", supportHref(support)]] as [string, string][]) : []),
       ["Your account", "/account"],
       ["Terms", "/terms"],
       ["Privacy", "/privacy"],

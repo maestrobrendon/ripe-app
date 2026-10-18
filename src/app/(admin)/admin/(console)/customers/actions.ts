@@ -10,6 +10,7 @@ import { appOrigin } from "@/lib/site";
 import { rateLimitShared } from "@/lib/rate-limit-db";
 import { activatePlan, endPlan } from "@/lib/plans";
 import { sendPlanDecision } from "@/lib/customer-emails";
+import { notify } from "@/lib/notify";
 
 /*
  * Staff actions on customer accounts. Contact details stay masked until a
@@ -220,5 +221,27 @@ export async function eraseCustomer(input: { userId: string; confirm: string }):
     await auditStaff(ctx, { action: "customers.erased", targetType: "User", targetId: uid, summary: "Erased a customer's personal data on request" });
     done(uid);
     return { ok: true, data: undefined };
+  });
+}
+
+/**
+ * For a customer who signed up with a phone number only: a reset link staff
+ * send on WhatsApp themselves (there's no SMS provider). It works once, for
+ * 30 minutes, and making one is recorded.
+ */
+export async function createCustomerResetLink(userId: string): Promise<ActionResult<{ link: string; phone: string | null }>> {
+  return staffAction("customers.manage", async (ctx) => {
+    const user = await findCustomer(userId);
+    if (!user) return NOT_FOUND;
+    if (user.erasedAt) return { ok: false, code: "CONFLICT", error: "This account was erased." };
+    if (!(await rateLimitShared(`admin-cust-reset-link:${user.id}`, 5, 60 * 60 * 1000)).ok) {
+      return { ok: false, code: "RATE_LIMIT", error: "Several links were made this hour. Use the last one, or wait a little." };
+    }
+    const token = await createPasswordResetToken(user.id);
+    const link = `${appOrigin()}/reset-password?token=${token}`;
+    await auditStaff(ctx, { action: "customers.reset_link_created", targetType: "User", targetId: user.id, summary: "Made a password reset link to send by hand" });
+    // Logged for the WhatsApp provider when there is one; staff send it today.
+    await notify({ userId: user.id, kind: "auth.reset_link", dedupeKey: `reset-link:${user.id}:${Date.now()}`, essential: true, whatsapp: { to: user.phone, text: `Basket: here's your link to set a new password. It works once, for 30 minutes: ${link}` } }).catch(() => {});
+    return { ok: true, data: { link, phone: user.phone } };
   });
 }

@@ -196,13 +196,14 @@ const SECTIONS: LegalSection[] = [
     ),
   },
   {
-    id: "streaks",
-    title: "Streaks and rewards",
+    id: "credit",
+    title: "Invites and account credit",
     body: (
       <p>
-        Weekly streaks and the rewards for reaching milestones, such as delivery credit or vouchers, are
-        a thank-you. They have no cash value, can&rsquo;t be transferred, and may change or end. A reward
-        we&rsquo;ve already given you will stay valid until its stated expiry.
+        When someone joins with your invite link and their first order is delivered, you each get
+        &#8358;1,000 account credit. We may also add credit to put a problem right. Credit comes off your
+        next orders; it has no cash value, can&rsquo;t be transferred, and is lost if you delete your
+        account. We may change or end invite rewards, but credit you already have stays.
       </p>
     ),
   },

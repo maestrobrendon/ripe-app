@@ -54,6 +54,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             {user.subscriptionTier ? <Badge tone="good">{user.subscriptionTier.name}</Badge> : <Badge>Pay as you go</Badge>}
             {user.suspendedAt && <Badge tone="bad">Paused</Badge>}
             {erased && <Badge tone="bad">Erased</Badge>}
+            {!erased && user.deletionRequestedAt && <Badge tone="warn">Asked to be deleted</Badge>}
           </div>
         }
       />
@@ -61,6 +62,11 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
       {user.suspendedAt && (
         <p className="mb-5 rounded-xl bg-ember/10 px-4 py-3 text-[13px] text-[#9a2c00]">
           Paused {when(user.suspendedAt)}: {user.suspendedReason}. They can&apos;t sign in.
+        </p>
+      )}
+      {!erased && user.deletionRequestedAt && (
+        <p className="mb-5 rounded-xl bg-sunburst/25 px-4 py-3 text-[13px]">
+          Asked to be deleted on {when(user.deletionRequestedAt)}. Settle open orders and payments, then use “Erase their personal data” under Their data, within 30 days.
         </p>
       )}
       {erased && (

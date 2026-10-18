@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { formatNaira } from "@/lib/format";
 import { LEVELS, type CoachProgress } from "@/lib/coach";
 import { useSiteSettings } from "@/components/site-settings-provider";
+import { supportHref, supportVerb } from "@/lib/support";
 import type { StreakView } from "@/lib/streak-config";
 import type { CoachReply } from "@/app/api/coach/route";
 
@@ -190,14 +191,12 @@ export function CoachWidget() {
 
                   {turn.reply.id === "human" ? (
                     <a
-                      href={`https://wa.me/${support.whatsapp}?text=${encodeURIComponent(
-                        "Hi Basket, I have a question about",
-                      )}`}
+                      href={supportHref(support, "Hi Basket, I have a question about ")}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-3 inline-block text-sm font-semibold text-carbon underline"
                     >
-                      Open WhatsApp
+                      {supportVerb(support)}
                     </a>
                   ) : (
                     turn.reply.link && (

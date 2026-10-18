@@ -11,6 +11,7 @@ import {
   eraseCustomer,
   revealCustomerContact,
   sendCustomerPasswordReset,
+  createCustomerResetLink,
   setCustomerPlan,
   setCustomerSuspended,
   signOutCustomer,
@@ -205,14 +206,35 @@ export function NotesCard({ userId, canAdd, notes }: { userId: string; canAdd: b
 
 export function AccountControls({ userId, suspended, hasEmail, sessions, canManage }: { userId: string; suspended: boolean; hasEmail: boolean; sessions: number; canManage: boolean }) {
   const { go, pending, banner } = useRun();
+  const [resetLink, setResetLink] = useState<{ link: string; phone: string | null } | null>(null);
   if (!canManage) return null;
+  const waText = resetLink ? encodeURIComponent(`Hi, it's Basket. Here's your link to set a new password. It works once, for 30 minutes: ${resetLink.link}`) : "";
   return (
     <Card title="Account">
       <div className="flex flex-col items-start gap-1">
-        {hasEmail && (
+        {hasEmail ? (
           <Button size="sm" variant="ghost" className="-ml-3" disabled={pending} onClick={() => go(() => sendCustomerPasswordReset(userId), "Password reset link sent to their email.")}>
             Send a password reset link
           </Button>
+        ) : (
+          <Button size="sm" variant="ghost" className="-ml-3" disabled={pending} onClick={() => go(() => createCustomerResetLink(userId), "Link made. Send it on WhatsApp; it works once, for 30 minutes.", setResetLink)}>
+            Make a password reset link to send on WhatsApp
+          </Button>
+        )}
+        {resetLink && (
+          <div className="mb-2 w-full rounded-lg bg-soft-mist p-2.5 text-[12px]">
+            <p className="break-all tabular-nums">{resetLink.link}</p>
+            <div className="mt-2 flex gap-3">
+              <button type="button" className="font-semibold underline" onClick={() => navigator.clipboard?.writeText(resetLink.link)}>
+                Copy
+              </button>
+              {resetLink.phone && (
+                <a className="font-semibold underline" target="_blank" rel="noreferrer" href={`https://wa.me/${resetLink.phone.replace(/\D/g, "")}?text=${waText}`}>
+                  Open WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
         )}
         {sessions > 0 && (
           <Button

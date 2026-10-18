@@ -6,7 +6,7 @@ import type { ActionResult } from "@/lib/admin/guard";
 import type { OrderStatus } from "@/generated/prisma/enums";
 import { useAdminAction } from "../../step-up";
 import { Alert, Button, Card, Field, Input } from "../../../_ui/kit";
-import { addOrderComment, recordRefund, revealOrderContact, saveInternalNote, setOrderStatus } from "../actions";
+import { addOrderComment, markOrderPaid, recordRefund, resolveIssue, revealOrderContact, saveInternalNote, setOrderStatus } from "../actions";
 
 type Notice = { tone: "error" | "success"; text: string } | null;
 
@@ -135,13 +135,14 @@ export function OrderActions(props: {
   );
 }
 
-export function RevealContact({ orderId, maskedPhone, maskedEmail, canReveal }: { orderId: string; maskedPhone: string; maskedEmail: string; canReveal: boolean }) {
+export function RevealContact({ orderId, maskedPhone, maskedEmail, maskedAltPhone, canReveal }: { orderId: string; maskedPhone: string; maskedEmail: string; maskedAltPhone?: string | null; canReveal: boolean }) {
   const { go, pending, notice } = useRun();
-  const [shown, setShown] = useState<{ phone: string; email: string | null } | null>(null);
+  const [shown, setShown] = useState<{ phone: string; email: string | null; altPhone: string | null } | null>(null);
   return (
     <div className="mt-1 text-[13px]">
       <p className="tabular-nums">{shown ? shown.phone : maskedPhone}</p>
       <p>{shown ? (shown.email ?? "No email") : maskedEmail}</p>
+      {(shown?.altPhone || maskedAltPhone) && <p className="tabular-nums text-carbon/65">Also {shown ? shown.altPhone : maskedAltPhone}</p>}
       {canReveal && !shown && (
         <button
           type="button"
@@ -199,5 +200,74 @@ export function OrderNotes({ orderId, note, canEdit }: { orderId: string; note: 
         </div>
       )}
     </Card>
+  );
+}
+
+/** For a transfer (or cash staff collected): record that the money arrived. */
+export function MarkPaid({ orderId, version }: { orderId: string; version: number }) {
+  const { go, pending, notice } = useRun();
+  return (
+    <div className="mt-3 border-t border-black/6 pt-3">
+      <Button size="sm" variant="secondary" disabled={pending} onClick={() => go(() => markOrderPaid({ orderId, version }), "Marked paid.")}>
+        Mark paid
+      </Button>
+      {notice && (
+        <div className="mt-2">
+          <Alert tone={notice.tone}>{notice.text}</Alert>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Issue = { id: string; kind: string; label: string; items: string[]; note: string | null; status: "OPEN" | "RESOLVED"; resolution: string | null; when: string };
+
+/** What the customer reported, and putting it right: a few words on what was done, and credit if it's due. */
+export function IssuesPanel({ issues, canCredit }: { issues: Issue[]; canCredit: boolean }) {
+  return (
+    <Card title={`Reported problems (${issues.filter((i) => i.status === "OPEN").length} open)`}>
+      <ul className="space-y-4">
+        {issues.map((i) => (
+          <IssueRow key={i.id} issue={i} canCredit={canCredit} />
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function IssueRow({ issue: i, canCredit }: { issue: Issue; canCredit: boolean }) {
+  const { go, pending, notice } = useRun();
+  const [resolution, setResolution] = useState("");
+  const [credit, setCredit] = useState("");
+  return (
+    <li className="text-[13px]">
+      <p className="font-semibold">
+        {i.label} <span className="font-normal text-carbon/50">· {i.when}</span>
+      </p>
+      {i.items.length > 0 && <p className="text-carbon/70">{i.items.join(", ")}</p>}
+      {i.note && <p className="mt-1 whitespace-pre-line">&ldquo;{i.note}&rdquo;</p>}
+      {i.status === "RESOLVED" ? (
+        <p className="mt-2 text-carbon/65">Sorted: {i.resolution}</p>
+      ) : (
+        <form
+          className="mt-2 space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            go(() => resolveIssue({ issueId: i.id, resolution, credit: Math.round(Number(credit) || 0) }), "Sorted, and the customer has been told.");
+          }}
+        >
+          <Input aria-label="What was done" placeholder="Replacement on the next delivery" value={resolution} onChange={(e) => setResolution(e.target.value)} maxLength={300} className="h-9! text-[13px]!" />
+          {canCredit && <Input aria-label="Credit in naira" placeholder="Credit (₦), optional" inputMode="numeric" value={credit} onChange={(e) => setCredit(e.target.value.replace(/\D/g, ""))} className="h-9! text-[13px]!" />}
+          <Button size="sm" variant="secondary" disabled={pending || resolution.trim().length < 3}>
+            Mark sorted
+          </Button>
+        </form>
+      )}
+      {notice && (
+        <div className="mt-2">
+          <Alert tone={notice.tone}>{notice.text}</Alert>
+        </div>
+      )}
+    </li>
   );
 }

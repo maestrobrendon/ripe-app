@@ -9,7 +9,8 @@ import { canRefundFrom, canTransition, nextStatuses, STATUS_LABEL } from "@/lib/
 import { formatOrderQty } from "@/lib/stock-core";
 import { Badge, Card, PageHeader } from "../../../_ui/kit";
 import { dayDate, naira, orderRef, statusTone, when } from "../../../_ui/format";
-import { OrderActions, OrderNotes, RevealContact } from "./order-panels";
+import { ISSUE_KINDS } from "@/lib/order-copy";
+import { IssuesPanel, MarkPaid, OrderActions, OrderNotes, RevealContact } from "./order-panels";
 
 export const metadata: Metadata = { title: "Order" };
 
@@ -23,6 +24,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       items: { include: { product: { select: { name: true, unit: true, slug: true, soldAs: true, referenceWeightG: true } } }, orderBy: { id: "asc" } },
       events: { orderBy: { at: "asc" } },
       credits: { orderBy: { createdAt: "asc" } },
+      issues: { orderBy: { createdAt: "desc" } },
       user: { select: { id: true, subscriptionTier: { select: { name: true } } } },
     },
   });
@@ -138,6 +140,18 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 <dt className="text-carbon/50">Address</dt>
                 <dd className="whitespace-pre-line">{order.address}</dd>
               </div>
+              {order.landmark && (
+                <div>
+                  <dt className="text-carbon/50">Nearest landmark</dt>
+                  <dd>{order.landmark}</dd>
+                </div>
+              )}
+              {order.deliveryNote && (
+                <div>
+                  <dt className="text-carbon/50">Gate or delivery notes</dt>
+                  <dd className="whitespace-pre-line">{order.deliveryNote}</dd>
+                </div>
+              )}
               {order.deliveredAt && (
                 <div>
                   <dt className="text-carbon/50">Delivered</dt>
@@ -159,6 +173,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               orderId={order.id}
               maskedPhone={maskPhone(order.customerPhone)}
               maskedEmail={maskEmail(order.customerEmail)}
+              maskedAltPhone={order.altPhone ? maskPhone(order.altPhone) : null}
               canReveal={can(role, "customers.reveal_pii")}
             />
             {order.user && can(role, "customers.view") && (
@@ -176,7 +191,17 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="flex justify-between">
                 <dt className="text-carbon/50">Paid</dt>
-                <dd>{order.paidAt ? when(order.paidAt) : "Not paid"}</dd>
+                <dd>{order.paidAt ? when(order.paidAt) : /delivery/i.test(order.paymentMethod) ? "On delivery" : "Not yet"}</dd>
+              </div>
+              {order.creditApplied > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-carbon/50">Account credit used</dt>
+                  <dd>{naira(order.creditApplied)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <dt className="text-carbon/50">To collect</dt>
+                <dd className="font-semibold">{order.paidAt ? "Nothing" : naira(order.total)}</dd>
               </div>
               {refunded > 0 && (
                 <div className="flex justify-between">
@@ -185,6 +210,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 </div>
               )}
             </dl>
+            {!order.paidAt && order.status !== "CANCELLED" && order.status !== "REFUNDED" && can(role, "orders.refund") && <MarkPaid orderId={order.id} version={order.version} />}
             {order.credits.length > 0 && (
               <ul className="mt-3 space-y-1.5 border-t border-black/6 pt-3 text-[12px] text-carbon/65">
                 {order.credits.map((c) => (
@@ -195,6 +221,22 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               </ul>
             )}
           </Card>
+
+          {order.issues.length > 0 && (
+            <IssuesPanel
+              canCredit={can(role, "orders.refund")}
+              issues={order.issues.map((i) => ({
+                id: i.id,
+                kind: i.kind,
+                label: ISSUE_KINDS.find((k) => k.id === i.kind)?.label ?? i.kind,
+                items: i.items,
+                note: i.note,
+                status: i.status,
+                resolution: i.resolution,
+                when: when(i.createdAt),
+              }))}
+            />
+          )}
 
           <OrderNotes orderId={order.id} note={order.internalNote ?? ""} canEdit={can(role, "orders.notes")} />
         </div>

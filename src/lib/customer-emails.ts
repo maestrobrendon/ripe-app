@@ -3,6 +3,7 @@ import { sendEmail } from "@/lib/email";
 import { formatNaira } from "@/lib/format";
 import { appOrigin } from "@/lib/site";
 import { getSiteSettings } from "@/lib/site-settings";
+import { supportHref, whatsappReady } from "@/lib/support";
 import type { OrderStatus } from "@/generated/prisma/enums";
 
 /*
@@ -31,7 +32,8 @@ function orderLink(o: OrderForEmail) {
 }
 
 async function wrap(lines: string[], link?: { href: string; label: string }) {
-  const help = `Questions? Reply to this email or message us on WhatsApp: https://wa.me/${(await getSiteSettings()).support.whatsapp}`;
+  const { support } = await getSiteSettings();
+  const help = whatsappReady(support) ? `Questions? Reply to this email or message us on WhatsApp: ${supportHref(support)}` : "Questions? Just reply to this email.";
   const html = `${lines.map((l) => `<p>${esc(l)}</p>`).join("")}${link ? `<p><a href="${esc(link.href)}">${esc(link.label)}</a></p>` : ""}<p style="color:#666">${esc(help)}</p>`;
   const text = `${lines.join("\n\n")}${link ? `\n\n${link.label}: ${link.href}` : ""}\n\n${help}`;
   return { html, text };
