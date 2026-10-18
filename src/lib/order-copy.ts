@@ -1,11 +1,16 @@
 import type { OrderStatus } from "@/generated/prisma/enums";
 import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
 
-/** Whether a stored delivery date (UTC midnight) is today in Lagos. */
-function isToday(dateIso: string) {
-  const lagos = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
-  return dateIso.slice(0, 10) === lagos;
-}
+/** Today in Lagos, as YYYY-MM-DD. */
+const lagosToday = () => new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
+
+/** Whether a stored delivery date is today in Lagos. */
+const isToday = (dateIso: string) => dateIso.slice(0, 10) === lagosToday();
+
+/** Whether a stored delivery date is a day that has already gone. */
+const isPast = (dateIso: string) => dateIso.slice(0, 10) < lagosToday();
+
+const OPEN: OrderStatus[] = ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_FOR_DELIVERY"];
 
 /*
  * How an order's state reads to the customer, wherever it's shown (Home,
@@ -23,6 +28,10 @@ export type OrderForCopy = {
 
 export function orderHeadline(o: OrderForCopy): { title: string; body: string } {
   const day = longDate(o.deliveryDateIso);
+  // Its day has gone and it hasn't arrived: say so, never "arriving" on a past date.
+  if (OPEN.includes(o.status) && isPast(o.deliveryDateIso)) {
+    return { title: "Running late", body: `This was due ${day} and hasn't reached you yet. Message us and we'll sort it straight away.` };
+  }
   switch (o.status) {
     case "RECEIVED":
     case "CONFIRMED":

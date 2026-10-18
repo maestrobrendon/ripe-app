@@ -16,6 +16,8 @@ import { cancelOrder, orderAgain } from "./actions";
 export type LiveOrder = {
   id: string;
   ref: string;
+  /** The basket it came from, when that isn't the one Home is showing. */
+  basketLabel: string | null;
   status: OrderStatus;
   statusLabel: string;
   deliveryDateIso: string;
@@ -92,6 +94,7 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
       )}
 
       <p className="mt-3 text-xs text-muted">
+        {o.basketLabel ? `${o.basketLabel} · ` : ""}
         {o.ref} · {o.itemCount} item{o.itemCount === 1 ? "" : "s"} · {paymentLine({ paidAt: o.paid ? o.deliveryDateIso : null, paymentMethod: o.paymentMethod, total: o.total, status: o.status }, formatNaira)}
       </p>
 

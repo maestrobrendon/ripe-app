@@ -78,7 +78,8 @@ export default async function HomePage() {
 
   /* ------------------------------ live orders ------------------------------ */
 
-  const live = toLiveOrders(liveRows, zone?.cutoffHour ?? 18);
+  const names = new Map(deliveries.map((d) => [d.id, deliveryName(d)]));
+  const live = toLiveOrders(liveRows, zone?.cutoffHour ?? 18, (basketId) => (basketId && basketId !== delivery.id ? (names.get(basketId) ?? null) : null));
 
   /* --------------------------- what to add next --------------------------- */
 
@@ -193,13 +194,14 @@ export default async function HomePage() {
 }
 
 /** Orders already placed from this delivery, as Home shows them. */
-function toLiveOrders(rows: Awaited<ReturnType<typeof liveOrdersFor>>, fallbackCutoffHour: number): LiveOrder[] {
+function toLiveOrders(rows: Awaited<ReturnType<typeof liveOrdersFor>>, fallbackCutoffHour: number, otherBasket: (basketId: string | null) => string | null): LiveOrder[] {
   const now = Date.now();
   return rows.map((o) => {
     const cutoff = cutoffFor(o.deliveryDate, o.deliveryZone?.cutoffHour ?? fallbackCutoffHour);
     return {
       id: o.id,
       ref: orderRef(o.id),
+      basketLabel: otherBasket(o.basketId),
       status: o.status,
       statusLabel: customerStatusLabel(o.status),
       deliveryDateIso: o.deliveryDate.toISOString(),

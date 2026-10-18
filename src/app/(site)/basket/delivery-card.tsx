@@ -160,7 +160,7 @@ export function DeliveryCard(props: {
                   <Icon name="calendar" size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[17px] font-semibold leading-tight">{longDate(dateIso)}</p>
+                  <p className="text-[17px] font-semibold leading-tight">Delivery on {longDate(dateIso)}</p>
                   <p className="mt-0.5 text-sm text-muted">
                     {DELIVERY_WINDOW}
                     {props.areaName ? ` · ${props.areaName}` : ""}
