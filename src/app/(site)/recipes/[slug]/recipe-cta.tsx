@@ -109,7 +109,7 @@ export function RecipeCta(props: CtaProps) {
           {failed && <p className="mt-3 text-[13px] text-ember">That didn&apos;t go through. Try again in a moment.</p>}
           {!signedIn && (
             <ul className="mt-5 space-y-2 text-[13px] text-[var(--hm-ink-2)]">
-              {["Change your order until the night before.", "Skip a week and nothing is charged.", "Recipes picked for your goal."].map((t) => (
+              {["A reminder before every delivery.", "Skip a week whenever you like.", "Nothing is charged automatically."].map((t) => (
                 <li key={t} className="flex gap-2">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--hm-basket-ink)]" /> {t}
                 </li>

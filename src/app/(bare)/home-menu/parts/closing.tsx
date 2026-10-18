@@ -27,21 +27,50 @@ export function Faq({
   const whatsapp = useWhatsappHref();
   const [open, setOpen] = useState<number | null>(0);
   const names = zones.map((z) => z.name);
+  const days = [...new Set(zones.flatMap((z) => z.days))];
+  const dayList = days.length > 1 ? `${days.slice(0, -1).join(", ")} and ${days[days.length - 1]}` : days[0] ?? "";
   const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0] ?? "selected Lagos areas";
 
   const items: { q: string; a: ReactNode }[] = [
     {
-      q: "How are your prices this good?",
+      q: "How does a basket work?",
       a: (
         <>
-          We buy straight from the farms and growers we work with, not off a warehouse shelf. Fewer hands between the farm and your kitchen means fairer prices and produce
-          that is fresher when it reaches you.
+          Your basket is the fruit and vegetables you want each week, and it stays as you left it. A few days before each delivery we remind you on WhatsApp, email and the app to
+          confirm it. You pay when it arrives, or by transfer. Nothing is ever charged automatically, and a week you don&apos;t confirm simply doesn&apos;t come.
         </>
       ),
     },
     {
-      q: "Do I have to cook every recipe?",
-      a: <>No. The recipes are suggestions built around your basket. Cook all of them, some of them, or none, and swap any recipe in your plan for another in a tap.</>,
+      q: "Can I try it first?",
+      a: (
+        <>
+          Yes. Your first basket is a trial: one delivery at market prices, no membership needed. To have it every week, or to run more than one basket, like one for you and one
+          for your mum, become a member.
+        </>
+      ),
+    },
+    {
+      q: "Why are member prices so low?",
+      a: (
+        <>
+          Membership is how we make our money, so members pay close to what we pay at the market. Everyone else pays the market rate. We buy straight from the farms and growers we
+          work with, so there are fewer hands between the farm and your kitchen.
+        </>
+      ),
+    },
+    {
+      q: "Do I have to cook?",
+      a: (
+        <>
+          No. Plenty of people just want good fruit, and that&apos;s welcome. The recipes are there to make fruit and veg exciting to eat: salads, bowls, snacks and sides. Cook
+          all of them, some of them, or none.
+        </>
+      ),
+    },
+    {
+      q: "Can I skip a week or pause?",
+      a: <>Yes. Skip any week until the evening before, pause a basket while you&apos;re away, and change its day or what&apos;s in it whenever you like.</>,
     },
     {
       q: "What about the ingredients you don't sell?",
@@ -60,7 +89,7 @@ export function Faq({
       q: "Where do you deliver?",
       a: (
         <>
-          {list}, for now. Each area has fixed delivery days, with a 9am to 5pm window.
+          {list}, for now{dayList ? <>, on {dayList}</> : null}, between 9am and 5pm.
           {comingSoon.length > 0 && <> Coming next: {comingSoon.join(", ")}.</>} See the{" "}
           <Link href="/delivery-areas" className="underline underline-offset-2">
             delivery areas
@@ -74,7 +103,7 @@ export function Faq({
       a: (
         <>
           No. Delivery depends on your area: each one has its own fee, shown before you pay, and it&apos;s free on Member Plus.
-          {memberFee != null && <> Membership starts at {formatNaira(memberFee)}, paid once a month. It makes every basket cheaper, and you can cancel anytime from your account.</>}
+          {memberFee != null && <> Membership starts at {formatNaira(memberFee)} a month, brings member prices on every basket, and you can cancel anytime from your account.</>}
         </>
       ),
     },
@@ -169,8 +198,8 @@ export function Closing({ signedIn }: { signedIn: boolean }) {
       <div className="hm-wrap">
         <div className="grid items-center gap-10 overflow-hidden rounded-[36px] bg-[#f3f5f0] p-8 sm:p-12 md:grid-cols-[1fr_1fr] lg:p-16">
           <div>
-            <h2 className="hm-h2">Start with one basket.</h2>
-            <p className="hm-lede mt-4 max-w-[26rem]">Tell Kachi your goal, pick your day, and cook your first recipe this week. Free to set up.</p>
+            <h2 className="hm-h2">Start with a trial basket.</h2>
+            <p className="hm-lede mt-4 max-w-[26rem]">Pick your fruit and veg, pick your day, and pay when it arrives. No membership needed for your first one.</p>
             <div className="mt-8">
               <MagneticLink href={signedIn ? "/basket" : "/start"} arrow>
                 {signedIn ? "Open your basket" : "Get started"}

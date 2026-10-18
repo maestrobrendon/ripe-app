@@ -71,7 +71,7 @@ export function Price({
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
           <h2 className="hm-h2">What a week of eating well costs.</h2>
           <p className="hm-lede mt-4 max-w-[30rem]">
-            Pick a goal and your household and see what the food costs. No minimum order. Delivery is priced by your area, and free on Member Plus.
+            Pick a goal and your household and see what the produce costs. Members pay close to what we pay at the market; everyone else pays the market rate. Delivery is priced by your area, and free on Member Plus.
           </p>
           <div className="mt-8 flex flex-wrap gap-2" role="radiogroup" aria-label="Your goal">
             {MENU_GOALS.map((g) => (
@@ -105,7 +105,7 @@ export function Price({
                 <div className="flex rounded-full bg-[#f3f5f0] p-1" role="radiogroup" aria-label="How you pay">
                   {(
                     [
-                      [false, "One basket"],
+                      [false, "Trial basket"],
                       [true, "As a member"],
                     ] as const
                   ).map(([k, label]) => (
@@ -138,7 +138,7 @@ export function Price({
               <p className="mt-2 text-[14px] text-[var(--hm-ink-2)]">
                 {isMember ? (
                   <>
-                    <b className="font-semibold text-[var(--hm-basket-ink)]">{formatNaira(memberSaving)} less</b> than standard prices, every week.
+                    <b className="font-semibold text-[var(--hm-basket-ink)]">{formatNaira(memberSaving)} less</b> than market prices, every week.
                   </>
                 ) : (
                   <>
@@ -196,7 +196,7 @@ export function Price({
               {signedIn ? "Open your basket" : "Build my basket"}
             </MagneticLink>
             <p className="mt-3 text-center text-[13px] text-[var(--hm-ink-3)]">
-              {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)}, paid once a month. Cancel anytime.` : "Free to set up. Nothing is charged until you check out."}
+              {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)} a month. Your basket every week, nothing charged automatically.` : "Your first basket is a trial. You pay when it arrives."}
             </p>
           </div>
         </Reveal>

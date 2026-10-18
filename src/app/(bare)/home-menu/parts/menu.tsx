@@ -79,7 +79,7 @@ export function Menu({
                 transition={{ ...spring.smooth, delay: i * 0.05 }}
                 className={trio && i === 0 ? "md:row-span-2" : ""}
               >
-                <RecipeCard recipe={r} products={products} large={!trio || i === 0} onOpen={() => setOpen(r)} />
+                <RecipeCard recipe={r} products={products} large={!trio || i === 0} tall={trio && i === 0} onOpen={() => setOpen(r)} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -105,7 +105,8 @@ export function Menu({
   );
 }
 
-function RecipeCard({ recipe, products, large, onOpen }: { recipe: MenuRecipe; products: Record<string, MenuProduct>; large: boolean; onOpen: () => void }) {
+/** tall: the lead card of three, whose photo fills the height of the stack beside it. Others keep their own ratio. */
+function RecipeCard({ recipe, products, large, tall = false, onOpen }: { recipe: MenuRecipe; products: Record<string, MenuProduct>; large: boolean; tall?: boolean; onOpen: () => void }) {
   const { basket, total } = splitRecipe(recipe, products);
   return (
     <button
@@ -114,7 +115,7 @@ function RecipeCard({ recipe, products, large, onOpen }: { recipe: MenuRecipe; p
       className="group hm-photo flex h-full w-full flex-col overflow-hidden rounded-[26px] bg-[#f3f5f0] text-left"
       aria-label={`${recipe.title}. ${basket.length} of ${total} ingredients from your basket. Open the recipe.`}
     >
-      <div className={`relative w-full overflow-hidden ${large ? "aspect-[4/3] md:aspect-auto md:flex-1" : "aspect-[16/9]"}`}>
+      <div className={`relative w-full overflow-hidden ${tall ? "aspect-[4/3] md:aspect-auto md:min-h-[280px] md:flex-1" : large ? "aspect-[4/3]" : "aspect-[16/9]"}`}>
         <Image src={recipe.image} alt={recipe.alt} fill sizes={large ? "(min-width: 768px) 600px, 100vw" : "(min-width: 768px) 480px, 100vw"} className="object-cover" />
         <span className="absolute top-3 left-3 inline-flex h-8 items-center gap-1.5 rounded-full bg-paper-white/92 px-3 text-[13px] font-semibold backdrop-blur-sm">
           <Clock className="h-4 w-4" />

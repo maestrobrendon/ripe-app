@@ -46,7 +46,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   if (q) where.OR = [{ name: { contains: q, mode: "insensitive" } }, { tags: { has: q.toLowerCase() } }];
 
   const [products, everything, cheapestTier, user] = await Promise.all([
-    prisma.product.findMany({ where, orderBy: { name: "asc" } }),
+    prisma.product.findMany({ where, orderBy: [{ featured: "desc" }, { name: "asc" }] }),
     prisma.product.findMany({ where: OFFERED, select: { standardPrice: true, memberPrice: true, category: true } }),
     prisma.subscriptionTier.findFirst({ orderBy: { monthlyFee: "asc" }, select: { monthlyFee: true } }),
     getCurrentUser(),
@@ -95,7 +95,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       <section className="bg-[var(--hm-tint)]">
         <div className="hm-wrap grid gap-8 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-14">
           <div>
-            <Eyebrow>Fruits</Eyebrow>
+            <Eyebrow>The shop</Eyebrow>
             <h1 className="hm-h2 max-w-[18ch]">Every fruit and vegetable, priced up front.</h1>
             <p className="hm-lede mt-4 max-w-xl">
               {produceCount} fruits and vegetables, plus ready-made boxes. Look around without an account. Every item shows what
@@ -106,7 +106,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
           {/* The two prices, explained once, so every card below reads at a glance. */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-[24px] bg-paper-white p-5">
-              <p className="text-[13px] font-semibold text-[var(--hm-ink-2)]">Standard price</p>
+              <p className="text-[13px] font-semibold text-[var(--hm-ink-2)]">Market price</p>
               <p className="mt-1 text-[15px] leading-relaxed">What anyone pays. No membership, no minimum order.</p>
               {example && (
                 <p className="mt-4 text-[13px] text-[var(--hm-ink-2)]">

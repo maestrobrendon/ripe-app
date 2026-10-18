@@ -2,12 +2,20 @@ export const metadata = { title: "FAQ. Basket" };
 
 const FAQS = [
   {
-    q: "Do I need a subscription to order?",
-    a: "No. Anyone can browse and fill a cart without an account. You sign up, free, to place the order. A subscription is an optional upgrade for regular customers.",
+    q: "How does a basket work?",
+    a: "Your basket is the fruit and vegetables you want each week, and it stays as you left it. A few days before each delivery we remind you on WhatsApp, email and the app to confirm it. You pay when it arrives. Nothing is ever charged automatically, and a week you don't confirm simply doesn't come.",
   },
   {
-    q: "What does a subscription add?",
-    a: "Every recipe, member prices on everything, up to three deliveries (for family or the office), and a weekly meal plan built from the recipes. Member Plus adds free delivery, early access to seasonal produce and priority support on WhatsApp.",
+    q: "Do I need a membership?",
+    a: "Not to try it. Anyone can browse without an account, and your first basket is a trial: one delivery at market prices. To have your basket every week, or more than one, become a member.",
+  },
+  {
+    q: "What does membership add?",
+    a: "Your baskets every week at member prices, up to three of them (one for you, one for your mum), a reminder before each delivery, every recipe, and a weekly meal plan. Member Plus adds free delivery, as many baskets as you need, early access to seasonal produce and priority support on WhatsApp.",
+  },
+  {
+    q: "Can I skip a week or pause?",
+    a: "Yes. Skip any week until the evening before, pause a basket while you're away, and change its day or what's in it whenever you like.",
   },
   {
     q: "Is there a minimum order?",
@@ -15,15 +23,15 @@ const FAQS = [
   },
   {
     q: "How is produce priced?",
-    a: "Prices are grounded in what the same produce costs at a Lagos supermarket. Sourcing locally from trusted farmers, and cutting out middlemen, is what makes member pricing possible.",
+    a: "Everyone else pays the market rate. Members pay close to what we pay at the market, because membership is how we make our money. Buying straight from farms and growers, with fewer hands in between, is what makes that possible.",
   },
   {
     q: "Who is Kachi?",
-    a: "Kachi is Basket's food assistant. Tell it what you're cooking or what you're after, and it suggests recipes and fills your order. It gives food ideas, not medical or nutritional advice.",
+    a: "Kachi is Basket's food assistant. Tell it what you're after and it suggests exciting ways to eat more fruit and veg, and fills your basket. It gives food ideas, not medical or nutritional advice.",
   },
   {
     q: "How is payment handled?",
-    a: "You pay when your order arrives, by transfer or card to the rider. You can also pay by bank transfer before it's packed, using your order number as the reference. Paying by card online is coming.",
+    a: "You pay when your basket arrives, by transfer or card to the rider. You can also pay by bank transfer before it's packed, using your order number as the reference. Paying by card online is coming.",
   },
 ];
 

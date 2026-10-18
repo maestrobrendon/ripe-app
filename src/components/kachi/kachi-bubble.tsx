@@ -207,6 +207,16 @@ export function KachiBubble() {
     launcherRef.current?.focus();
   }, []);
 
+  // The launcher steps aside while the footer is on screen, so it never sits on its links.
+  const [atFooter, setAtFooter] = useState(false);
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const io = new IntersectionObserver(([e]) => setAtFooter(e.isIntersecting), { rootMargin: "0px 0px -40px 0px" });
+    io.observe(footer);
+    return () => io.disconnect();
+  }, [pathname]);
+
   useEffect(() => {
     if (!open) return;
     const t = window.setTimeout(() => inputRef.current?.focus(), 250);
@@ -233,7 +243,10 @@ export function KachiBubble() {
 
   return (
     <>
-      <div className={`fixed right-4 z-(--z-dock) flex flex-col items-end gap-3 lg:right-6 lg:bottom-6 ${lift}`}>
+      <div
+        className={`fixed right-4 z-(--z-dock) flex flex-col items-end gap-3 transition-[opacity,translate] duration-300 lg:right-6 lg:bottom-6 ${lift} ${atFooter && !open ? "pointer-events-none translate-y-4 opacity-0" : ""}`}
+        inert={atFooter && !open}
+      >
         <AnimatePresence>
           {showNudge && (
             <motion.div

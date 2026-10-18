@@ -198,16 +198,16 @@ export function Details() {
           </div>
         </div>
         <div className="grid gap-14">
-          <Detail title="Change it until the night before" color="text-[#0f7a48]" body="Add, remove or swap anything in your basket. Whatever it says the night before is what we pack.">
+          <Detail title="A reminder before every delivery" color="text-[#0f7a48]" body="Your basket stays as you left it. A few days before your day we remind you to confirm it, and you can change anything until the evening before.">
             <EditWidget />
           </Detail>
-          <Detail title="Skip a week when you're away" color="text-electric-blue" body="Travelling, or still working through last week's? Skip it and nothing comes, and nothing is charged.">
+          <Detail title="Skip a week when you're away" color="text-electric-blue" body="Travelling, or still working through last week's? Skip it and nothing comes. Nothing is ever charged automatically.">
             <SkipWidget />
           </Detail>
           <Detail title="Checked by hand before it leaves" color="text-ember" body="Every order is looked over before it goes out. Anything bruised gets swapped, not shipped.">
             <CheckWidget />
           </Detail>
-          <Detail title="Try one basket, no strings" color="text-voltage-violet" body="Your first basket is a one-off at standard prices. Become a member later if you want every basket after it to cost less.">
+          <Detail title="Your first basket is a trial" color="text-voltage-violet" body="Try one delivery at market prices, no membership needed. Join to have your baskets every week, at member prices.">
             <TrialWidget />
           </Detail>
         </div>

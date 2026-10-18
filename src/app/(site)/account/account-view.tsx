@@ -149,7 +149,7 @@ export function AccountView(props: Props) {
                     ? "Your last request wasn't approved"
                     : props.trial === "used"
                       ? "Join to keep your baskets coming"
-                      : "Your first basket is a free trial"
+                      : "Try your first basket, no membership needed"
             }
           />
           <Tile

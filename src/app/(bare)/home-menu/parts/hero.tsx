@@ -312,7 +312,7 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
           </div>
 
           <p data-intro data-hero-fade className="hm-lede mt-6 max-w-[34rem]">
-            Tell us what you&apos;re working toward. We&apos;ll give you the plan, the recipes and the fresh produce to make it happen, delivered on your day.
+            Fresh fruit and vegetables every week, and exciting ways to eat them. Tell us what you&apos;re after and we&apos;ll build your basket, delivered on your day.
           </p>
 
           <div data-intro data-hero-fade className="mt-8 flex flex-wrap items-center justify-center gap-3">

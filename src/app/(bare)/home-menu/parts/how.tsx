@@ -236,10 +236,10 @@ export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal;
           <Step n={1} title="Tell Kachi your goal" body="Lose a little weight, train harder, feed four. Say it how you'd say it to a friend.">
             <KachiChat goal={goal} />
           </Step>
-          <Step n={2} title="Get a week you'll actually cook" body="Recipes picked for your goal and your household. Swap any of them in a tap.">
+          <Step n={2} title="Get a week you'll actually cook" body="Recipes that make fruit and veg the best part of the day, picked for your goal and your household. Swap any of them in a tap.">
             <WeekPlan goal={goal} />
           </Step>
-          <Step n={3} title="Your basket arrives" body={`Everything the plan needs from us, on your day. Change it until the night before, or skip a week when you're away.`}>
+          <Step n={3} title="Confirm it, and it arrives" body={`A few days before your day we remind you on WhatsApp, email and the app. Confirm, and pay when it comes. Skip a week when you're away.`}>
             <Delivery goal={goal} deliveryDay={deliveryDay} products={products} />
           </Step>
         </div>

@@ -592,14 +592,14 @@ export function StartFlow({
                     })}
                   </div>
                 </LayoutGroup>
-                <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-2)">Change your basket or skip a week until the evening before.</p>
+                <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-2)">Your first basket comes once, as a trial. Members get theirs every week, with a reminder before each delivery.</p>
               </>
             )}
 
             {step === "account" && (
               <>
-                <Kachi>Your week is ready. Make a free account to keep it.</Kachi>
-                <Title>Save your week</Title>
+                <Kachi>Your basket is ready. Make a free account to keep it.</Kachi>
+                <Title>Save your basket</Title>
 
                 <dl className="hm-panel mt-6 divide-y divide-(--hm-line) px-5 text-[14px]">
                   <Row term="Goal">{goalLabel(goal)}</Row>
@@ -658,7 +658,7 @@ export function StartFlow({
                   <PasswordInput />
                 </form>
                 <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-3)">
-                  Free to join. Nothing is charged until you check out a basket. By creating an account you agree to our{" "}
+                  Free to join. Your first basket is a trial: you confirm it and pay when it arrives. Nothing is ever charged automatically. By creating an account you agree to our{" "}
                   <Link href="/terms" className="underline underline-offset-2">
                     terms
                   </Link>

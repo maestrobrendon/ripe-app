@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
+import { formatNaira } from "@/lib/format";
 import { OFFERED } from "@/lib/product";
 import { MEMBER_BASKET_LIMIT } from "@/lib/basket";
 import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
@@ -13,7 +13,7 @@ import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
   title: "Pricing. Basket",
-  description: "Pay as you go at standard prices, or become a member for every recipe, lower prices and up to three deliveries. Member Plus adds free delivery.",
+  description: "Try one basket at market prices, or become a member: your baskets every week at member prices, a reminder before each delivery, and nothing charged automatically. Member Plus adds free delivery.",
 };
 
 /** "Chilli Pepper (Ata Rodo)" reads as "Chilli Pepper" in a price table. */
@@ -25,7 +25,7 @@ const SAMPLE_SLUGS = ["tomato", "banana", "onion", "avocado", "spinach", "pineap
 type Cell = boolean | string;
 
 /**
- * Who gets what, row by row. Columns: pay as you go, Member, Member Plus.
+ * Who gets what, row by row. Columns: the trial, Member, Member Plus.
  * Two rows are the business's rules rather than code yet: recipe access is
  * not gated by plan, and checkout still prices delivery with the flat rule in
  * lib/pricing.ts until each delivery area has its own fee.
@@ -33,24 +33,26 @@ type Cell = boolean | string;
 function comparison(avgSaving: number): { label: string; cells: [Cell, Cell, Cell] }[] {
   const member = avgSaving > 0 ? `About ${avgSaving}% less` : "Member";
   return [
-    { label: "Recipes, with amounts and steps", cells: ["Most recipes", "Every recipe", "Every recipe"] },
-    { label: "Shop the full produce list", cells: [true, true, true] },
-    { label: "Kachi, your food assistant", cells: [true, true, true] },
-    { label: "Prices", cells: ["Standard", member, member] },
+    { label: "Your basket every week", cells: ["Once, as a trial", true, true] },
+    { label: "Baskets, like one for Mum", cells: ["One", `Up to ${MEMBER_BASKET_LIMIT}`, "Unlimited"] },
+    { label: "Prices", cells: ["Market rate", member, member] },
+    { label: "A reminder before each delivery", cells: [false, true, true] },
     { label: "Delivery", cells: ["Priced by area", "Priced by area", "Free"] },
+    { label: "Recipes, with amounts and steps", cells: ["Most recipes", "Every recipe", "Every recipe"] },
+    { label: "Kachi, your food assistant", cells: [true, true, true] },
     { label: "Weekly meal plan", cells: [false, true, true] },
-    { label: "Deliveries, for family or the office", cells: ["One", `Up to ${MEMBER_BASKET_LIMIT}`, "Unlimited"] },
     { label: "Early access to seasonal produce", cells: [false, false, true] },
     { label: "Priority support on WhatsApp", cells: [false, false, true] },
   ];
 }
 
 const FAQ = [
-  { q: "Do I need a membership to order?", a: "No. Anyone can sign up, pick recipes and order at standard prices. Membership makes every order cheaper." },
-  { q: "When do I pay for food?", a: "When your order arrives, by transfer or card to the rider, or by bank transfer before it's packed. You confirm each week's order yourself; change it until the day before, or skip a week." },
+  { q: "Do I need a membership to try it?", a: "No. Your first basket is a trial: one delivery at market prices. To have your basket every week, or more than one basket, become a member." },
+  { q: "Why are member prices so much lower?", a: "Membership is how we make our money, so members pay close to what we pay at the market. Everyone else pays the market rate." },
+  { q: "When do I pay for food?", a: "When it arrives, by transfer or card to the rider, or by bank transfer before it's packed. A few days before each delivery we remind you on WhatsApp, email and the app; you confirm it yourself, change it until the evening before, or skip the week." },
   { q: "How much is delivery?", a: "It depends on where you are. Each delivery area has its own fee, shown before you pay. Delivery is free on Member Plus." },
   { q: "How is the membership paid?", a: "Once a month, by transfer. Nothing is charged automatically: we message you when it's due." },
-  { q: "Can I switch plans or cancel?", a: "Yes, anytime, from this page or your account. Cancelling takes you back to paying as you go." },
+  { q: "Can I switch plans or cancel?", a: "Yes, anytime, from this page or your account. If you cancel, your baskets stop coming every week; their produce stays saved." },
   { q: "Which plan is right for me?", a: "Member covers almost everyone. Member Plus is for people who want first pick of seasonal produce and faster help when something needs sorting." },
 ];
 
@@ -81,10 +83,10 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
       <section className="bg-[var(--hm-tint)]">
         <div className="hm-wrap py-12 text-center sm:py-16">
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
-          <h1 className="hm-h2 mx-auto max-w-[20ch]">Pick how you pay. Change it anytime.</h1>
+          <h1 className="hm-h2 mx-auto max-w-[20ch]">Fruit and veg every week, close to market cost.</h1>
           <p className="hm-lede mx-auto mt-4 max-w-2xl">
-            Anyone can shop the full produce list and cook most of the recipes. Members get every recipe, pay less on everything
-            and can keep up to three deliveries. Member Plus adds free delivery.
+            Try your first basket at market prices. Members get their baskets every week at member prices, with a reminder before each
+            delivery. You confirm, and pay when it arrives: nothing is charged automatically.
           </p>
         </div>
       </section>
@@ -92,7 +94,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
       {reason === "free-basket-used" && (
         <div className="hm-wrap mt-8">
           <p className="rounded-[20px] border-[1.5px] border-dashed border-ember px-5 py-4 text-center text-[15px]">
-            Without a membership you have one delivery. Members can have up to {MEMBER_BASKET_LIMIT}, for family or the office (unlimited on Member Plus), and pay member prices.
+            Your trial basket is for one delivery. Members get their baskets every week, up to {MEMBER_BASKET_LIMIT} of them (unlimited on Member Plus), at member prices. Your produce is saved and waiting.
           </p>
         </div>
       )}
@@ -108,7 +110,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
       {reason === "basket-limit" && (
         <div className="hm-wrap mt-8">
           <p className="rounded-[20px] border-[1.5px] border-dashed border-ember px-5 py-4 text-center text-[15px]">
-            You have {MEMBER_BASKET_LIMIT} deliveries, the most a Member plan holds. Member Plus has no limit.
+            You have {MEMBER_BASKET_LIMIT} baskets, the most a Member plan holds. Member Plus has no limit.
           </p>
         </div>
       )}
@@ -129,8 +131,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
         <div className="hm-wrap mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-mint-pop/25 px-5 py-4">
             <p className="text-[15px]">
-              You&apos;re on <b className="font-semibold">{user?.subscriptionTier?.name}</b>, delivering{" "}
-              {user?.deliveryDay ? DELIVERY_DAY_LABEL[user.deliveryDay] : "on a day you choose"}.
+              You&apos;re on <b className="font-semibold">{user?.subscriptionTier?.name}</b>. Your baskets come every week, each on its own day.
             </p>
             <CancelMembershipButton />
           </div>
@@ -141,16 +142,16 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
       <section id="plans" className="hm-wrap mt-10 scroll-mt-24" aria-label="Plans">
         <div className="grid items-stretch gap-4 lg:grid-cols-3">
           <article className="flex flex-col rounded-[28px] bg-paper-white p-7 shadow-[0_0_0_1px_var(--hm-line)]">
-            <h2 className="text-[17px] font-semibold">Pay as you go</h2>
+            <h2 className="text-[17px] font-semibold">Trial basket</h2>
             <p className="mt-3 text-[2.4rem] leading-none font-semibold tracking-[-0.045em]">₦0</p>
-            <p className="mt-1.5 text-[14px] text-[var(--hm-ink-2)]">No fee. Pay for food when you order it.</p>
+            <p className="mt-1.5 text-[14px] text-[var(--hm-ink-2)]">No fee. Pay for the produce when it arrives.</p>
             <ul className="mt-6 flex-1 space-y-2.5 text-[15px]">
               {[
+                "One basket, delivered once",
+                "The full produce list at market prices",
                 "Most recipes, with amounts and steps",
-                "The full produce list at standard prices",
                 "No minimum order",
                 "Delivery priced by your area",
-                "One delivery, confirmed each week",
               ].map((t) => (
                 <li key={t} className="flex gap-2.5">
                   <Check className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--hm-ink-3)]" /> {t}
@@ -162,7 +163,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                 Get started
               </Link>
             ) : !currentSlug ? (
-              <p className={`${solid} mt-7 bg-[var(--hm-tint)] text-[var(--hm-ink-2)]`}>How you pay now</p>
+              <p className={`${solid} mt-7 bg-[var(--hm-tint)] text-[var(--hm-ink-2)]`}>Where you are now</p>
             ) : null}
           </article>
 
@@ -235,7 +236,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                   <span className="sr-only">Feature</span>
                 </th>
                 <th scope="col" className="px-2 py-3 text-center font-semibold sm:px-4">
-                  Pay as you go
+                  Trial
                 </th>
                 {tiers.map((t) => (
                   <th key={t.id} scope="col" className="px-2 py-3 text-center font-semibold text-carbon sm:px-4">
@@ -293,7 +294,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                     Item
                   </th>
                   <th scope="col" className="px-5 py-3 text-right font-semibold">
-                    Standard
+                    Market rate
                   </th>
                   <th scope="col" className="px-5 py-3 text-right font-semibold">
                     Member
