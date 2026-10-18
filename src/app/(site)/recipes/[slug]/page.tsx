@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BackButton } from "@/components/ui/back-button";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -85,7 +86,8 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
       <div className="hm-wrap pt-6 sm:pt-8">
-        <nav aria-label="Breadcrumb" className="text-[14px] text-[var(--hm-ink-2)]">
+        <BackButton fallback="/recipes" label="Recipes" />
+        <nav aria-label="Breadcrumb" className="mt-1 hidden text-[14px] text-[var(--hm-ink-2)] sm:block">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link href="/recipes" className="hover:text-carbon hover:underline">

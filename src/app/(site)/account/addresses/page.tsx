@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackButton } from "@/components/ui/back-button";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -22,9 +22,7 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
-      <Link href="/account" className="text-sm font-semibold underline underline-offset-2">
-        Me
-      </Link>
+      <BackButton fallback="/account" label="Me" />
       <h1 className="mt-3 text-[26px] font-extrabold tracking-tight sm:text-[30px]">Addresses</h1>
       <p className="mt-1 text-sm text-muted">Your default address decides which days we come to you.</p>
       <AddressBook

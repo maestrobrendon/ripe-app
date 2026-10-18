@@ -1,13 +1,14 @@
 import Link from "next/link";
+import { BackButton } from "@/components/ui/back-button";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { toAddable } from "@/lib/product";
+import { toAddable, toCardData } from "@/lib/product";
 import { CATEGORY_LABEL } from "@/lib/format";
 import { BuyBox } from "@/components/buy-box";
 import { ProductAccordion } from "@/components/product-accordion";
 import { BrandStoryBand } from "@/components/brand-story-band";
-import { CompleteYourBasket, type CrossSellProduct } from "@/components/complete-your-basket";
+import { CompleteYourBasket } from "@/components/complete-your-basket";
 import { ProductImage } from "@/components/product-image";
 import { flavourFor } from "@/lib/flavour";
 import { FRESH_CUTS_TAG, OFFERED } from "@/lib/product";
@@ -43,18 +44,15 @@ export default async function ProductPage({
   const hasRecipes =
     (await prisma.recipe.count({ where: { ingredientProductIds: { has: product.id } } })) > 0;
 
-  const crossSell: CrossSellProduct[] = related.map((p) => ({
-    ...toAddable(p),
-    ratingAvg: p.ratingAvg,
-    ratingCount: p.ratingCount,
-    category: p.category,
-    tags: p.tags,
-  }));
+  const crossSell = related.map(toCardData);
 
   return (
     <div>
-      <div className="mx-auto max-w-5xl px-4 pt-8 sm:px-6">
-        <p className="text-sm text-muted">
+      <div className="mx-auto max-w-5xl px-4 pt-4 sm:px-6 sm:pt-6">
+        <div className="flex items-center justify-between gap-3">
+          <BackButton fallback="/shop" />
+        </div>
+        <p className="mt-1 hidden text-sm text-muted sm:block">
           <Link href="/shop" className="hover:underline">Shop</Link> / {CATEGORY_LABEL[product.category]} / {product.name}
         </p>
 

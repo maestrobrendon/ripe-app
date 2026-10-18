@@ -24,9 +24,9 @@ export type CookRecipe = {
 /** Recipes the order is close to, and one tap to add what each still needs. */
 export function CookThisWeek({ deliveryId, recipes, fromOrder }: { deliveryId: string; recipes: CookRecipe[]; fromOrder: boolean }) {
   return (
-    <section className="mt-8" aria-labelledby="cook">
+    <section className="mt-10" aria-labelledby="cook">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="cook" className="text-lg font-semibold">
+        <h2 id="cook" className="text-xl font-semibold tracking-[-0.015em]">
           Cook this week
         </h2>
         <Link href="/recipes" className="text-sm font-semibold underline underline-offset-2">
@@ -57,27 +57,33 @@ function RecipeRow({ deliveryId, recipe: r }: { deliveryId: string; recipe: Cook
     });
 
   return (
-    <article className="flex gap-3 rounded-2xl border border-border bg-surface p-3">
-      <Link href={`/recipes/${r.slug}`} className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-soft-mist">
-        <Image src={r.image} alt="" fill sizes="80px" className="object-cover" />
+    <article className="flex gap-3.5 rounded-2xl border border-border bg-surface p-3">
+      <Link href={`/recipes/${r.slug}`} className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-soft-mist">
+        <Image src={r.image} alt="" fill sizes="96px" className="object-cover transition-transform duration-300 hover:scale-[1.04]" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Link href={`/recipes/${r.slug}`} className="line-clamp-2 font-medium leading-snug hover:underline">
+        <Link href={`/recipes/${r.slug}`} className="line-clamp-2 text-[15px] leading-[1.3] font-semibold tracking-[-0.01em] hover:underline">
           {r.title}
         </Link>
-        <p className="mt-0.5 text-xs text-muted">
+        <p className="mt-1 text-[13px] text-muted">
           {r.minutes ? `${r.minutes} min · ` : ""}
           {r.have} of {r.total} in your order
         </p>
-        <div className="mt-auto pt-2">
+        <div className="mt-auto pt-2.5">
           {r.need > 0 && !added ? (
-            <button type="button" onClick={add} disabled={pending} className="rounded-full bg-carbon px-3 py-1.5 text-xs font-semibold text-paper-white disabled:opacity-60">
-              {pending ? "Adding…" : `Add the ${r.need} you don't have · ${formatNaira(r.needCost)}`}
+            <button
+              type="button"
+              onClick={add}
+              disabled={pending}
+              className="flex h-9 w-full items-center justify-between gap-2 rounded-full bg-carbon pr-3.5 pl-4 text-[13px] font-semibold whitespace-nowrap text-paper-white transition-transform active:scale-[0.98] disabled:opacity-60"
+            >
+              <span>{pending ? "Adding…" : `Add ${r.need} missing`}</span>
+              <span className="text-paper-white/70">{formatNaira(r.needCost)}</span>
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold">
-              <Icon name="checkPlain" size={13} weight="bold" />
-              Everything we sell for it is in
+            <span className="inline-flex h-9 items-center gap-1.5 text-[13px] font-semibold">
+              <Icon name="checkPlain" size={14} weight="bold" />
+              All we sell for it is in
             </span>
           )}
         </div>

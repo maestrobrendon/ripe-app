@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { BackButton } from "@/components/ui/back-button";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -88,9 +89,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-10 sm:px-6">
-      <Link href="/basket" className="text-sm font-semibold underline underline-offset-2">
-        Back to your order
-      </Link>
+      <BackButton fallback="/basket" label="Your order" />
       <h1 className="text-heading-lg mt-3">Confirm your order</h1>
       <p className="mt-1 text-sm text-muted">{deliveryName(basket, basket.deliveryDay)} · nothing is charged now</p>
 

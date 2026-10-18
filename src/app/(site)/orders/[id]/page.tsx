@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { BackButton } from "@/components/ui/back-button";
 import { timingSafeEqual } from "crypto";
 import { Check } from "@phosphor-icons/react/dist/ssr";
 import { prisma } from "@/lib/prisma";
@@ -61,9 +61,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   return (
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
       {ownsIt && (
-        <Link href="/orders" className="text-sm font-semibold underline underline-offset-2">
-          All orders
-        </Link>
+        <BackButton fallback="/orders" label="Orders" />
       )}
 
       {placed && !stopped && (

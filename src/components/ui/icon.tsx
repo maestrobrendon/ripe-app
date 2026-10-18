@@ -1,4 +1,5 @@
 import {
+  CaretLeft,
   CaretRight,
   FileText,
   Leaf,
@@ -103,6 +104,7 @@ export const ICONS = {
   arrowUp: ArrowUp,
   trolley: ShoppingCart,
   caretRight: CaretRight,
+  caretLeft: CaretLeft,
   pin: MapPin,
   leaf: Leaf,
   help: Question,
