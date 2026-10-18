@@ -34,11 +34,11 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
         maxLength={40}
         placeholder="For Mum"
         autoComplete="off"
-        className="mt-1.5 h-12 w-full rounded-control border border-border bg-surface px-4 text-base outline-none focus:border-carbon"
+        className="mt-1.5 h-12 w-full rounded-control border border-hairline bg-surface px-4 text-base outline-none focus:border-carbon"
       />
       <div className="mt-2 flex flex-wrap gap-2">
         {NAMES.map((n) => (
-          <button key={n} type="button" onClick={() => setName(n)} className="rounded-full border border-border px-3 py-1 text-sm">
+          <button key={n} type="button" onClick={() => setName(n)} className="rounded-full border border-hairline px-3 py-1 text-sm">
             {n}
           </button>
         ))}
@@ -52,7 +52,7 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
             type="button"
             onClick={() => setDay(o.day)}
             aria-pressed={day === o.day}
-            className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left ${day === o.day ? "border-carbon bg-mint-pop/20" : "border-border bg-surface"}`}
+            className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left ${day === o.day ? "border-carbon bg-mint-pop/20" : "border-hairline bg-surface"}`}
           >
             <span>
               <b className="block font-semibold">{dayName(o.day)}s</b>
@@ -62,7 +62,7 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
                 </small>
               )}
             </span>
-            <span className={`size-5 rounded-full border-2 ${day === o.day ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-border"}`} />
+            <span className={`size-5 rounded-full border-2 ${day === o.day ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-hairline"}`} />
           </button>
         ))}
       </div>

@@ -24,7 +24,7 @@ type ZoneOption = { id: string; name: string; area: string; fee: number; dateIso
 type Line = { productId: string; name: string; quantity: string; total: number; emoji: string; publicId: string | null };
 
 const LABELS = ["Home", "Work", "Family"];
-const field = "h-12 w-full rounded-control border border-border bg-surface px-4 text-base outline-none focus:border-carbon";
+const field = "h-12 w-full rounded-control border border-hairline bg-surface px-4 text-base outline-none focus:border-carbon";
 
 export function CheckoutFlow(props: {
   basketId: string;
@@ -135,9 +135,9 @@ export function CheckoutFlow(props: {
                     setAddressId(a.id);
                   }}
                   aria-pressed={on}
-                  className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-55 ${on ? "border-carbon bg-mint-pop/15" : "border-border bg-surface"}`}
+                  className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-55 ${on ? "border-carbon bg-mint-pop/15" : "border-hairline bg-surface"}`}
                 >
-                  <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-border"}`} />
+                  <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-hairline"}`} />
                   <span className="min-w-0 flex-1">
                     <b className="block font-semibold">{a.label}</b>
                     <span className="block text-sm">{a.line}</span>
@@ -154,10 +154,10 @@ export function CheckoutFlow(props: {
         )}
 
         {adding ? (
-          <div className={props.addresses.length ? "mt-4 border-t border-border pt-4" : ""}>
+          <div className={props.addresses.length ? "mt-4 border-t border-hairline pt-4" : ""}>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Call this address">
               {LABELS.map((l) => (
-                <button key={l} type="button" onClick={() => setDraft({ ...draft, label: l })} aria-pressed={draft.label === l} className={`rounded-full border px-3 py-1 text-sm ${draft.label === l ? "border-carbon bg-carbon text-paper-white" : "border-border"}`}>
+                <button key={l} type="button" onClick={() => setDraft({ ...draft, label: l })} aria-pressed={draft.label === l} className={`rounded-full border px-3 py-1 text-sm ${draft.label === l ? "border-carbon bg-carbon text-paper-white" : "border-hairline"}`}>
                   {l}
                 </button>
               ))}
@@ -251,7 +251,7 @@ export function CheckoutFlow(props: {
       {/* Items and total */}
       <Section title={`${props.lines.length} item${props.lines.length === 1 ? "" : "s"}`}>
         {showItems ? (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-hairline">
             {props.lines.map((l) => (
               <li key={l.productId} className="flex items-center gap-3 py-2 text-sm">
                 <ProductImage publicId={l.publicId} alt={l.name} emoji={l.emoji} className="size-10 shrink-0" rounded="rounded-lg" emojiClassName="text-lg" sizes="40px" />
@@ -274,7 +274,7 @@ export function CheckoutFlow(props: {
           </p>
         )}
 
-        <dl className="mt-4 grid gap-1.5 border-t border-border pt-4 text-sm">
+        <dl className="mt-4 grid gap-1.5 border-t border-hairline pt-4 text-sm">
           <Row label="Items" value={formatNaira(props.subtotal)} />
           <Row label="Delivery" value={areaFee === undefined ? "—" : quote.fee ? formatNaira(quote.fee) : "Free"} />
           {props.credit > 0 && (
@@ -286,7 +286,7 @@ export function CheckoutFlow(props: {
               {creditUsed > 0 && <dd className="font-medium">−{formatNaira(creditUsed)}</dd>}
             </div>
           )}
-          <div className="mt-1 flex items-baseline justify-between border-t border-border pt-3">
+          <div className="mt-1 flex items-baseline justify-between border-t border-hairline pt-3">
             <dt className="font-semibold">Total</dt>
             <dd className="text-xl font-semibold">{formatNaira(total)}</dd>
           </div>
@@ -295,7 +295,7 @@ export function CheckoutFlow(props: {
       </Section>
 
       {error && (
-        <p role="alert" className="rounded-xl border border-border bg-ember/12 p-3 text-sm">
+        <p role="alert" className="rounded-xl border border-hairline bg-ember/12 p-3 text-sm">
           {error}
         </p>
       )}
@@ -312,7 +312,7 @@ export function CheckoutFlow(props: {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+    <section className="rounded-2xl border border-hairline bg-surface p-4 sm:p-5">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
       {children}
     </section>
@@ -347,9 +347,9 @@ function PayOption({ on, onClick, title, sub, disabled }: { on: boolean; onClick
       onClick={onClick}
       disabled={disabled}
       aria-pressed={on}
-      className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-50 ${on ? "border-carbon bg-mint-pop/15" : "border-border bg-surface"}`}
+      className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left disabled:opacity-50 ${on ? "border-carbon bg-mint-pop/15" : "border-hairline bg-surface"}`}
     >
-      <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-border"}`} />
+      <span className={`mt-0.5 size-5 shrink-0 rounded-full border-2 ${on ? "border-carbon bg-carbon shadow-[inset_0_0_0_3px_var(--surface)]" : "border-hairline"}`} />
       <span>
         <b className="block font-semibold">{title}</b>
         <small className="block text-[13px] text-muted">{sub}</small>

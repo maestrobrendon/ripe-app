@@ -42,7 +42,7 @@ export function DeliverySwitcher({
               setGoing(d.id);
               start(() => selectDelivery(d.id));
             }}
-            className={`flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${on ? "border-carbon bg-carbon text-paper-white" : "border-border bg-surface"} ${going === d.id && pending ? "opacity-60" : ""}`}
+            className={`flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${on ? "border-carbon bg-carbon text-paper-white" : "border-hairline bg-surface"} ${going === d.id && pending ? "opacity-60" : ""}`}
           >
             {d.label}
             <span className={`rounded-full px-1.5 text-xs ${on ? "bg-paper-white/20" : "bg-soft-mist"}`}>{d.itemCount}</span>
@@ -50,12 +50,12 @@ export function DeliverySwitcher({
         );
       })}
       {canAddMore ? (
-        <button type="button" onClick={() => setNewOpen(true)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border px-4 text-sm font-semibold">
+        <button type="button" onClick={() => setNewOpen(true)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-hairline px-4 text-sm font-semibold">
           <Icon name="plus" size={14} weight="bold" />
           Another
         </button>
       ) : (
-        <Link href={member ? "/subscribe?reason=basket-limit" : "/subscribe?reason=free-basket-used"} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border px-4 text-sm font-semibold">
+        <Link href={member ? "/subscribe?reason=basket-limit" : "/subscribe?reason=free-basket-used"} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-hairline px-4 text-sm font-semibold">
           <Icon name="plus" size={14} weight="bold" />
           Another
         </Link>

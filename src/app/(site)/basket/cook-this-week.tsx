@@ -57,7 +57,7 @@ function RecipeRow({ deliveryId, recipe: r }: { deliveryId: string; recipe: Cook
     });
 
   return (
-    <article className="flex gap-3.5 rounded-2xl border border-border bg-surface p-3">
+    <article className="flex gap-3.5 rounded-2xl border border-hairline bg-surface p-3">
       <Link href={`/recipes/${r.slug}`} className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-soft-mist">
         <Image src={r.image} alt="" fill sizes="96px" className="object-cover transition-transform duration-300 hover:scale-[1.04]" />
       </Link>

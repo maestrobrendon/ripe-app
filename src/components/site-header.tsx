@@ -32,12 +32,16 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   // to the search page on phones, so Home isn't pushed below the fold.
   if (isSignedIn) {
     return (
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4 sm:px-6">
-          <Link href="/basket" className="logo-wordmark text-2xl text-carbon">
-            {SITE_NAME}
-          </Link>
-          <div className="flex-1">{showSearch && <div className="hidden max-w-md lg:ml-6 lg:block"><SearchBar compact /></div>}</div>
+      <header className="sticky top-0 z-40 border-b border-hairline bg-background/85 backdrop-blur-xl backdrop-saturate-150">
+        <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-0">
+          {/* On desktop the wordmark sits over the sidebar, and the rest lines up with the page. */}
+          <div className="shrink-0 lg:w-60 lg:px-6">
+            <Link href="/basket" className="logo-wordmark text-2xl text-carbon">
+              {SITE_NAME}
+            </Link>
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:pr-6 lg:pl-6">
+          <div className="flex-1">{showSearch && <div className="hidden max-w-md lg:block"><SearchBar compact /></div>}</div>
           {showSearch && (
             <Link href="/search" aria-label="Search produce and recipes" title="Search" className={`${ICON_BUTTON} lg:hidden`}>
               <Icon name="search" size={20} />
@@ -49,6 +53,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
               Ask Kachi
             </Link>
           )}
+          </div>
         </div>
       </header>
     );

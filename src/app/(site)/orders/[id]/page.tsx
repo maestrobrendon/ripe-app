@@ -83,7 +83,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           {CUSTOMER_STEPS.map((label, i) => (
             <li key={label} className="relative flex flex-1 flex-col items-center text-center">
               {i < CUSTOMER_STEPS.length - 1 && <span aria-hidden className={`absolute top-4 left-1/2 h-px w-full ${i < step ? "bg-carbon" : "bg-border"}`} />}
-              <span className={`relative z-10 flex size-8 items-center justify-center rounded-full text-xs font-medium ${i <= step ? "bg-carbon text-white" : "border border-border bg-surface text-muted"}`}>
+              <span className={`relative z-10 flex size-8 items-center justify-center rounded-full text-xs font-medium ${i <= step ? "bg-carbon text-white" : "border border-hairline bg-surface text-muted"}`}>
                 {i <= step ? <Check size={14} weight="bold" aria-hidden /> : i + 1}
               </span>
               <span className={`mt-2 text-xs ${i <= step ? "font-medium" : "text-muted"}`}>{label}</span>
@@ -105,7 +105,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       )}
 
       {unpaidTransfer && (
-        <div className="mt-5 rounded-2xl border border-border bg-surface p-4 text-sm">
+        <div className="mt-5 rounded-2xl border border-hairline bg-surface p-4 text-sm">
           <p className="font-semibold">Transfer {formatNaira(order.total)} to</p>
           <p className="mt-1">
             {settings.transfer.accountName}
@@ -136,7 +136,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">What you told us</h2>
           <ul className="mt-2 grid gap-2">
             {order.issues.map((i) => (
-              <li key={i.id} className="rounded-2xl border border-border bg-surface p-3 text-sm">
+              <li key={i.id} className="rounded-2xl border border-hairline bg-surface p-3 text-sm">
                 <p className="font-semibold">{ISSUE_KINDS.find((k) => k.id === i.kind)?.label ?? i.kind}</p>
                 {i.items.length > 0 && <p className="text-muted">{i.items.join(", ")}</p>}
                 {i.note && <p className="mt-1">&ldquo;{i.note}&rdquo;</p>}
@@ -147,7 +147,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </section>
       )}
 
-      <section className="mt-6 grid gap-3 rounded-2xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
+      <section className="mt-6 grid gap-3 rounded-2xl border border-hairline bg-surface p-4 text-sm sm:grid-cols-2">
         <Detail label="When">
           {longDate(order.deliveryDate)}, {DELIVERY_WINDOW}
         </Detail>
@@ -165,7 +165,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
       <section className="mt-6">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Items</h2>
-        <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+        <ul className="divide-y divide-hairline rounded-2xl border border-hairline bg-surface">
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 p-3 text-sm">
               <ProductImage publicId={i.product.cloudinaryPublicId} alt={i.product.name} emoji={i.product.imageEmoji} className="size-10 shrink-0" rounded="rounded-lg" emojiClassName="text-lg" sizes="40px" />

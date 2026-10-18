@@ -26,7 +26,8 @@ type Zone = { id: string; name: string; area: string; isServed: boolean };
 type Draft = Omit<Address, "id" | "zoneName" | "served" | "isDefault" | "line"> & { id: string | null; isDefault: boolean };
 
 const LABELS = ["Home", "Work", "Family"];
-const field = "h-12 w-full rounded-control border border-border bg-surface px-4 text-base outline-none focus:border-carbon";
+const field =
+  "h-12 w-full rounded-xl border border-hairline bg-surface px-3.5 text-[16px] outline-none transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-carbon focus:shadow-[0_0_0_3px_rgb(0_0_0/0.08)]";
 
 export function AddressBook({ addresses, zones, next }: { addresses: Address[]; zones: Zone[]; next: string | null }) {
   const router = useRouter();
@@ -58,20 +59,20 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
 
   return (
     <>
-      <div className="mt-5 grid gap-3">
+      <div className="mt-6 grid gap-3">
         {addresses.map((a) => (
-          <article key={a.id} className="rounded-2xl border border-border bg-surface p-4">
-            <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-soft-mist">
-                <Icon name={a.label === "Work" ? "shop" : "home"} size={18} />
+          <article key={a.id} className="overflow-hidden rounded-2xl bg-surface shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline">
+            <div className="flex items-start gap-3 p-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sky-wash">
+                <Icon name={a.label === "Work" ? "shop" : "home"} size={18} weight="bold" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-semibold">
+                <p className="flex flex-wrap items-center gap-2 text-[16px] font-semibold">
                   {a.label}
-                  {a.isDefault && <span className="rounded-full bg-mint-pop/40 px-2 py-0.5 text-[11px]">Default</span>}
+                    {a.isDefault && <span className="rounded-full bg-mint-pop/40 px-2 py-0.5 text-[11px] font-semibold">Default</span>}
                   {!a.served && <span className="rounded-full bg-soft-mist px-2 py-0.5 text-[11px] text-muted">We don&apos;t deliver here yet</span>}
                 </p>
-                <p className="text-sm">{a.line}</p>
+                <p className="mt-0.5 text-[15px]">{a.line}</p>
                 <p className="text-[13px] text-muted">
                   {a.landmark ? `Near ${a.landmark} · ` : ""}
                   {a.zoneName}
@@ -80,16 +81,16 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
                 {a.instructions && <p className="mt-1 text-[13px] text-muted">{a.instructions}</p>}
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3 text-sm">
-              <button type="button" onClick={() => setDraft({ ...a, id: a.id })} className="rounded-full border border-border px-3 py-1.5 font-semibold">
+            <div className="flex border-t border-hairline text-[15px] font-semibold [&>*+*]:border-l [&>*+*]:border-hairline">
+              <button type="button" onClick={() => setDraft({ ...a, id: a.id })} className="h-12 flex-1 transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
                 Edit
               </button>
               {!a.isDefault && (
-                <button type="button" disabled={pending} onClick={() => run(() => makeDefault(a.id), `${a.label} is now your default`)} className="rounded-full border border-border px-3 py-1.5 font-semibold">
+                <button type="button" disabled={pending} onClick={() => run(() => makeDefault(a.id), `${a.label} is now your default`)} className="h-12 flex-1 transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
                   Make default
                 </button>
               )}
-              <button type="button" onClick={() => setRemoving(a)} className="ml-auto rounded-full px-3 py-1.5 font-semibold text-muted">
+              <button type="button" onClick={() => setRemoving(a)} className="h-12 flex-1 text-[#c2410c] transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
                 Remove
               </button>
             </div>
@@ -97,9 +98,16 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
         ))}
       </div>
 
-      <Button size="lg" variant={addresses.length ? "secondary" : "primary"} className="mt-4 w-full" onClick={() => setDraft(blank())}>
+      <button
+        type="button"
+        onClick={() => setDraft(blank())}
+        className="mt-3 flex h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 text-left text-[16px] font-semibold shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline transition-colors hover:bg-black/[0.015] active:bg-black/[0.04]"
+      >
+        <span className="flex size-9 items-center justify-center rounded-[10px] bg-carbon text-paper-white">
+          <Icon name="plus" size={16} weight="bold" />
+        </span>
         Add an address
-      </Button>
+      </button>
 
       <BottomSheet open={Boolean(draft)} onClose={() => setDraft(null)} title={draft?.id ? "Edit address" : "New address"} desktopDialog>
         {draft && (
@@ -111,7 +119,7 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
           >
             <div className="flex flex-wrap gap-2" role="group" aria-label="Call this address">
               {LABELS.map((l) => (
-                <button key={l} type="button" onClick={() => setDraft({ ...draft, label: l })} aria-pressed={draft.label === l} className={`rounded-full border px-3 py-1 text-sm ${draft.label === l ? "border-carbon bg-carbon text-paper-white" : "border-border"}`}>
+                <button key={l} type="button" onClick={() => setDraft({ ...draft, label: l })} aria-pressed={draft.label === l} className={`h-9 rounded-full px-4 text-[14px] transition-colors ${draft.label === l ? "bg-carbon font-semibold text-paper-white" : "bg-soft-mist hover:bg-black/[0.1]"}`}>
                   {l}
                 </button>
               ))}

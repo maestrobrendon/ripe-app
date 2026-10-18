@@ -73,7 +73,7 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
         // whole nav rather than rounding its corners — a fixed radius reads
         // as a rounded rectangle regardless of how tall the column gets.
         isDesktop
-          ? "left-6 top-1/2 flex w-52 -translate-y-1/2 flex-col gap-1 rounded-3xl p-2"
+          ? "top-14 bottom-0 left-0 flex w-60 flex-col gap-0.5 rounded-none border-0 border-r border-hairline bg-surface px-3 pt-5 pb-6"
           : "inset-x-0 mx-auto flex h-16 w-[min(100%-1.5rem,28rem)] items-stretch justify-between gap-0.5 rounded-[1.75rem] p-1.5",
       )}
       style={isDesktop ? undefined : { bottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
@@ -90,15 +90,15 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
                 data-flight-target={item.flightTarget ? "cart" : undefined}
                 className={cn(
                   "group relative flex h-full min-h-12 outline-none transition-colors",
-                  isDesktop ? "items-center gap-2 rounded-full px-4 py-3" : "flex-col items-center justify-center gap-0.5 rounded-[1.35rem] px-1",
-                  active ? "text-paper-white" : "text-muted hover:bg-sky-wash",
+                  isDesktop ? "items-center gap-3 rounded-xl px-3 py-2.5" : "flex-col items-center justify-center gap-0.5 rounded-[1.35rem] px-1",
+                  active ? "text-paper-white" : isDesktop ? "text-carbon/70 hover:bg-black/[0.04] hover:text-carbon" : "text-muted hover:bg-sky-wash",
                 )}
               >
                 {active && (
                   <motion.span
                     layoutId={`${ariaLabel}-dock-pill`}
                     transition={spring.indicator}
-                    className={cn("absolute inset-0 bg-carbon", isDesktop ? "rounded-full" : "rounded-[1.35rem]")}
+                    className={cn("absolute inset-0 bg-carbon", isDesktop ? "rounded-xl" : "rounded-[1.35rem]")}
                     aria-hidden
                   />
                 )}
@@ -109,7 +109,7 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
                   animate={active ? { scale: [1, 1.14, 1] } : { scale: 1 }}
                   transition={active ? { duration: 0.34, times: [0, 0.4, 1] } : spring.snappy}
                 >
-                  <Icon name={item.icon} size={isDesktop ? 22 : 21} weight={active ? "fill" : "regular"} />
+                  <Icon name={item.icon} size={isDesktop ? 20 : 21} weight={active ? "fill" : "regular"} />
                   <AnimatePresence>
                     {Boolean(item.badge) && !active && (
                       <motion.span
@@ -127,7 +127,7 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
                   </AnimatePresence>
                 </motion.span>
 
-                <span className={cn("relative truncate", isDesktop ? "text-sm font-bold" : "text-[11px] font-semibold leading-none")}>{item.label}</span>
+                <span className={cn("relative truncate", isDesktop ? "text-[15px] font-semibold" : "text-[11px] font-semibold leading-none")}>{item.label}</span>
               </Link>
             </motion.div>
           </div>

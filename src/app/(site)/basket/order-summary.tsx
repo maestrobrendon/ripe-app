@@ -58,14 +58,14 @@ export function OrderSummary({
   return (
     <>
       <aside className="hidden lg:sticky lg:top-24 lg:block">
-        <div className="rounded-2xl border border-border bg-surface p-5">
+        <div className="rounded-2xl border border-hairline bg-surface p-5">
           <h2 className="text-lg font-semibold">Order summary</h2>
           <dl className="mt-3 grid gap-2 text-sm">
             <Row label={`Items (${t.count})`} value={formatNaira(t.subtotal)} />
             <Row label="Delivery" value={t.count === 0 ? "—" : t.fee ? formatNaira(t.fee) : "Free"} />
             {t.toFreeDelivery > 0 && <p className="-mt-1 text-xs text-muted">{formatNaira(t.toFreeDelivery)} more for free delivery</p>}
             {t.creditUsed > 0 && <Row label="Account credit" value={`−${formatNaira(t.creditUsed)}`} />}
-            <div className="mt-1 flex items-baseline justify-between border-t border-border pt-3">
+            <div className="mt-1 flex items-baseline justify-between border-t border-hairline pt-3">
               <dt className="font-semibold">Total</dt>
               <dd className="text-xl font-semibold">{formatNaira(t.total)}</dd>
             </div>
@@ -91,7 +91,7 @@ export function OrderSummary({
 
       {t.count > 0 && (
         <div data-order-bar className="fixed inset-x-0 z-(--z-sticky) px-3 lg:hidden" style={{ bottom: "calc(var(--dock-height) + var(--dock-inset) + 0.5rem)" }}>
-          <div className="mx-auto flex max-w-[28rem] items-center gap-3 rounded-full border border-border bg-surface/95 p-1.5 pl-5 shadow-lg backdrop-blur">
+          <div className="mx-auto flex max-w-[28rem] items-center gap-3 rounded-full border border-hairline bg-surface/95 p-1.5 pl-5 shadow-lg backdrop-blur">
             <div className="min-w-0 flex-1 leading-tight">
               <p className="font-semibold">{formatNaira(t.total)}</p>
               <p className="truncate text-xs text-muted">

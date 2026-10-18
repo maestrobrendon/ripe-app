@@ -3,13 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Button, LinkButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useCart } from "@/components/cart-provider";
 import { formatNaira, GOAL_LABEL, PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
 import { MENU_GOALS } from "@/lib/menu-types";
-import { press } from "@/lib/motion/tokens";
 import { cancelSubscription, withdrawPlanRequest } from "@/app/(site)/subscribe/actions";
 import {
   saveContact,
@@ -50,15 +49,31 @@ type Props = {
 
 type Sheet = "prefs" | "profile" | "member" | "invite" | "delete" | "signout" | null;
 
-const FIELD = "h-13 w-full rounded-input border border-border bg-surface px-3.5 text-base outline-none focus:border-carbon";
-const LABEL = "mb-1.5 mt-3.5 block text-sm font-semibold";
-const PRIMARY = "tap-target mt-5 h-13 w-full rounded-full bg-carbon text-base font-semibold text-white disabled:opacity-60";
-const SOFT = "tap-target mt-2 h-13 w-full rounded-full bg-soft-mist text-base font-semibold disabled:opacity-60";
+/** Icon tiles, one colour per kind of thing, so a row can be found by colour before it's read. */
+type Tint = "mint" | "sky" | "lavender" | "sun" | "ember" | "mist" | "carbon";
+const TINT: Record<Tint, string> = {
+  mint: "bg-mint-pop/35 text-carbon",
+  sky: "bg-sky-wash text-carbon",
+  lavender: "bg-lavender text-carbon",
+  sun: "bg-sunburst/45 text-carbon",
+  ember: "bg-ember/20 text-carbon",
+  mist: "bg-soft-mist text-carbon",
+  carbon: "bg-carbon text-paper-white",
+};
+
+/* Shared form styles for every sheet on this page: the same fields as checkout. */
+const FIELD =
+  "h-12 w-full rounded-xl border border-hairline bg-surface px-3.5 text-[16px] outline-none transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-carbon focus:shadow-[0_0_0_3px_rgb(0_0_0/0.08)]";
+const LABEL = "mb-1.5 mt-4 block text-[13px] font-semibold text-carbon/70";
+const LEDE = "text-[15px] leading-relaxed text-muted";
 
 /**
- * Me: who you are, your membership, invites and credit, then everything you
- * can set, grouped the way people look for it. Saving shows a toast above
- * any open sheet.
+ * Me: a settings screen. One column, the way people expect to find their
+ * account: who they are at the top, the two things worth a glance
+ * (membership, invite credit), then grouped lists of everything they can
+ * set. Every row is the same height, every group the same shape, and every
+ * sheet uses the same fields and buttons. Saving shows a toast above any
+ * open sheet.
  */
 export function AccountView(props: Props) {
   const router = useRouter();
@@ -73,162 +88,145 @@ export function AccountView(props: Props) {
   const failed = (message: string) => cart.announce(message, "error");
 
   const people = props.adults + props.kids;
-  const nudges: { icon: IconName; text: string; href?: string; sheet?: Sheet }[] = [];
-  if (!props.address) nudges.push({ icon: "pin", text: "Add your delivery address", href: "/account/addresses?next=/account" });
-  if (!props.phone) nudges.push({ icon: "phone", text: "Add a phone number the rider can call", sheet: "profile" });
-
   const m = props.membership;
-  const memberSub =
-    m?.state === "member"
-      ? `${m.tierName} · renews ${m.renews ?? "monthly"}`
-      : m?.state === "pending"
-        ? `Waiting for payment: ${m.tierName}`
-        : m?.state === "declined"
-          ? `Your ${m.tierName} request wasn't approved`
-          : "Lower prices on everything";
+  const initial = props.name.trim().charAt(0).toUpperCase() || "?";
 
-  const signOutButton = (
-    <button onClick={() => setSheet("signout")} className="mx-auto mt-6.5 block h-12 rounded-full border border-border px-6 font-semibold">
-      Sign out
-    </button>
-  );
+  const todo: { icon: IconName; title: string; sub: string; href?: string; sheet?: Sheet }[] = [];
+  if (!props.address) todo.push({ icon: "pin", title: "Add your delivery address", sub: "So we know which days we come to you", href: "/account/addresses?next=/account" });
+  if (!props.phone) todo.push({ icon: "phone", title: "Add a phone number", sub: "The rider calls it on the day", sheet: "profile" });
 
   return (
-    <div>
-      <div className="mx-auto max-w-5xl pb-6 lg:grid lg:grid-cols-[360px_1fr] lg:gap-10 lg:px-6 lg:pt-8">
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <div className="flex items-center gap-3.5 px-5 pb-1 pt-3 lg:px-0 lg:pt-0">
-            <div className="flex h-14 w-14 flex-none items-center justify-center rounded-full bg-carbon text-[22px] font-semibold text-white" aria-hidden>
-              {props.name.trim().charAt(0).toUpperCase() || "?"}
-            </div>
-            <div className="min-w-0">
-              <h1 className="truncate text-2xl font-extrabold tracking-tight">{props.name || "Your account"}</h1>
-              <small className="block truncate text-sm text-muted">{[props.phone, props.email].filter(Boolean).join(" · ")}</small>
-            </div>
-          </div>
+    <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
+      <div className="mx-auto max-w-2xl px-4 pt-6 pb-10 sm:px-6 sm:pt-8">
+        <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Me</h1>
 
-          {nudges.length > 0 && (
-            <section className="mx-5 mt-4 rounded-tile bg-sunburst/20 p-2 lg:mx-0">
-              {nudges.map((n) =>
-                n.href ? (
-                  <Link key={n.text} href={n.href} className="flex items-center gap-2.5 rounded-xl px-2 py-2.5 text-[15px] font-semibold">
-                    <Icon name={n.icon} size={18} />
-                    {n.text}
-                    <Icon name="caretRight" size={16} className="ml-auto text-muted" />
-                  </Link>
-                ) : (
-                  <button key={n.text} onClick={() => setSheet(n.sheet ?? null)} className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left text-[15px] font-semibold">
-                    <Icon name={n.icon} size={18} />
-                    {n.text}
-                    <Icon name="caretRight" size={16} className="ml-auto text-muted" />
-                  </button>
-                ),
-              )}
-            </section>
-          )}
+        {/* Who you are */}
+        <button
+          type="button"
+          onClick={() => setSheet("profile")}
+          className="mt-4 flex w-full items-center gap-4 rounded-2xl bg-surface p-4 text-left shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline transition-[transform,background-color] hover:bg-black/[0.015] active:scale-[0.995]"
+        >
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-carbon to-carbon/75 text-[22px] font-semibold text-paper-white" aria-hidden>
+            {initial}
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block truncate text-[19px] leading-tight font-semibold tracking-[-0.01em]">{props.name || "Add your name"}</b>
+            <span className="mt-0.5 block truncate text-[14px] text-muted">{[props.phone, props.email].filter(Boolean).join(" · ") || "Name, phone and email"}</span>
+          </span>
+          <Icon name="caretRight" size={16} className="shrink-0 text-carbon/35" />
+        </button>
 
-          <motion.button
+        {todo.length > 0 && (
+          <Group title="To do">
+            {todo.map((t) =>
+              t.href ? (
+                <Row key={t.title} icon={t.icon} tint="sun" title={t.title} sub={t.sub} href={t.href} />
+              ) : (
+                <Row key={t.title} icon={t.icon} tint="sun" title={t.title} sub={t.sub} onClick={() => setSheet(t.sheet ?? null)} />
+              ),
+            )}
+          </Group>
+        )}
+
+        {/* The two things worth a glance */}
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Tile
             onClick={() => setSheet("member")}
-            whileTap={{ scale: press.scaleLarge }}
-            className={`mx-5 mt-3.5 flex w-[calc(100%-2.5rem)] items-center gap-3.5 rounded-tile p-4 text-left text-carbon lg:mx-0 lg:w-full ${m?.state === "member" ? "bg-mint-pop/25" : m?.state === "pending" ? "bg-sunburst/25" : "bg-lavender"}`}
-          >
-            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[14px] bg-white">
-              <Icon name="star" size={22} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <b className="block text-base font-semibold">{m?.state === "member" ? "You're a member" : m?.state === "pending" ? "Membership on its way" : "Become a member"}</b>
-              <small className="text-sm text-carbon/75">{memberSub}</small>
-            </span>
-            <Icon name="caretRight" size={18} className="flex-none" />
-          </motion.button>
-
-          <motion.button
+            tone={m?.state === "member" ? "bg-mint-pop/25" : m?.state === "pending" ? "bg-sunburst/30" : "bg-lavender/70"}
+            icon="star"
+            eyebrow="Membership"
+            title={m?.state === "member" ? m.tierName : m?.state === "pending" ? "On its way" : "Not a member"}
+            sub={
+              m?.state === "member"
+                ? `Next due ${m.renews ?? "monthly"}`
+                : m?.state === "pending"
+                  ? `Waiting for payment: ${m.tierName}`
+                  : m?.state === "declined"
+                    ? "Your last request wasn't approved"
+                    : "Lower prices on everything"
+            }
+          />
+          <Tile
             onClick={() => setSheet("invite")}
-            whileTap={{ scale: press.scaleLarge }}
-            className="mx-5 mt-2.5 flex w-[calc(100%-2.5rem)] items-center gap-3.5 rounded-tile border-[1.5px] border-border p-4 text-left lg:mx-0 lg:w-full"
-          >
-            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[14px] bg-soft-mist">
-              <Icon name="gift" size={22} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <b className="block text-base font-semibold">Invite friends, get {formatNaira(props.invite.reward)}</b>
-              <small className="text-sm text-muted">{props.invite.credit > 0 ? `${formatNaira(props.invite.credit)} credit to spend` : "Each, after their first delivery"}</small>
-            </span>
-            <Icon name="caretRight" size={18} className="flex-none" />
-          </motion.button>
-
-          <div className="hidden lg:block">{signOutButton}</div>
+            tone="bg-surface ring-1 ring-hairline"
+            icon="gift"
+            eyebrow="Invite friends"
+            title={props.invite.credit > 0 ? `${formatNaira(props.invite.credit)} credit` : `Get ${formatNaira(props.invite.reward)} each`}
+            sub={props.invite.credit > 0 ? "Comes off your next order" : "After their first delivery"}
+          />
         </div>
 
-        <div>
-          <Group title="Orders">
-            <Row icon="box" title="Your orders" sub={props.orders.live ?? (props.orders.count ? `${props.orders.count} so far` : "None yet")} href="/orders" />
-          </Group>
+        <Group title="Orders">
+          <Row icon="box" tint="mint" title="Your orders" sub={props.orders.live ?? (props.orders.count ? `${props.orders.count} so far` : "None yet")} href="/orders" />
+        </Group>
 
-          <Group title="Delivery">
-            <Row
-              icon="pin"
-              title="Addresses"
-              sub={props.address ? `${props.address.label}: ${props.address.line}, ${props.address.zone}${props.address.count > 1 ? ` · +${props.address.count - 1} more` : ""}` : "Add one"}
-              warn={!props.address}
-              href="/account/addresses"
-            />
-            <Row icon="calendar" title="Delivery days and reminders" sub="On Home, from the ⋯ menu" href="/basket" />
-          </Group>
+        <Group title="Delivery">
+          <Row
+            icon="pin"
+            tint="sky"
+            title="Addresses"
+            sub={props.address ? `${props.address.label} · ${props.address.line}${props.address.count > 1 ? ` · +${props.address.count - 1}` : ""}` : "None yet"}
+            href="/account/addresses"
+          />
+          <Row icon="calendar" tint="sky" title="Delivery days and reminders" sub="On Home, from the ⋯ menu" href="/basket" />
+        </Group>
 
-          <Group title="You">
-            <Row
-              icon="leaf"
-              title="Food and household"
-              sub={props.goal ? `${people} ${people === 1 ? "person" : "people"} · ${GOAL_LABEL[props.goal] ?? props.goal}` : "Tell us what you're after"}
-              onClick={() => setSheet("prefs")}
-            />
-            <Row icon="account" title="Name and contact" sub={[props.name, props.phone || props.email].filter(Boolean).join(" · ")} onClick={() => setSheet("profile")} />
-          </Group>
+        <Group title="You">
+          <Row
+            icon="leaf"
+            tint="mint"
+            title="Food and household"
+            sub={props.goal ? `${people} ${people === 1 ? "person" : "people"} · ${GOAL_LABEL[props.goal] ?? props.goal}` : "Tell us what you're after"}
+            onClick={() => setSheet("prefs")}
+          />
+          <Row icon="account" tint="mist" title="Name and contact" sub={[props.name, props.phone || props.email].filter(Boolean).join(" · ")} onClick={() => setSheet("profile")} />
+        </Group>
 
-          <Group title="Notifications">
-            <Toggle
-              icon="whatsapp"
-              title="WhatsApp"
-              sub={props.phone ? `Order updates and weekly reminders on ${props.phone}` : "Add a phone number first"}
-              on={props.notify.whatsapp && Boolean(props.phone)}
-              disabled={!props.phone}
-              onChange={(on) => setNotifyChannel("whatsapp", on)}
-              onError={failed}
-            />
-            {props.email && (
-              <Toggle icon="send" title="Email" sub={`Receipts and order updates to ${props.email}`} on={props.notify.email} onChange={(on) => setNotifyChannel("email", on)} onError={failed} />
-            )}
-          </Group>
+        <Group title="Notifications" footer="Order updates and the weekly reminder go to whichever you leave on. Password links always come through.">
+          <Toggle
+            icon="whatsapp"
+            tint="mint"
+            title="WhatsApp"
+            sub={props.phone ? props.phone : "Add a phone number first"}
+            on={props.notify.whatsapp && Boolean(props.phone)}
+            disabled={!props.phone}
+            onChange={(on) => setNotifyChannel("whatsapp", on)}
+            onError={failed}
+          />
+          {props.email && <Toggle icon="send" tint="sky" title="Email" sub={props.email} on={props.notify.email} onChange={(on) => setNotifyChannel("email", on)} onError={failed} />}
+        </Group>
 
-          <Group title="Help">
-            <Row icon={props.help.verb.includes("WhatsApp") ? "whatsapp" : "send"} title={props.help.verb} sub="About an order, your account or anything else" href={props.help.href} external />
-            <Row icon="help" title="Questions and answers" href="/faq" />
-            <Row icon="map" title="Where we deliver" href="/delivery-areas" />
-            <Row icon="leaf" title="About Basket" href="/about" />
-          </Group>
+        <Group title="Help">
+          <Row icon={props.help.verb.includes("WhatsApp") ? "whatsapp" : "send"} tint="lavender" title={props.help.verb} sub="About an order, your account or anything else" href={props.help.href} external />
+          <Row icon="help" tint="lavender" title="Questions and answers" href="/faq" />
+          <Row icon="map" tint="lavender" title="Where we deliver" href="/delivery-areas" />
+          <Row icon="leaf" tint="lavender" title="About Basket" href="/about" />
+        </Group>
 
-          <Group title="Privacy and data">
-            <Toggle
-              icon="shield"
-              title="Help improve Kachi"
-              sub="Let the Basket team read your chats with Kachi to make it better. Off unless you turn it on."
-              on={props.kachiReview}
-              onChange={setKachiReviewConsent}
-              onError={failed}
-            />
-            <Row icon="download" title="Download my data" sub="Your account, addresses and orders, as a file" href="/account/data" download />
-            {props.deletionRequested ? (
-              <Row icon="trash" title="Deletion requested" sub="We'll finish it within 30 days. Tap to withdraw." onClick={() => setSheet("delete")} />
-            ) : (
-              <Row icon="trash" title="Delete my account" onClick={() => setSheet("delete")} />
-            )}
-            <Row icon="doc" title="Terms of service" href="/terms" />
-            <Row icon="shield" title="Privacy policy" href="/privacy" />
-          </Group>
+        <Group title="Privacy and data">
+          <Toggle
+            icon="shield"
+            tint="mist"
+            title="Help improve Kachi"
+            sub="Let the Basket team read your Kachi chats. Off unless you turn it on."
+            on={props.kachiReview}
+            onChange={setKachiReviewConsent}
+            onError={failed}
+          />
+          <Row icon="download" tint="mist" title="Download my data" sub="Your account, addresses and orders, as a file" href="/account/data" download />
+          <Row icon="doc" tint="mist" title="Terms of service" href="/terms" />
+          <Row icon="shield" tint="mist" title="Privacy policy" href="/privacy" />
+        </Group>
 
-          <div className="lg:hidden">{signOutButton}</div>
-        </div>
+        <Group>
+          <Row title="Sign out" onClick={() => setSheet("signout")} plain />
+          <Row
+            title={props.deletionRequested ? "Deletion requested · keep my account" : "Delete my account"}
+            onClick={() => setSheet("delete")}
+            plain
+            danger={!props.deletionRequested}
+          />
+        </Group>
       </div>
 
       <BottomSheet desktopDialog open={sheet === "prefs"} onClose={() => setSheet(null)} title="Food and household">
@@ -247,49 +245,85 @@ export function AccountView(props: Props) {
         <DeleteSheet requested={Boolean(props.deletionRequested)} onDone={saved} onError={failed} onClose={() => setSheet(null)} />
       </BottomSheet>
       <BottomSheet desktopDialog open={sheet === "signout"} onClose={() => setSheet(null)} title="Sign out?">
-        <p className="mb-3 text-[15px] leading-snug text-muted">Your orders, deliveries and meal plan are saved to your account.</p>
-        <form action={signOut}>
-          <button className="tap-target mt-5 h-13 w-full rounded-full bg-carbon text-base font-semibold text-white">Sign out</button>
-        </form>
-        <form action={signOutEverywhere}>
-          <button className="tap-target mt-2.5 h-12 w-full rounded-full border border-border text-[15px] font-semibold">Sign out on all devices</button>
-        </form>
-        <button onClick={() => setSheet(null)} className={SOFT}>
-          Stay signed in
-        </button>
+        <p className={LEDE}>Your orders, deliveries and meal plan are saved to your account.</p>
+        <Actions>
+          <form action={signOut}>
+            <Button type="submit" size="lg" className="w-full">
+              Sign out
+            </Button>
+          </form>
+          <form action={signOutEverywhere}>
+            <Button type="submit" size="lg" variant="secondary" className="w-full">
+              Sign out on all devices
+            </Button>
+          </form>
+        </Actions>
       </BottomSheet>
     </div>
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+/* -------------------------------- building blocks ------------------------------- */
+
+function Group({ title, footer, children }: { title?: string; footer?: string; children: React.ReactNode }) {
   return (
-    <div className="px-5 pt-6.5 lg:px-0 lg:first:pt-0">
-      <h3 className="mb-1.5 ml-1 text-[13px] font-semibold text-muted">{title}</h3>
-      <div className="overflow-hidden rounded-tile border-[1.5px] border-border [&>*+*]:border-t [&>*+*]:border-border">{children}</div>
-    </div>
+    <section className="mt-7">
+      {title && <h2 className="mb-2 px-4 text-[13px] font-semibold tracking-[0.02em] text-carbon/55 uppercase">{title}</h2>}
+      <div className="overflow-hidden rounded-2xl bg-surface shadow-[0_1px_0_rgb(0_0_0/0.04)] ring-1 ring-hairline">{children}</div>
+      {footer && <p className="mt-2 px-4 text-[13px] leading-snug text-muted">{footer}</p>}
+    </section>
   );
 }
 
-function Row({ icon, title, sub, warn, onClick, href, external, download }: { icon: IconName; title: string; sub?: string; warn?: boolean; onClick?: () => void; href?: string; external?: boolean; download?: boolean }) {
+function IconTile({ icon, tint }: { icon: IconName; tint: Tint }) {
+  return (
+    <span className={`flex size-8 shrink-0 items-center justify-center rounded-[9px] ${TINT[tint]}`} aria-hidden>
+      <Icon name={icon} size={17} weight="bold" />
+    </span>
+  );
+}
+
+/**
+ * One row of a grouped list. The divider starts where the text does, as in a
+ * settings list, and the last row has none.
+ */
+function Row({
+  icon,
+  tint = "mist",
+  title,
+  sub,
+  onClick,
+  href,
+  external,
+  download,
+  plain,
+  danger,
+}: {
+  icon?: IconName;
+  tint?: Tint;
+  title: string;
+  sub?: string;
+  onClick?: () => void;
+  href?: string;
+  external?: boolean;
+  download?: boolean;
+  /** No icon or chevron: Sign out, Delete. */
+  plain?: boolean;
+  danger?: boolean;
+}) {
   const body = (
     <>
-      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-soft-mist">
-        <Icon name={icon} size={19} />
+      {icon && !plain && <IconTile icon={icon} tint={tint} />}
+      <span className="flex min-h-14 min-w-0 flex-1 items-center gap-3 border-b border-hairline py-2.5 pr-4 group-last/row:border-b-0">
+        <span className="min-w-0 flex-1">
+          <span className={`block truncate text-[16px] leading-snug ${plain ? `text-center font-semibold ${danger ? "text-[#c2410c]" : "text-carbon"}` : "font-medium"}`}>{title}</span>
+          {sub && <span className="block truncate text-[13px] leading-snug text-muted">{sub}</span>}
+        </span>
+        {!plain && <Icon name={external ? "send" : "caretRight"} size={external ? 14 : 15} className="shrink-0 text-carbon/30" />}
       </span>
-      <span className="min-w-0 flex-1">
-        <b className="block text-base font-semibold">{title}</b>
-        {sub && (
-          <small className={`flex items-center gap-1.5 truncate text-[13px] ${warn ? "font-semibold text-carbon" : "text-muted"}`}>
-            {warn && <span className="h-2 w-2 flex-none rounded-full bg-sunburst" aria-hidden />}
-            <span className="truncate">{sub}</span>
-          </small>
-        )}
-      </span>
-      <Icon name="caretRight" size={16} className="flex-none text-muted" />
     </>
   );
-  const cls = "flex min-h-15.5 w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors active:bg-soft-mist lg:hover:bg-soft-mist";
+  const cls = "group/row flex w-full items-center gap-3 pl-4 text-left transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]";
   if (href && (external || download))
     return (
       <a href={href} className={cls} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : { download: true })}>
@@ -303,14 +337,14 @@ function Row({ icon, title, sub, warn, onClick, href, external, download }: { ic
       </Link>
     );
   return (
-    <button onClick={onClick} className={cls}>
+    <button type="button" onClick={onClick} className={cls}>
       {body}
     </button>
   );
 }
 
 /** An on/off row that saves at once and puts itself back if saving fails. */
-function Toggle({ icon, title, sub, on, disabled, onChange, onError }: { icon: IconName; title: string; sub: string; on: boolean; disabled?: boolean; onChange: (on: boolean) => Promise<SaveResult>; onError: (m: string) => void }) {
+function Toggle({ icon, tint, title, sub, on, disabled, onChange, onError }: { icon: IconName; tint: Tint; title: string; sub: string; on: boolean; disabled?: boolean; onChange: (on: boolean) => Promise<SaveResult>; onError: (m: string) => void }) {
   const [value, setValue] = useState(on);
   const [pending, start] = useTransition();
   const toggle = () =>
@@ -324,19 +358,41 @@ function Toggle({ icon, title, sub, on, disabled, onChange, onError }: { icon: I
       }
     });
   return (
-    <button type="button" role="switch" aria-checked={value} disabled={pending || disabled} onClick={toggle} className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left disabled:opacity-60">
-      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-soft-mist">
-        <Icon name={icon} size={19} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <b className="block text-base font-semibold">{title}</b>
-        <small className="block text-[13px] text-muted">{sub}</small>
-      </span>
-      <span aria-hidden className={`relative h-7 w-12 flex-none rounded-full transition-colors ${value ? "bg-carbon" : "bg-soft-mist"}`}>
-        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-[left] ${value ? "left-6" : "left-1"}`} />
+    <button type="button" role="switch" aria-checked={value} aria-label={title} disabled={pending || disabled} onClick={toggle} className="group/row flex w-full items-center gap-3 pl-4 text-left disabled:opacity-50">
+      <IconTile icon={icon} tint={tint} />
+      <span className="flex min-h-14 min-w-0 flex-1 items-center gap-3 border-b border-hairline py-2.5 pr-4 group-last/row:border-b-0">
+        <span className="min-w-0 flex-1">
+          <span className="block text-[16px] leading-snug font-medium">{title}</span>
+          <span className="block text-[13px] leading-snug text-muted">{sub}</span>
+        </span>
+        <span aria-hidden className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ${value ? "bg-[#1f9d55]" : "bg-black/[0.12]"}`}>
+          <span className={`absolute top-[2px] size-[27px] rounded-full bg-white shadow-[0_3px_8px_rgb(0_0_0/0.15),0_1px_1px_rgb(0_0_0/0.16)] transition-[left] duration-200 ${value ? "left-[22px]" : "left-[2px]"}`} />
+        </span>
       </span>
     </button>
   );
+}
+
+function Tile({ onClick, tone, icon, eyebrow, title, sub }: { onClick: () => void; tone: string; icon: IconName; eyebrow: string; title: string; sub: string }) {
+  return (
+    <button type="button" onClick={onClick} className={`flex min-h-[7.5rem] flex-col justify-between rounded-2xl p-4 text-left transition-transform active:scale-[0.985] ${tone}`}>
+      <span className="flex items-center justify-between">
+        <span className="text-[13px] font-semibold text-carbon/65">{eyebrow}</span>
+        <span className="flex size-8 items-center justify-center rounded-full bg-white/80">
+          <Icon name={icon} size={16} weight="bold" />
+        </span>
+      </span>
+      <span>
+        <b className="block text-[19px] leading-tight font-semibold tracking-[-0.01em]">{title}</b>
+        <span className="mt-0.5 block text-[13px] text-carbon/65">{sub}</span>
+      </span>
+    </button>
+  );
+}
+
+/** The buttons at the foot of a sheet, stacked and full width. */
+function Actions({ children }: { children: React.ReactNode }) {
+  return <div className="mt-6 grid gap-2.5">{children}</div>;
 }
 
 function useSave(onSaved: () => void, onError: (m: string) => void) {
@@ -352,15 +408,15 @@ function useSave(onSaved: () => void, onError: (m: string) => void) {
 
 function Stepper({ label, value, onChange, min, max }: { label: string; value: number; onChange: (n: number) => void; min: number; max: number }) {
   return (
-    <div className="flex h-13 items-center justify-between rounded-input border-[1.5px] border-border pl-3.5 pr-1.5">
+    <div className="flex h-12 items-center justify-between rounded-xl border border-hairline pr-1.5 pl-3.5">
       <span className="text-[15px]">{label}</span>
       <div className="flex items-center gap-1">
-        <button onClick={() => onChange(Math.max(min, value - 1))} aria-label={`Fewer ${label.toLowerCase()}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-soft-mist">
-          <Icon name="minus" size={14} />
+        <button type="button" disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))} aria-label={`Fewer ${label.toLowerCase()}`} className="flex size-9 items-center justify-center rounded-full bg-soft-mist transition-transform active:scale-90 disabled:opacity-40">
+          <Icon name="minus" size={14} weight="bold" />
         </button>
-        <b className="min-w-4.5 text-center">{value}</b>
-        <button onClick={() => onChange(Math.min(max, value + 1))} aria-label={`More ${label.toLowerCase()}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-soft-mist">
-          <Icon name="plus" size={14} />
+        <b className="min-w-6 text-center tabular-nums">{value}</b>
+        <button type="button" disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))} aria-label={`More ${label.toLowerCase()}`} className="flex size-9 items-center justify-center rounded-full bg-soft-mist transition-transform active:scale-90 disabled:opacity-40">
+          <Icon name="plus" size={14} weight="bold" />
         </button>
       </div>
     </div>
@@ -369,11 +425,18 @@ function Stepper({ label, value, onChange, min, max }: { label: string; value: n
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <motion.button whileTap={{ scale: press.scale }} onClick={onClick} aria-pressed={on} className={`h-10 rounded-full px-3.5 text-sm ${on ? "bg-carbon font-semibold text-white" : "bg-soft-mist"}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`h-10 rounded-full px-4 text-[14px] transition-[background-color,color,transform] active:scale-[0.97] ${on ? "bg-carbon font-semibold text-paper-white" : "bg-soft-mist text-carbon hover:bg-black/[0.1]"}`}
+    >
       {children}
-    </motion.button>
+    </button>
   );
 }
+
+/* ------------------------------------ sheets ------------------------------------ */
 
 function PrefsForm({ adults, kids, goal, likes, dietaryNotes, onSaved, onError }: Props & { onSaved: () => void; onError: (m: string) => void }) {
   const [a, setA] = useState(adults);
@@ -384,7 +447,7 @@ function PrefsForm({ adults, kids, goal, likes, dietaryNotes, onSaved, onError }
   const { pending, run } = useSave(onSaved, onError);
   return (
     <>
-      <p className="mb-3 text-[15px] leading-snug text-muted">Kachi, recipes and your starter sets use this to suggest the right things in the right amounts.</p>
+      <p className={LEDE}>Kachi, recipes and your starter sets use this to suggest the right things in the right amounts.</p>
       <span className={LABEL}>Who are you feeding?</span>
       <div className="grid grid-cols-2 gap-2.5">
         <Stepper label="Adults" value={a} onChange={setA} min={1} max={12} />
@@ -410,16 +473,19 @@ function PrefsForm({ adults, kids, goal, likes, dietaryNotes, onSaved, onError }
         Allergies, dislikes or things you don&apos;t eat <span className="font-normal text-muted">(optional)</span>
       </label>
       <textarea id="diet" rows={2} maxLength={400} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="No pork. My son is allergic to peanuts." className={`${FIELD} h-auto resize-none py-3`} />
-      <button
-        disabled={pending}
-        onClick={() => {
-          if (!g) return onError("Pick what you're after most.");
-          run(() => savePreferences({ adults: a, kids: k, goal: g, likes: l, dietaryNotes: notes }));
-        }}
-        className={PRIMARY}
-      >
-        Save
-      </button>
+      <Actions>
+        <Button
+          size="lg"
+          className="w-full"
+          loading={pending}
+          onClick={() => {
+            if (!g) return onError("Pick what you're after most.");
+            run(() => savePreferences({ adults: a, kids: k, goal: g, likes: l, dietaryNotes: notes }));
+          }}
+        >
+          Save
+        </Button>
+      </Actions>
     </>
   );
 }
@@ -434,8 +500,13 @@ function ContactForm({ name, phone, email, hasPassword, onSaved, onError }: Prop
   // Phone and email are how the account is recovered: changing them asks for the password.
   const contactChanged = digits(p) !== digits(phone) || e.trim().toLowerCase() !== email.trim().toLowerCase();
   return (
-    <>
-      <p className="mb-3 text-[15px] leading-snug text-muted">Riders call this number on the day. You sign in with either.</p>
+    <form
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        run(() => saveContact({ name: n, phone: p, email: e, currentPassword: contactChanged ? pw : undefined }));
+      }}
+    >
+      <p className={LEDE}>Riders call this number on the day. You sign in with either.</p>
       <label className={LABEL} htmlFor="nm">
         Name
       </label>
@@ -457,14 +528,12 @@ function ContactForm({ name, phone, email, hasPassword, onSaved, onError }: Prop
           <p className="mt-1.5 text-[13px] text-muted">To keep your account safe, changing your phone or email needs your password.</p>
         </>
       )}
-      <button
-        disabled={pending || !n.trim() || (contactChanged && hasPassword && !pw)}
-        onClick={() => run(() => saveContact({ name: n, phone: p, email: e, currentPassword: contactChanged ? pw : undefined }))}
-        className={PRIMARY}
-      >
-        Save
-      </button>
-    </>
+      <Actions>
+        <Button type="submit" size="lg" className="w-full" loading={pending} disabled={!n.trim() || (contactChanged && hasPassword && !pw)}>
+          Save
+        </Button>
+      </Actions>
+    </form>
   );
 }
 
@@ -475,36 +544,47 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
   if (m?.state === "member") {
     return (
       <>
-        <p className="mb-3 text-[15px] leading-snug text-muted">
-          {m.tierName}, {formatNaira(m.monthlyFee)} a month{m.renews ? `, next due ${m.renews}` : ""}. Nothing is charged automatically: we message you when it&apos;s due, and you pay by transfer.
-        </p>
-        <Link href="/subscribe" className={`${PRIMARY} flex items-center justify-center`}>
-          Change plan
-        </Link>
+        <div className="rounded-2xl bg-mint-pop/20 p-4">
+          <p className="text-[13px] font-semibold text-carbon/65">Your plan</p>
+          <p className="mt-0.5 text-[22px] leading-tight font-semibold tracking-[-0.01em]">{m.tierName}</p>
+          <p className="mt-1 text-[14px] text-carbon/70">
+            {formatNaira(m.monthlyFee)} a month{m.renews ? ` · next due ${m.renews}` : ""}
+          </p>
+        </div>
+        <p className={`${LEDE} mt-4`}>Nothing is charged automatically: we message you when it&apos;s due, and you pay by transfer.</p>
         {asking ? (
-          <div className="mt-3 rounded-2xl bg-soft-mist p-4 text-[15px]">
-            <p>Member prices and any free delivery end straight away. Your deliveries stay, at standard prices.</p>
-            <button
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  const r = await cancelSubscription();
-                  if (r.ok) onDone("Membership cancelled");
-                  else onError(r.error);
-                })
-              }
-              className="tap-target mt-3 h-12 w-full rounded-full bg-ember font-semibold text-carbon disabled:opacity-60"
-            >
-              {pending ? "Cancelling…" : "Cancel membership"}
-            </button>
-            <button onClick={() => setAsking(false)} className={SOFT}>
-              Keep it
-            </button>
+          <div className="mt-5 rounded-2xl bg-soft-mist p-4">
+            <p className="text-[15px]">Member prices and any free delivery end straight away. Your deliveries stay, at standard prices.</p>
+            <Actions>
+              <Button
+                size="lg"
+                variant="danger"
+                className="w-full"
+                loading={pending}
+                onClick={() =>
+                  start(async () => {
+                    const r = await cancelSubscription();
+                    if (r.ok) onDone("Membership cancelled");
+                    else onError(r.error);
+                  })
+                }
+              >
+                Cancel membership
+              </Button>
+              <Button size="lg" variant="secondary" className="w-full" onClick={() => setAsking(false)}>
+                Keep it
+              </Button>
+            </Actions>
           </div>
         ) : (
-          <button onClick={() => setAsking(true)} className={SOFT}>
-            Cancel membership
-          </button>
+          <Actions>
+            <LinkButton href="/subscribe" size="lg" className="flex w-full justify-center">
+              Change plan
+            </LinkButton>
+            <Button size="lg" variant="secondary" className="w-full" onClick={() => setAsking(true)}>
+              Cancel membership
+            </Button>
+          </Actions>
         )}
       </>
     );
@@ -513,22 +593,26 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
   if (m?.state === "pending") {
     return (
       <>
-        <p className="mb-3 text-[15px] leading-snug text-muted">
+        <p className={LEDE}>
           You asked to join {m.tierName} ({formatNaira(m.monthlyFee)} a month). We&apos;ll send payment details within one working day, and it starts once payment arrives.
         </p>
-        <button
-          disabled={pending}
-          onClick={() =>
-            start(async () => {
-              const r = await withdrawPlanRequest();
-              if (r.ok) onDone("Request withdrawn");
-              else onError(r.error);
-            })
-          }
-          className={SOFT}
-        >
-          Withdraw request
-        </button>
+        <Actions>
+          <Button
+            size="lg"
+            variant="secondary"
+            className="w-full"
+            loading={pending}
+            onClick={() =>
+              start(async () => {
+                const r = await withdrawPlanRequest();
+                if (r.ok) onDone("Request withdrawn");
+                else onError(r.error);
+              })
+            }
+          >
+            Withdraw request
+          </Button>
+        </Actions>
       </>
     );
   }
@@ -536,21 +620,25 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
   return (
     <>
       {m?.state === "declined" && (
-        <p className="mb-3 rounded-2xl bg-soft-mist p-3 text-[15px]">
+        <p className="mb-4 rounded-2xl bg-soft-mist p-4 text-[15px]">
           Your request to join {m.tierName} wasn&apos;t approved{m.note ? `: ${m.note}` : "."} You can ask again any time.
         </p>
       )}
-      <ul className="mb-1.5">
+      <ul className="divide-y divide-hairline rounded-2xl ring-1 ring-hairline">
         {["Lower prices on everything", "Up to 3 deliveries, for family or the office", "Every recipe, with the method", "Free delivery on Member Plus"].map((perk) => (
-          <li key={perk} className="flex gap-2.5 py-2 text-base">
-            <Icon name="checkPlain" size={20} weight="bold" className="flex-none text-carbon" />
-            <span>{perk}</span>
+          <li key={perk} className="flex items-center gap-3 px-4 py-3 text-[15px]">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mint-pop/40">
+              <Icon name="checkPlain" size={13} weight="bold" />
+            </span>
+            {perk}
           </li>
         ))}
       </ul>
-      <Link href="/subscribe" className={`${PRIMARY} flex items-center justify-center`}>
-        See plans
-      </Link>
+      <Actions>
+        <LinkButton href="/subscribe" size="lg" className="flex w-full justify-center">
+          See plans
+        </LinkButton>
+      </Actions>
     </>
   );
 }
@@ -561,36 +649,48 @@ function InviteSheet({ invite, name, onCopied }: { invite: Props["invite"]; name
   const message = `I get my fruit and veg from Basket: fresh, checked by hand, delivered in Lagos. Join with my link and we both get ${formatNaira(invite.reward)} off: ${link}`;
   return (
     <>
-      <p className="mb-4 text-[15px] leading-snug text-muted">
-        When a friend joins with your link and gets their first delivery, you both get {formatNaira(invite.reward)} credit. It comes off your next order.
-      </p>
+      <p className={LEDE}>When a friend joins with your link and gets their first delivery, you both get {formatNaira(invite.reward)} credit. It comes off your next order.</p>
       {invite.code ? (
         <>
-          <div className="rounded-2xl border-[1.5px] border-dashed border-border p-4 text-center">
-            <small className="text-[13px] text-muted">{first ? `${first}'s code` : "Your code"}</small>
-            <p className="mt-1 text-2xl font-extrabold tracking-[0.15em]">{invite.code}</p>
+          <div className="mt-5 rounded-2xl bg-grouped p-5 text-center ring-1 ring-hairline">
+            <p className="text-[13px] font-semibold text-carbon/60">{first ? `${first}'s code` : "Your code"}</p>
+            <p className="mt-1 font-mono text-[26px] font-bold tracking-[0.18em]">{invite.code}</p>
           </div>
-          <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer" className={`${PRIMARY} flex items-center justify-center gap-2`}>
-            <Icon name="whatsapp" size={20} />
-            Share on WhatsApp
-          </a>
-          <button
-            onClick={() => {
-              navigator.clipboard?.writeText(link).then(onCopied, () => {});
-            }}
-            className={SOFT}
-          >
-            Copy link
-          </button>
+          <Actions>
+            <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer" className="flex h-14 items-center justify-center gap-2 rounded-control bg-carbon text-base font-semibold text-paper-white transition-transform active:scale-[0.98]">
+              <Icon name="whatsapp" size={20} />
+              Share on WhatsApp
+            </a>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                navigator.clipboard?.writeText(link).then(onCopied, () => {});
+              }}
+            >
+              Copy link
+            </Button>
+          </Actions>
         </>
       ) : (
-        <p className="text-[15px]">Your invite code isn&apos;t ready yet. Try again in a moment.</p>
+        <p className="mt-4 text-[15px]">Your invite code isn&apos;t ready yet. Try again in a moment.</p>
       )}
-      <p className="mt-4 text-center text-[13px] text-muted">
-        {invite.invited ? `${invite.invited} joined with your link · ${invite.rewarded} had their first delivery` : "Nobody's joined with your link yet."}
-        {invite.credit > 0 ? ` · ${formatNaira(invite.credit)} credit to spend` : ""}
-      </p>
+      <dl className="mt-5 grid grid-cols-3 divide-x divide-hairline rounded-2xl text-center ring-1 ring-hairline">
+        <Stat label="Joined" value={String(invite.invited)} />
+        <Stat label="First delivery" value={String(invite.rewarded)} />
+        <Stat label="Credit" value={formatNaira(invite.credit)} />
+      </dl>
     </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-2 py-3">
+      <dd className="text-[17px] font-semibold tabular-nums">{value}</dd>
+      <dt className="text-[12px] text-muted">{label}</dt>
+    </div>
   );
 }
 
@@ -605,26 +705,30 @@ function DeleteSheet({ requested, onDone, onError, onClose }: { requested: boole
   if (requested)
     return (
       <>
-        <p className="mb-3 text-[15px] leading-snug text-muted">You asked us to delete your account. Until we do, you can change your mind and keep everything.</p>
-        <button disabled={pending} onClick={() => run(cancelDeletion, "Your account stays")} className={PRIMARY}>
-          Keep my account
-        </button>
-        <button onClick={onClose} className={SOFT}>
-          Close
-        </button>
+        <p className={LEDE}>You asked us to delete your account. Until we do, you can change your mind and keep everything.</p>
+        <Actions>
+          <Button size="lg" className="w-full" loading={pending} onClick={() => run(cancelDeletion, "Your account stays")}>
+            Keep my account
+          </Button>
+          <Button size="lg" variant="secondary" className="w-full" onClick={onClose}>
+            Close
+          </Button>
+        </Actions>
       </>
     );
   return (
     <>
-      <p className="mb-3 text-[15px] leading-snug text-muted">
+      <p className={LEDE}>
         We&apos;ll delete your account, addresses, deliveries and Kachi chats within 30 days. Order records we must keep for tax are kept without your name and contact details. Any credit is lost.
       </p>
-      <button disabled={pending} onClick={() => run(requestDeletion, "We've got your request")} className="tap-target mt-5 h-13 w-full rounded-full bg-ember text-base font-semibold text-carbon disabled:opacity-60">
-        Delete my account
-      </button>
-      <button onClick={onClose} className={SOFT}>
-        Keep it
-      </button>
+      <Actions>
+        <Button size="lg" variant="danger" className="w-full" loading={pending} onClick={() => run(requestDeletion, "We've got your request")}>
+          Delete my account
+        </Button>
+        <Button size="lg" variant="secondary" className="w-full" onClick={onClose}>
+          Keep it
+        </Button>
+      </Actions>
     </>
   );
 }

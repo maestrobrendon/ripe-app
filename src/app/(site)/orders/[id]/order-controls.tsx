@@ -103,7 +103,7 @@ export function OrderControls(props: {
       <BottomSheet open={reportOpen} onClose={() => setReportOpen(false)} title="What went wrong?">
         <div className="flex flex-wrap gap-2" role="group" aria-label="What went wrong">
           {ISSUE_KINDS.map((k) => (
-            <button key={k.id} type="button" onClick={() => setKind(k.id)} aria-pressed={kind === k.id} className={`rounded-full border px-3 py-1.5 text-sm ${kind === k.id ? "border-carbon bg-carbon text-paper-white" : "border-border"}`}>
+            <button key={k.id} type="button" onClick={() => setKind(k.id)} aria-pressed={kind === k.id} className={`rounded-full border px-3 py-1.5 text-sm ${kind === k.id ? "border-carbon bg-carbon text-paper-white" : "border-hairline"}`}>
               {k.label}
             </button>
           ))}
@@ -126,7 +126,7 @@ export function OrderControls(props: {
         <label className="mt-4 block text-sm font-medium" htmlFor="issue-note">
           Anything else? <span className="font-normal text-muted">(optional)</span>
         </label>
-        <textarea id="issue-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} className="mt-1.5 w-full rounded-control border border-border bg-surface px-4 py-3 text-base outline-none focus:border-carbon" placeholder="The pawpaw was soft on one side." />
+        <textarea id="issue-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} className="mt-1.5 w-full rounded-control border border-hairline bg-surface px-4 py-3 text-base outline-none focus:border-carbon" placeholder="The pawpaw was soft on one side." />
 
         {error && (
           <p role="alert" className="mt-3 rounded-xl bg-ember/12 p-3 text-sm">

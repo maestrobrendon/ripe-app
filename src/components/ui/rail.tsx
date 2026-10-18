@@ -66,7 +66,7 @@ function RailButton({ dir, hidden, onClick }: { dir: 1 | -1; hidden: boolean; on
       aria-label={dir === 1 ? "Show more" : "Show previous"}
       tabIndex={hidden ? -1 : 0}
       aria-hidden={hidden || undefined}
-      className={`absolute top-[38%] z-10 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface/90 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-md transition-[opacity,transform] duration-200 hover:scale-105 active:scale-95 [@media(hover:hover)]:flex ${
+      className={`absolute top-[38%] z-10 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-surface/90 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-md transition-[opacity,transform] duration-200 hover:scale-105 active:scale-95 [@media(hover:hover)]:flex ${
         dir === 1 ? "-right-3" : "-left-3"
       } ${hidden ? "pointer-events-none opacity-0" : "opacity-100"}`}
     >

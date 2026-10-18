@@ -40,7 +40,7 @@ export default async function OrdersPage() {
       <h1 className="text-[26px] font-extrabold tracking-tight sm:text-[30px]">Orders</h1>
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-border p-6 text-center">
+        <div className="mt-6 rounded-2xl border border-dashed border-hairline p-6 text-center">
           <p className="font-semibold">No orders yet</p>
           <p className="mt-1 text-sm text-muted">When you confirm an order, it shows up here with its progress.</p>
           <LinkButton href="/basket" size="sm" className="mt-4">
@@ -72,7 +72,7 @@ function Group({ title, orders }: { title: string; orders: Row[] }) {
   return (
     <section className="mt-6">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
-      <ul className="mt-2 divide-y divide-border rounded-2xl border border-border bg-surface">
+      <ul className="mt-2 divide-y divide-hairline rounded-2xl border border-hairline bg-surface">
         {orders.map((o) => (
           <li key={o.id}>
             <Link href={`/orders/${o.id}`} className="flex items-center gap-3 p-3 hover:bg-sky-wash">

@@ -89,7 +89,7 @@ export function DeliveryCard(props: {
           type="button"
           onClick={() => setSheet("menu")}
           aria-label="More for this delivery"
-          className="tap-target flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface"
+          className="tap-target flex size-10 shrink-0 items-center justify-center rounded-full border border-hairline bg-surface"
         >
           <Icon name="more" size={20} weight="bold" />
         </button>
@@ -108,7 +108,7 @@ export function DeliveryCard(props: {
       )}
 
       {area.state === "ok" && dateIso && cutoffIso && left !== null ? (
-        <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
+        <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
           <div className="flex items-start gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-mint-pop/30">
               <Icon name="calendar" size={18} />
@@ -121,12 +121,12 @@ export function DeliveryCard(props: {
               </p>
             </div>
             {props.dayOptions.length > 1 && (
-              <button type="button" onClick={() => setSheet("day")} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-sm font-semibold">
+              <button type="button" onClick={() => setSheet("day")} className="shrink-0 rounded-full border border-hairline px-3 py-1.5 text-sm font-semibold">
                 Change day
               </button>
             )}
           </div>
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 border-t border-border pt-3 text-sm">
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 border-t border-hairline pt-3 text-sm">
             <span className={`size-2 rounded-full border border-carbon ${left < 6 * 3_600_000 ? "bg-ember" : "bg-mint-pop"}`} aria-hidden />
             <span>
               Change until <b className="font-semibold">{cutoffLabel(cutoffIso)}</b>
@@ -138,7 +138,7 @@ export function DeliveryCard(props: {
           {props.isStanding && <p className="mt-1 text-xs text-muted">We&apos;ll remind you before it closes. Nothing is ordered until you confirm.</p>}
         </div>
       ) : area.state === "unserved" ? (
-        <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
+        <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
           <p className="font-semibold">We don&apos;t deliver to {area.name} yet</p>
           <p className="mt-1 text-sm text-muted">We&apos;re growing area by area and we&apos;ll tell you when we reach you. You can still fill this order, or use an address in an area we cover.</p>
           <LinkButton href="/account/addresses?next=/basket" variant="secondary" size="sm" className="mt-3">
@@ -146,7 +146,7 @@ export function DeliveryCard(props: {
           </LinkButton>
         </div>
       ) : (
-        <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
+        <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
           <p className="font-semibold">Where should we deliver?</p>
           <p className="mt-1 text-sm text-muted">Add your address and we&apos;ll show the days we come to you.</p>
           <LinkButton href="/account/addresses?next=/basket" size="sm" className="mt-3">
@@ -209,7 +209,7 @@ export function DeliveryCard(props: {
                 disabled={pending}
                 onClick={() => (on ? setSheet(null) : run(() => setDeliveryDay(deliveryId, o.day), `Moved to ${dayName(o.day)}s`))}
                 aria-pressed={on}
-                className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left ${on ? "border-carbon bg-mint-pop/20" : "border-border bg-surface"}`}
+                className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left ${on ? "border-carbon bg-mint-pop/20" : "border-hairline bg-surface"}`}
               >
                 <span>
                   <b className="block font-semibold">{dayName(o.day)}s</b>
@@ -252,7 +252,7 @@ export function DeliveryCard(props: {
             placeholder={`${dayName(props.day)}s`}
             aria-label="Delivery name"
             autoComplete="off"
-            className="h-12 w-full rounded-control border border-border bg-surface px-4 text-base outline-none focus:border-carbon"
+            className="h-12 w-full rounded-control border border-hairline bg-surface px-4 text-base outline-none focus:border-carbon"
           />
           <p className="mt-1.5 text-xs text-muted">Leave it empty to call it by its day.</p>
           <Button type="submit" size="lg" className="mt-4 w-full" loading={pending}>

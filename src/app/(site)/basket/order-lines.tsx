@@ -59,7 +59,7 @@ export function OrderLines({
         </span>
       </div>
 
-      <ul className="mt-2 divide-y divide-border rounded-2xl border border-border bg-surface">
+      <ul className="mt-2 divide-y divide-hairline rounded-2xl border border-hairline bg-surface">
         {cart.items.map((l) => (
           <Line key={l.productId} line={l} swap={swaps[l.productId] ?? null} />
         ))}
@@ -131,7 +131,7 @@ function Line({ line: l, swap }: { line: CartLine; swap: AddableProduct | null }
                   Swap for {swap.name}
                 </button>
               )}
-              <button type="button" onClick={() => cart.setQuantity(product, 0)} className="rounded-full border border-border bg-surface px-3 py-1.5 font-semibold">
+              <button type="button" onClick={() => cart.setQuantity(product, 0)} className="rounded-full border border-hairline bg-surface px-3 py-1.5 font-semibold">
                 Remove
               </button>
             </div>
@@ -168,7 +168,7 @@ function EmptyOrder({ deliveryId, lastOrder, goalLabel }: { deliveryId: string; 
     });
 
   return (
-    <section className="rounded-2xl border border-dashed border-border p-5">
+    <section className="rounded-2xl border border-dashed border-hairline p-5">
       <h2 className="text-lg font-semibold">Nothing in this order yet</h2>
       <p className="mt-1 text-sm text-muted">Add what you need for the week. Nothing is ordered until you confirm.</p>
       <div className="mt-4 grid gap-2" aria-busy={pending}>
@@ -208,7 +208,7 @@ function Option({ icon, title, sub, onClick, href, disabled }: { icon: IconName;
       <Icon name="caretRight" size={16} className="shrink-0 text-muted" />
     </>
   );
-  const cls = "flex w-full items-center gap-3 rounded-2xl border border-border bg-surface px-3 py-3 text-left transition hover:bg-sky-wash disabled:opacity-60";
+  const cls = "flex w-full items-center gap-3 rounded-2xl border border-hairline bg-surface px-3 py-3 text-left transition hover:bg-sky-wash disabled:opacity-60";
   return href ? (
     <Link href={href} className={cls}>
       {body}
