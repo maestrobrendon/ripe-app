@@ -26,13 +26,13 @@ type Sheet = null | "menu" | "day" | "skip" | "rename" | "remove" | "new";
 
 const WEEK_LABEL: Record<CycleWeekState, string> = {
   delivered: "Delivered",
-  "on-the-way": "On its way",
+  "on-the-way": "On the way",
   confirmed: "Confirmed",
   skipped: "Skipped",
-  missed: "Not confirmed",
-  "to-confirm": "To confirm",
+  missed: "Missed",
+  "to-confirm": "Confirm",
   upcoming: "Coming",
-  before: "Not started",
+  before: "—",
 };
 
 /** Ticks every half minute, for the "confirm by" countdown. */
@@ -166,45 +166,53 @@ export function DeliveryCard(props: {
 
           {area.state === "ok" && dateIso && cutoffIso && left !== null ? (
             <div className="mt-3 rounded-2xl border border-hairline bg-surface p-4">
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-mint-pop/30">
                   <Icon name="calendar" size={18} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[17px] font-semibold leading-tight">Delivery on {longDate(dateIso)}</p>
-                  <p className="mt-0.5 text-sm text-muted">
+                  <p className="text-xs font-medium text-muted">Delivery</p>
+                  <p className="text-[17px] leading-tight font-semibold">{longDate(dateIso)}</p>
+                  <p className="mt-0.5 truncate text-[13px] text-muted">
                     {DELIVERY_WINDOW}
                     {props.areaName ? ` · ${props.areaName}` : ""}
                   </p>
                 </div>
                 {props.dayOptions.length > 1 && (
-                  <button type="button" onClick={() => setSheet("day")} className="shrink-0 rounded-full border border-hairline px-3 py-1.5 text-sm font-semibold">
-                    Change day
+                  <button
+                    type="button"
+                    onClick={() => setSheet("day")}
+                    aria-label="Change delivery day"
+                    className="shrink-0 rounded-full border border-hairline px-3 py-1.5 text-[13px] font-semibold"
+                  >
+                    Change
                   </button>
                 )}
               </div>
-              <p className="mt-3 flex flex-wrap items-center gap-x-2 border-t border-hairline pt-3 text-sm">
-                <span className={`size-2 rounded-full border border-carbon ${left < 6 * 3_600_000 ? "bg-ember" : "bg-mint-pop"}`} aria-hidden />
+              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-hairline pt-3 text-sm">
+                <span className={`size-2 rounded-full ${left < 6 * 3_600_000 ? "bg-ember" : "bg-mint-pop"}`} aria-hidden />
                 <span>
                   Confirm by <b className="font-semibold">{cutoffLabel(cutoffIso)}</b>
                 </span>
                 <span className="text-muted" suppressHydrationWarning>
                   · {timeLeft(left)}
                 </span>
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                {status === "running"
-                  ? "We'll remind you on WhatsApp, email and the app before it closes. Nothing is charged automatically: you pay when it arrives."
-                  : status === "trial"
-                    ? "Your trial basket comes once, at market prices. With a membership it comes every week, at member prices."
-                    : "Nothing is ordered until you confirm. You pay when it arrives."}
-                {status === "trial" && (
+              </div>
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+                {status === "running" ? (
                   <>
-                    {" "}
+                    <Icon name="bell" size={13} className="shrink-0" />
+                    We&apos;ll remind you. You pay when it arrives.
+                  </>
+                ) : status === "trial" ? (
+                  <>
+                    Trial: comes once.{" "}
                     <Link href="/subscribe" className="font-semibold text-carbon underline underline-offset-2">
-                      See membership
+                      Every week with membership
                     </Link>
                   </>
+                ) : (
+                  "You pay when it arrives."
                 )}
               </p>
             </div>
@@ -340,36 +348,46 @@ export function DeliveryCard(props: {
   );
 }
 
+/** Each week's colour, so the strip reads at a glance; the word underneath confirms it. */
+const WEEK_TONE: Record<CycleWeekState, { cell: string; dot: string; label: string }> = {
+  delivered: { cell: "bg-mint-pop/30", dot: "bg-[#0f7a48]", label: "text-[#0f7a48]" },
+  confirmed: { cell: "bg-mint-pop/15 ring-1 ring-mint-pop", dot: "bg-mint-pop", label: "text-[#0f7a48]" },
+  "on-the-way": { cell: "bg-electric-blue/15", dot: "bg-electric-blue", label: "text-[#1f6fd1]" },
+  "to-confirm": { cell: "bg-sunburst/30 ring-1 ring-sunburst", dot: "bg-sunburst", label: "text-carbon" },
+  skipped: { cell: "bg-soft-mist", dot: "bg-carbon/25", label: "text-muted" },
+  missed: { cell: "bg-ember/10", dot: "bg-ember", label: "text-ember" },
+  upcoming: { cell: "bg-surface ring-1 ring-hairline", dot: "bg-carbon/15", label: "text-muted" },
+  before: { cell: "bg-surface ring-1 ring-hairline opacity-50", dot: "bg-carbon/10", label: "text-muted" },
+};
+
 /** The four weeks of the membership cycle, each with what happened or what's needed. */
 function CycleStrip({ weekNumber, weeks }: { weekNumber: number; weeks: CycleWeek[] }) {
   return (
-    <div className="mt-3">
+    <div className="mt-4">
       <p className="text-xs font-medium text-muted">Week {weekNumber} of 4</p>
       <ol className="mt-1.5 grid grid-cols-4 gap-1.5">
         {weeks.map((w) => {
-          const tone =
-            w.state === "delivered" || w.state === "on-the-way" || w.state === "confirmed"
-              ? "border-carbon bg-mint-pop/25"
-              : w.state === "to-confirm"
-                ? "border-carbon bg-surface"
-                : "border-hairline bg-surface text-muted";
+          const t = WEEK_TONE[w.state];
+          const d = new Date(w.dateIso);
           const body = (
             <>
-              <span className="block text-[13px] font-semibold text-carbon">{shortDate(w.dateIso)}</span>
-              <span className="mt-0.5 flex items-center gap-1 text-[11px] leading-tight">
-                {(w.state === "delivered" || w.state === "confirmed") && <Icon name="checkPlain" size={11} weight="bold" />}
-                {WEEK_LABEL[w.state]}
+              <span className="block text-[11px] text-muted">{d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" })}</span>
+              <span className="block text-[15px] leading-tight font-semibold tabular-nums">{d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}</span>
+              <span className={`mt-1 flex items-center gap-1 text-[11px] leading-tight font-medium ${t.label}`}>
+                <span className={`size-1.5 shrink-0 rounded-full ${t.dot}`} aria-hidden />
+                <span className="truncate">{WEEK_LABEL[w.state]}</span>
               </span>
             </>
           );
+          const cls = `block h-full rounded-xl px-2 py-2 ${t.cell}`;
           return (
             <li key={w.dateIso}>
               {w.orderId ? (
-                <Link href={`/orders/${w.orderId}`} className={`block rounded-xl border px-2 py-2 ${tone}`}>
+                <Link href={`/orders/${w.orderId}`} className={cls}>
                   {body}
                 </Link>
               ) : (
-                <div className={`rounded-xl border px-2 py-2 ${tone}`}>{body}</div>
+                <div className={cls}>{body}</div>
               )}
             </li>
           );

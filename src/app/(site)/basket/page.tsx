@@ -5,7 +5,8 @@ import { getOrCreateActiveDelivery, isMember } from "@/lib/order-container";
 import { basketLimitFor } from "@/lib/basket";
 import { getDeliveryCycle, liveOrdersFor, zoneForUser } from "@/lib/delivery";
 import { cutoffFor, lagosDate, nextDeliveryDate } from "@/lib/delivery-dates";
-import { basketName, deliveryName, orderRef } from "@/lib/delivery-labels";
+import { dayName, deliveryName, orderRef } from "@/lib/delivery-labels";
+import type { DeliveryDay } from "@/generated/prisma/enums";
 import { basketCycle, confirmRight } from "@/lib/basket-rules";
 import { customerStatusLabel } from "@/lib/order-status";
 import { creditBalance } from "@/lib/credit";
@@ -77,9 +78,21 @@ export default async function HomePage() {
     return { day, dateIso: date.toISOString(), cutoffIso: cutoffFor(date, zone!.cutoffHour).toISOString() };
   });
 
+  /* -------------------------------- names -------------------------------- */
+
+  // Unnamed baskets are "My basket"; with more than one, each is called by its day.
+  // Two on the same day are numbered: "Saturday basket", "Saturday basket 2".
+  const unnamed = deliveries.filter((d) => !d.name?.trim());
+  const labelOf = (d: { id: string; name: string | null; deliveryDay: DeliveryDay }) => {
+    if (d.name?.trim() || unnamed.length < 2) return deliveryName(d);
+    const sameDay = unnamed.filter((u) => u.deliveryDay === d.deliveryDay);
+    const n = sameDay.findIndex((u) => u.id === d.id);
+    return `${dayName(d.deliveryDay)} basket${n > 0 ? ` ${n + 1}` : ""}`;
+  };
+
   /* ------------------------------ live orders ------------------------------ */
 
-  const names = new Map(deliveries.map((d) => [d.id, deliveryName(d)]));
+  const names = new Map(deliveries.map((d) => [d.id, labelOf(d)]));
   const live = toLiveOrders(liveRows, zone?.cutoffHour ?? 18, (basketId) => (basketId && basketId !== delivery.id ? (names.get(basketId) ?? null) : null));
 
   /* --------------------------- what to add next --------------------------- */
@@ -125,7 +138,7 @@ export default async function HomePage() {
   const weeks = member && delivery.isStanding && zone ? await basketCycle(delivery, cycle.day, zone, user.subscribedAt) : null;
   const status: BasketStatus = !right.ok ? "trial-used" : right.trial ? "trial" : delivery.isStanding ? "running" : "paused";
 
-  const list = deliveries.map((d) => ({ id: d.id, label: deliveryName(d), itemCount: d._count.items }));
+  const list = deliveries.map((d) => ({ id: d.id, label: labelOf(d), itemCount: d._count.items }));
   const limit = basketLimitFor(member, user.subscriptionTier?.slug);
   const canAddMore = limit === null || deliveries.length < limit;
   const monthSaved = monthOrders.reduce((s, o) => s + o.items.reduce((t, i) => t + Math.max(0, i.product.standardPrice - i.unitPrice) * i.quantity, 0), 0);
@@ -135,7 +148,7 @@ export default async function HomePage() {
       {(list.length > 1 || (member && canAddMore)) && <DeliverySwitcher deliveries={list} activeId={delivery.id} canAddMore={canAddMore} member={member} dayOptions={dayOptions} />}
 
       <DeliveryCard
-        title={basketName(delivery)}
+        title={labelOf(delivery)}
         status={status}
         cycle={weeks ? { weekNumber: weeks.weekNumber, weeks: weeks.weeks } : null}
         deliveryId={delivery.id}
