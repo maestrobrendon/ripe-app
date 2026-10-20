@@ -76,6 +76,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
         trafficFactor={settings.trafficFactor}
         returnToDepot={settings.returnToDepot}
         canPlan={can(role, "delivery.manage_runs")}
+        canMoveDepot={can(role, "zones.manage")}
         stops={stops}
         riders={riders}
       />

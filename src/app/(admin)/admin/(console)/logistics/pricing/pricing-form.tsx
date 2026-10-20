@@ -88,9 +88,9 @@ export function PricingForm({ initial, canEdit, zones }: { initial: LogisticsSet
           </p>
         </Card>
 
-        <Card title="Where runs start">
-          <p className="mb-3 text-[13px] text-carbon/60">Every distance is measured from here: your hub, market or kitchen. Search, or click the map.</p>
-          {canEdit && <PlaceSearch onPick={(p) => setS({ ...s, depot: { lat: p.lat, lng: p.lng, label: p.label.split(",").slice(0, 2).join(",") } })} placeholder="Search for the depot's address" />}
+        <Card title="Dispatch point">
+          <p className="mb-3 text-[13px] text-carbon/60">Where runs leave from: your hub, market or kitchen. Every distance is measured from here. Search, click the map or drag the H. You can also move it for a single day on the Planner.</p>
+          {canEdit && <PlaceSearch onPick={(p) => setS({ ...s, depot: { lat: p.lat, lng: p.lng, label: p.label.split(",").slice(0, 2).join(",") } })} placeholder="Search for the dispatch point's address" />}
           <LeafletMap
             center={s.depot}
             zoom={13}

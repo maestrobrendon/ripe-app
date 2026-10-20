@@ -6,7 +6,8 @@ import { LeafletMap, type MapLine, type MapPin } from "@/components/maps/leaflet
 import { useAdminAction } from "../step-up";
 import { Alert, Badge, Button, Card, cx } from "../../_ui/kit";
 import { naira } from "../../_ui/format";
-import { locateOrders, moveStop, planDay, savePlan, type DayPlan } from "./actions";
+import { locateOrders, moveStop, nameSpot, planDay, saveDepot, savePlan, type DayPlan } from "./actions";
+import { PlaceSearch } from "./place-search";
 import { ROUTE_COLORS } from "./colors";
 
 type Stop = { id: string; name: string; address: string; zone: string; fee: number; lat: number | null; lng: number | null; precision: "exact" | "found" | "area" | "none" };
@@ -24,6 +25,7 @@ export function DayPlanner({
   trafficFactor,
   returnToDepot: defaultReturn,
   canPlan,
+  canMoveDepot,
   stops: initialStops,
   riders,
 }: {
@@ -33,6 +35,7 @@ export function DayPlanner({
   trafficFactor: number;
   returnToDepot: boolean;
   canPlan: boolean;
+  canMoveDepot: boolean;
   stops: Stop[];
   riders: Rider[];
 }) {
@@ -49,6 +52,10 @@ export function DayPlanner({
   const [focus, setFocus] = useState<number | null>(null);
   const [names, setNames] = useState<string[]>([]);
   const [note, setNote] = useState<{ tone: "error" | "success" | "warn"; text: string } | null>(null);
+  // Where today's runs leave from: the usual dispatch point unless moved for this plan.
+  const [from, setFrom] = useState(depot);
+  const [choosing, setChoosing] = useState(false);
+  const moved = from.lat !== depot.lat || from.lng !== depot.lng;
 
   const onMap = stops.filter((s) => s.lat != null && s.lng != null);
   const missing = stops.filter((s) => s.lat == null);
@@ -59,7 +66,7 @@ export function DayPlanner({
 
   // Before planning: every stop, faded when approximate. After: numbered and coloured by route.
   const { pins, lines } = useMemo(() => {
-    const depotPin: MapPin = { id: "depot", lat: depot.lat, lng: depot.lng, kind: "depot", text: "H", label: depot.label || "Depot" };
+    const depotPin: MapPin = { id: "depot", lat: from.lat, lng: from.lng, kind: "depot", text: "H", label: `Dispatch: ${from.label || "Depot"}${canPlan ? " (drag to move)" : ""}`, color: moved ? "#1f6fd1" : undefined, draggable: canPlan };
     if (!plan) {
       return {
         pins: [depotPin, ...onMap.map((s): MapPin => ({ id: s.id, lat: s.lat!, lng: s.lng!, label: `${s.name} · ${s.zone}`, color: "#495057", faint: s.precision === "area", draggable: canPlan }))],
@@ -88,13 +95,34 @@ export function DayPlanner({
         .map((r, ri): MapLine => ({ id: `r${ri}`, points: r.line, color: ROUTE_COLORS[ri % ROUTE_COLORS.length], dashed: stale || (focus != null && focus !== ri) }))
         .filter((l) => l.points.length > 1),
     };
-  }, [plan, onMap, stops, depot, focus, stale, canPlan]);
+  }, [plan, onMap, stops, from, moved, focus, stale, canPlan]);
+
+  const moveDispatch = (p: { lat: number; lng: number }, label?: string) => {
+    setFrom({ lat: p.lat, lng: p.lng, label: label ?? "Dropped pin" });
+    setChoosing(false);
+    changed();
+    if (label) return;
+    void run(() => nameSpot(p)).then((r) => {
+      if (r.ok && r.data) setFrom((f) => (f.lat === p.lat && f.lng === p.lng ? { ...f, label: r.data! } : f));
+    });
+  };
+
+  const makeDefault = () =>
+    start(async () => {
+      const r = await run(() => saveDepot(from));
+      if (!r.ok) {
+        if (r.code !== "AUTH" && r.code !== "STEP_UP") setNote({ tone: "error", text: r.error });
+        return;
+      }
+      setNote({ tone: "success", text: `Runs now leave from ${from.label} by default. Area distances were measured again from there.` });
+      router.refresh();
+    });
 
   const doPlan = () =>
     start(async () => {
       setNote(null);
       setFocus(null);
-      const r = await run(() => planDay({ day, vehicles: active.map((v) => ({ riderId: v.riderId, capacity: v.capacity })), returnToDepot: back }));
+      const r = await run(() => planDay({ day, vehicles: active.map((v) => ({ riderId: v.riderId, capacity: v.capacity })), returnToDepot: back, from: { lat: from.lat, lng: from.lng } }));
       if (!r.ok) {
         if (r.code !== "AUTH" && r.code !== "STEP_UP") setNote({ tone: "error", text: r.error });
         return;
@@ -134,7 +162,7 @@ export function DayPlanner({
     });
 
   const onDrag = (id: string, p: { lat: number; lng: number }) => {
-    if (id === "depot") return;
+    if (id === "depot") return moveDispatch(p);
     setStops((all) => all.map((s) => (s.id === id ? { ...s, ...p, precision: "exact" } : s)));
     changed();
     void run(() => moveStop({ orderId: id, ...p })).then((r) => {
@@ -153,7 +181,10 @@ export function DayPlanner({
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_400px]">
       <div className="space-y-4">
-        <LeafletMap center={depot} pins={pins} lines={lines} onDrag={canPlan ? onDrag : undefined} className="h-[560px]" />
+        <div className="relative">
+          <LeafletMap center={from} pins={pins} lines={lines} onDrag={canPlan ? onDrag : undefined} onPick={choosing ? (p) => moveDispatch(p) : undefined} className={cx("h-[560px]", choosing && "cursor-crosshair!")} />
+          {choosing && <p className="pointer-events-none absolute inset-x-0 top-3 z-[500] mx-auto w-fit rounded-full bg-carbon px-4 py-2 text-[13px] font-semibold text-paper-white shadow-lg">Click the map where runs leave from</p>}
+        </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px] text-carbon/60">
           <span>
             <b className="text-carbon">{stops.length}</b> order{stops.length === 1 ? "" : "s"} to plan
@@ -177,6 +208,53 @@ export function DayPlanner({
       </div>
 
       <div className="space-y-4">
+        <Card>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[12px] text-carbon/55">Runs leave from</p>
+              <p className="flex items-center gap-2 text-[15px] font-semibold">
+                <span className={cx("grid h-5 w-5 shrink-0 place-items-center rounded-[5px] text-[10px] font-bold text-white", moved ? "bg-[#1f6fd1]" : "bg-black")}>H</span>
+                <span className="truncate">{from.label || "Dispatch point"}</span>
+              </p>
+            </div>
+            {canPlan && (
+              <button type="button" className="shrink-0 text-[13px] font-semibold text-carbon/60 hover:text-carbon" onClick={() => setChoosing(!choosing)} aria-expanded={choosing}>
+                {choosing ? "Cancel" : "Change"}
+              </button>
+            )}
+          </div>
+          {choosing && (
+            <div className="mt-3 space-y-2">
+              <PlaceSearch onPick={(p) => moveDispatch(p, p.label.split(",").slice(0, 2).join(","))} placeholder="Search a market, hub or address" />
+              <p className="text-[12px] text-carbon/55">Or click the map, or drag the H.</p>
+            </div>
+          )}
+          {moved && (
+            <div className="mt-3 border-t border-black/6 pt-3">
+              <p className="text-[12px] text-carbon/60">Moved for this plan only. Usual: {depot.label || "the depot"}.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {canMoveDepot && (
+                  <Button size="sm" variant="secondary" disabled={pending} onClick={makeDefault}>
+                    Make it the usual
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={pending}
+                  onClick={() => {
+                    setFrom(depot);
+                    changed();
+                  }}
+                >
+                  Put it back
+                </Button>
+              </div>
+              {canMoveDepot && <p className="mt-2 text-[11px] text-carbon/50">Making it the usual also re-measures each area, which changes area prices when distance pricing is on.</p>}
+            </div>
+          )}
+        </Card>
+
         <Card title="Vehicles">
           <ul className="space-y-2">
             {vehicles.map((v, i) => {

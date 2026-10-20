@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { angleFrom, arrivals, directionsLinks, planRoutes, routeThrough, travelTable } from "@/lib/logistics";
+import { angleFrom, arrivals, directionsLinks, planRoutes, routeThrough, travelTable, type LatLng } from "@/lib/logistics";
 import { getLogistics, routingOptions, type LogisticsSettings } from "@/lib/delivery-logistics";
 
 /*
@@ -53,8 +53,10 @@ export type DayPlan = {
   approximate: boolean;
 };
 
-export async function planForDay(day: Date, vehicles: { riderId: string | null; capacity: number }[], returnToDepot: boolean): Promise<DayPlan> {
+/** `from` plans from somewhere other than the usual dispatch point, for this plan only. */
+export async function planForDay(day: Date, vehicles: { riderId: string | null; capacity: number }[], returnToDepot: boolean, from?: LatLng): Promise<DayPlan> {
   const s = await getLogistics();
+  const depot = from ?? s.depot;
 
   const orders = await prisma.order.findMany({
     where: {
@@ -99,14 +101,14 @@ export async function planForDay(day: Date, vehicles: { riderId: string | null; 
   }
   if (!stops.length) return { routes: [], unassigned: [], missing, approximate: false };
 
-  const points = [s.depot, ...stops.map((st) => ({ lat: st.lat, lng: st.lng }))];
+  const points = [depot, ...stops.map((st) => ({ lat: st.lat, lng: st.lng }))];
   const table = await travelTable(points, routingOptions());
   const plan = planRoutes({
     matrix: table,
     stops: stops.map((_, i) => i + 1),
     vehicles: vehicles.map((v) => ({ capacity: v.capacity })),
     returnToDepot,
-    angles: points.map((p) => angleFrom(s.depot, p)),
+    angles: points.map((p) => angleFrom(depot, p)),
   });
 
   const riders = await prisma.rider.findMany({
@@ -120,7 +122,7 @@ export async function planForDay(day: Date, vehicles: { riderId: string | null; 
   const routes: PlanRoute[] = await Promise.all(
     plan.routes.map(async (r, vi) => {
       const routeStops = r.stops.map((i) => stops[i - 1]);
-      const pts = [s.depot, ...routeStops.map((st) => ({ lat: st.lat, lng: st.lng })), ...(returnToDepot ? [s.depot] : [])];
+      const pts = [depot, ...routeStops.map((st) => ({ lat: st.lat, lng: st.lng })), ...(returnToDepot ? [depot] : [])];
       const road = routeStops.length ? await routeThrough(pts, routingOptions()) : null;
       const eta = arrivals(
         {

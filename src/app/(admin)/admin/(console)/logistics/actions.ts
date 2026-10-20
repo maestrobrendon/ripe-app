@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { staffAction, auditStaff, type ActionResult } from "@/lib/admin/guard";
 import { parseYmd } from "@/lib/delivery-dates";
-import { geocode, routeThrough, type LatLng } from "@/lib/logistics";
+import { geocode, reverseGeocode, routeThrough, type LatLng } from "@/lib/logistics";
 import { planForDay } from "@/lib/logistics-plan";
 import {
   LOGISTICS_KEY,
@@ -45,6 +45,30 @@ export async function saveLogisticsSettings(input: z.input<typeof logisticsSchem
     await auditStaff(ctx, { action: "logistics.settings_saved", targetType: "SiteSetting", targetId: LOGISTICS_KEY, summary: `${s.enabled ? "Distance pricing on" : "Distance pricing off"}: ₦${s.rules.baseFee} + ₦${s.rules.perKm}/km` });
     revalidatePath("/logistics", "layout");
     return { ok: true, data: { zones: Object.keys(value.zoneKm).length } };
+  });
+}
+
+/** Move where runs start from. Area distances (and so area prices) are measured again from there. */
+export async function saveDepot(input: { lat: number; lng: number; label: string }): Promise<ActionResult<{ zones: number }>> {
+  return staffAction("zones.manage", async (ctx) => {
+    const parsed = point.extend({ label: z.string().trim().min(1).max(120) }).safeParse(input);
+    if (!parsed.success) return { ok: false, code: "INVALID", error: "Pick a spot on the map." };
+    const s = { ...(await getLogistics()), depot: parsed.data };
+    const value = { ...s, zoneKm: await zoneDistances(s) };
+    await prisma.siteSetting.upsert({ where: { key: LOGISTICS_KEY }, create: { key: LOGISTICS_KEY, value, updatedById: ctx.staff.id }, update: { value, updatedById: ctx.staff.id } });
+    await auditStaff(ctx, { action: "logistics.depot_moved", targetType: "SiteSetting", targetId: LOGISTICS_KEY, summary: `Dispatch from ${parsed.data.label}` });
+    revalidatePath("/logistics", "layout");
+    return { ok: true, data: { zones: Object.keys(value.zoneKm).length } };
+  });
+}
+
+/** A short name for a spot on the map ("Admiralty Way, Lekki Phase 1"). */
+export async function nameSpot(p: LatLng): Promise<ActionResult<string | null>> {
+  return staffAction("delivery.view", async () => {
+    const at = point.safeParse(p);
+    if (!at.success) return { ok: true, data: null };
+    const name = await reverseGeocode(at.data, geocodeOptions);
+    return { ok: true, data: name ? name.split(",").map((x) => x.trim()).filter((x) => !/^\d+$/.test(x)).slice(0, 2).join(", ") : null };
   });
 }
 
@@ -94,12 +118,12 @@ export type { DayPlan, PlanRoute, PlanStop } from "@/lib/logistics-plan";
 const vehicleInput = z.object({ riderId: id.nullable(), capacity: z.number().int().min(1).max(200) });
 
 /** The best routes for a day's unplanned orders, across the vehicles given. Nothing is saved. */
-export async function planDay(input: { day: string; vehicles: { riderId: string | null; capacity: number }[]; returnToDepot: boolean }): Promise<ActionResult<DayPlan>> {
+export async function planDay(input: { day: string; vehicles: { riderId: string | null; capacity: number }[]; returnToDepot: boolean; from?: LatLng }): Promise<ActionResult<DayPlan>> {
   return staffAction("delivery.view", async () => {
-    const parsed = z.object({ day: z.string(), vehicles: z.array(vehicleInput).min(1).max(12), returnToDepot: z.boolean() }).safeParse(input);
+    const parsed = z.object({ day: z.string(), vehicles: z.array(vehicleInput).min(1).max(12), returnToDepot: z.boolean(), from: point.optional() }).safeParse(input);
     const day = parsed.success ? parseYmd(parsed.data.day) : null;
     if (!parsed.success || !day) return { ok: false, code: "INVALID", error: "Pick a day and at least one vehicle." };
-    return { ok: true, data: await planForDay(day, parsed.data.vehicles, parsed.data.returnToDepot) };
+    return { ok: true, data: await planForDay(day, parsed.data.vehicles, parsed.data.returnToDepot, parsed.data.from) };
   });
 }
 
