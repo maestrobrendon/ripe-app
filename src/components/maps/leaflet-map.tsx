@@ -102,7 +102,9 @@ export function LeafletMap({
       const leaflet = (mod as unknown as { default?: Leaflet }).default ?? (mod as unknown as Leaflet);
       L.current = leaflet;
       const m = leaflet.map(box.current, { zoomControl: true, attributionControl: true }).setView([center.lat, center.lng], zoom);
-      leaflet.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(m);
+      // OpenStreetMap refuses tiles asked for with no Referer (the admin sends none by default),
+      // so tiles alone send the site's origin: never the page's path.
+      leaflet.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIBUTION, referrerPolicy: "strict-origin" }).addTo(m);
       m.on("click", (e) => latest.current.onPick?.({ lat: e.latlng.lat, lng: e.latlng.lng }));
       layer.current = leaflet.layerGroup().addTo(m);
       map.current = m;
