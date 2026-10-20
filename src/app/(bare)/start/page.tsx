@@ -9,7 +9,6 @@ import { ZONE_COOKIE } from "@/lib/zone";
 import { MENU_GOALS, type MenuGoal } from "../home-menu/recipes";
 import { getGuestMenu } from "@/lib/menu";
 import { getSiteSettings } from "@/lib/site-settings";
-import { transferReady } from "@/lib/site-settings-schema";
 import { readCart } from "@/lib/cart";
 import { quantityLabel } from "@/lib/delivery-labels";
 import { MenuProvider } from "@/components/menu-provider";
@@ -69,7 +68,6 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         next={safeNext}
         referralCode={cleanReferralCode(ref) || null}
         cart={cart}
-        payNow={transferReady(settings.transfer)}
       />
     </MenuProvider>
   );

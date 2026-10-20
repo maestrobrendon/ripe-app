@@ -18,8 +18,6 @@ import { BUYABLE } from "@/lib/product";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
-import { getSiteSettings } from "@/lib/site-settings";
-import { transferReady } from "@/lib/site-settings-schema";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -170,16 +168,11 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
     .slice(0, 8);
   const welcome = `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`;
 
-  // The last choice of sign-up. Pay now: straight to confirming the basket (transfer chosen when we take it).
-  // Pay later: the welcome page, with the basket saved. Outside our areas there's nothing to confirm yet.
-  const then = formData.get("then");
-  if (then === "pay" && zone) {
+  // Straight on to their basket and paying for it, in the same flow (/start/confirm).
+  // Outside our areas there's nothing to confirm yet, so it's the welcome page.
+  if (zone) {
     const basket = await prisma.basket.findFirst({ where: { userId, oneOff: false, items: { some: {} } }, orderBy: { createdAt: "asc" }, select: { id: true } });
-    if (basket) {
-      const transfer = transferReady((await getSiteSettings()).transfer);
-      redirect(`/checkout?b=${basket.id}${transfer ? "&pay=now" : ""}`);
-    }
+    if (basket) redirect(`/start/confirm?b=${basket.id}`);
   }
-  if (then === "later") redirect(welcome);
   redirect(safeNextPath(String(formData.get("next") ?? ""), welcome));
 }

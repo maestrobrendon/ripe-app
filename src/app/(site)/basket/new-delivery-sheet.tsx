@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cutoffLabel, dayName, shortDate } from "@/lib/delivery-labels";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import { haptic } from "@/lib/haptics";
+import { MENU_GOALS, type MenuGoal } from "@/lib/menu-types";
 import { newDelivery } from "./actions";
 
 /** One of the area's delivery days, with its next date and when that closes. */
@@ -19,6 +20,8 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
   const days = dayOptions.length ? dayOptions : ALL_DAYS.map((day) => ({ day, dateIso: null, cutoffIso: null }));
   const [name, setName] = useState("");
   const [day, setDay] = useState<DeliveryDay>(days[0].day);
+  // Optional: what this basket is for. Its Home follows it; left empty, it follows theirs.
+  const [goal, setGoal] = useState<MenuGoal | null>(null);
   const [pending, start] = useTransition();
 
   return (
@@ -41,6 +44,26 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
         {NAMES.map((n) => (
           <button key={n} type="button" onClick={() => setName(n)} className="rounded-full border border-hairline px-3 py-1 text-sm">
             {n}
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-5 text-sm font-medium">
+        What&apos;s it for? <span className="font-normal text-muted">(optional)</span>
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {MENU_GOALS.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            aria-pressed={goal === g.id}
+            onClick={() => {
+              haptic("selection");
+              setGoal(goal === g.id ? null : g.id);
+            }}
+            className={`rounded-full px-3 py-1.5 text-sm transition-colors ${goal === g.id ? "bg-carbon text-paper-white" : "border border-hairline"}`}
+          >
+            {g.short}
           </button>
         ))}
       </div>
@@ -75,7 +98,7 @@ export function NewDeliverySheet({ open, onClose, dayOptions }: { open: boolean;
           } catch {
             /* the message is a nicety */
           }
-          start(() => newDelivery({ name, day }));
+          start(() => newDelivery({ name, day, goal }));
         }}>
         Create basket
       </Button>

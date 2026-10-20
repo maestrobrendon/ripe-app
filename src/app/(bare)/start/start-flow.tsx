@@ -38,9 +38,10 @@ type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
 const STEPS = ["goal", "table", "recipes", "basket", "area", "day", "account"] as const;
 /**
  * Arriving from the shop with a cart, the plan is already made: their cart.
- * So it's just the cart, where, which day, and the account.
+ * So it's the cart, what they're after (it shapes their Home), where, which
+ * day, and the account. Paying comes straight after, in the same style.
  */
-const CART_STEPS = ["cart", "area", "day", "account"] as const;
+const CART_STEPS = ["cart", "goal", "area", "day", "account"] as const;
 type Step = (typeof STEPS)[number] | (typeof CART_STEPS)[number];
 
 /** A visitor's cart, as sign-up shows it. */
@@ -92,7 +93,6 @@ export function StartFlow({
   next,
   referralCode,
   cart,
-  payNow,
 }: {
   candidates: StarterCandidate[];
   zones: Zone[];
@@ -106,8 +106,6 @@ export function StartFlow({
   referralCode: string | null;
   /** What they put in a cart before signing up, if anything. */
   cart: StartCart | null;
-  /** Bank transfer is set up, so "pay now" can really mean paying now. */
-  payNow: boolean;
 }) {
   const MENU = useMenu();
   const [[index, direction], setIndex] = useState<[number, 1 | -1]>([0, 1]);
@@ -225,10 +223,6 @@ export function StartFlow({
   };
 
   const [state, formAction, pending] = useActionState<StartState, FormData>(createAccountFromOnboarding, { error: null });
-  // Which way sign-up ends: straight to paying (or confirming), or later.
-  const thenRef = useRef<HTMLInputElement>(null);
-  // Only a basket in an area we deliver to can be confirmed straight away.
-  const canConfirm = Boolean(chosenZone && day && !notListed);
   // Held here because React resets a form's fields after its action runs,
   // and a bounced sign-up shouldn't make anyone retype their name.
   const [name, setName] = useState("");
@@ -312,7 +306,7 @@ export function StartFlow({
           >
             {step === "cart" && cart && (
               <>
-                <Kachi>Ooh, good picks. You&apos;ve already done the hard part, so this is quick: where it goes, which day, and you&apos;re in.</Kachi>
+                <Kachi>Ooh, good picks. You&apos;ve already done the hard part, so this is quick.</Kachi>
                 <Title>Your cart</Title>
                 <ul className="hm-panel mt-6 divide-y divide-(--hm-line)">
                   {cart.items.map((l, i) => (
@@ -343,7 +337,11 @@ export function StartFlow({
 
             {step === "goal" && (
               <>
-                <Kachi>Hey, I&apos;m Kachi. Tell me what you&apos;re after and I&apos;ll build your first basket around it. No wrong answers, promise.</Kachi>
+                <Kachi>
+                  {cart
+                    ? "One quick one: what are you after? I'll set up your Home around it."
+                    : "Hey, I'm Kachi. Tell me what you're after and I'll build your first basket around it. No wrong answers, promise."}
+                </Kachi>
                 <Title>What are you working toward?</Title>
                 <LayoutGroup id="start-goal">
                   <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Your goal">
@@ -709,8 +707,6 @@ export function StartFlow({
                   <input type="hidden" name="recipes" value={JSON.stringify(recipeSlugs)} />
                   <input type="hidden" name="items" value={cart ? "[]" : JSON.stringify(kept.map((l) => ({ productId: l.productId, quantity: l.quantity })))} />
                   {cart && <input type="hidden" name="fromCart" value="1" />}
-                  {/* Set by whichever button finishes sign-up: pay now, or later. */}
-                  <input ref={thenRef} type="hidden" name="then" value="pay" />
                   {next && <input type="hidden" name="next" value={next} />}
                   {referralCode && <input type="hidden" name="ref" value={referralCode} />}
 
@@ -727,7 +723,7 @@ export function StartFlow({
                   <PasswordInput />
                 </form>
                 <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-3)">
-                  Free to join, and nothing is ever charged automatically. By creating an account you agree to our{" "}
+                  Free to join. Next, you&apos;ll see your basket and can pay for it, or leave it for later. By creating an account you agree to our{" "}
                   <Link href="/terms" className="underline underline-offset-2">
                     terms
                   </Link>
@@ -746,33 +742,13 @@ export function StartFlow({
             type={step === "account" ? "submit" : "button"}
             form={step === "account" ? "start-account" : undefined}
             disabled={!ready[step] || pending}
-            onClick={
-              step === "account"
-                ? () => {
-                    if (thenRef.current) thenRef.current.value = "pay";
-                  }
-                : () => go(index + 1)
-            }
+            onClick={step === "account" ? undefined : () => go(index + 1)}
             whileTap={{ scale: press.scale }}
             transition={spring.snappy}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-opacity disabled:opacity-30"
           >
-            {step === "account" ? (pending ? "Setting you up…" : canConfirm ? (payNow ? "Create account & pay now" : "Create account & confirm my order") : "Create my account") : cta[step]}
+            {step === "account" ? (pending ? "Setting you up…" : "Create my account") : cta[step]}
           </motion.button>
-          {/* The other way to finish: honest and always there, just quieter. */}
-          {step === "account" && canConfirm && (
-            <button
-              type="submit"
-              form="start-account"
-              disabled={pending}
-              onClick={() => {
-                if (thenRef.current) thenRef.current.value = "later";
-              }}
-              className="mx-auto mt-2 block py-1.5 text-[13px] text-(--hm-ink-3) underline decoration-(--hm-line) underline-offset-4 disabled:opacity-40"
-            >
-              or create my account and pay later
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -781,7 +757,7 @@ export function StartFlow({
 
 /* -------------------------------------------------------------------------- */
 
-function Kachi({ children }: { children: ReactNode }) {
+export function Kachi({ children }: { children: ReactNode }) {
   return (
     <div className="mt-2 flex items-start gap-2.5">
       <KachiMark className="mt-0.5 h-8 w-8" />
@@ -790,7 +766,7 @@ function Kachi({ children }: { children: ReactNode }) {
   );
 }
 
-function Title({ children }: { children: ReactNode }) {
+export function Title({ children }: { children: ReactNode }) {
   return <h1 className="mt-6 text-[clamp(1.75rem,6vw,2.25rem)] leading-[1.06] font-semibold tracking-[-0.04em] text-balance">{children}</h1>;
 }
 
@@ -920,7 +896,7 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
 const INPUT =
   "h-14 w-full rounded-[18px] bg-(--hm-tint) px-4 text-[16px] outline-none transition-shadow placeholder:text-(--hm-ink-3) focus:bg-paper-white focus:ring-2 focus:ring-carbon";
 
-function Field({ label, name, ...rest }: { label: string; name: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+export function Field({ label, name, ...rest }: { label: string; name: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-[14px] font-medium">{label}</span>

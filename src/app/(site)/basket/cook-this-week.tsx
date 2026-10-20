@@ -26,13 +26,30 @@ export type CookRecipe = {
 };
 
 /** Recipes the basket is close to, and one tap to add what each still needs. */
-export function CookThisWeek({ deliveryId, recipes, fromOrder, savedIds, hasSaved }: { deliveryId: string; recipes: CookRecipe[]; fromOrder: boolean; savedIds: string[]; hasSaved: boolean }) {
+export function CookThisWeek({
+  deliveryId,
+  recipes,
+  fromOrder,
+  savedIds,
+  hasSaved,
+  title = "Cook this week",
+  subtitle,
+}: {
+  deliveryId: string;
+  recipes: CookRecipe[];
+  fromOrder: boolean;
+  savedIds: string[];
+  hasSaved: boolean;
+  /** Named for their goal ("Quick this week", "Ways to enjoy it"). */
+  title?: string;
+  subtitle?: string;
+}) {
   const saved = new Set(savedIds);
   return (
     <section className="mt-10" aria-labelledby="cook">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="cook" className="text-xl font-semibold tracking-[-0.015em]">
-          Cook this week
+          {title}
         </h2>
         <span className="flex items-baseline gap-4">
           {hasSaved && (
@@ -45,7 +62,7 @@ export function CookThisWeek({ deliveryId, recipes, fromOrder, savedIds, hasSave
           </Link>
         </span>
       </div>
-      <p className="text-sm text-muted">{fromOrder ? "Recipes that use what's already in your basket." : "Recipes picked for what you told us you're after."}</p>
+      <p className="text-sm text-muted">{subtitle ?? (fromOrder ? "Recipes that use what's already in your basket." : "Recipes picked for what you told us you're after.")}</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {recipes.map((r) => (
           <RecipeRow key={r.slug} deliveryId={deliveryId} recipe={r} saved={r.id ? saved.has(r.id) : null} />

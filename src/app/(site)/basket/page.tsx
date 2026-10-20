@@ -11,6 +11,7 @@ import { customerStatusLabel } from "@/lib/order-status";
 import { creditBalance } from "@/lib/credit";
 import { getMenu } from "@/lib/menu";
 import { buyableFor, fitRecipe } from "@/lib/recipe-fit";
+import { homeFor } from "@/lib/home-for-goal";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { BUYABLE, toAddable, toCardData } from "@/lib/product";
 import { DeliverySwitcher } from "./delivery-switcher";
@@ -95,10 +96,15 @@ export default async function HomePage() {
   const usualRank = [...new Set([...(user.preferences?.favoriteProductIds ?? []), ...ordered.map((o) => o.productId)])].filter((id) => !inOrder.has(id));
   const rank = new Map(usualRank.map((id, i) => [id, i]));
 
+  // Home is arranged around what they're after: this basket's goal, else theirs.
+  const goal =
+    MENU_GOALS.find((g) => g.id === delivery.goalTag || g.starterSlug === delivery.goalTag) ?? MENU_GOALS.find((g) => g.starterSlug === user.preferences?.primaryGoal) ?? null;
+  const layout = homeFor(goal?.id ?? null);
+
   const [usualRows, seasonRows, swapPool, buyable, savedRows] = await Promise.all([
     usualRank.length ? prisma.product.findMany({ where: { id: { in: usualRank }, ...BUYABLE } }) : Promise.resolve([]),
     prisma.product.findMany({
-      where: { ...BUYABLE, availability: "AVAILABLE", id: { notIn: [...inOrder, ...usualRank] } },
+      where: { ...BUYABLE, availability: "AVAILABLE", id: { notIn: [...inOrder, ...usualRank] }, ...(layout.season.category ? { category: layout.season.category } : {}) },
       orderBy: [{ featured: "desc" }, { name: "asc" }],
       take: 10,
     }),
@@ -118,10 +124,14 @@ export default async function HomePage() {
     if (s) swaps[i.productId] = toAddable(s);
   }
 
-  const goal = MENU_GOALS.find((g) => g.starterSlug === user.preferences?.primaryGoal) ?? null;
-  const scored = menu.filter((r) => r.image).map((r) => ({ goal: r.goal, fit: fitRecipe(r, inOrderSlugs, buyable, member) }));
-  const withOverlap = scored.filter((x) => x.fit.have > 0).sort((a, b) => b.fit.have - a.fit.have || a.fit.need - b.fit.need);
-  const cook: CookRecipe[] = (withOverlap.length ? withOverlap : scored.filter((x) => !goal || x.goal === goal.id)).slice(0, 4).map((x) => x.fit);
+  // Recipes for their goal first; for busy weeks, only quick ones when there are enough.
+  const pool = menu.filter((r) => r.image);
+  const quick = layout.maxMinutes ? pool.filter((r) => r.minutes > 0 && r.minutes <= layout.maxMinutes!) : [];
+  const scored = (quick.length >= 2 ? quick : pool).map((r) => ({ goal: r.goal, fit: fitRecipe(r, inOrderSlugs, buyable, member) }));
+  const forGoal = (x: { goal: string }) => (goal && x.goal === goal.id ? 1 : 0);
+  const withOverlap = scored.filter((x) => x.fit.have > 0).sort((a, b) => forGoal(b) - forGoal(a) || b.fit.have - a.fit.have || a.fit.need - b.fit.need);
+  const goalFirst = [...scored].sort((a, b) => forGoal(b) - forGoal(a));
+  const cook: CookRecipe[] = (withOverlap.length ? withOverlap : goalFirst).slice(0, 4).map((x) => x.fit);
   const savedIds = savedRows.map((s) => s.recipeId);
 
   /* ------------------------------ the basket ------------------------------ */
@@ -173,9 +183,27 @@ export default async function HomePage() {
             goalLabel={goal?.label ?? null}
           />
 
-          {cook.length > 0 && <CookThisWeek deliveryId={delivery.id} recipes={cook} fromOrder={withOverlap.length > 0} savedIds={savedIds} hasSaved={savedIds.length > 0} />}
-          {usuals.length > 0 && <SuggestionRail title="Your usuals" subtitle="What you buy most, and your favourites." products={usuals.map(toCardData)} />}
-          {seasonRows.length > 0 && <SuggestionRail title="Good this week" subtitle="In stock and at its best right now." products={seasonRows.map(toCardData)} />}
+          {/* In the order their goal puts first. */}
+          {layout.order.map((section) =>
+            section === "cook" ? (
+              cook.length > 0 && (
+                <CookThisWeek
+                  key="cook"
+                  deliveryId={delivery.id}
+                  recipes={cook}
+                  fromOrder={withOverlap.length > 0}
+                  savedIds={savedIds}
+                  hasSaved={savedIds.length > 0}
+                  title={layout.cook.title}
+                  subtitle={withOverlap.length > 0 && !goal ? undefined : layout.cook.subtitle}
+                />
+              )
+            ) : section === "usuals" ? (
+              usuals.length > 0 && <SuggestionRail key="usuals" title="Your usuals" subtitle="What you buy most, and your favourites." products={usuals.map(toCardData)} />
+            ) : (
+              seasonRows.length > 0 && <SuggestionRail key="season" title={layout.season.title} subtitle={layout.season.subtitle} products={seasonRows.map(toCardData)} />
+            ),
+          )}
         </div>
 
         <OrderSummary

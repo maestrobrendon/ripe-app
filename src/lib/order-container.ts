@@ -81,7 +81,7 @@ export async function ownedDelivery(userId: string, basketId: string | null | un
  * Another delivery ("For Mum", Saturdays). Members can hold several (Member
  * three, Member Plus any number); everyone else has one.
  */
-export async function createDelivery(user: UserLike, input: { name: string; day: DeliveryDay }) {
+export async function createDelivery(user: UserLike, input: { name: string; day: DeliveryDay; goal?: string | null }) {
   const limit = basketLimitFor(isMember(user), user.subscriptionTier?.slug);
   // A one-time order isn't a basket: it doesn't count toward the limit.
   if (limit !== null && (await prisma.basket.count({ where: { userId: user.id, oneOff: false } })) >= limit) {
@@ -92,6 +92,8 @@ export async function createDelivery(user: UserLike, input: { name: string; day:
     data: {
       userId: user.id,
       name: input.name.trim().slice(0, 40) || null,
+      // What this basket is for, which shapes its Home (lib/home-for-goal.ts).
+      goalTag: input.goal?.slice(0, 40) || null,
       isStanding: isMember(user),
       deliveryDay: dayIn(zone, input.day),
       pricingMode: isMember(user) ? "MEMBER" : "STANDARD",

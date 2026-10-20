@@ -34,6 +34,8 @@ export type CheckoutInput = {
   email: string;
   payment: PaymentChoice;
   useCredit: boolean;
+  /** The reference they used for a transfer they've already sent (sign-up's pay step), so staff can match it. */
+  reference?: string;
 };
 
 export type CheckoutResult = { ok: false; error: string; addressId?: string };
@@ -124,7 +126,14 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
         paidAt: null,
         itemSnapshot: snapshot,
         basketId: basket.id,
-        events: { create: { kind: "STATUS", toStatus: "RECEIVED", actorName: "Customer", note: `Order placed · ${PAYMENT_LABEL[payment]}` } },
+        events: {
+          create: {
+            kind: "STATUS",
+            toStatus: "RECEIVED",
+            actorName: "Customer",
+            note: `Order placed · ${PAYMENT_LABEL[payment]}${payment === "TRANSFER" && input.reference ? ` · customer says they've sent it with reference ${input.reference.replace(/[^A-Z0-9-]/gi, "").slice(0, 20)}` : ""}`,
+          },
+        },
         items: { create: snapshot.map((s) => ({ productId: s.productId, quantity: s.quantity, unitPrice: s.unitPrice })) },
       },
     });

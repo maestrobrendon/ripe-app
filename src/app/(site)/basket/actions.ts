@@ -97,7 +97,7 @@ export async function startOneOff(): Promise<Result & { id?: string }> {
 }
 
 /** Another basket: "For Mum", on Saturdays. Members only (the cap is in createDelivery). */
-export async function newDelivery(input: { name: string; day: DeliveryDay }) {
+export async function newDelivery(input: { name: string; day: DeliveryDay; goal?: string | null }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/basket");
   try {
