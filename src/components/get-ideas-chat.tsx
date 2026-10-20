@@ -29,12 +29,14 @@ export function GetIdeasChat({
   const [loading, setLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [userMessageCount, setUserMessageCount] = useState(0);
+  const [replies, setReplies] = useState<string[]>([]);
 
   const sendMessage = async (message: string) => {
     if (!message || loading) return;
     setTurns((t) => [...t, { role: "user", content: message }]);
     setUserMessageCount((n) => n + 1);
     setInput("");
+    setReplies([]);
     setLoading(true);
     try {
       const res = await fetch("/api/assistant", {
@@ -42,8 +44,9 @@ export function GetIdeasChat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, threadId, source, contextRef }),
       });
-      const data: { reply?: string; threadId?: string } = await res.json().catch(() => ({}));
+      const data: { reply?: string; threadId?: string; suggestions?: string[] } = await res.json().catch(() => ({}));
       setTurns((t) => [...t, { role: "assistant", content: data.reply ?? "I couldn't get that done just now." }]);
+      setReplies(data.suggestions ?? []);
       if (data.threadId) setThreadId(data.threadId);
       router.refresh();
     } catch {
@@ -89,6 +92,15 @@ export function GetIdeasChat({
             </div>
           ))}
           {loading && <p className="text-sm text-muted">Kachi is thinking…</p>}
+          {!loading && replies.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {replies.map((r) => (
+                <button key={r} type="button" onClick={() => sendMessage(r)} className="rounded-full bg-lavender/70 px-3 py-1.5 text-left text-xs font-medium hover:bg-lavender">
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

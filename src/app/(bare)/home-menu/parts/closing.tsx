@@ -84,7 +84,7 @@ export function Faq({
     },
     {
       q: "Is Kachi a nutritionist?",
-      a: <>No. Kachi plans food: recipes, portions for your household, and the basket to match. It doesn&apos;t give medical advice. If you have a condition or a prescribed diet, follow your doctor first.</>,
+      a: <>No. Kachi plans food: recipes, portions for your household, and the basket to match. She doesn&apos;t give medical advice. If you have a condition or a prescribed diet, follow your doctor first.</>,
     },
     {
       q: "Where do you deliver?",

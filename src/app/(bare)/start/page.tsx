@@ -9,6 +9,9 @@ import { ZONE_COOKIE } from "@/lib/zone";
 import { MENU_GOALS, type MenuGoal } from "../home-menu/recipes";
 import { getGuestMenu } from "@/lib/menu";
 import { getSiteSettings } from "@/lib/site-settings";
+import { transferReady } from "@/lib/site-settings-schema";
+import { readCart } from "@/lib/cart";
+import { quantityLabel } from "@/lib/delivery-labels";
 import { MenuProvider } from "@/components/menu-provider";
 import { StartFlow } from "./start-flow";
 
@@ -23,7 +26,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const user = await getCurrentUser();
   if (user) redirect(safeNext ?? "/basket");
 
-  const [candidates, freshCuts, zones, store, menu, settings] = await Promise.all([
+  const [candidates, freshCuts, zones, store, menu, settings, guestCart] = await Promise.all([
     getStarterCandidates(),
     prisma.product.findMany({ where: { tags: { has: FRESH_CUTS_TAG } }, select: { slug: true } }),
     prisma.deliveryZone.findMany({
@@ -33,7 +36,23 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     cookies(),
     getGuestMenu(),
     getSiteSettings(),
+    readCart(),
   ]);
+  // Came from the shop with a cart: sign-up is built around it instead of recipes.
+  const lines = guestCart.items.filter((l) => !l.soldOut);
+  const cart = lines.length
+    ? {
+        items: lines.map((l) => ({
+          productId: l.productId,
+          name: l.name,
+          amount: quantityLabel(l.quantity, l.unit),
+          lineTotal: l.standardPrice * l.quantity,
+          publicId: l.cloudinaryPublicId,
+          emoji: l.imageEmoji,
+        })),
+        subtotal: lines.reduce((s, l) => s + l.standardPrice * l.quantity, 0),
+      }
+    : null;
   // Fresh Cuts is archived, so pre-cut items never land in a first basket.
   const cut = new Set(freshCuts.map((p) => p.slug));
   const initialGoal = MENU_GOALS.some((g) => g.id === goal) ? (goal as MenuGoal) : null;
@@ -49,6 +68,8 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         freeDeliveryThreshold={settings.delivery.freeThreshold}
         next={safeNext}
         referralCode={cleanReferralCode(ref) || null}
+        cart={cart}
+        payNow={transferReady(settings.transfer)}
       />
     </MenuProvider>
   );

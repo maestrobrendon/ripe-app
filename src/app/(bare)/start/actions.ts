@@ -18,6 +18,8 @@ import { BUYABLE } from "@/lib/product";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
+import { getSiteSettings } from "@/lib/site-settings";
+import { transferReady } from "@/lib/site-settings-schema";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -116,6 +118,9 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
     return { error: "failed" };
   }
 
+  // Arrived from the shop with a cart: their cart is the basket, so no starter picks.
+  const fromCart = formData.get("fromCart") === "1";
+
   // The basket the customer built from their recipes on the preview screen.
   // Falls back to the goal's starter basket if it's missing or malformed.
   let picks = parseJson<unknown[]>(formData.get("items"), [])
@@ -135,14 +140,15 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
     );
     picks = picks.filter((p) => sold.has(p.productId));
   }
-  if (picks.length === 0) {
+  if (picks.length === 0 && !fromCart) {
     picks = buildStarterPicks({ goalSlug, producePreferences: [], adults, kids }, await getStarterCandidates());
   }
 
   // This is the member's first basket: the free trial, permanently priced at
   // standard rates regardless of any subscription taken out afterward.
   try {
-    if (picks.length > 0) {
+    // From a cart the basket starts empty and the cart is merged into it below, on the day they chose.
+    if (picks.length > 0 || fromCart) {
       const basket = await createUserBasket(userId, { isSubscriber: false, deliveryDay });
       await prisma.basketItem.createMany({
         data: picks.map((p) => ({ basketId: basket.id, productId: p.productId, quantity: p.quantity })),
@@ -162,5 +168,18 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   const picked = parseJson<unknown[]>(formData.get("recipes"), [])
     .filter((s): s is string => typeof s === "string" && menuSlugs.has(s))
     .slice(0, 8);
-  redirect(safeNextPath(String(formData.get("next") ?? ""), `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`));
+  const welcome = `/welcome${picked.length ? `?recipes=${picked.join(",")}` : ""}`;
+
+  // The last choice of sign-up. Pay now: straight to confirming the basket (transfer chosen when we take it).
+  // Pay later: the welcome page, with the basket saved. Outside our areas there's nothing to confirm yet.
+  const then = formData.get("then");
+  if (then === "pay" && zone) {
+    const basket = await prisma.basket.findFirst({ where: { userId, oneOff: false, items: { some: {} } }, orderBy: { createdAt: "asc" }, select: { id: true } });
+    if (basket) {
+      const transfer = transferReady((await getSiteSettings()).transfer);
+      redirect(`/checkout?b=${basket.id}${transfer ? "&pay=now" : ""}`);
+    }
+  }
+  if (then === "later") redirect(welcome);
+  redirect(safeNextPath(String(formData.get("next") ?? ""), welcome));
 }

@@ -18,6 +18,10 @@ import { basketName } from "@/lib/delivery-labels";
 import { getSiteSettings } from "@/lib/site-settings";
 import { transferReady } from "@/lib/site-settings-schema";
 import { LinkButton } from "@/components/ui/button";
+import { ProductImage } from "@/components/product-image";
+import { KachiMark } from "@/components/kachi-mark";
+import { Icon } from "@/components/ui/icon";
+import { formatNaira } from "@/lib/format";
 import { CheckoutFlow } from "./checkout-flow";
 
 /*
@@ -26,24 +30,60 @@ import { CheckoutFlow } from "./checkout-flow";
  * address picked. A guest with a cart is asked to sign in first; their cart
  * becomes their order when they do.
  */
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ b?: string }> }) {
-  const { b } = await searchParams;
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ b?: string; pay?: string }> }) {
+  const { b, pay } = await searchParams;
   const user = await getCurrentUser();
 
   if (!user) {
     const cart = await readCart();
     if (cart.items.length === 0) redirect("/cart");
+    const lines = cart.items.filter((l) => !l.soldOut);
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6">
-        <h1 className="text-heading-lg">Sign in to order</h1>
-        <p className="mt-3 text-sm text-muted">Your cart is saved and comes with you. It takes a minute, and you pay when it arrives.</p>
-        <div className="mt-6 flex flex-col gap-3">
-          <LinkButton href="/start?next=/checkout" size="lg">
-            Create an account
-          </LinkButton>
-          <Link href="/login?next=/checkout" className="text-sm font-medium text-carbon underline">
-            I have an account
-          </Link>
+      <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
+        <div className="mx-auto max-w-md px-4 pt-10 pb-16 sm:px-6">
+          <div className="rounded-[28px] bg-surface p-6 text-center ring-1 ring-hairline">
+            {/* What they picked, as a little stack of produce. */}
+            <div className="flex justify-center -space-x-3" aria-hidden>
+              {lines.slice(0, 5).map((l) => (
+                <ProductImage
+                  key={l.productId}
+                  publicId={l.cloudinaryPublicId}
+                  alt=""
+                  emoji={l.imageEmoji}
+                  sizes="56px"
+                  rounded="rounded-full"
+                  className="size-14 border-[3px] border-surface shadow-sm"
+                  emojiClassName="text-2xl"
+                />
+              ))}
+            </div>
+            <h1 className="mt-5 text-[28px] leading-tight font-bold tracking-[-0.02em]">Almost yours</h1>
+            <p className="mt-1.5 text-[15px] text-muted">
+              {lines.length} {lines.length === 1 ? "item" : "items"} · {formatNaira(cart.subtotal)}
+            </p>
+            <div className="mt-5 flex items-start gap-2.5 rounded-2xl bg-soft-mist p-3.5 text-left">
+              <KachiMark className="size-8 shrink-0" />
+              <p className="text-[14px] leading-snug">
+                Your cart&apos;s saved and comes with you. Make a free account in about a minute, then pay now or when it arrives. Your call.
+              </p>
+            </div>
+            <div className="mt-6 grid gap-2.5">
+              <LinkButton href="/start?next=/checkout" size="lg" className="flex w-full justify-center">
+                Create my account
+              </LinkButton>
+              <LinkButton href="/login?next=/checkout" size="lg" variant="secondary" className="flex w-full justify-center">
+                I already have an account
+              </LinkButton>
+            </div>
+          </div>
+          <ul className="mt-5 grid gap-2 px-2 text-[13px] text-muted">
+            {["Free to join, no card needed", "Nothing is ever charged automatically", "Checked by hand before it leaves"].map((t) => (
+              <li key={t} className="flex items-center gap-2">
+                <Icon name="checkPlain" size={14} weight="bold" className="shrink-0 text-[#0f7a48]" />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     );
@@ -142,6 +182,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         contact={{ name: user.name ?? "", phone: user.phone ? formatPhone(user.phone) : "", email: user.email ?? "" }}
         credit={credit}
         transfer={transferReady(settings.transfer) ? settings.transfer : null}
+        // Chose "pay now" at sign-up: the transfer option is already picked.
+        initialPayment={pay === "now" && transferReady(settings.transfer) ? "TRANSFER" : "POD"}
         draftDefaults={{ line1: user.address ?? "", zoneId: zones.some((z) => z.id === user.deliveryZoneId) ? user.deliveryZoneId : null }}
       />
     </div>

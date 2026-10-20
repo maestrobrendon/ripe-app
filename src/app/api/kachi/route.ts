@@ -4,7 +4,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { OFFERED } from "@/lib/product";
 import { generate, isRateLimited } from "@/lib/kachi-model";
-import { VOICE, RECIPE_RULES, recipeLibrary, extractRecipes } from "@/lib/kachi";
+import { VOICE, RECIPE_RULES, NEXT_RULE, parseNext, recipeLibrary, extractRecipes } from "@/lib/kachi";
 import type { KachiRecipe } from "@/lib/kachi-types";
 
 /**
@@ -29,10 +29,9 @@ const GUEST_RULES = `The person you're talking to is browsing Basket's website a
 
 You can answer questions about food and cooking, the recipes, produce and prices, the plans, and delivery. You can't see or change any basket, cart or order. If they want to order, save a recipe, or get produce delivered, tell them the next step in one sentence: "Get started" builds their first basket around a goal, free, and nothing is charged until they check out. Don't push it in every reply; only when it is the natural next step.
 
-Be curious: if a question is vague, ask one short question back (who they're cooking for, how much time they have, what they're working toward) instead of guessing. Never invent prices, products, areas or plan details; use only what is listed below. If something isn't listed, say you'll leave that to the team on WhatsApp.
+Never invent prices, products, areas or plan details; use only what is listed below. If something isn't listed, say you'll leave that to the team on WhatsApp.
 
-Finish every reply with one line in exactly this form, offering two short things they might ask next, in their voice:
-NEXT: first follow-up | second follow-up`;
+${NEXT_RULE}`;
 
 async function knowledge() {
   const [products, tiers, zones] = await Promise.all([
@@ -72,16 +71,6 @@ Areas:
 ${zoneLines}`;
 }
 
-function parseNext(text: string) {
-  const m = text.match(/\n?\s*NEXT:\s*(.+)\s*$/i);
-  if (!m) return { text: text.trim(), suggestions: [] };
-  const suggestions = m[1]
-    .split("|")
-    .map((x) => x.trim().replace(/^["“]|["”]$/g, ""))
-    .filter((x) => x.length > 1 && x.length <= 60)
-    .slice(0, 2);
-  return { text: text.slice(0, m.index).trim(), suggestions };
-}
 
 export async function POST(request: Request) {
   const ip = await clientIp();

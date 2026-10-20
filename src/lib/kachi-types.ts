@@ -36,6 +36,8 @@ export type KachiReply = {
   threadId?: string;
   title?: string;
   cards?: KachiCard[];
+  /** Short replies the customer can tap next (Kachi's own suggestions, or the answers to her question). */
+  suggestions?: string[];
   error?: string;
   /** The turn failed (busy or broken) and sending it again may work. */
   retry?: boolean;

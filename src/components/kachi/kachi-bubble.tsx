@@ -350,7 +350,7 @@ export function KachiBubble() {
                 <KachiMark className="h-10 w-10" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[16px] leading-tight font-semibold">Kachi</p>
-                  <p className="text-[13px] text-carbon/55">{thinking ? "Thinking…" : "Here to help you eat well"}</p>
+                  <p className="text-[13px] text-carbon/55">{thinking ? "Thinking…" : "Your fruit and veg friend"}</p>
                 </div>
                 {msgs.length > 0 && (
                   <button

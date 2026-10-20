@@ -27,7 +27,7 @@ const FAQS = [
   },
   {
     q: "Who is Kachi?",
-    a: "Kachi is Basket's food assistant. Tell it what you're after and it suggests exciting ways to eat more fruit and veg, and fills your basket. It gives food ideas, not medical or nutritional advice.",
+    a: "Kachi is Basket's food friend. Tell her what you're after and she'll suggest exciting ways to eat more fruit and veg, and fill your basket for you. She gives food ideas, not medical or nutritional advice.",
   },
   {
     q: "How is payment handled?",

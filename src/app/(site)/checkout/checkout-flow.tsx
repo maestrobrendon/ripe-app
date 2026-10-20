@@ -32,6 +32,7 @@ export function CheckoutFlow(props: {
   basketId: string;
   /** A one-time order reads as an order, not a basket. */
   oneOff?: boolean;
+  initialPayment?: PaymentChoice;
   lines: Line[];
   leftOut: string[];
   subtotal: number;
@@ -60,7 +61,7 @@ export function CheckoutFlow(props: {
   });
   const [contact, setContact] = useState(props.contact);
   const [editContact, setEditContact] = useState(!props.contact.name || !props.contact.phone);
-  const [payment, setPayment] = useState<PaymentChoice>("POD");
+  const [payment, setPayment] = useState<PaymentChoice>(props.initialPayment ?? "POD");
   const [useCredit, setUseCredit] = useState(props.credit > 0);
   const [showItems, setShowItems] = useState(props.lines.length <= 4);
   const [error, setError] = useState<string | null>(null);

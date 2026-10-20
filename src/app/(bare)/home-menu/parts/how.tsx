@@ -228,7 +228,7 @@ export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal;
           <Eyebrow className="text-electric-blue">How it works</Eyebrow>
           <h2 className="hm-h2">From your goal to dinner, in three steps.</h2>
           <p className="hm-lede mt-4">
-            Kachi is the planner inside Basket. Tell it what you&apos;re working toward and it builds the week: the recipes, and a basket sized to cook them.
+            Kachi is your food friend inside Basket. Tell her what you&apos;re after and she builds the week: the fruit and veg, and exciting ways to eat them.
           </p>
         </Reveal>
 

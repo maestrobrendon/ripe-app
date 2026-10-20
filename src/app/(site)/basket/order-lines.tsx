@@ -189,7 +189,7 @@ function EmptyOrder({ deliveryId, lastOrder, goalLabel }: { deliveryId: string; 
           onClick={() => go(() => startFromGoal(deliveryId), "Added a starter set")}
         />
         <Option icon="shop" title="Browse the shop" sub="Fruit, vegetables and boxes" href="/shop" />
-        <Option icon="assistant" title="Ask Kachi" sub="Say what you're cooking and it fills the basket" href="/assistant" />
+        <Option icon="assistant" title="Ask Kachi" sub="Tell her what you fancy. She'll fill it for you" href="/assistant" />
       </div>
     </section>
   );

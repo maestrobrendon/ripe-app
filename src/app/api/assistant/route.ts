@@ -32,6 +32,7 @@ import {
   contentsContext,
   extractRecipes,
   recipeLibrary,
+  parseNext,
   ORDER_INTENT,
 } from "@/lib/kachi";
 import { OFFERED } from "@/lib/product";
@@ -125,18 +126,18 @@ export async function POST(request: Request) {
   const orderCard: KachiCard | null =
     ORDER_INTENT.test(message) && orders[0] ? { type: "order", order: toKachiOrder(orders[0]) } : null;
 
-  const finish = async (reply: string, cards: KachiCard[], calls?: unknown, status = 200) => {
+  const finish = async (reply: string, cards: KachiCard[], calls?: unknown, status = 200, suggestions: string[] = []) => {
     // A bare failure isn't kept, so Try again replays onto a clean history.
     if (status < 400 || cards.length) {
       await appendMessage(threadId, "ASSISTANT", reply, cards.length || calls ? { cards, calls } : undefined);
     }
-    return NextResponse.json({ reply, threadId, title, cards, retry: status >= 400 || undefined }, { status });
+    return NextResponse.json({ reply, threadId, title, cards, suggestions, retry: status >= 400 || undefined }, { status });
   };
   const failure = (err: unknown, cards: KachiCard[], where: string) => {
     if (isRateLimited(err))
-      return finish("I am a little busy right now. Give me a few seconds and try again.", cards, undefined, 429);
+      return finish("Everyone wants fruit advice at once. Give me a few seconds and ask again?", cards, undefined, 429);
     console.error(JSON.stringify({ scope: where, userId: user.id, error: String(err) }));
-    return finish("Something went wrong on my side. Try again in a moment.", cards, undefined, 500);
+    return finish("Something slipped on my side. Try that again in a moment?", cards, undefined, 500);
   };
   // Recipe markers in a reply become recipe cards.
   const shape = (raw: string, extra: KachiCard[] = []) => {
@@ -303,8 +304,10 @@ export async function POST(request: Request) {
     );
     const calls = result.steps?.flatMap((s) => s.toolCalls ?? []).map((c) => ({ tool: c.toolName, input: c.input }));
     const changeCards = await collectCards();
-    const { text, cards } = shape(result.text, changeCards);
-    return finish(text || confirmation(changeCards), cards, calls?.length ? calls : undefined);
+    // The tappable replies Kachi offers come off the end of the text.
+    const { text: said, suggestions } = parseNext(result.text);
+    const { text, cards } = shape(said, changeCards);
+    return finish(text || confirmation(changeCards), cards, calls?.length ? calls : undefined, 200, suggestions);
   } catch (err) {
     // Anything already changed before the failure still gets its card and Undo.
     return failure(err, await collectCards(), "kachi-acting");
@@ -320,7 +323,7 @@ const CHANGE_TOOLS = new Set([
 
 /** The reply when the model stopped at its change and wrote nothing itself. */
 function confirmation(cards: KachiCard[]) {
-  if (cards.some((c) => c.type === "list")) return "Here is what I would add. Nothing goes in until you say so.";
-  if (cards.some((c) => c.type === "act")) return "Done. You can undo it below if that's not right.";
-  return "I couldn't make that change. Try saying it another way?";
+  if (cards.some((c) => c.type === "list")) return "Here's what I'd add. Nothing goes in until you say so.";
+  if (cards.some((c) => c.type === "act")) return "Done. Changed your mind? Undo it below.";
+  return "That one didn't go through. Say it another way and I'll try again?";
 }

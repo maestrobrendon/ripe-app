@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { CUSTOMER_STEPS, customerStatusLabel, customerStep } from "@/lib/order-status";
-import { press, spring } from "@/lib/motion/tokens";
+import { haptic, press, spring } from "@/lib/motion/tokens";
 import type { KachiCard, KachiReply, KachiScope } from "@/lib/kachi-types";
 import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges } from "./thread-actions";
 
@@ -29,10 +29,10 @@ type Msg = {
 type ThreadSummary = { id: string; title: string; updatedAt: Date; messageCount: number };
 
 const STARTERS = [
-  ["🍲", "What can I cook with what's in my order?"],
-  ["💪", "Fill my order for a gym week"],
-  ["🥗", "A light dinner for tonight"],
-  ["🚚", "Where is my order?"],
+  ["🥭", "What's good this week?"],
+  ["🥗", "Something fresh for lunch"],
+  ["🍍", "Plan my fruit for the week"],
+  ["🚚", "Where's my basket?"],
 ] as const;
 
 /** Each starter gets its own sticker colour, so the first screen feels like a kitchen, not a form. */
@@ -40,15 +40,15 @@ const STARTER_TINTS = ["bg-mint-pop/35", "bg-sunburst/45", "bg-lavender", "bg-[#
 
 /** A line for the time of day; null on the server so the first render matches. */
 function timeGreeting(hour: number | null) {
-  if (hour === null) return "What are we cooking?";
-  if (hour < 5) return "Up late? Let's find you something good.";
-  if (hour < 12) return "Good morning. Breakfast, or planning ahead?";
-  if (hour < 17) return "Good afternoon. Thinking about dinner already?";
-  return "Good evening. Something light, or something to share?";
+  if (hour === null) return "What are we eating?";
+  if (hour < 5) return "Up late? Let's find you something good to snack on.";
+  if (hour < 12) return "Morning! Breakfast, or plotting the week?";
+  if (hour < 17) return "Afternoon. Hungry, or just planning ahead?";
+  return "Evening. Something light, or something to share?";
 }
 const noSubscribe = () => () => {};
 
-const AFTER_CHANGE_REPLIES = ["What can I cook with this?", "Check my order"];
+const AFTER_CHANGE_REPLIES = ["What can I make with it?", "What else goes well?"];
 
 let seq = 0;
 const newId = () => `m${Date.now()}-${seq++}`;
@@ -153,7 +153,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
               role: "kachi",
               text: data.reply || data.error || "Sorry, I lost my train of thought. Try again?",
               cards,
-              replies: changed ? AFTER_CHANGE_REPLIES : undefined,
+              replies: data.suggestions?.length ? data.suggestions : changed ? AFTER_CHANGE_REPLIES : undefined,
               retry: data.retry ? text : undefined,
             }
           : m,
@@ -190,7 +190,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     patchCard(msgId, cardIdx, { busy: false, done: `Added to ${scopeName(card.scope)}` });
     setMessages((ms) => [
       ...ms,
-      { id: newId(), role: "kachi", text: "All in.", cards: [actCard as CardState], replies: AFTER_CHANGE_REPLIES },
+      { id: newId(), role: "kachi", text: "All in. Good choices.", cards: [actCard as CardState], replies: AFTER_CHANGE_REPLIES },
     ]);
     afterChange();
   };
@@ -314,7 +314,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
                     Hi {firstName} <span aria-hidden>👋</span>
                   </h1>
                   <p className="mt-1 max-w-75 text-[15px] leading-snug text-carbon/75">
-                    {timeGreeting(hour)} I can plan meals and add, swap or remove things in {deliveryLabel}.
+                    {timeGreeting(hour)} Tell me what you fancy and I&apos;ll find it, and sort {deliveryLabel} if you want.
                   </p>
                 </div>
               </div>
@@ -338,7 +338,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
               </div>
               <p className="mt-4 flex justify-center gap-2 text-[13px] leading-snug text-muted">
                 <Icon name="shield" size={16} className="mt-px shrink-0 text-carbon" />
-                <span>I only change your order when you ask, you can undo anything, and I never place or pay for an order. Food ideas, not medical advice.</span>
+                <span>I only touch your basket when you ask, you can undo anything, and I never pay for anything. Food ideas, not medical advice.</span>
               </p>
             </div>
           ) : (
@@ -422,15 +422,23 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
                   ))}
 
                   {m.replies && mi === lastKachiIdx && mi === messages.length - 1 && (
+                    // Kachi's suggested replies (or the answers to her question), arriving one after another.
                     <div className="mt-2.5 flex flex-wrap gap-2">
-                      {m.replies.map((r) => (
-                        <button
+                      {m.replies.map((r, ri) => (
+                        <motion.button
                           key={r}
-                          onClick={() => send(r)}
+                          initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ ...spring.smooth, delay: 0.15 + ri * 0.07 }}
+                          whileTap={{ scale: press.scale }}
+                          onClick={() => {
+                            haptic(6);
+                            send(r);
+                          }}
                           className="h-9.5 rounded-full bg-lavender/70 px-3.5 text-sm font-medium transition-colors hover:bg-lavender active:bg-lavender"
                         >
                           {r}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   )}
@@ -445,7 +453,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
           <Link href="/basket" className="mb-2 ml-1 inline-flex h-8 items-center gap-1.5 rounded-full bg-mint-pop/45 px-3 text-[13px]">
             <span className="h-2 w-2 rounded-full bg-[#0f7a48]" />
             <span>
-              Working on <b className="font-semibold">{deliveryLabel}</b>
+              Adding to <b className="font-semibold">{deliveryLabel}</b>
             </span>
           </Link>
 
@@ -460,7 +468,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about food, or add to your order"
+              placeholder="Tell Kachi what you fancy…"
               aria-label="Message Kachi"
               className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
             />

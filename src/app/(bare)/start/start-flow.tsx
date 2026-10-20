@@ -36,7 +36,15 @@ type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
  * our areas the day is skipped, and the week is still saved.
  */
 const STEPS = ["goal", "table", "recipes", "basket", "area", "day", "account"] as const;
-type Step = (typeof STEPS)[number];
+/**
+ * Arriving from the shop with a cart, the plan is already made: their cart.
+ * So it's just the cart, where, which day, and the account.
+ */
+const CART_STEPS = ["cart", "area", "day", "account"] as const;
+type Step = (typeof STEPS)[number] | (typeof CART_STEPS)[number];
+
+/** A visitor's cart, as sign-up shows it. */
+export type StartCart = { items: { productId: string; name: string; amount: string; lineTotal: number; publicId: string | null; emoji: string }[]; subtotal: number };
 
 const DIETARY: [Dietary, string][] = [
   ["none", "No restrictions"],
@@ -83,6 +91,8 @@ export function StartFlow({
   freeDeliveryThreshold,
   next,
   referralCode,
+  cart,
+  payNow,
 }: {
   candidates: StarterCandidate[];
   zones: Zone[];
@@ -94,15 +104,20 @@ export function StartFlow({
   next: string | null;
   /** From an invite link (/start?ref=CODE): both get credit after the first delivery. */
   referralCode: string | null;
+  /** What they put in a cart before signing up, if anything. */
+  cart: StartCart | null;
+  /** Bank transfer is set up, so "pay now" can really mean paying now. */
+  payNow: boolean;
 }) {
   const MENU = useMenu();
   const [[index, direction], setIndex] = useState<[number, 1 | -1]>([0, 1]);
-  const step: Step = STEPS[index];
+  const steps: readonly Step[] = cart ? CART_STEPS : STEPS;
+  const step: Step = steps[index];
   const go = (to: number) => {
     setIndex(([from]) => {
       const dir = to >= from ? 1 : -1;
       // No day to pick outside our areas: step over it either way.
-      const target = STEPS[to] === "day" && notListed ? to + dir : to;
+      const target = steps[to] === "day" && notListed ? to + dir : to;
       return [target, dir];
     });
     window.scrollTo({ top: 0 });
@@ -199,6 +214,7 @@ export function StartFlow({
   const setLine = (productId: string, quantity: number) => setOverrides((o) => ({ ...o, [productId]: quantity }));
 
   const ready: Record<Step, boolean> = {
+    cart: true,
     area: notListed || Boolean(chosenZone),
     goal: Boolean(goal),
     table: dietary !== "allergies" || dietaryDetail.trim().length > 0,
@@ -209,12 +225,23 @@ export function StartFlow({
   };
 
   const [state, formAction, pending] = useActionState<StartState, FormData>(createAccountFromOnboarding, { error: null });
+  // Which way sign-up ends: straight to paying (or confirming), or later.
+  const thenRef = useRef<HTMLInputElement>(null);
+  // Only a basket in an area we deliver to can be confirmed straight away.
+  const canConfirm = Boolean(chosenZone && day && !notListed);
   // Held here because React resets a form's fields after its action runs,
   // and a bounced sign-up shouldn't make anyone retype their name.
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
 
   const cta: Record<Step, ReactNode> = {
+    cart: cart ? (
+      <>
+        Deliver these, <RollingNumber value={cart.subtotal} format={formatNaira} />
+      </>
+    ) : (
+      "Continue"
+    ),
     area: notListed ? "Continue anyway" : chosenZone ? `Continue in ${chosenZone.name}` : "Pick your area",
     goal: "Continue",
     table: `Continue for ${people} ${people === 1 ? "person" : "people"}`,
@@ -250,8 +277,8 @@ export function StartFlow({
               </svg>
             </motion.button>
           )}
-          <div className="flex flex-1 gap-1.5" role="progressbar" aria-label="Sign-up progress" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={index + 1}>
-            {STEPS.map((s, i) => (
+          <div className="flex flex-1 gap-1.5" role="progressbar" aria-label="Sign-up progress" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={index + 1}>
+            {steps.map((s, i) => (
               <span key={s} className="h-1.5 flex-1 overflow-hidden rounded-full bg-(--hm-tint-2)">
                 <motion.span
                   className="block h-full origin-left rounded-full bg-carbon"
@@ -263,7 +290,7 @@ export function StartFlow({
             ))}
           </div>
           <span className="w-9 shrink-0 text-right text-[13px] font-medium text-(--hm-ink-3) tabular-nums">
-            {index + 1}/{STEPS.length}
+            {index + 1}/{steps.length}
           </span>
         </div>
       </header>
@@ -283,9 +310,40 @@ export function StartFlow({
             exit="exit"
             transition={spring.smooth}
           >
+            {step === "cart" && cart && (
+              <>
+                <Kachi>Ooh, good picks. You&apos;ve already done the hard part, so this is quick: where it goes, which day, and you&apos;re in.</Kachi>
+                <Title>Your cart</Title>
+                <ul className="hm-panel mt-6 divide-y divide-(--hm-line)">
+                  {cart.items.map((l, i) => (
+                    <motion.li
+                      key={l.productId}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ ...spring.smooth, delay: 0.05 + i * 0.04 }}
+                      className="flex items-center gap-3 px-4 py-3"
+                    >
+                      <ProductImage publicId={l.publicId} alt="" emoji={l.emoji} sizes="44px" className="size-11 shrink-0" rounded="rounded-xl" emojiClassName="text-xl" />
+                      <span className="min-w-0 flex-1">
+                        <b className="block truncate text-[15px] font-semibold">{shortName(l.name)}</b>
+                        <span className="text-[13px] text-(--hm-ink-3)">{l.amount}</span>
+                      </span>
+                      <span className="shrink-0 text-[15px] font-medium tabular-nums">{formatNaira(l.lineTotal)}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+                <p className="mt-3 flex items-center justify-between px-1 text-[14px] text-(--hm-ink-2)">
+                  <span>Delivery is worked out for your area next.</span>
+                  <Link href="/shop" className="font-semibold text-carbon underline underline-offset-2">
+                    Add more
+                  </Link>
+                </p>
+              </>
+            )}
+
             {step === "goal" && (
               <>
-                <Kachi>Hi, I&apos;m Kachi. Tell me what you&apos;re working toward and I&apos;ll plan your first week around it.</Kachi>
+                <Kachi>Hey, I&apos;m Kachi. Tell me what you&apos;re after and I&apos;ll build your first basket around it. No wrong answers, promise.</Kachi>
                 <Title>What are you working toward?</Title>
                 <LayoutGroup id="start-goal">
                   <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Your goal">
@@ -325,7 +383,7 @@ export function StartFlow({
 
             {step === "table" && (
               <>
-                <Kachi>I&apos;ll size every recipe for your table, and keep out anything you avoid.</Kachi>
+                <Kachi>Who&apos;s eating? I&apos;ll size everything for your table, and keep out anything you&apos;d rather not.</Kachi>
                 <Title>Who are you cooking for?</Title>
                 <div className="mt-6 grid gap-2.5">
                   <Stepper
@@ -480,7 +538,7 @@ export function StartFlow({
 
             {step === "area" && (
               <>
-                <Kachi>Your week is ready. Where should it go? I&apos;ll check we deliver there.</Kachi>
+                <Kachi>{cart ? "Where are these going? Let me check we come to you." : "Looking good. Where should it go? Let me check we come to you."}</Kachi>
                 <Title>Where should we deliver?</Title>
 
                 <motion.button
@@ -558,11 +616,11 @@ export function StartFlow({
 
             {step === "day" && chosenZone && (
               <>
-                <Kachi>Last thing before your account: which day should it arrive?</Kachi>
+                <Kachi>Which day suits you? Pick the one when you&apos;re actually home to enjoy it.</Kachi>
                 <Title>Which day suits you?</Title>
                 <p className="mt-2 text-[15px] text-(--hm-ink-2)">
                   {chosenZone.name} gets deliveries on {listDays(inWeekOrder(chosenZone.deliveryDays))}.{" "}
-                  <button type="button" onClick={() => go(STEPS.indexOf("area"))} className="font-semibold text-carbon underline underline-offset-2">
+                  <button type="button" onClick={() => go(steps.indexOf("area"))} className="font-semibold text-carbon underline underline-offset-2">
                     Change area
                   </button>
                 </p>
@@ -598,17 +656,25 @@ export function StartFlow({
 
             {step === "account" && (
               <>
-                <Kachi>Your basket is ready. Make a free account to keep it.</Kachi>
-                <Title>Save your basket</Title>
+                <Kachi>{cart ? "Last bit. Make your free account and these are yours." : "Your basket's ready. One last thing and it's yours."}</Kachi>
+                <Title>{cart ? "Make it yours" : "Save your basket"}</Title>
 
                 <dl className="hm-panel mt-6 divide-y divide-(--hm-line) px-5 text-[14px]">
-                  <Row term="Goal">{goalLabel(goal)}</Row>
-                  <Row term="Recipes">
-                    {recipes.length} for {people} {people === 1 ? "person" : "people"}
-                  </Row>
-                  <Row term="Basket">
-                    {kept.length} items, {formatNaira(produce + delivery.fee)}
-                  </Row>
+                  {cart ? (
+                    <Row term="Your cart">
+                      {cart.items.length} {cart.items.length === 1 ? "item" : "items"}, {formatNaira(cart.subtotal)}
+                    </Row>
+                  ) : (
+                    <>
+                      <Row term="Goal">{goalLabel(goal)}</Row>
+                      <Row term="Recipes">
+                        {recipes.length} for {people} {people === 1 ? "person" : "people"}
+                      </Row>
+                      <Row term="Basket">
+                        {kept.length} items, {formatNaira(produce + delivery.fee)}
+                      </Row>
+                    </>
+                  )}
                   <Row term="Delivery">{chosenZone && day && !notListed ? `${chosenZone.name}, ${DELIVERY_DAY_LABEL[day]}s` : "Not in your area yet"}</Row>
                 </dl>
 
@@ -641,7 +707,10 @@ export function StartFlow({
                   <input type="hidden" name="zone" value={notListed ? "" : (zone ?? "")} />
                   <input type="hidden" name="deliveryDay" value={day ?? ""} />
                   <input type="hidden" name="recipes" value={JSON.stringify(recipeSlugs)} />
-                  <input type="hidden" name="items" value={JSON.stringify(kept.map((l) => ({ productId: l.productId, quantity: l.quantity })))} />
+                  <input type="hidden" name="items" value={cart ? "[]" : JSON.stringify(kept.map((l) => ({ productId: l.productId, quantity: l.quantity })))} />
+                  {cart && <input type="hidden" name="fromCart" value="1" />}
+                  {/* Set by whichever button finishes sign-up: pay now, or later. */}
+                  <input ref={thenRef} type="hidden" name="then" value="pay" />
                   {next && <input type="hidden" name="next" value={next} />}
                   {referralCode && <input type="hidden" name="ref" value={referralCode} />}
 
@@ -658,7 +727,7 @@ export function StartFlow({
                   <PasswordInput />
                 </form>
                 <p className="mt-4 text-[13px] leading-relaxed text-(--hm-ink-3)">
-                  Free to join. Your first basket is a trial: you confirm it and pay when it arrives. Nothing is ever charged automatically. By creating an account you agree to our{" "}
+                  Free to join, and nothing is ever charged automatically. By creating an account you agree to our{" "}
                   <Link href="/terms" className="underline underline-offset-2">
                     terms
                   </Link>
@@ -677,13 +746,33 @@ export function StartFlow({
             type={step === "account" ? "submit" : "button"}
             form={step === "account" ? "start-account" : undefined}
             disabled={!ready[step] || pending}
-            onClick={step === "account" ? undefined : () => go(index + 1)}
+            onClick={
+              step === "account"
+                ? () => {
+                    if (thenRef.current) thenRef.current.value = "pay";
+                  }
+                : () => go(index + 1)
+            }
             whileTap={{ scale: press.scale }}
             transition={spring.snappy}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-opacity disabled:opacity-30"
           >
-            {cta[step]}
+            {step === "account" ? (pending ? "Setting you up…" : canConfirm ? (payNow ? "Create account & pay now" : "Create account & confirm my order") : "Create my account") : cta[step]}
           </motion.button>
+          {/* The other way to finish: honest and always there, just quieter. */}
+          {step === "account" && canConfirm && (
+            <button
+              type="submit"
+              form="start-account"
+              disabled={pending}
+              onClick={() => {
+                if (thenRef.current) thenRef.current.value = "later";
+              }}
+              className="mx-auto mt-2 block py-1.5 text-[13px] text-(--hm-ink-3) underline decoration-(--hm-line) underline-offset-4 disabled:opacity-40"
+            >
+              or create my account and pay later
+            </button>
+          )}
         </div>
       </div>
     </div>

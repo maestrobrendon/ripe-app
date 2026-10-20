@@ -22,9 +22,9 @@ export function kachiContext(pathname: string, signedIn: boolean, pageTitle: str
   if (pathname === "/") {
     return {
       key: "home",
-      greeting: "Hi, I'm Kachi. I plan meals around what you're working toward. What would you like to eat more of, or less of?",
-      starters: ["Which goal fits me?", "What does a week cost?", "Do you deliver to me?"],
-      nudge: { text: "Not sure where to start? Tell me your goal and I'll pick three recipes for you.", chips: ["I want to eat lighter", "Dinners for my family"] },
+      greeting: "Hey, I'm Kachi. I help you eat more fruit and veg without it feeling like homework. What are you after: more energy, lighter meals, or just good fruit?",
+      starters: ["Just good fruit, please", "What does a week cost?", "Do you deliver to me?"],
+      nudge: { text: "Hey, I'm Kachi. Tell me what you're after and I'll put a first basket together for you.", chips: ["Just good fruit", "Feed the family"] },
     };
   }
   const recipe = pathname.match(/^\/recipes\/([^/]+)$/);
@@ -32,33 +32,33 @@ export function kachiContext(pathname: string, signedIn: boolean, pageTitle: str
     const dish = pageTitle || "recipe";
     return {
       key: "recipe",
-      greeting: `Cooking the ${dish}? I can scale it, suggest a swap, or tell you what the produce costs.`,
+      greeting: `Ooh, the ${dish}. Good taste. Want it for more people, a swap for something you don't have, or what the produce costs?`,
       starters: ["Make it for 4", "Swap an ingredient", "What goes well with it?"],
-      nudge: { text: `Cooking the ${dish}? I can scale it for more people or swap anything you don't have.`, chips: ["Make it for 4", "Swap an ingredient"] },
+      nudge: { text: `Eyeing the ${dish}? I can scale it up or swap anything you don't have.`, chips: ["Make it for 4", "Swap an ingredient"] },
     };
   }
   if (pathname.startsWith("/recipes")) {
     return {
       key: "recipes",
-      greeting: "Hi, I'm Kachi. Tell me how much time you have, or what's in your kitchen, and I'll find a recipe.",
-      starters: ["Something under 20 minutes", "High protein dinner", "I have plantain and eggs"],
-      nudge: { text: "Looking for something quick? I can find a recipe that fits your evening.", chips: ["Under 20 minutes", "High protein"] },
+      greeting: "Hey, I'm Kachi. How much time have you got, and what's already in your kitchen? I'll find you something worth eating.",
+      starters: ["Something under 20 minutes", "A fresh salad idea", "I have mangoes and cucumber"],
+      nudge: { text: "Short on time? I know a few recipes that are faster than delivery.", chips: ["Under 20 minutes", "A fresh salad"] },
     };
   }
   if (pathname.startsWith("/shop") || pathname.startsWith("/products")) {
     return {
       key: "shop",
-      greeting: "Tell me what you're cooking this week and I'll tell you exactly what to get, and what it costs.",
+      greeting: "Tell me what you're in the mood for this week and I'll tell you exactly what to get, and what it costs.",
       starters: ["What's in season?", "What can I make with mango?", "Is membership worth it for me?"],
-      nudge: { text: "Shopping for something in particular? Tell me the dish and I'll list what to get.", chips: ["What's in season?", "Plan a week of dinners"] },
+      nudge: { text: "Not sure what's good right now? I know what's at its best this week.", chips: ["What's in season?", "Plan my fruit for the week"] },
     };
   }
   if (pathname.startsWith("/subscribe")) {
     return {
       key: "pricing",
-      greeting: "Happy to help you pick. How many people do you cook for, and how often?",
+      greeting: "Let's find the plan that actually fits you. How many people are eating, and how often do you want a basket?",
       starters: ["Which plan suits me?", "How much is delivery?", "Can I pay as I go?"],
-      nudge: { text: "Not sure which plan? Tell me how you cook and I'll work out what makes sense.", chips: ["Which plan suits me?", "How much is delivery?"] },
+      nudge: { text: "Weighing it up? Tell me how you eat and I'll do the maths for you.", chips: ["Which plan suits me?", "How much is delivery?"] },
     };
   }
   if (pathname.startsWith("/basket")) {
@@ -72,7 +72,7 @@ export function kachiContext(pathname: string, signedIn: boolean, pageTitle: str
   if (pathname.startsWith("/cart")) {
     return {
       key: "cart",
-      greeting: "Anything you'd like to check before you order? I can suggest what goes with what you've picked.",
+      greeting: "Nice picks. Want to know what goes with them, or check anything before you order?",
       starters: ["What can I cook with this?", "How much is delivery?"],
       nudge: null,
     };
@@ -80,8 +80,8 @@ export function kachiContext(pathname: string, signedIn: boolean, pageTitle: str
   return {
     key: "other",
     greeting: signedIn
-      ? "Hi, it's Kachi. What are you cooking this week?"
-      : "Hi, I'm Kachi. Ask me about recipes, produce, prices or delivery.",
+      ? "Hey, it's Kachi. What are we eating this week?"
+      : "Hey, I'm Kachi. Ask me anything about fruit, veg, recipes, prices or delivery.",
     starters: ["Plan my week", "What's in season?", "How does Basket work?"],
     nudge: null,
   };
