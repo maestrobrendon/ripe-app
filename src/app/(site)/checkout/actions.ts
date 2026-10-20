@@ -16,6 +16,7 @@ import { getDeliveryCycle } from "@/lib/delivery";
 import { ADDRESS_SELECT, addressLine, saveAddress, type AddressInput } from "@/lib/addresses";
 import { creditBalance } from "@/lib/credit";
 import { confirmRight } from "@/lib/basket-rules";
+import { addressFee, getLogistics } from "@/lib/delivery-logistics";
 import { sendOrderConfirmation } from "@/lib/customer-emails";
 import { notify } from "@/lib/notify";
 import { appOrigin } from "@/lib/site";
@@ -91,7 +92,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   const snapshot = lines.map((i) => ({ productId: i.productId, name: i.product.name, unit: i.product.unit, quantity: i.quantity, unitPrice: priceFor(i.product, member) }));
   const subtotal = snapshot.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
   const settings = await getSiteSettings();
-  const fee = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), address.zone.deliveryFee, settings.delivery.freeThreshold).fee;
+  // By distance when Logistics prices that way (the address's own pin, else its area), else the area's flat fee.
+  const areaFee = addressFee(address, address.zone, await getLogistics());
+  const fee = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), areaFee, settings.delivery.freeThreshold).fee;
   const creditApplied = input.useCredit ? Math.min(await creditBalance(user.id), subtotal + fee) : 0;
   const total = subtotal + fee - creditApplied;
 
@@ -113,6 +116,11 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
         customerPhone: phone,
         customerEmail: email || user.email || null,
         address: addressLine(address),
+        // Where the stop is, for route planning in Logistics.
+        lat: address.lat,
+        lng: address.lng,
+        geoSource: address.geoSource,
+        distanceKm: address.distanceKm,
         landmark: address.landmark,
         deliveryNote: address.instructions,
         altPhone: address.altPhone,

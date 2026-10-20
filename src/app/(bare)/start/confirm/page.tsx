@@ -9,6 +9,7 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { transferReady } from "@/lib/site-settings-schema";
 import { isBuyable } from "@/lib/product";
 import { DELIVERY_WINDOW, longDate, quantityLabel } from "@/lib/delivery-labels";
+import { getLogistics, zoneFee } from "@/lib/delivery-logistics";
 import { ConfirmFlow } from "./confirm-flow";
 
 // The same bare, step-by-step look as sign-up.
@@ -39,7 +40,8 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
   if (!lines.length) redirect("/basket");
 
   const subtotal = lines.reduce((s, i) => s + priceFor(i.product, member) * i.quantity, 0);
-  const fee = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zone.deliveryFee, settings.delivery.freeThreshold).fee;
+  // The area's fee (by distance from the depot when Logistics prices that way); the address comes after paying.
+  const fee = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zoneFee(zone, await getLogistics()), settings.delivery.freeThreshold).fee;
   const transfer = transferReady(settings.transfer) ? settings.transfer : null;
 
   return (

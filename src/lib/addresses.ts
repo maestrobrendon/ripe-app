@@ -41,6 +41,11 @@ export const ADDRESS_SELECT = {
   instructions: true,
   altPhone: true,
   isDefault: true,
+  // Where it is on the map (for distance pricing and route planning).
+  lat: true,
+  lng: true,
+  geoSource: true,
+  distanceKm: true,
   zone: { select: { id: true, slug: true, name: true, area: true, isServed: true, deliveryDays: true, cutoffHour: true, deliveryFee: true } },
 } as const;
 
@@ -65,7 +70,7 @@ export async function saveAddress(userId: string, input: AddressInput): Promise<
   const zone = await prisma.deliveryZone.findUnique({ where: { id: a.zoneId }, select: { id: true } });
   if (!zone) return { ok: false, error: "Pick your area from the list." };
 
-  const existing = input.id ? await prisma.address.findFirst({ where: { id: input.id, userId }, select: { id: true } }) : null;
+  const existing = input.id ? await prisma.address.findFirst({ where: { id: input.id, userId }, select: { id: true, line1: true, zoneId: true } }) : null;
   if (input.id && !existing) return { ok: false, error: "We couldn't find that address." };
   const count = await prisma.address.count({ where: { userId } });
   const makeDefault = Boolean(input.isDefault) || count === 0;
@@ -78,6 +83,8 @@ export async function saveAddress(userId: string, input: AddressInput): Promise<
     instructions: a.instructions || null,
     altPhone,
     zoneId: zone.id,
+    // A new street or area means the old map pin (and the price from it) no longer applies.
+    ...(existing && (existing.line1 !== a.line1 || existing.zoneId !== zone.id) ? { lat: null, lng: null, geoSource: null, distanceKm: null, geocodedAt: null } : {}),
   };
 
   const id = await prisma.$transaction(async (tx) => {

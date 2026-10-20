@@ -1,0 +1,24 @@
+-- AlterTable
+ALTER TABLE "Address" ADD COLUMN     "distanceKm" DOUBLE PRECISION,
+ADD COLUMN     "geoSource" TEXT,
+ADD COLUMN     "geocodedAt" TIMESTAMP(3),
+ADD COLUMN     "lat" DOUBLE PRECISION,
+ADD COLUMN     "lng" DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "DeliveryRun" ADD COLUMN     "distanceKm" DOUBLE PRECISION,
+ADD COLUMN     "durationMin" INTEGER,
+ADD COLUMN     "geometry" JSONB;
+
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN     "distanceKm" DOUBLE PRECISION,
+ADD COLUMN     "geoSource" TEXT,
+ADD COLUMN     "lat" DOUBLE PRECISION,
+ADD COLUMN     "lng" DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "Rider" ADD COLUMN     "capacity" INTEGER NOT NULL DEFAULT 20,
+ADD COLUMN     "costPerKm" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "partner" TEXT,
+ADD COLUMN     "vehicle" TEXT NOT NULL DEFAULT 'BIKE';
+

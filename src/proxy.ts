@@ -30,7 +30,8 @@ function adminCsp(nonce: string): string {
     `style-src 'self' 'nonce-${nonce}'`,
     // Inline style *attributes* only (layout values from React). Script injection stays blocked.
     "style-src-attr 'unsafe-inline'",
-    "img-src 'self' data: blob: https://res.cloudinary.com",
+    // Map tiles for Logistics come from OpenStreetMap.
+    "img-src 'self' data: blob: https://res.cloudinary.com https://tile.openstreetmap.org",
     "font-src 'self'",
     // Product photos upload straight to Cloudinary with a server-signed request.
     `connect-src 'self' https://api.cloudinary.com${dev ? " ws: wss:" : ""}`,

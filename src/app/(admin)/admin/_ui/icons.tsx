@@ -29,7 +29,8 @@ export type IconName =
   | "plus"
   | "arrow"
   | "chat"
-  | "leaf";
+  | "leaf"
+  | "route";
 
 const PATHS: Record<IconName, ReactNode> = {
   home: <path d="M3.5 9.2 10 4l6.5 5.2V16a1 1 0 0 1-1 1h-3.3v-4.5H7.8V17H4.5a1 1 0 0 1-1-1V9.2Z" />,
@@ -83,6 +84,13 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <circle cx="10" cy="8" r="4.5" />
       <path d="m7.3 11.6-1.1 5.2L10 15l3.8 1.8-1.1-5.2" />
+    </>
+  ),
+  route: (
+    <>
+      <circle cx="5" cy="15" r="2" />
+      <circle cx="15" cy="5" r="2" />
+      <path d="M7 15h5.5a2.5 2.5 0 0 0 0-5h-5a2.5 2.5 0 0 1 0-5H13" />
     </>
   ),
   map: (

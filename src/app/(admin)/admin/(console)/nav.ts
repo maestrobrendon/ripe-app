@@ -15,6 +15,7 @@ export const NAV: NavItem[] = [
   { href: "/orders", icon: "orders", label: "Orders", permission: "orders.view", group: "Run the day", ready: true },
   { href: "/fulfilment", icon: "box", label: "Fulfilment", permission: "fulfilment.view", group: "Run the day", ready: true },
   { href: "/delivery", icon: "truck", label: "Delivery", permission: "delivery.view", group: "Run the day", ready: true },
+  { href: "/logistics", icon: "route", label: "Logistics", permission: "delivery.view", group: "Run the day", ready: true },
   { href: "/inventory", icon: "stock", label: "Inventory", permission: "inventory.view", group: "Stock and menu", ready: true },
   { href: "/catalogue", icon: "tag", label: "Products", permission: "catalogue.view", group: "Stock and menu", ready: true },
   { href: "/recipes", icon: "book", label: "Recipes", permission: "recipes.view", group: "Stock and menu", ready: true },

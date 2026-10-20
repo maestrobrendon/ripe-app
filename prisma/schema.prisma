@@ -277,6 +277,14 @@ model Address {
   zoneId       String
   zone         DeliveryZone @relation(fields: [zoneId], references: [id])
   isDefault    Boolean      @default(false)
+  /// Where it is on the map, for routing and distance pricing. PIN: the customer dropped
+  /// it (exact, used for their price). GEOCODE: looked up from the text (routing only).
+  lat          Float?
+  lng          Float?
+  geoSource    String?
+  /// Road distance from the depot, worked out when the location was set.
+  distanceKm   Float?
+  geocodedAt   DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -735,6 +743,11 @@ model Order {
   deliveryRunId  String?
   deliveryRun    DeliveryRun?   @relation(fields: [deliveryRunId], references: [id], onDelete: SetNull)
   runSequence    Int?
+  // Where the stop is, copied from the address at checkout (or found later in Logistics).
+  lat            Float?
+  lng            Float?
+  geoSource      String?
+  distanceKm     Float?
   // Set when stock was taken for this order (at packing), so it's taken once
   // and given back once if the order is cancelled afterwards.
   stockTakenAt   DateTime?
@@ -867,6 +880,11 @@ model Rider {
   phone     String
   notes     String?
   active    Boolean       @default(true)
+  /// BIKE, CAR or VAN; how many stops fit; what they cost per km (a partner's agreed rate).
+  vehicle   String        @default("BIKE")
+  capacity  Int           @default(20)
+  costPerKm Int           @default(0)
+  partner   String?
   runs      DeliveryRun[]
   createdAt DateTime      @default(now())
 }
@@ -883,6 +901,10 @@ model DeliveryRun {
   rider     Rider?            @relation(fields: [riderId], references: [id], onDelete: SetNull)
   status    DeliveryRunStatus @default(PLANNING)
   notes     String?
+  /// The planned route, from Logistics: road distance, drive time, and the line to draw.
+  distanceKm  Float?
+  durationMin Int?
+  geometry    Json?
   orders    Order[]
   startedAt DateTime?
   doneAt    DateTime?

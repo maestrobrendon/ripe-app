@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getOrCreateActiveDelivery, readActiveDelivery, writeDeliveryLine, OrderError } from "@/lib/order-container";
 import { zoneForUser } from "@/lib/delivery";
+import { getLogistics, zoneFee } from "@/lib/delivery-logistics";
 import { basketLabels, orderPhrase } from "@/lib/delivery-labels";
 
 /*
@@ -114,13 +115,14 @@ function buildView(items: { quantity: number; product: import("@/generated/prism
 }
 
 async function whoFor(user: Awaited<ReturnType<typeof getCurrentUser>>): Promise<Who> {
-  const settings = await getSiteSettings();
+  const [settings, logistics] = await Promise.all([getSiteSettings(), getLogistics()]);
   const zone = user ? await zoneForUser(user.id) : null;
   return {
     freeDeliveryThreshold: settings.delivery.freeThreshold,
     isSubscriber: Boolean(user?.subscriptionTierId),
     freeDelivery: hasFreeDelivery(user?.subscriptionTier?.slug),
-    deliveryFee: zone?.deliveryFee ?? user?.deliveryZone?.deliveryFee ?? BASE_DELIVERY_FEE,
+    // The area's fee: by distance from the depot when Logistics prices that way.
+    deliveryFee: zone ? zoneFee(zone, logistics) : user?.deliveryZone ? zoneFee(user.deliveryZone, logistics) : BASE_DELIVERY_FEE,
   };
 }
 

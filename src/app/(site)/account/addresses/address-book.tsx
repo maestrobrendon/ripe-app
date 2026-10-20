@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/components/cart-provider";
 import { makeDefault, removeAddress, saveMyAddress, type AddressResult } from "./actions";
+import { PinSheet } from "./pin-sheet";
 
 type Address = {
   id: string;
@@ -21,9 +22,13 @@ type Address = {
   served: boolean;
   isDefault: boolean;
   line: string;
+  pin: { lat: number; lng: number } | null;
+  around: { lat: number; lng: number };
+  /** The delivery fee here, when fees follow distance. */
+  fee: number | null;
 };
 type Zone = { id: string; name: string; area: string; isServed: boolean };
-type Draft = Omit<Address, "id" | "zoneName" | "served" | "isDefault" | "line"> & { id: string | null; isDefault: boolean };
+type Draft = Omit<Address, "id" | "zoneName" | "served" | "isDefault" | "line" | "pin" | "around" | "fee"> & { id: string | null; isDefault: boolean };
 
 const LABELS = ["Home", "Work", "Family"];
 const field =
@@ -35,6 +40,7 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
   const [pending, start] = useTransition();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [removing, setRemoving] = useState<Address | null>(null);
+  const [pinning, setPinning] = useState<Address | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const blank = (): Draft => ({ id: null, label: "Home", line1: "", estate: "", landmark: "", instructions: "", altPhone: "", zoneId: zones.find((z) => z.isServed)?.id ?? zones[0]?.id ?? "", isDefault: addresses.length === 0 });
@@ -79,10 +85,21 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
                   {a.altPhone ? ` · also ${a.altPhone}` : ""}
                 </p>
                 {a.instructions && <p className="mt-1 text-[13px] text-muted">{a.instructions}</p>}
+                {a.served && (
+                  <p className={`mt-1.5 flex items-center gap-1 text-[13px] ${a.pin ? "text-[#0b5a35]" : "text-muted"}`}>
+                    <Icon name={a.pin ? "check" : "pin"} size={13} weight="bold" />
+                    {a.pin ? "On the map" : "Not on the map yet"}
+                    {a.fee != null && <span className="text-muted"> · delivery {a.pin ? "" : "about "}₦{a.fee.toLocaleString("en-NG")}</span>}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex border-t border-hairline text-[15px] font-semibold [&>*+*]:border-l [&>*+*]:border-hairline">
-              <button type="button" onClick={() => setDraft({ ...a, id: a.id })} className="h-12 flex-1 transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
+              <button type="button" onClick={() => setPinning(a)} className="flex h-12 flex-1 items-center justify-center gap-1.5 transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
+                <Icon name="pin" size={15} weight="bold" />
+                {a.pin ? "Move pin" : "Pin it"}
+              </button>
+              <button type="button" onClick={() => setDraft({ id: a.id, label: a.label, line1: a.line1, estate: a.estate, landmark: a.landmark, instructions: a.instructions, altPhone: a.altPhone, zoneId: a.zoneId, isDefault: a.isDefault })} className="h-12 flex-1 transition-colors hover:bg-black/[0.025] active:bg-black/[0.05]">
                 Edit
               </button>
               {!a.isDefault && (
@@ -168,6 +185,8 @@ export function AddressBook({ addresses, zones, next }: { addresses: Address[]; 
           </form>
         )}
       </BottomSheet>
+
+      <PinSheet address={pinning} onClose={() => setPinning(null)} />
 
       <BottomSheet open={Boolean(removing)} onClose={() => setRemoving(null)} title="Remove this address?">
         {removing && (

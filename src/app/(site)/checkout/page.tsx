@@ -17,6 +17,7 @@ import { confirmRight } from "@/lib/basket-rules";
 import { basketName } from "@/lib/delivery-labels";
 import { getSiteSettings } from "@/lib/site-settings";
 import { transferReady } from "@/lib/site-settings-schema";
+import { addressFee, getLogistics, zoneFee } from "@/lib/delivery-logistics";
 import { LinkButton } from "@/components/ui/button";
 import { ProductImage } from "@/components/product-image";
 import { KachiMark } from "@/components/kachi-mark";
@@ -131,6 +132,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const leftOut = items.filter((i) => !isBuyable(i.product)).map((i) => i.product.name);
 
   // The date depends on the area, so each saved address carries its own.
+  const logistics = await getLogistics();
   const savedAddresses = await Promise.all(
     addresses.map(async (a) => {
       const cycle = a.zone.isServed ? await getDeliveryCycle(basket, a.zone) : null;
@@ -140,7 +142,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         line: addressLine(a),
         landmark: a.landmark,
         isDefault: a.isDefault,
-        zone: { id: a.zone.id, name: a.zone.name, served: a.zone.isServed, fee: a.zone.deliveryFee },
+        zone: { id: a.zone.id, name: a.zone.name, served: a.zone.isServed, fee: addressFee(a, a.zone, logistics) },
         dateIso: cycle?.date?.toISOString() ?? null,
         cutoffIso: cycle?.cutoff?.toISOString() ?? null,
       };
@@ -148,7 +150,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   );
   const zoneOptions = zones.map((z) => {
     const date = nextDeliveryDate(dayIn(z, basket.deliveryDay), z.cutoffHour);
-    return { id: z.id, name: z.name, area: z.area, fee: z.deliveryFee, dateIso: date.toISOString(), cutoffIso: cutoffFor(date, z.cutoffHour).toISOString() };
+    return { id: z.id, name: z.name, area: z.area, fee: zoneFee(z, logistics), dateIso: date.toISOString(), cutoffIso: cutoffFor(date, z.cutoffHour).toISOString() };
   });
 
   const subtotal = lines.reduce((s, i) => s + priceFor(i.product, member) * i.quantity, 0);

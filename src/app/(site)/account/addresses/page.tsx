@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { listAddresses, addressLine } from "@/lib/addresses";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { formatPhone } from "@/lib/phone";
+import { addressFee, getLogistics } from "@/lib/delivery-logistics";
 import { AddressBook } from "./address-book";
 
 export const metadata = { title: "Addresses" };
@@ -15,10 +16,15 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
   if (!user) redirect("/login?next=/account/addresses");
   const { next } = await searchParams;
 
-  const [addresses, zones] = await Promise.all([
+  const [addresses, zones, logistics] = await Promise.all([
     listAddresses(user.id),
-    prisma.deliveryZone.findMany({ orderBy: [{ isServed: "desc" }, { sortOrder: "asc" }], select: { id: true, name: true, area: true, isServed: true } }),
+    prisma.deliveryZone.findMany({ orderBy: [{ isServed: "desc" }, { sortOrder: "asc" }], select: { id: true, name: true, area: true, isServed: true, centerLat: true, centerLng: true } }),
+    getLogistics(),
   ]);
+  const middleOf = (zoneId: string) => {
+    const z = zones.find((x) => x.id === zoneId);
+    return z?.centerLat != null && z.centerLng != null ? { lat: z.centerLat, lng: z.centerLng } : { lat: logistics.depot.lat, lng: logistics.depot.lng };
+  };
 
   return (
     <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
@@ -40,8 +46,12 @@ export default async function AddressesPage({ searchParams }: { searchParams: Pr
           served: a.zone.isServed,
           isDefault: a.isDefault,
           line: addressLine(a),
+          // On the map: their own pin, else where the map should open (their area's middle).
+          pin: a.geoSource === "PIN" && a.lat != null && a.lng != null ? { lat: a.lat, lng: a.lng } : null,
+          around: middleOf(a.zone.id),
+          fee: logistics.enabled && a.zone.isServed ? addressFee(a, a.zone, logistics) : null,
         }))}
-        zones={zones}
+        zones={zones.map((z) => ({ id: z.id, name: z.name, area: z.area, isServed: z.isServed }))}
         next={next ? safeNextPath(next, "/account") : null}
       />
     </div>
