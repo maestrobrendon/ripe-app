@@ -5,14 +5,12 @@
   Vercel's Git integration. Use it when you want to deploy directly.
 
   Usage, in this project's terminal:
-    $env:VERCEL_TOKEN = Read-Host "Vercel token" -AsSecureString | ConvertFrom-SecureString -AsPlainText   # PowerShell 7
-    # or, in Windows PowerShell 5.1:
-    $env:VERCEL_TOKEN = Read-Host "Vercel token"
     .\scripts\deploy-vercel.ps1            # refuses uncommitted changes
     .\scripts\deploy-vercel.ps1 -Force     # deploy the working folder as it is
 
-  The token lives only in this terminal session. Never commit it, and never put
-  it in .vercel/project.json or any file in this repository.
+  The token comes from VERCEL_TOKEN in this terminal, else from this project's
+  .env.local (git-ignored). Never commit it, and never put it in
+  .vercel/project.json or any tracked file.
 #>
 param([switch]$Force)
 
@@ -23,13 +21,23 @@ $project = "basket-app"
 $projectId = "prj_f0BZjhX3LRM7ulhYrtx1Jjx5zzSI"
 $scope = "maestrobrendons-projects"
 
-if (-not $env:VERCEL_TOKEN) {
-    throw "Load this project's Vercel token into this terminal first: `$env:VERCEL_TOKEN = Read-Host 'Vercel token'"
-}
-
 # Run from the project root, whatever folder the script was called from.
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
+
+# The token: this terminal's, else this project's .env.local (git-ignored), never another project's.
+if (-not $env:VERCEL_TOKEN) {
+    $envFile = Join-Path $root ".env.local"
+    if (Test-Path $envFile) {
+        $line = Get-Content $envFile | Where-Object { $_ -match '^\s*VERCEL_TOKEN\s*=' } | Select-Object -First 1
+        if ($line) {
+            $env:VERCEL_TOKEN = ($line -replace '^\s*VERCEL_TOKEN\s*=\s*', '').Trim().Trim('"').Trim("'")
+        }
+    }
+}
+if (-not $env:VERCEL_TOKEN) {
+    throw "No Vercel token. Add VERCEL_TOKEN to .env.local, or load it into this terminal: `$env:VERCEL_TOKEN = Read-Host 'Vercel token'"
+}
 
 # 1. The folder must be linked to Basket's Vercel project, not another account's.
 $link = Join-Path $root ".vercel/project.json"
