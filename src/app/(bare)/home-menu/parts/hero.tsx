@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRef, type CSSProperties } from "react";
 import { gsap, SplitText, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { MagneticLink, scrollToId } from "../../home-next/parts/runtime";
@@ -129,18 +128,7 @@ function Side({ side }: { side: "left" | "right" }) {
   );
 }
 
-/** "Lekki, VI and Ikoyi", or the first few and "more". */
-function listOf(items: string[], max = 5) {
-  if (items.length <= 1) return items[0] ?? "";
-  if (items.length > max) return `${items.slice(0, max).join(", ")} and more`;
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
-}
-
-const WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-export function Hero({ signedIn, onPickGoal, zones }: { signedIn: boolean; onPickGoal: (g: MenuGoal) => void; zones: { name: string; days: string[] }[] }) {
-  const days = WEEK.filter((d) => zones.some((z) => z.days.includes(d)));
-  const areas = zones.map((z) => z.name);
+export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: (g: MenuGoal) => void }) {
   const root = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -337,28 +325,6 @@ export function Hero({ signedIn, onPickGoal, zones }: { signedIn: boolean; onPic
               See this week&apos;s menu
             </MagneticLink>
           </div>
-
-          {/* What a first-time buyer in Lagos needs before scrolling: how they pay, when, and where. */}
-          <ul data-intro data-hero-fade className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[14px] text-[var(--hm-ink-2)]">
-            <li className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-[#0f7a48]" aria-hidden />
-              Pay when it arrives
-            </li>
-            {days.length > 0 && (
-              <li className="flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-[#0f7a48]" aria-hidden />
-                {listOf(days.map((d) => d.slice(0, 3)))}, 9am to 5pm
-              </li>
-            )}
-            {areas.length > 0 && (
-              <li className="flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-[#0f7a48]" aria-hidden />
-                <Link href="/delivery-areas" className="underline decoration-carbon/20 underline-offset-4 hover:decoration-carbon">
-                  {listOf(areas)}
-                </Link>
-              </li>
-            )}
-          </ul>
 
           <div data-intro data-hero-fade className="mt-12 w-full">
             <p className="text-[14px] font-medium text-[var(--hm-ink-3)]">What are you working toward?</p>
