@@ -2,83 +2,88 @@
 
 import Link from "next/link";
 import { useCart, type AddableProduct } from "@/components/cart-provider";
+import { ProductImage } from "@/components/product-image";
+import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { flyToCart } from "@/components/ui/fly-to-cart";
 import { formatNaira } from "@/lib/format";
+import type { ProductCategory } from "@/generated/prisma/enums";
 
 export type ProductCardData = AddableProduct & {
   inSeason: boolean;
   description: string | null;
+  category: ProductCategory;
+  tags: string[];
 };
 
+/** "per pawpaw", "per 250g", "each": the unit, said once under the price. */
+function unitLine(unit: string) {
+  const u = unit.replace(/^per\s+/i, "").trim();
+  return !u || /^(piece|each)$/i.test(u) ? "each" : `per ${u}`;
+}
+
+/**
+ * A product in a grid or a rail. The photo leads, on a quiet tile; the name
+ * gets two lines whatever its length, the price one, its unit the line under,
+ * so every card in a row ends at the same height with Add in the same place.
+ * The stepper shows what's really in the order, so Add never overwrites a
+ * quantity already there. Sold out and Limited sit on the photo.
+ */
 export function ProductCard({ product }: { product: ProductCardData }) {
   const cart = useCart();
-  const line = cart.items.find((i) => i.productId === product.id);
-  const quantity = line?.quantity ?? 0;
-  const isLoading = cart.loadingProductId === product.id;
+  const quantity = cart.quantityOf(product.id);
   const price = cart.isSubscriber ? product.memberPrice : product.standardPrice;
   const href = `/products/${product.slug}`;
-
-  const change = (next: number) => cart.setQuantity(product, next);
+  const signedIn = cart.container === "delivery";
+  const memberLine = !cart.isSubscriber && product.memberPrice < product.standardPrice ? `Members ${formatNaira(product.memberPrice)}` : null;
 
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-surface p-4 transition hover:shadow-sm">
-      <Link href={href} className="mb-3 flex h-32 items-center justify-center rounded-xl bg-ripe-green-light text-6xl">
-        {product.imageEmoji}
-      </Link>
-
-      <div className="mb-1 flex items-start justify-between gap-2">
-        <h3 className="font-medium leading-snug">
-          <Link href={href} className="hover:underline">{product.name}</Link>
-        </h3>
-        {!product.inSeason && (
-          <span className="shrink-0 rounded-full bg-ripe-terracotta-light px-2 py-0.5 text-[11px] font-medium text-ripe-terracotta-dark">
-            Off-season
+    <article className="group/card flex h-full flex-col">
+      <Link href={href} className="relative block overflow-hidden rounded-2xl" tabIndex={-1} aria-hidden>
+        <ProductImage
+          publicId={product.cloudinaryPublicId}
+          alt=""
+          emoji={product.imageEmoji}
+          flavour="bg-soft-mist"
+          rounded="rounded-2xl"
+          className={`aspect-square w-full transition-transform duration-300 ease-out group-hover/card:scale-[1.03] ${product.soldOut ? "opacity-55" : ""}`}
+          emojiClassName="text-5xl sm:text-6xl"
+          sizes="(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw"
+        />
+        {(product.soldOut || !product.inSeason) && (
+          <span className="absolute top-2 left-2 rounded-full bg-paper-white/90 px-2 py-0.5 text-[11px] font-semibold text-carbon backdrop-blur-sm">
+            {product.soldOut ? "Sold out" : "Limited"}
           </span>
         )}
-      </div>
-      <p className="mb-2 text-xs text-muted">{product.unit}</p>
+      </Link>
 
-      <div className="mb-3 flex items-baseline gap-2">
-        <span className="text-lg font-semibold">{formatNaira(price)}</span>
-        {cart.isSubscriber ? (
-          <span className="text-xs text-muted line-through">{formatNaira(product.standardPrice)}</span>
+      <h3 className="mt-2.5 line-clamp-2 min-h-[2.6em] text-[15px] leading-[1.3] font-medium tracking-[-0.01em]">
+        <Link href={href} className="hover:underline underline-offset-2">
+          {product.name}
+        </Link>
+      </h3>
+
+      <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap">
+        <span className="text-[17px] font-semibold tracking-[-0.01em]">{formatNaira(price)}</span>
+        <span className="truncate text-[13px] text-muted">{unitLine(product.unit)}</span>
+      </p>
+      <p className="min-h-[1.25rem] text-[12px] text-muted">{memberLine}</p>
+
+      <div className="mt-auto pt-2.5">
+        {product.soldOut && quantity === 0 ? (
+          <p className="flex h-9 items-center text-[13px] text-muted">Back soon</p>
         ) : (
-          product.memberPrice < product.standardPrice && (
-            <span className="text-xs text-muted">members {formatNaira(product.memberPrice)}</span>
-          )
+          <QuantityStepper
+            quantity={quantity}
+            min={product.minOrderQty}
+            step={product.stepQty}
+            label={product.name}
+            loading={cart.loadingProductId === product.id}
+            suffix={signedIn ? "in order" : "in cart"}
+            onAddFrom={(el) => flyToCart(el, product.imageEmoji)}
+            onChange={(next) => cart.setQuantity(product, next)}
+          />
         )}
       </div>
-
-      <div className="mt-auto">
-        {quantity === 0 ? (
-          <button
-            disabled={isLoading}
-            onClick={() => change(product.minOrderQty)}
-            className="w-full rounded-full bg-ripe-green px-4 py-2 text-sm font-medium text-white hover:bg-ripe-green-dark disabled:opacity-60"
-          >
-            + Add
-          </button>
-        ) : (
-          <div className="flex items-center justify-between rounded-full border border-ripe-green px-2 py-1">
-            <button
-              disabled={isLoading}
-              onClick={() => change(quantity - product.stepQty)}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-ripe-green"
-              aria-label={`Reduce ${product.name}`}
-            >
-              −
-            </button>
-            <span className="text-sm font-medium">{quantity} in cart</span>
-            <button
-              disabled={isLoading}
-              onClick={() => change(quantity + product.stepQty)}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-ripe-green"
-              aria-label={`Add ${product.name}`}
-            >
-              +
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </article>
   );
 }

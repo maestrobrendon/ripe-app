@@ -1,3 +1,4 @@
+import "server-only";
 import { headers } from "next/headers";
 
 /**
@@ -31,10 +32,18 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
   return { ok: true, retryAfterSeconds: 0 };
 }
 
-/** Client IP from the proxy headers, or a stable fallback. */
+/**
+ * The client's IP. On Vercel, from the headers Vercel itself sets
+ * (x-vercel-forwarded-for, then x-real-ip), which a client can't forge: the
+ * first entry of x-forwarded-for can be whatever the client sent, which would
+ * let anyone pick a fresh IP per request and walk past every rate limit.
+ * Off Vercel (local dev), x-forwarded-for is the best there is.
+ */
 export async function clientIp(): Promise<string> {
   const store = await headers();
+  const vercel = store.get("x-vercel-forwarded-for") ?? store.get("x-real-ip");
+  if (process.env.VERCEL) return vercel?.split(",")[0]!.trim() || "unknown";
   const forwarded = store.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0]!.trim();
-  return store.get("x-real-ip")?.trim() || "unknown";
+  return vercel?.trim() || "unknown";
 }

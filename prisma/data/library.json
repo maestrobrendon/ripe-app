@@ -1,0 +1,5517 @@
+{
+ "products": [
+  {
+   "sheetId": "P009",
+   "slug": "lemon",
+   "name": "Lemon",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 300,
+   "imageEmoji": "🍋",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 2-3 weeks.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P011",
+   "slug": "grapefruit",
+   "name": "Grapefruit",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 0,
+   "imageEmoji": "🍊",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Room temp / fridge. Keeps 2-3 weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P014",
+   "slug": "soursop",
+   "name": "Soursop",
+   "category": "SEASONAL",
+   "unit": "per piece / 1kg",
+   "price": 5500,
+   "imageEmoji": "🍈",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Room temp until soft; fridge after. Keeps 2-3 days ripe.",
+   "stockIt": "Seasonal"
+  },
+  {
+   "sheetId": "P018",
+   "slug": "cashew-apple",
+   "name": "Cashew Apple",
+   "category": "FRUIT",
+   "unit": "per pack",
+   "price": 0,
+   "imageEmoji": "🍎",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": "Also called Kaju (Yor), Kanju (Hau).",
+   "storageTips": "Fridge; bruises fast. Keeps 1-2 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P020",
+   "slug": "hog-plum",
+   "name": "Hog Plum (Iyeye)",
+   "category": "FRUIT",
+   "unit": "per pack",
+   "price": 0,
+   "imageEmoji": "🟡",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": "Also called Iyeye (Yor).",
+   "storageTips": "Fridge. Keeps 1-2 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P021",
+   "slug": "pepper-fruit",
+   "name": "Pepper Fruit (Mmimi)",
+   "category": "FRUIT",
+   "unit": "per cup",
+   "price": 0,
+   "imageEmoji": "🫐",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": "Also called Mmimi (Igbo).",
+   "storageTips": "Room temp. Keeps 3-5 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P022",
+   "slug": "monkey-kola",
+   "name": "Monkey Kola",
+   "category": "FRUIT",
+   "unit": "per pack",
+   "price": 0,
+   "imageEmoji": "🟠",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": "Also called Ochicha (Igbo), Obi edun (Yor).",
+   "storageTips": "Room temp. Keeps 3-5 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P023",
+   "slug": "african-pear",
+   "name": "African Pear (Ube)",
+   "category": "SEASONAL",
+   "unit": "per pack of 10",
+   "price": 0,
+   "imageEmoji": "🫒",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": "Also called Ube (Igbo).",
+   "storageTips": "Room temp. Keeps 2-3 days.",
+   "stockIt": "Seasonal"
+  },
+  {
+   "sheetId": "P024",
+   "slug": "tiger-nut",
+   "name": "Tiger Nuts (Aya)",
+   "category": "FRUIT",
+   "unit": "per cup / 250g",
+   "price": 0,
+   "imageEmoji": "🥜",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": "Also called Ofio (Yor), Aki Hausa (Igbo), Aya (Hau).",
+   "storageTips": "Dry, airtight. Keeps Weeks dried.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P025",
+   "slug": "sugarcane",
+   "name": "Sugarcane",
+   "category": "SEASONAL",
+   "unit": "per stick / pre-cut pack",
+   "price": 0,
+   "imageEmoji": "🎋",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Ireke (Yor), Okpete (Igbo), Rake (Hau).",
+   "storageTips": "Room temp; cut pieces in fridge. Keeps 3-5 days.",
+   "stockIt": "Seasonal"
+  },
+  {
+   "sheetId": "P026",
+   "slug": "custard-apple",
+   "name": "Custard Apple (Sweetsop)",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 0,
+   "imageEmoji": "🍏",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": null,
+   "storageTips": "Room temp until soft. Keeps 1-2 days ripe.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P027",
+   "slug": "jackfruit",
+   "name": "Jackfruit Pods",
+   "category": "FRUIT",
+   "unit": "per pre-cut pods",
+   "price": 0,
+   "imageEmoji": "🍈",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": null,
+   "storageTips": "Fridge once cut. Keeps 2-3 days cut.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P028",
+   "slug": "june-plum",
+   "name": "June Plum",
+   "category": "FRUIT",
+   "unit": "per pack",
+   "price": 0,
+   "imageEmoji": "🟢",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": null,
+   "storageTips": "Room temp. Keeps 3-5 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P029",
+   "slug": "sweet-melon",
+   "name": "Sweet Melon",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 15950,
+   "imageEmoji": "🍈",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Room temp to ripen; fridge cut. Keeps 3-5 days ripe.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P034",
+   "slug": "strawberries",
+   "name": "Strawberries",
+   "category": "FRUIT",
+   "unit": "per 250g punnet",
+   "price": 5000,
+   "imageEmoji": "🍓",
+   "source": "Trusted local farmers",
+   "inSeason": false,
+   "description": null,
+   "storageTips": "Fridge, unwashed. Keeps 2-4 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P036",
+   "slug": "kiwi",
+   "name": "Kiwi",
+   "category": "FRUIT",
+   "unit": "per 3-pack",
+   "price": 20000,
+   "imageEmoji": "🥝",
+   "source": "Imported",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 1-2 weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P037",
+   "slug": "pomegranate",
+   "name": "Pomegranate",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 18000,
+   "imageEmoji": "🔴",
+   "source": "Imported",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 2-3 weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P038",
+   "slug": "dragon-fruit",
+   "name": "Dragon Fruit",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 40000,
+   "imageEmoji": "🐉",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 5-7 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P039",
+   "slug": "star-fruit",
+   "name": "Star Fruit",
+   "category": "FRUIT",
+   "unit": "per piece",
+   "price": 0,
+   "imageEmoji": "⭐",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Room temp / fridge. Keeps 3-5 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P040",
+   "slug": "groundnut",
+   "name": "Groundnuts",
+   "category": "FRUIT",
+   "unit": "per cup / 250g",
+   "price": 0,
+   "imageEmoji": "🥜",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Epa (Yor), Gyada (Hau).",
+   "storageTips": "Airtight. Keeps Weeks roasted.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P041",
+   "slug": "african-walnut",
+   "name": "African Walnut (Asala)",
+   "category": "SEASONAL",
+   "unit": "per pack",
+   "price": 0,
+   "imageEmoji": "🌰",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Asala (Yor), Ukpa (Igbo).",
+   "storageTips": "Cool, dry. Keeps 1 week cooked.",
+   "stockIt": "Seasonal"
+  },
+  {
+   "sheetId": "P043",
+   "slug": "cherry-tomato",
+   "name": "Cherry Tomatoes",
+   "category": "VEGETABLE",
+   "unit": "per 250g",
+   "price": 9000,
+   "imageEmoji": "🍅",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Room temp. Keeps 5-7 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P045",
+   "slug": "green-bell-pepper",
+   "name": "Green Bell Pepper",
+   "category": "VEGETABLE",
+   "unit": "per piece / 6-pack",
+   "price": 9500,
+   "imageEmoji": "🫑",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 1 week.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P047",
+   "slug": "long-red-chilli",
+   "name": "Long Red Chilli",
+   "category": "VEGETABLE",
+   "unit": "per cup",
+   "price": 0,
+   "imageEmoji": "🌶️",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Shombo (Yor).",
+   "storageTips": "Fridge. Keeps 1-2 weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P049",
+   "slug": "spring-onion",
+   "name": "Spring Onion",
+   "category": "VEGETABLE",
+   "unit": "per bunch",
+   "price": 0,
+   "imageEmoji": "🧅",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Alubosa elewe (Yor).",
+   "storageTips": "Fridge, wrapped. Keeps 5-7 days.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P050",
+   "slug": "shallots",
+   "name": "Shallots",
+   "category": "VEGETABLE",
+   "unit": "per 250g",
+   "price": 6500,
+   "imageEmoji": "🧅",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Cool, dry. Keeps 3-4 weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P051",
+   "slug": "garlic",
+   "name": "Garlic",
+   "category": "VEGETABLE",
+   "unit": "per bulb / 5 bulbs",
+   "price": 10000,
+   "imageEmoji": "🧄",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Ayu (Yor), Tafarnuwa (Hau).",
+   "storageTips": "Cool, dry. Keeps 1-2 months.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P053",
+   "slug": "turmeric",
+   "name": "Fresh Turmeric",
+   "category": "VEGETABLE",
+   "unit": "per 100g",
+   "price": 0,
+   "imageEmoji": "🫚",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Ata ile pupa (Yor).",
+   "storageTips": "Fridge. Keeps 2-3 weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P057",
+   "slug": "purple-cabbage",
+   "name": "Purple Cabbage",
+   "category": "VEGETABLE",
+   "unit": "per head",
+   "price": 6000,
+   "imageEmoji": "🥬",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 2 weeks.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P059",
+   "slug": "green-beans",
+   "name": "Green Beans",
+   "category": "VEGETABLE",
+   "unit": "per 250g",
+   "price": 2500,
+   "imageEmoji": "🫛",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 5-7 days.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P062",
+   "slug": "okra",
+   "name": "Okra",
+   "category": "VEGETABLE",
+   "unit": "per 250g",
+   "price": 0,
+   "imageEmoji": "🫛",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Ila (Yor), Okwuru (Igbo), Kubewa (Hau).",
+   "storageTips": "Fridge, dry. Keeps 3-4 days.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P063",
+   "slug": "broccoli",
+   "name": "Broccoli",
+   "category": "VEGETABLE",
+   "unit": "per head",
+   "price": 10000,
+   "imageEmoji": "🥦",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 5-7 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P064",
+   "slug": "cauliflower",
+   "name": "Cauliflower",
+   "category": "VEGETABLE",
+   "unit": "per head",
+   "price": 5500,
+   "imageEmoji": "🥦",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 1 week.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P066",
+   "slug": "zucchini",
+   "name": "Zucchini (Courgette)",
+   "category": "VEGETABLE",
+   "unit": "per piece",
+   "price": 0,
+   "imageEmoji": "🥒",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 5-7 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P068",
+   "slug": "pumpkin",
+   "name": "Pumpkin",
+   "category": "VEGETABLE",
+   "unit": "per wedge / 1kg",
+   "price": 0,
+   "imageEmoji": "🎃",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Elegede (Yor), Kabewa (Hau).",
+   "storageTips": "Whole at room temp. Keeps Weeks whole, 5 days cut.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P070",
+   "slug": "irish-potato",
+   "name": "Irish Potato",
+   "category": "VEGETABLE",
+   "unit": "per 1kg",
+   "price": 3650,
+   "imageEmoji": "🥔",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Dankalin turawa (Hau).",
+   "storageTips": "Cool, dark. Keeps 3-4 weeks.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P071",
+   "slug": "yam",
+   "name": "Yam",
+   "category": "VEGETABLE",
+   "unit": "per tuber",
+   "price": 0,
+   "imageEmoji": "🍠",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Isu (Yor), Ji (Igbo), Doya (Hau).",
+   "storageTips": "Cool, dry. Keeps Weeks.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P074",
+   "slug": "waterleaf",
+   "name": "Waterleaf (Gbure)",
+   "category": "VEGETABLE",
+   "unit": "per bunch",
+   "price": 0,
+   "imageEmoji": "🌿",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Gbure (Yor), Mgbolodi (Igbo).",
+   "storageTips": "Fridge. Keeps 2-3 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P075",
+   "slug": "baby-spinach",
+   "name": "Baby Spinach",
+   "category": "VEGETABLE",
+   "unit": "per 125g",
+   "price": 4950,
+   "imageEmoji": "🥬",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 4-5 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P076",
+   "slug": "kale",
+   "name": "Kale",
+   "category": "VEGETABLE",
+   "unit": "per 125g",
+   "price": 4940,
+   "imageEmoji": "🥬",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Fridge. Keeps 5-7 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P078",
+   "slug": "bitter-leaf",
+   "name": "Bitter Leaf (Onugbu)",
+   "category": "VEGETABLE",
+   "unit": "per bunch (washed)",
+   "price": 0,
+   "imageEmoji": "🌿",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Ewuro (Yor), Onugbu (Igbo), Shiwaka (Hau).",
+   "storageTips": "Fridge. Keeps 3-4 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P080",
+   "slug": "coriander",
+   "name": "Coriander",
+   "category": "VEGETABLE",
+   "unit": "per bunch / 100g",
+   "price": 3550,
+   "imageEmoji": "🌿",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Stems in water, fridge. Keeps 4-5 days.",
+   "stockIt": "Y"
+  },
+  {
+   "sheetId": "P082",
+   "slug": "basil",
+   "name": "Basil",
+   "category": "VEGETABLE",
+   "unit": "per 150g",
+   "price": 3550,
+   "imageEmoji": "🌿",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": null,
+   "storageTips": "Room temp, stems in water. Keeps 3-4 days.",
+   "stockIt": "N"
+  },
+  {
+   "sheetId": "P083",
+   "slug": "lemongrass",
+   "name": "Lemongrass",
+   "category": "VEGETABLE",
+   "unit": "per bunch",
+   "price": 0,
+   "imageEmoji": "🌾",
+   "source": "Trusted local farmers",
+   "inSeason": true,
+   "description": "Also called Fever grass.",
+   "storageTips": "Fridge. Keeps 1-2 weeks.",
+   "stockIt": "Y"
+  }
+ ],
+ "recipes": [
+  {
+   "sheetId": "R015",
+   "slug": "mango-and-passion-fruit-overnight-oats",
+   "title": "Mango & Passion Fruit Overnight Oats",
+   "summary": "Mango and passion fruit on top, tiger nut milk as an option.",
+   "goal": "training",
+   "minutes": 10,
+   "serves": 2,
+   "basketSlugs": [
+    "mango",
+    "passion-fruit"
+   ],
+   "elsewhere": [
+    "Rolled oats",
+    "Milk or tiger nut milk",
+    "Plain yoghurt",
+    "Chia seeds",
+    "Honey"
+   ],
+   "amounts": {
+    "Rolled oats": [
+     1.0,
+     "cup"
+    ],
+    "Milk or tiger nut milk": [
+     1.0,
+     "cup"
+    ],
+    "Plain yoghurt": [
+     0.5,
+     "cup"
+    ],
+    "Chia seeds": [
+     1.0,
+     "tbsp"
+    ],
+    "mango": [
+     1.0,
+     ""
+    ],
+    "passion-fruit": [
+     2.0,
+     ""
+    ],
+    "Honey": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Stir oats, milk, yoghurt and chia together in two jars.",
+    "Cover and refrigerate overnight.",
+    "In the morning, top with diced mango and passion fruit pulp.",
+    "Drizzle with honey if you like."
+   ],
+   "tip": "Make 3 days at once for a week of grab-and-go breakfasts.",
+   "sortOrder": 1000
+  },
+  {
+   "sheetId": "R016",
+   "slug": "pawpaw-boats-with-yoghurt-and-groundnut-crunch",
+   "title": "Pawpaw Boats with Yoghurt & Groundnut Crunch",
+   "summary": "Crushed groundnuts and pineapple replace imported berries.",
+   "goal": "lighter",
+   "minutes": 5,
+   "serves": 2,
+   "basketSlugs": [
+    "pawpaw",
+    "pineapple",
+    "lime",
+    "groundnut"
+   ],
+   "elsewhere": [
+    "Greek yoghurt",
+    "Granola",
+    "Honey"
+   ],
+   "amounts": {
+    "pawpaw": [
+     1.0,
+     ""
+    ],
+    "Greek yoghurt": [
+     1.0,
+     "cup"
+    ],
+    "Granola": [
+     0.5,
+     "cup"
+    ],
+    "pineapple": [
+     0.5,
+     "cup"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "groundnut": [
+     1.0,
+     "tbsp"
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Halve the pawpaw lengthways and scoop out the seeds.",
+    "Fill each half with yoghurt.",
+    "Top with granola, pineapple and crushed groundnuts.",
+    "Finish with lime zest and a drizzle of honey."
+   ],
+   "tip": null,
+   "sortOrder": 1010
+  },
+  {
+   "sheetId": "R017",
+   "slug": "banana-oat-pancakes-with-pineapple-compote",
+   "title": "Banana Oat Pancakes with Pineapple Compote",
+   "summary": "Warm pineapple compote stands in for maple syrup and berries.",
+   "goal": "training",
+   "minutes": 25,
+   "serves": 2,
+   "basketSlugs": [
+    "banana",
+    "pineapple",
+    "lime"
+   ],
+   "elsewhere": [
+    "Eggs",
+    "Rolled oats",
+    "Ground cinnamon"
+   ],
+   "amounts": {
+    "banana": [
+     2.0,
+     ""
+    ],
+    "Eggs": [
+     2.0,
+     ""
+    ],
+    "Rolled oats": [
+     1.0,
+     "cup"
+    ],
+    "Ground cinnamon": [
+     0.5,
+     "tsp"
+    ],
+    "pineapple": [
+     1.0,
+     "cup"
+    ],
+    "lime": [
+     0.5,
+     ""
+    ]
+   },
+   "steps": [
+    "Blend bananas, eggs, oats and cinnamon into a thick batter.",
+    "Cook small pancakes in a lightly oiled pan, 2 minutes a side.",
+    "Simmer pineapple with lime juice for 5 minutes until jammy.",
+    "Stack the pancakes and spoon the compote over."
+   ],
+   "tip": null,
+   "sortOrder": 1020
+  },
+  {
+   "sheetId": "R018",
+   "slug": "shakshuka-with-tatashe-and-efo",
+   "title": "Shakshuka with Tatashe & Efo",
+   "summary": "The sauce is basically a lighter obe ata. Greens folded in at the end.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "tomato",
+    "bell-pepper",
+    "chilli",
+    "onion",
+    "garlic",
+    "spinach"
+   ],
+   "elsewhere": [
+    "Eggs",
+    "Cumin or curry powder",
+    "Bread"
+   ],
+   "amounts": {
+    "tomato": [
+     4.0,
+     ""
+    ],
+    "bell-pepper": [
+     2.0,
+     ""
+    ],
+    "chilli": [
+     0.5,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "spinach": [
+     1.0,
+     "cup"
+    ],
+    "Eggs": [
+     4.0,
+     ""
+    ],
+    "Cumin or curry powder": [
+     1.0,
+     "tsp"
+    ],
+    "Bread": [
+     4.0,
+     "slice"
+    ]
+   },
+   "steps": [
+    "Soften chopped onion and garlic in oil.",
+    "Add chopped tomatoes, tatashe, ata rodo and cumin. Simmer 10 minutes until thick.",
+    "Stir in the efo tete, then make four wells and crack in the eggs.",
+    "Cover and cook 5 to 6 minutes until the whites set. Serve with bread."
+   ],
+   "tip": null,
+   "sortOrder": 1030
+  },
+  {
+   "sheetId": "R019",
+   "slug": "avocado-toast-with-ata-rodo-salsa",
+   "title": "Avocado Toast with Ata Rodo Salsa",
+   "summary": "A fresh tomato, onion and ata rodo salsa on top instead of chilli flakes.",
+   "goal": "busy",
+   "minutes": 13,
+   "serves": 2,
+   "basketSlugs": [
+    "avocado",
+    "tomato",
+    "onion",
+    "chilli",
+    "lime"
+   ],
+   "elsewhere": [
+    "Wholewheat bread",
+    "Eggs"
+   ],
+   "amounts": {
+    "avocado": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Wholewheat bread": [
+     4.0,
+     "slice"
+    ],
+    "Eggs": [
+     2.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Toast the bread.",
+    "Mash avocado with half the lime juice and a pinch of salt.",
+    "Dice tomato, onion and ata rodo and toss with the rest of the lime.",
+    "Spread avocado, spoon over salsa, top with sliced boiled egg if using."
+   ],
+   "tip": null,
+   "sortOrder": 1040
+  },
+  {
+   "sheetId": "R020",
+   "slug": "sweet-potato-breakfast-hash",
+   "title": "Sweet Potato Breakfast Hash",
+   "summary": "Sweet potato is cheaper locally than Irish potato and keeps you full longer.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "sweet-potato",
+    "onion",
+    "bell-pepper",
+    "spinach",
+    "spring-onion"
+   ],
+   "elsewhere": [
+    "Eggs",
+    "Paprika"
+   ],
+   "amounts": {
+    "sweet-potato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "spinach": [
+     1.0,
+     "cup"
+    ],
+    "spring-onion": [
+     1.0,
+     "stalk"
+    ],
+    "Eggs": [
+     4.0,
+     ""
+    ],
+    "Paprika": [
+     0.5,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Dice sweet potatoes small and fry in oil for 10 minutes until golden.",
+    "Add onion and tatashe, cook 4 minutes. Season with paprika and salt.",
+    "Stir in efo tete until wilted.",
+    "Make wells, crack in eggs, cover until set. Finish with spring onion."
+   ],
+   "tip": null,
+   "sortOrder": 1050
+  },
+  {
+   "sheetId": "R021",
+   "slug": "plantain-and-efo-frittata",
+   "title": "Plantain & Efo Frittata",
+   "summary": "Ripe plantain takes the place of potato. Dodo meets tortilla.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 3,
+   "basketSlugs": [
+    "plantain",
+    "spinach",
+    "onion",
+    "bell-pepper",
+    "chilli"
+   ],
+   "elsewhere": [
+    "Eggs"
+   ],
+   "amounts": {
+    "plantain": [
+     1.0,
+     ""
+    ],
+    "Eggs": [
+     6.0,
+     ""
+    ],
+    "spinach": [
+     1.0,
+     "cup"
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ]
+   },
+   "steps": [
+    "Slice the plantain and fry until golden on both sides.",
+    "Add onion, tatashe and ata rodo, cook 3 minutes, then the efo.",
+    "Pour over beaten, seasoned eggs.",
+    "Cook on low with a lid until set, about 8 minutes. Slice like a cake."
+   ],
+   "tip": "Cold slices travel well in a lunch box.",
+   "sortOrder": 1060
+  },
+  {
+   "sheetId": "R022",
+   "slug": "tropical-parfait-with-tiger-nut-crumble",
+   "title": "Tropical Parfait with Tiger Nut Crumble",
+   "summary": "Tiger nut and coconut crumble replaces store-bought granola.",
+   "goal": "lighter",
+   "minutes": 10,
+   "serves": 2,
+   "basketSlugs": [
+    "pineapple",
+    "banana",
+    "mango",
+    "tiger-nut",
+    "coconut"
+   ],
+   "elsewhere": [
+    "Greek yoghurt",
+    "Honey"
+   ],
+   "amounts": {
+    "Greek yoghurt": [
+     1.5,
+     "cup"
+    ],
+    "pineapple": [
+     1.0,
+     "cup"
+    ],
+    "banana": [
+     1.0,
+     ""
+    ],
+    "mango": [
+     0.5,
+     ""
+    ],
+    "tiger-nut": [
+     3.0,
+     "tbsp"
+    ],
+    "coconut": [
+     2.0,
+     "tbsp"
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Chop tiger nuts roughly and toast with grated coconut in a dry pan for 3 minutes.",
+    "Dice pineapple, banana and mango.",
+    "Layer yoghurt, fruit and crumble in two glasses.",
+    "Finish with honey."
+   ],
+   "tip": "Off season, pawpaw replaces mango.",
+   "sortOrder": 1070
+  },
+  {
+   "sheetId": "R023",
+   "slug": "coconut-chia-pudding-with-mango",
+   "title": "Coconut Chia Pudding with Mango",
+   "summary": "Fresh coconut milk and dates instead of canned milk and maple syrup.",
+   "goal": "fruit",
+   "minutes": 10,
+   "serves": 2,
+   "basketSlugs": [
+    "coconut",
+    "dates",
+    "mango",
+    "lime"
+   ],
+   "elsewhere": [
+    "Chia seeds"
+   ],
+   "amounts": {
+    "Chia seeds": [
+     4.0,
+     "tbsp"
+    ],
+    "coconut": [
+     0.5,
+     ""
+    ],
+    "dates": [
+     2.0,
+     ""
+    ],
+    "mango": [
+     1.0,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Blend coconut flesh with warm water and dates, then strain to get sweet coconut milk.",
+    "Stir chia seeds into the milk and leave 10 minutes, then stir again.",
+    "Refrigerate at least 4 hours.",
+    "Top with diced mango and lime zest."
+   ],
+   "tip": null,
+   "sortOrder": 1080
+  },
+  {
+   "sheetId": "R024",
+   "slug": "chilli-lime-fruit-cup-yaji-edition",
+   "title": "Chilli-Lime Fruit Cup (Yaji Edition)",
+   "summary": "Yaji replaces Tajin. Same salty, spicy, sour hit on cold fruit.",
+   "goal": "fruit",
+   "minutes": 10,
+   "serves": 2,
+   "basketSlugs": [
+    "watermelon",
+    "pineapple",
+    "pawpaw",
+    "cucumber",
+    "mango",
+    "lime"
+   ],
+   "elsewhere": [
+    "Yaji (suya spice)"
+   ],
+   "amounts": {
+    "watermelon": [
+     2.0,
+     "cup"
+    ],
+    "pineapple": [
+     1.0,
+     "cup"
+    ],
+    "pawpaw": [
+     1.0,
+     "cup"
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "mango": [
+     0.5,
+     ""
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "Yaji (suya spice)": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cut all the fruit and cucumber into spears or chunks.",
+    "Pile into cups.",
+    "Squeeze lime over generously.",
+    "Dust with yaji and a pinch of salt just before eating."
+   ],
+   "tip": "A strong candidate for a ready-to-eat snack box.",
+   "sortOrder": 1090
+  },
+  {
+   "sheetId": "R025",
+   "slug": "garden-egg-chopped-salad",
+   "title": "Garden Egg Chopped Salad",
+   "summary": "Raw garden egg adds a crunchy, slightly bitter bite.",
+   "goal": "lighter",
+   "minutes": 15,
+   "serves": 2,
+   "basketSlugs": [
+    "garden-egg",
+    "tomato",
+    "cucumber",
+    "onion",
+    "parsley",
+    "lemon"
+   ],
+   "elsewhere": [],
+   "amounts": {
+    "garden-egg": [
+     4.0,
+     ""
+    ],
+    "tomato": [
+     3.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "parsley": [
+     0.5,
+     "bunch"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Dice garden eggs, tomatoes, cucumber and onion into small even pieces.",
+    "Chop the parsley.",
+    "Dress with lemon juice, olive oil and salt.",
+    "Rest 5 minutes before serving."
+   ],
+   "tip": "Scent leaf instead of parsley gives it a distinctly Nigerian finish.",
+   "sortOrder": 1100
+  },
+  {
+   "sheetId": "R026",
+   "slug": "grilled-pineapple-and-chicken-salad",
+   "title": "Grilled Pineapple & Chicken Salad",
+   "summary": "Yaji-rubbed chicken and local lettuce.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "pineapple",
+    "romaine-lettuce",
+    "cucumber",
+    "bell-pepper",
+    "spring-onion",
+    "lime"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Yaji (suya spice)",
+    "Honey"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "pineapple": [
+     0.25,
+     ""
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "head"
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "spring-onion": [
+     1.0,
+     "stalk"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Yaji (suya spice)": [
+     1.0,
+     "tsp"
+    ],
+    "Honey": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Rub chicken with yaji, oil and salt. Grill or pan-fry 6 minutes a side.",
+    "Grill pineapple rings until charred.",
+    "Whisk lime juice, honey and oil into a dressing.",
+    "Toss lettuce, cucumber, tatashe and spring onion with dressing. Top with sliced chicken and pineapple."
+   ],
+   "tip": null,
+   "sortOrder": 1110
+  },
+  {
+   "sheetId": "R027",
+   "slug": "avocado-mango-and-cucumber-salad",
+   "title": "Avocado, Mango & Cucumber Salad",
+   "summary": "Ata rodo for heat, coriander for freshness.",
+   "goal": "busy",
+   "minutes": 15,
+   "serves": 2,
+   "basketSlugs": [
+    "avocado",
+    "mango",
+    "cucumber",
+    "onion",
+    "chilli",
+    "coriander",
+    "lime"
+   ],
+   "elsewhere": [],
+   "amounts": {
+    "avocado": [
+     1.0,
+     ""
+    ],
+    "mango": [
+     1.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Cube avocado, mango and cucumber.",
+    "Finely slice onion and ata rodo.",
+    "Toss with lime juice, olive oil and salt.",
+    "Scatter coriander over the top."
+   ],
+   "tip": "Best Feb to May. Use pineapple off season.",
+   "sortOrder": 1120
+  },
+  {
+   "sheetId": "R028",
+   "slug": "watermelon-cucumber-and-grilled-wara-salad",
+   "title": "Watermelon, Cucumber & Grilled Wara Salad",
+   "summary": "Grilled wara (local soft cheese) replaces feta.",
+   "goal": "fruit",
+   "minutes": 20,
+   "serves": 2,
+   "basketSlugs": [
+    "watermelon",
+    "cucumber",
+    "onion",
+    "mint",
+    "lime"
+   ],
+   "elsewhere": [
+    "Wara (cow milk cheese)"
+   ],
+   "amounts": {
+    "watermelon": [
+     3.0,
+     "cup"
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "mint": [
+     1.0,
+     "small bunch"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Wara (cow milk cheese)": [
+     150.0,
+     "g"
+    ]
+   },
+   "steps": [
+    "Slice wara and sear in a hot pan until golden on both sides.",
+    "Cube watermelon and cucumber, thinly slice the onion.",
+    "Toss with lime juice, mint and olive oil.",
+    "Top with the warm wara and black pepper."
+   ],
+   "tip": null,
+   "sortOrder": 1130
+  },
+  {
+   "sheetId": "R029",
+   "slug": "lighter-chicken-caesar",
+   "title": "Lighter Chicken Caesar",
+   "summary": "Yoghurt, garlic and lemon dressing instead of a mayo-heavy one.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "romaine-lettuce",
+    "tomato",
+    "lemon",
+    "garlic"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Greek yoghurt",
+    "Parmesan",
+    "Mustard",
+    "Croutons"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "head"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "Greek yoghurt": [
+     0.5,
+     "cup"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     1.0,
+     "clove"
+    ],
+    "Parmesan": [
+     2.0,
+     "tbsp"
+    ],
+    "Mustard": [
+     1.0,
+     "tsp"
+    ],
+    "Croutons": [
+     1.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Season and grill the chicken, then slice.",
+    "Whisk yoghurt, grated garlic, lemon juice, mustard and half the parmesan.",
+    "Tear lettuce and toss with tomatoes and dressing.",
+    "Top with chicken, croutons and the rest of the parmesan."
+   ],
+   "tip": null,
+   "sortOrder": 1140
+  },
+  {
+   "sheetId": "R030",
+   "slug": "crunchy-groundnut-cabbage-slaw",
+   "title": "Crunchy Groundnut Cabbage Slaw",
+   "summary": "Local groundnut paste and both cabbages.",
+   "goal": "family",
+   "minutes": 20,
+   "serves": 4,
+   "basketSlugs": [
+    "cabbage",
+    "purple-cabbage",
+    "carrot",
+    "spring-onion",
+    "coriander",
+    "groundnut",
+    "lime",
+    "ginger"
+   ],
+   "elsewhere": [
+    "Groundnut paste (peanut butter)",
+    "Soy sauce",
+    "Honey"
+   ],
+   "amounts": {
+    "cabbage": [
+     0.25,
+     "head"
+    ],
+    "purple-cabbage": [
+     0.25,
+     "head"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "groundnut": [
+     0.5,
+     "cup"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "Groundnut paste (peanut butter)": [
+     2.0,
+     "tbsp"
+    ],
+    "Soy sauce": [
+     1.0,
+     "tbsp"
+    ],
+    "Honey": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Finely shred both cabbages and julienne the carrots.",
+    "Whisk groundnut paste, lime juice, grated ginger, soy and honey with a splash of water.",
+    "Toss vegetables with dressing.",
+    "Top with spring onion, coriander and roasted groundnuts."
+   ],
+   "tip": "Holds well for 2 days, so it is a good meal-prep side.",
+   "sortOrder": 1150
+  },
+  {
+   "sheetId": "R031",
+   "slug": "greek-salad-with-wara",
+   "title": "Greek Salad with Wara",
+   "summary": "Wara replaces feta, local green pepper stays.",
+   "goal": "lighter",
+   "minutes": 15,
+   "serves": 2,
+   "basketSlugs": [
+    "tomato",
+    "cucumber",
+    "green-bell-pepper",
+    "onion",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Wara (cow milk cheese)",
+    "Olives",
+    "Dried oregano"
+   ],
+   "amounts": {
+    "tomato": [
+     3.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "green-bell-pepper": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "lemon": [
+     0.5,
+     ""
+    ],
+    "Wara (cow milk cheese)": [
+     150.0,
+     "g"
+    ],
+    "Olives": [
+     10.0,
+     ""
+    ],
+    "Dried oregano": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cut tomatoes and cucumber into chunks.",
+    "Slice green pepper and onion into rings.",
+    "Add olives and cubes of wara.",
+    "Dress with olive oil, lemon and oregano."
+   ],
+   "tip": null,
+   "sortOrder": 1160
+  },
+  {
+   "sheetId": "R032",
+   "slug": "orange-spinach-and-tiger-nut-salad",
+   "title": "Orange, Spinach & Tiger Nut Salad",
+   "summary": "Local oranges or tangerines and tiger nuts for crunch.",
+   "goal": "fruit",
+   "minutes": 15,
+   "serves": 2,
+   "basketSlugs": [
+    "baby-spinach",
+    "orange",
+    "onion",
+    "tiger-nut",
+    "avocado",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Honey"
+   ],
+   "amounts": {
+    "baby-spinach": [
+     2.0,
+     "cup"
+    ],
+    "orange": [
+     3.0,
+     ""
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "tiger-nut": [
+     3.0,
+     "tbsp"
+    ],
+    "avocado": [
+     0.5,
+     ""
+    ],
+    "lemon": [
+     0.5,
+     ""
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Peel and segment the oranges, saving the juice.",
+    "Whisk saved juice with lemon, honey and olive oil.",
+    "Toss spinach, onion, avocado and orange segments with the dressing.",
+    "Scatter sliced tiger nuts on top."
+   ],
+   "tip": "Best Oct to Jan when citrus is at its peak. Use dates instead of honey to keep it vegan.",
+   "sortOrder": 1170
+  },
+  {
+   "sheetId": "R033",
+   "slug": "roast-sweet-potato-and-efo-salad",
+   "title": "Roast Sweet Potato & Efo Salad",
+   "summary": "Young efo tete or ugu replaces kale.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "sweet-potato",
+    "spinach",
+    "onion",
+    "groundnut",
+    "lime"
+   ],
+   "elsewhere": [
+    "Honey",
+    "Paprika"
+   ],
+   "amounts": {
+    "sweet-potato": [
+     2.0,
+     ""
+    ],
+    "spinach": [
+     2.0,
+     "cup"
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "groundnut": [
+     0.5,
+     "cup"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ],
+    "Paprika": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cube sweet potatoes, toss with oil, paprika and salt. Roast at 200C for 25 minutes.",
+    "Massage the efo with a little salt and lime juice for 1 minute.",
+    "Whisk remaining lime with honey and a splash of oil.",
+    "Toss warm potatoes with greens and onion, top with groundnuts."
+   ],
+   "tip": null,
+   "sortOrder": 1180
+  },
+  {
+   "sheetId": "R034",
+   "slug": "black-eyed-bean-lagos-caviar",
+   "title": "Black-Eyed Bean 'Lagos Caviar'",
+   "summary": "Black-eyed beans are the original bean in the US recipe. Tatashe and ata rodo bring it home.",
+   "goal": "family",
+   "minutes": 45,
+   "serves": 4,
+   "basketSlugs": [
+    "corn",
+    "bell-pepper",
+    "tomato",
+    "onion",
+    "chilli",
+    "coriander",
+    "lime"
+   ],
+   "elsewhere": [
+    "Black-eyed beans"
+   ],
+   "amounts": {
+    "Black-eyed beans": [
+     2.0,
+     "cup"
+    ],
+    "corn": [
+     1.0,
+     "cob"
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Cook the beans until just tender (or use leftover beans). Cool.",
+    "Boil or char the corn and cut off the kernels.",
+    "Dice tatashe, tomatoes, onion and ata rodo.",
+    "Toss everything with lime juice, olive oil, salt and coriander."
+   ],
+   "tip": "Even better the next day.",
+   "sortOrder": 1190
+  },
+  {
+   "sheetId": "R035",
+   "slug": "lagos-nicoise",
+   "title": "Lagos Nicoise",
+   "summary": "Jos potatoes and green beans with canned tuna or sardines.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "irish-potato",
+    "green-beans",
+    "tomato",
+    "romaine-lettuce",
+    "onion",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Eggs",
+    "Tuna",
+    "Olives",
+    "Mustard"
+   ],
+   "amounts": {
+    "irish-potato": [
+     300.0,
+     "g"
+    ],
+    "green-beans": [
+     150.0,
+     "g"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "head"
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "Eggs": [
+     2.0,
+     ""
+    ],
+    "Tuna": [
+     1.0,
+     "can"
+    ],
+    "Olives": [
+     8.0,
+     ""
+    ],
+    "Mustard": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Boil potatoes until tender. Add green beans for the last 3 minutes. Boil the eggs.",
+    "Whisk lemon juice, mustard, olive oil and salt.",
+    "Arrange lettuce, potatoes, beans, tomatoes, onion, tuna, halved eggs and olives.",
+    "Spoon over the dressing."
+   ],
+   "tip": null,
+   "sortOrder": 1200
+  },
+  {
+   "sheetId": "R036",
+   "slug": "green-pawpaw-salad",
+   "title": "Green Pawpaw Salad",
+   "summary": "Unripe Nigerian pawpaw is the same fruit Thai cooks use. Groundnuts replace peanuts.",
+   "goal": "lighter",
+   "minutes": 20,
+   "serves": 2,
+   "basketSlugs": [
+    "pawpaw",
+    "carrot",
+    "tomato",
+    "garlic",
+    "chilli",
+    "lime",
+    "groundnut",
+    "green-beans"
+   ],
+   "elsewhere": [
+    "Fish sauce or soy sauce",
+    "Honey"
+   ],
+   "amounts": {
+    "pawpaw": [
+     1.0,
+     ""
+    ],
+    "carrot": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "chilli": [
+     0.5,
+     ""
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "groundnut": [
+     2.0,
+     "tbsp"
+    ],
+    "green-beans": [
+     1.0,
+     "handful"
+    ],
+    "Fish sauce or soy sauce": [
+     1.0,
+     "tbsp"
+    ],
+    "Honey": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Peel and finely shred the green pawpaw and carrot.",
+    "Pound garlic and ata rodo, then add lime, fish sauce and honey.",
+    "Lightly bruise tomatoes and green beans in the dressing.",
+    "Toss with pawpaw and carrot. Top with groundnuts."
+   ],
+   "tip": "Use soy sauce instead of fish sauce to make it vegan.",
+   "sortOrder": 1210
+  },
+  {
+   "sheetId": "R037",
+   "slug": "moroccan-carrot-and-orange-salad",
+   "title": "Moroccan Carrot & Orange Salad",
+   "summary": "Jos carrots, local oranges and fresh mint.",
+   "goal": "fruit",
+   "minutes": 15,
+   "serves": 2,
+   "basketSlugs": [
+    "carrot",
+    "orange",
+    "mint",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Ground cumin",
+    "Ground cinnamon"
+   ],
+   "amounts": {
+    "carrot": [
+     4.0,
+     ""
+    ],
+    "orange": [
+     1.0,
+     ""
+    ],
+    "mint": [
+     1.0,
+     "small bunch"
+    ],
+    "lemon": [
+     0.5,
+     ""
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ],
+    "Ground cinnamon": [
+     0.5,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Coarsely grate the carrots.",
+    "Segment the orange and add the juice.",
+    "Season with lemon, cumin, cinnamon, olive oil and salt.",
+    "Toss with torn mint."
+   ],
+   "tip": null,
+   "sortOrder": 1220
+  },
+  {
+   "sheetId": "R038",
+   "slug": "beetroot-orange-and-avocado-salad",
+   "title": "Beetroot, Orange & Avocado Salad",
+   "summary": "Local beetroot, boiled rather than roasted to save gas.",
+   "goal": "training",
+   "minutes": 55,
+   "serves": 2,
+   "basketSlugs": [
+    "beetroot",
+    "orange",
+    "avocado",
+    "romaine-lettuce",
+    "onion",
+    "groundnut",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Honey"
+   ],
+   "amounts": {
+    "beetroot": [
+     2.0,
+     ""
+    ],
+    "orange": [
+     1.0,
+     ""
+    ],
+    "avocado": [
+     1.0,
+     ""
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "cup"
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "groundnut": [
+     2.0,
+     "tbsp"
+    ],
+    "lemon": [
+     0.5,
+     ""
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Boil beetroot until tender, about 40 minutes. Cool, peel and slice.",
+    "Segment the orange and slice the avocado.",
+    "Arrange on lettuce with onion.",
+    "Dress with lemon, honey and olive oil. Top with groundnuts."
+   ],
+   "tip": null,
+   "sortOrder": 1230
+  },
+  {
+   "sheetId": "R039",
+   "slug": "kachumbari",
+   "title": "Kachumbari",
+   "summary": "Ata rodo for heat. Built to sit next to grilled fish, suya or rice.",
+   "goal": "lighter",
+   "minutes": 10,
+   "serves": 4,
+   "basketSlugs": [
+    "tomato",
+    "onion",
+    "cucumber",
+    "chilli",
+    "coriander",
+    "lime"
+   ],
+   "elsewhere": [],
+   "amounts": {
+    "tomato": [
+     4.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Dice tomatoes and cucumber.",
+    "Slice onion very thinly and rinse in cold water to tame it.",
+    "Finely chop ata rodo and coriander.",
+    "Toss with lime juice and salt."
+   ],
+   "tip": null,
+   "sortOrder": 1240
+  },
+  {
+   "sheetId": "R040",
+   "slug": "chicken-suya-power-bowl",
+   "title": "Chicken Suya Power Bowl",
+   "summary": "Suya-spiced chicken with the classic suya garnish of onion, tomato and cabbage.",
+   "goal": "training",
+   "minutes": 40,
+   "serves": 2,
+   "basketSlugs": [
+    "cabbage",
+    "tomato",
+    "onion",
+    "cucumber",
+    "avocado",
+    "lime"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Rice or quinoa",
+    "Yaji (suya spice)"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "Rice or quinoa": [
+     1.0,
+     "cup"
+    ],
+    "cabbage": [
+     0.25,
+     "head"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "avocado": [
+     0.5,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Yaji (suya spice)": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Cook the rice.",
+    "Coat chicken in yaji and oil, then grill or pan-fry 6 minutes a side. Slice.",
+    "Shred cabbage, slice tomatoes, onion and cucumber, slice the avocado.",
+    "Build bowls: rice, vegetables, chicken. Finish with lime and extra yaji."
+   ],
+   "tip": "Swap rice for quinoa or extra cabbage on lower-carb days.",
+   "sortOrder": 1250
+  },
+  {
+   "sheetId": "R041",
+   "slug": "burrito-bowl-with-dodo",
+   "title": "Burrito Bowl with Dodo",
+   "summary": "Ripe plantain and black-eyed beans take the place of pinto beans and sweet corn.",
+   "goal": "training",
+   "minutes": 45,
+   "serves": 2,
+   "basketSlugs": [
+    "plantain",
+    "corn",
+    "tomato",
+    "onion",
+    "chilli",
+    "avocado",
+    "romaine-lettuce",
+    "lime",
+    "coriander"
+   ],
+   "elsewhere": [
+    "Rice",
+    "Black-eyed beans",
+    "Ground cumin"
+   ],
+   "amounts": {
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "Black-eyed beans": [
+     1.0,
+     "cup"
+    ],
+    "plantain": [
+     1.0,
+     ""
+    ],
+    "corn": [
+     1.0,
+     "cob"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "avocado": [
+     1.0,
+     ""
+    ],
+    "romaine-lettuce": [
+     0.5,
+     "head"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cook rice. Warm beans with cumin and salt.",
+    "Slice plantain and roast or pan-fry until caramelised. Char the corn and slice off the kernels.",
+    "Make a quick salsa: tomato, onion, ata rodo, coriander, lime.",
+    "Build bowls with lettuce, rice, beans, plantain, corn, salsa and sliced avocado."
+   ],
+   "tip": null,
+   "sortOrder": 1260
+  },
+  {
+   "sheetId": "R042",
+   "slug": "mango-prawn-poke-style-bowl",
+   "title": "Mango Prawn Poke-Style Bowl",
+   "summary": "Cooked prawns instead of raw fish, which is safer for home delivery. Mango for sweetness.",
+   "goal": "training",
+   "minutes": 40,
+   "serves": 2,
+   "basketSlugs": [
+    "mango",
+    "cucumber",
+    "carrot",
+    "avocado",
+    "spring-onion",
+    "lime"
+   ],
+   "elsewhere": [
+    "Prawns",
+    "Rice",
+    "Soy sauce",
+    "Sesame oil",
+    "Honey"
+   ],
+   "amounts": {
+    "Prawns": [
+     250.0,
+     "g"
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "mango": [
+     1.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "carrot": [
+     1.0,
+     ""
+    ],
+    "avocado": [
+     0.5,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Soy sauce": [
+     2.0,
+     "tbsp"
+    ],
+    "Sesame oil": [
+     1.0,
+     "tsp"
+    ],
+    "Honey": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cook rice and let it cool slightly.",
+    "Saute prawns 2 to 3 minutes until pink. Toss in soy, sesame oil, honey and lime.",
+    "Dice mango, cucumber and avocado. Shred the carrot.",
+    "Build bowls and top with spring onion."
+   ],
+   "tip": null,
+   "sortOrder": 1270
+  },
+  {
+   "sheetId": "R043",
+   "slug": "teriyaki-chicken-and-broccoli-bowl",
+   "title": "Teriyaki Chicken & Broccoli Bowl",
+   "summary": "Fresh ginger and garlic glaze. Green beans are the budget swap for broccoli.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "broccoli",
+    "carrot",
+    "spring-onion",
+    "ginger",
+    "garlic"
+   ],
+   "elsewhere": [
+    "Chicken breast or thighs",
+    "Rice",
+    "Soy sauce",
+    "Honey"
+   ],
+   "amounts": {
+    "Chicken breast or thighs": [
+     2.0,
+     ""
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "broccoli": [
+     1.0,
+     "head"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "Soy sauce": [
+     3.0,
+     "tbsp"
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Cook rice.",
+    "Simmer soy, honey, grated ginger and garlic for 2 minutes to make the glaze.",
+    "Pan-fry chicken pieces until cooked, then toss in the glaze.",
+    "Steam broccoli and sliced carrots 4 minutes. Serve over rice with spring onion."
+   ],
+   "tip": null,
+   "sortOrder": 1280
+  },
+  {
+   "sheetId": "R044",
+   "slug": "black-eyed-bean-falafel-bowl",
+   "title": "Black-Eyed Bean Falafel Bowl",
+   "summary": "Black-eyed beans (akara's cousin) replace chickpeas. Scent leaf joins parsley.",
+   "goal": "plants",
+   "minutes": 45,
+   "serves": 3,
+   "basketSlugs": [
+    "onion",
+    "garlic",
+    "parsley",
+    "scent-leaf",
+    "romaine-lettuce",
+    "tomato",
+    "cucumber",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Black-eyed beans",
+    "Ground cumin",
+    "Plain yoghurt",
+    "Pita bread"
+   ],
+   "amounts": {
+    "Black-eyed beans": [
+     2.0,
+     "cup"
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "parsley": [
+     1.0,
+     "handful"
+    ],
+    "scent-leaf": [
+     1.0,
+     "handful"
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "head"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ],
+    "Plain yoghurt": [
+     1.0,
+     "cup"
+    ],
+    "Pita bread": [
+     3.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Blend soaked, peeled beans with onion, garlic, herbs, cumin and salt into a coarse paste.",
+    "Shape into small patties and bake at 200C for 20 minutes, flipping once (or shallow fry).",
+    "Mix yoghurt with lemon juice and a little grated garlic.",
+    "Serve with chopped lettuce, tomatoes, cucumber, pita and the yoghurt sauce."
+   ],
+   "tip": "The paste is basically akara batter with herbs, so most Nigerian cooks nail it first try.",
+   "sortOrder": 1290
+  },
+  {
+   "sheetId": "R045",
+   "slug": "sweet-potato-buddha-bowl-with-ugu-pesto",
+   "title": "Sweet Potato Buddha Bowl with Ugu Pesto",
+   "summary": "Ugu and groundnut pesto replaces tahini dressing.",
+   "goal": "plants",
+   "minutes": 50,
+   "serves": 2,
+   "basketSlugs": [
+    "sweet-potato",
+    "ugu",
+    "groundnut",
+    "garlic",
+    "lemon",
+    "cucumber",
+    "carrot"
+   ],
+   "elsewhere": [
+    "Chickpeas or beans",
+    "Quinoa or rice"
+   ],
+   "amounts": {
+    "sweet-potato": [
+     2.0,
+     ""
+    ],
+    "Chickpeas or beans": [
+     1.0,
+     "cup"
+    ],
+    "Quinoa or rice": [
+     1.0,
+     "cup"
+    ],
+    "ugu": [
+     2.0,
+     "cup"
+    ],
+    "groundnut": [
+     0.25,
+     "cup"
+    ],
+    "garlic": [
+     1.0,
+     "clove"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "cucumber": [
+     0.5,
+     ""
+    ],
+    "carrot": [
+     1.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Roast cubed sweet potato with oil and salt at 200C for 25 to 30 minutes.",
+    "Cook quinoa or rice. Warm the chickpeas or beans.",
+    "Blend ugu, groundnuts, garlic, lemon, olive oil and salt into a pesto.",
+    "Build bowls with grain, sweet potato, beans, cucumber and grated carrot. Spoon over the pesto."
+   ],
+   "tip": null,
+   "sortOrder": 1300
+  },
+  {
+   "sheetId": "R046",
+   "slug": "bibimbap-style-beef-bowl",
+   "title": "Bibimbap-Style Beef Bowl",
+   "summary": "Efo tete stands in for spinach. A honey and ata rodo sauce replaces gochujang.",
+   "goal": "training",
+   "minutes": 45,
+   "serves": 2,
+   "basketSlugs": [
+    "spinach",
+    "carrot",
+    "cucumber",
+    "mushrooms",
+    "garlic",
+    "chilli",
+    "spring-onion"
+   ],
+   "elsewhere": [
+    "Minced beef or thin steak",
+    "Rice",
+    "Eggs",
+    "Soy sauce",
+    "Honey",
+    "Sesame oil"
+   ],
+   "amounts": {
+    "Minced beef or thin steak": [
+     250.0,
+     "g"
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "Eggs": [
+     2.0,
+     ""
+    ],
+    "spinach": [
+     2.0,
+     "cup"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "mushrooms": [
+     1.0,
+     "cup"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "chilli": [
+     0.5,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "Soy sauce": [
+     2.0,
+     "tbsp"
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ],
+    "Sesame oil": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cook rice.",
+    "Brown beef with garlic and half the soy. Saute mushrooms, then wilt the efo.",
+    "Mix the rest of the soy with honey, sesame oil and finely chopped ata rodo.",
+    "Top rice with julienned carrot and cucumber, the cooked vegetables, beef and a fried egg. Drizzle sauce."
+   ],
+   "tip": null,
+   "sortOrder": 1310
+  },
+  {
+   "sheetId": "R047",
+   "slug": "thai-groundnut-wara-bowl",
+   "title": "Thai Groundnut Wara Bowl",
+   "summary": "Wara soya is Nigerian tofu. Groundnut sauce does the rest.",
+   "goal": "plants",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "purple-cabbage",
+    "carrot",
+    "cucumber",
+    "spring-onion",
+    "coriander",
+    "lime",
+    "ginger",
+    "garlic",
+    "dates"
+   ],
+   "elsewhere": [
+    "Wara soya (tofu)",
+    "Rice or noodles",
+    "Groundnut paste (peanut butter)",
+    "Soy sauce"
+   ],
+   "amounts": {
+    "Wara soya (tofu)": [
+     300.0,
+     "g"
+    ],
+    "Rice or noodles": [
+     1.0,
+     "cup"
+    ],
+    "purple-cabbage": [
+     0.25,
+     "head"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "garlic": [
+     1.0,
+     "clove"
+    ],
+    "dates": [
+     2.0,
+     ""
+    ],
+    "Groundnut paste (peanut butter)": [
+     3.0,
+     "tbsp"
+    ],
+    "Soy sauce": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Press and cube the wara soya, then pan-fry until golden.",
+    "Blend groundnut paste, soy, lime juice, ginger, garlic, dates and warm water into a pourable sauce.",
+    "Cook rice or noodles. Shred cabbage and carrot, slice cucumber.",
+    "Build bowls, pour over sauce, top with spring onion and coriander."
+   ],
+   "tip": null,
+   "sortOrder": 1320
+  },
+  {
+   "sheetId": "R048",
+   "slug": "greek-chicken-gyro-bowl-with-tzatziki",
+   "title": "Greek Chicken Gyro Bowl with Tzatziki",
+   "summary": "Tzatziki made with local cucumber, mint or parsley.",
+   "goal": "training",
+   "minutes": 40,
+   "serves": 2,
+   "basketSlugs": [
+    "cucumber",
+    "tomato",
+    "onion",
+    "romaine-lettuce",
+    "garlic",
+    "lemon",
+    "mint"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Rice",
+    "Greek yoghurt",
+    "Dried oregano"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     3.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "romaine-lettuce": [
+     0.5,
+     "head"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "mint": [
+     1.0,
+     "small bunch"
+    ],
+    "Greek yoghurt": [
+     1.0,
+     "cup"
+    ],
+    "Dried oregano": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Marinate chicken in lemon juice, garlic, oregano, oil and salt for 10 minutes, then grill and slice.",
+    "Cook rice.",
+    "Grate half the cucumber, squeeze dry, mix with yoghurt, garlic and chopped mint.",
+    "Build bowls with lettuce, tomatoes, onion, the rest of the cucumber, chicken and tzatziki."
+   ],
+   "tip": null,
+   "sortOrder": 1330
+  },
+  {
+   "sheetId": "R049",
+   "slug": "coconut-prawn-and-mango-rice-bowl",
+   "title": "Coconut Prawn & Mango Rice Bowl",
+   "summary": "Rice cooked in fresh coconut milk with a mango salsa.",
+   "goal": "training",
+   "minutes": 45,
+   "serves": 2,
+   "basketSlugs": [
+    "coconut",
+    "mango",
+    "onion",
+    "bell-pepper",
+    "chilli",
+    "coriander",
+    "lime",
+    "garlic"
+   ],
+   "elsewhere": [
+    "Prawns",
+    "Rice"
+   ],
+   "amounts": {
+    "Prawns": [
+     250.0,
+     "g"
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "coconut": [
+     0.5,
+     ""
+    ],
+    "mango": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     1.0,
+     "clove"
+    ]
+   },
+   "steps": [
+    "Cook rice in fresh coconut milk topped up with water.",
+    "Saute prawns with garlic and a pinch of salt, 3 minutes.",
+    "Dice mango, tatashe, onion and ata rodo. Toss with lime and coriander.",
+    "Serve rice topped with prawns and salsa."
+   ],
+   "tip": null,
+   "sortOrder": 1340
+  },
+  {
+   "sheetId": "R050",
+   "slug": "lighter-chicken-shawarma",
+   "title": "Lighter Chicken Shawarma",
+   "summary": "Grilled not fried, yoghurt-garlic sauce instead of mayo, twice the vegetables.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "cabbage",
+    "carrot",
+    "cucumber",
+    "tomato",
+    "onion",
+    "garlic",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Large wraps or pita",
+    "Greek yoghurt",
+    "Curry powder and paprika"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "Large wraps or pita": [
+     2.0,
+     ""
+    ],
+    "cabbage": [
+     0.25,
+     "head"
+    ],
+    "carrot": [
+     1.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "lemon": [
+     0.5,
+     ""
+    ],
+    "Greek yoghurt": [
+     0.5,
+     "cup"
+    ],
+    "Curry powder and paprika": [
+     2.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Toss sliced chicken with curry powder, paprika, oil and salt. Pan-grill until charred.",
+    "Mix yoghurt, grated garlic, lemon and salt.",
+    "Shred cabbage and carrot, slice cucumber, tomatoes and onion.",
+    "Spread sauce on warm wraps, fill with vegetables and chicken, roll tight and toast seam-side down."
+   ],
+   "tip": "The one people will order every week. Make it the hero of the launch menu.",
+   "sortOrder": 1350
+  },
+  {
+   "sheetId": "R051",
+   "slug": "fish-tacos-with-pineapple-salsa",
+   "title": "Fish Tacos with Pineapple Salsa",
+   "summary": "Croaker or tilapia, pineapple and ata rodo salsa, cabbage slaw.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "pineapple",
+    "onion",
+    "chilli",
+    "coriander",
+    "cabbage",
+    "lime",
+    "avocado"
+   ],
+   "elsewhere": [
+    "White fish fillets (croaker / tilapia)",
+    "Small tortillas",
+    "Paprika"
+   ],
+   "amounts": {
+    "White fish fillets (croaker / tilapia)": [
+     300.0,
+     "g"
+    ],
+    "Small tortillas": [
+     6.0,
+     ""
+    ],
+    "pineapple": [
+     1.0,
+     "cup"
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "cabbage": [
+     0.25,
+     "head"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "avocado": [
+     0.5,
+     ""
+    ],
+    "Paprika": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Season fish with paprika, salt and lime. Pan-fry 3 minutes a side and flake.",
+    "Dice pineapple, onion and ata rodo. Mix with coriander and lime.",
+    "Shred cabbage and toss with lime and salt.",
+    "Warm tortillas and fill with slaw, fish, salsa and avocado."
+   ],
+   "tip": null,
+   "sortOrder": 1360
+  },
+  {
+   "sheetId": "R052",
+   "slug": "chicken-lettuce-cups",
+   "title": "Chicken Lettuce Cups",
+   "summary": "Local iceberg cups with groundnuts for crunch.",
+   "goal": "lighter",
+   "minutes": 25,
+   "serves": 2,
+   "basketSlugs": [
+    "romaine-lettuce",
+    "carrot",
+    "bell-pepper",
+    "spring-onion",
+    "garlic",
+    "ginger",
+    "groundnut",
+    "lime"
+   ],
+   "elsewhere": [
+    "Minced chicken",
+    "Soy sauce"
+   ],
+   "amounts": {
+    "Minced chicken": [
+     300.0,
+     "g"
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "head"
+    ],
+    "carrot": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     0.5,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "groundnut": [
+     2.0,
+     "tbsp"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Soy sauce": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Finely chop or mince the chicken.",
+    "Stir-fry garlic and ginger for 30 seconds, add chicken, cook until no longer pink.",
+    "Add diced carrot and tatashe, soy and lime. Cook 2 minutes.",
+    "Spoon into lettuce cups. Top with spring onion and crushed groundnuts."
+   ],
+   "tip": "Low-carb and quick. A strong pick for the weight-management goal filter.",
+   "sortOrder": 1370
+  },
+  {
+   "sheetId": "R053",
+   "slug": "suya-beef-lettuce-wraps",
+   "title": "Suya Beef Lettuce Wraps",
+   "summary": "Suya beef with the full suya garnish, wrapped in lettuce.",
+   "goal": "training",
+   "minutes": 25,
+   "serves": 2,
+   "basketSlugs": [
+    "romaine-lettuce",
+    "onion",
+    "tomato",
+    "cucumber",
+    "lime"
+   ],
+   "elsewhere": [
+    "Beef, thinly sliced",
+    "Yaji (suya spice)"
+   ],
+   "amounts": {
+    "Beef, thinly sliced": [
+     300.0,
+     "g"
+    ],
+    "romaine-lettuce": [
+     1.0,
+     "head"
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Yaji (suya spice)": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Rub thin beef slices with yaji, oil and salt.",
+    "Sear in a very hot pan, 1 to 2 minutes a side.",
+    "Slice onion, tomatoes and cucumber.",
+    "Wrap beef and vegetables in lettuce leaves. Squeeze lime over."
+   ],
+   "tip": null,
+   "sortOrder": 1380
+  },
+  {
+   "sheetId": "R054",
+   "slug": "corn-tatashe-and-efo-quesadilla",
+   "title": "Corn, Tatashe & Efo Quesadilla",
+   "summary": "Local sweet corn, tatashe and efo inside.",
+   "goal": "training",
+   "minutes": 20,
+   "serves": 2,
+   "basketSlugs": [
+    "corn",
+    "bell-pepper",
+    "onion",
+    "spinach",
+    "chilli",
+    "avocado"
+   ],
+   "elsewhere": [
+    "Tortillas",
+    "Grated cheese",
+    "Ground cumin"
+   ],
+   "amounts": {
+    "Tortillas": [
+     4.0,
+     ""
+    ],
+    "corn": [
+     1.0,
+     "cob"
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "spinach": [
+     1.0,
+     "cup"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "avocado": [
+     0.5,
+     ""
+    ],
+    "Grated cheese": [
+     1.0,
+     "cup"
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Slice corn off the cob. Saute with onion, tatashe, ata rodo and cumin for 4 minutes.",
+    "Stir in efo until wilted.",
+    "Layer half of each tortilla with cheese and filling, fold, then toast 2 minutes a side.",
+    "Cut into wedges. Serve with sliced avocado."
+   ],
+   "tip": null,
+   "sortOrder": 1390
+  },
+  {
+   "sheetId": "R055",
+   "slug": "egg-and-avocado-breakfast-wrap",
+   "title": "Egg & Avocado Breakfast Wrap",
+   "summary": "The filling is a Nigerian egg sauce: tomato, onion and pepper scrambled with eggs.",
+   "goal": "training",
+   "minutes": 20,
+   "serves": 2,
+   "basketSlugs": [
+    "avocado",
+    "tomato",
+    "onion",
+    "chilli",
+    "spinach"
+   ],
+   "elsewhere": [
+    "Eggs",
+    "Wraps"
+   ],
+   "amounts": {
+    "Eggs": [
+     4.0,
+     ""
+    ],
+    "Wraps": [
+     2.0,
+     ""
+    ],
+    "avocado": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "spinach": [
+     1.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Saute diced onion, tomatoes and ata rodo in oil for 3 minutes.",
+    "Add efo, then the beaten eggs. Scramble softly.",
+    "Warm the wraps and spread with mashed avocado.",
+    "Fill with eggs and roll."
+   ],
+   "tip": null,
+   "sortOrder": 1400
+  },
+  {
+   "sheetId": "R056",
+   "slug": "bean-and-plantain-burrito",
+   "title": "Bean & Plantain Burrito",
+   "summary": "Ewa and dodo, the Nigerian favourite, wrapped Mexican-style.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "plantain",
+    "tomato",
+    "onion",
+    "chilli",
+    "romaine-lettuce",
+    "lime"
+   ],
+   "elsewhere": [
+    "Large wraps",
+    "Black-eyed beans",
+    "Grated cheese",
+    "Ground cumin"
+   ],
+   "amounts": {
+    "Large wraps": [
+     2.0,
+     ""
+    ],
+    "Black-eyed beans": [
+     1.5,
+     "cup"
+    ],
+    "plantain": [
+     1.0,
+     ""
+    ],
+    "Grated cheese": [
+     0.5,
+     "cup"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "romaine-lettuce": [
+     4.0,
+     "leaf"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Warm beans with cumin, lightly mashing half.",
+    "Slice and fry the plantain until golden.",
+    "Make a quick salsa with tomato, onion, ata rodo and lime.",
+    "Fill wraps with beans, plantain, cheese, salsa and lettuce. Roll and toast."
+   ],
+   "tip": null,
+   "sortOrder": 1410
+  },
+  {
+   "sheetId": "R057",
+   "slug": "sheet-pan-lemon-herb-chicken",
+   "title": "Sheet-Pan Lemon Herb Chicken",
+   "summary": "Sweet potato and local green beans on one tray.",
+   "goal": "training",
+   "minutes": 50,
+   "serves": 2,
+   "basketSlugs": [
+    "sweet-potato",
+    "green-beans",
+    "onion",
+    "lemon",
+    "garlic",
+    "rosemary"
+   ],
+   "elsewhere": [
+    "Chicken thighs",
+    "Paprika"
+   ],
+   "amounts": {
+    "Chicken thighs": [
+     4.0,
+     ""
+    ],
+    "sweet-potato": [
+     2.0,
+     ""
+    ],
+    "green-beans": [
+     200.0,
+     "g"
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     4.0,
+     "clove"
+    ],
+    "rosemary": [
+     2.0,
+     "sprig"
+    ],
+    "Paprika": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Heat oven to 200C. Cut sweet potatoes into wedges, quarter the onion.",
+    "Toss chicken and vegetables with oil, paprika, crushed garlic, lemon zest, rosemary and salt.",
+    "Roast 25 minutes, add green beans, roast 10 more.",
+    "Squeeze lemon over before serving."
+   ],
+   "tip": "One tray, one wash-up. The format meal-kit customers love most.",
+   "sortOrder": 1420
+  },
+  {
+   "sheetId": "R058",
+   "slug": "ginger-chicken-and-veg-stir-fry",
+   "title": "Ginger Chicken & Veg Stir-Fry",
+   "summary": "The 'Chinese restaurant' order Lagos loves, made with half the oil.",
+   "goal": "training",
+   "minutes": 27,
+   "serves": 2,
+   "basketSlugs": [
+    "broccoli",
+    "carrot",
+    "bell-pepper",
+    "green-bell-pepper",
+    "spring-onion",
+    "ginger",
+    "garlic"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Soy sauce",
+    "Cornflour",
+    "Rice or noodles"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "broccoli": [
+     1.0,
+     "head"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "green-bell-pepper": [
+     1.0,
+     ""
+    ],
+    "spring-onion": [
+     3.0,
+     "stalk"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "Soy sauce": [
+     3.0,
+     "tbsp"
+    ],
+    "Cornflour": [
+     1.0,
+     "tsp"
+    ],
+    "Rice or noodles": [
+     1.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Slice chicken thin and toss with 1 tbsp soy and the cornflour.",
+    "Stir-fry chicken in a very hot pan until browned. Remove.",
+    "Stir-fry garlic, ginger, broccoli, carrots and peppers for 3 to 4 minutes.",
+    "Return chicken with the rest of the soy and a splash of water. Toss, top with spring onion. Serve with rice or noodles."
+   ],
+   "tip": null,
+   "sortOrder": 1430
+  },
+  {
+   "sheetId": "R059",
+   "slug": "thai-green-curry-with-pumpkin-and-ugu",
+   "title": "Thai Green Curry with Pumpkin & Ugu",
+   "summary": "Elegede pumpkin, ugu greens and scent leaf, which is a basil, just like Thai basil.",
+   "goal": "training",
+   "minutes": 45,
+   "serves": 3,
+   "basketSlugs": [
+    "pumpkin",
+    "green-beans",
+    "ugu",
+    "lemongrass",
+    "scent-leaf",
+    "ginger",
+    "garlic",
+    "chilli",
+    "coconut",
+    "lime"
+   ],
+   "elsewhere": [
+    "Chicken",
+    "Green curry paste",
+    "Fish sauce",
+    "Rice"
+   ],
+   "amounts": {
+    "Chicken": [
+     400.0,
+     "g"
+    ],
+    "pumpkin": [
+     2.0,
+     "cup"
+    ],
+    "green-beans": [
+     100.0,
+     "g"
+    ],
+    "ugu": [
+     2.0,
+     "cup"
+    ],
+    "lemongrass": [
+     1.0,
+     "stalk"
+    ],
+    "scent-leaf": [
+     1.0,
+     "handful"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "chilli": [
+     0.5,
+     ""
+    ],
+    "coconut": [
+     1.0,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Green curry paste": [
+     2.0,
+     "tbsp"
+    ],
+    "Fish sauce": [
+     1.0,
+     "tbsp"
+    ],
+    "Rice": [
+     1.5,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Fry curry paste with bruised lemongrass, ginger and garlic for 1 minute.",
+    "Add chicken and brown lightly, then pour in coconut milk.",
+    "Add pumpkin and simmer 12 minutes until tender. Add green beans for the last 4.",
+    "Stir in ugu and scent leaf, season with fish sauce and lime. Serve with rice."
+   ],
+   "tip": null,
+   "sortOrder": 1440
+  },
+  {
+   "sheetId": "R060",
+   "slug": "pepper-steak-stir-fry",
+   "title": "Pepper Steak Stir-Fry",
+   "summary": "Tatashe and green pepper with local onions.",
+   "goal": "training",
+   "minutes": 27,
+   "serves": 2,
+   "basketSlugs": [
+    "bell-pepper",
+    "green-bell-pepper",
+    "onion",
+    "garlic",
+    "ginger",
+    "spring-onion"
+   ],
+   "elsewhere": [
+    "Beef (sirloin or topside)",
+    "Soy sauce",
+    "Cornflour",
+    "Rice"
+   ],
+   "amounts": {
+    "Beef (sirloin or topside)": [
+     300.0,
+     "g"
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "green-bell-pepper": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "Soy sauce": [
+     3.0,
+     "tbsp"
+    ],
+    "Cornflour": [
+     1.0,
+     "tsp"
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Slice beef very thin across the grain. Toss with 1 tbsp soy and cornflour.",
+    "Sear beef in batches in a very hot pan. Remove.",
+    "Stir-fry onion, peppers, garlic and ginger for 3 minutes.",
+    "Return beef with remaining soy and a splash of water. Finish with spring onion. Serve with rice."
+   ],
+   "tip": null,
+   "sortOrder": 1450
+  },
+  {
+   "sheetId": "R061",
+   "slug": "prawn-cauliflower-fried-rice",
+   "title": "Prawn Cauliflower Fried 'Rice'",
+   "summary": "Party fried rice vegetables, with cauliflower standing in for rice.",
+   "goal": "lighter",
+   "minutes": 27,
+   "serves": 2,
+   "basketSlugs": [
+    "cauliflower",
+    "carrot",
+    "green-beans",
+    "spring-onion",
+    "garlic",
+    "ginger"
+   ],
+   "elsewhere": [
+    "Prawns",
+    "Eggs",
+    "Soy sauce"
+   ],
+   "amounts": {
+    "cauliflower": [
+     1.0,
+     "head"
+    ],
+    "Prawns": [
+     250.0,
+     "g"
+    ],
+    "Eggs": [
+     2.0,
+     ""
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "green-beans": [
+     100.0,
+     "g"
+    ],
+    "spring-onion": [
+     3.0,
+     "stalk"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "Soy sauce": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Pulse cauliflower in a blender until rice-sized.",
+    "Stir-fry prawns with garlic and ginger, 2 minutes. Remove.",
+    "Stir-fry diced carrots and green beans 3 minutes, push aside, scramble the eggs.",
+    "Add cauliflower and soy, fry 4 minutes. Return prawns, finish with spring onion."
+   ],
+   "tip": null,
+   "sortOrder": 1460
+  },
+  {
+   "sheetId": "R062",
+   "slug": "grilled-fish-with-mango-salsa-and-roast-plantain",
+   "title": "Grilled Fish with Mango Salsa & Roast Plantain",
+   "summary": "Croaker or tilapia, and plantain roasted rather than fried.",
+   "goal": "training",
+   "minutes": 40,
+   "serves": 2,
+   "basketSlugs": [
+    "plantain",
+    "mango",
+    "onion",
+    "chilli",
+    "coriander",
+    "lime",
+    "garlic",
+    "ginger"
+   ],
+   "elsewhere": [
+    "Whole fish or fillets",
+    "Paprika"
+   ],
+   "amounts": {
+    "Whole fish or fillets": [
+     2.0,
+     ""
+    ],
+    "plantain": [
+     2.0,
+     ""
+    ],
+    "mango": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "Paprika": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Rub fish with grated garlic, ginger, paprika, lime and salt. Rest 10 minutes.",
+    "Roast plantain slices at 200C for 20 minutes, flipping once.",
+    "Grill or oven-bake the fish for 15 to 20 minutes.",
+    "Mix diced mango, onion, ata rodo, coriander and lime. Spoon over the fish."
+   ],
+   "tip": "Mango Feb to May. Pineapple works the rest of the year.",
+   "sortOrder": 1470
+  },
+  {
+   "sheetId": "R063",
+   "slug": "chickpea-and-efo-curry",
+   "title": "Chickpea & Efo Curry",
+   "summary": "Efo tete for spinach, fresh coconut milk for cream.",
+   "goal": "plants",
+   "minutes": 40,
+   "serves": 3,
+   "basketSlugs": [
+    "spinach",
+    "tomato",
+    "onion",
+    "garlic",
+    "ginger",
+    "chilli",
+    "coconut"
+   ],
+   "elsewhere": [
+    "Chickpeas or beans",
+    "Curry powder",
+    "Ground cumin",
+    "Rice or flatbread"
+   ],
+   "amounts": {
+    "Chickpeas or beans": [
+     2.0,
+     "cup"
+    ],
+    "spinach": [
+     4.0,
+     "cup"
+    ],
+    "tomato": [
+     3.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coconut": [
+     0.25,
+     ""
+    ],
+    "Curry powder": [
+     1.0,
+     "tbsp"
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ],
+    "Rice or flatbread": [
+     1.5,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Soften onion, then add garlic, ginger, ata rodo, curry powder and cumin for 1 minute.",
+    "Add chopped tomatoes and cook down 8 minutes.",
+    "Stir in chickpeas and coconut milk. Simmer 10 minutes.",
+    "Fold in efo until wilted. Serve with rice or flatbread."
+   ],
+   "tip": null,
+   "sortOrder": 1480
+  },
+  {
+   "sheetId": "R064",
+   "slug": "caribbean-curry-chicken-and-sweet-potato",
+   "title": "Caribbean Curry Chicken & Sweet Potato",
+   "summary": "Scotch bonnet is already ours. Sweet potato replaces potato.",
+   "goal": "training",
+   "minutes": 55,
+   "serves": 4,
+   "basketSlugs": [
+    "sweet-potato",
+    "onion",
+    "garlic",
+    "ginger",
+    "chilli",
+    "spring-onion",
+    "tomato"
+   ],
+   "elsewhere": [
+    "Chicken pieces",
+    "Curry powder",
+    "Dried thyme",
+    "Rice"
+   ],
+   "amounts": {
+    "Chicken pieces": [
+     800.0,
+     "g"
+    ],
+    "sweet-potato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     4.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "chilli": [
+     0.5,
+     ""
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "Curry powder": [
+     2.0,
+     "tbsp"
+    ],
+    "Dried thyme": [
+     1.0,
+     "tsp"
+    ],
+    "Rice": [
+     2.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Season chicken with curry powder, thyme, garlic, ginger and salt.",
+    "Brown chicken in oil, add onion, tomatoes and the whole ata rodo.",
+    "Add water to half-cover, simmer 20 minutes.",
+    "Add cubed sweet potato and simmer 15 more until tender. Finish with spring onion. Serve with rice."
+   ],
+   "tip": "Leave the ata rodo whole for flavour without too much heat.",
+   "sortOrder": 1490
+  },
+  {
+   "sheetId": "R065",
+   "slug": "fresh-tomato-and-basil-garden-pasta",
+   "title": "Fresh Tomato & Basil Garden Pasta",
+   "summary": "Plum tomatoes plus tatashe for a sweeter sauce. Scent leaf works if basil is scarce.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "tomato",
+    "bell-pepper",
+    "onion",
+    "garlic",
+    "mushrooms",
+    "baby-spinach",
+    "basil"
+   ],
+   "elsewhere": [
+    "Pasta",
+    "Parmesan"
+   ],
+   "amounts": {
+    "Pasta": [
+     200.0,
+     "g"
+    ],
+    "tomato": [
+     5.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "mushrooms": [
+     1.0,
+     "cup"
+    ],
+    "baby-spinach": [
+     1.0,
+     "cup"
+    ],
+    "basil": [
+     1.0,
+     "handful"
+    ],
+    "Parmesan": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Cook pasta.",
+    "Soften onion and garlic in olive oil, add chopped tomatoes and tatashe. Simmer 12 minutes.",
+    "Add mushrooms and spinach, cook 2 minutes.",
+    "Toss with pasta, torn basil and parmesan."
+   ],
+   "tip": null,
+   "sortOrder": 1500
+  },
+  {
+   "sheetId": "R066",
+   "slug": "stuffed-tatashe-with-beef-and-corn",
+   "title": "Stuffed Tatashe with Beef & Corn",
+   "summary": "The filling is a jollof-spiced rice and beef mix.",
+   "goal": "training",
+   "minutes": 55,
+   "serves": 2,
+   "basketSlugs": [
+    "bell-pepper",
+    "corn",
+    "tomato",
+    "onion",
+    "garlic",
+    "chilli"
+   ],
+   "elsewhere": [
+    "Minced beef",
+    "Rice",
+    "Curry powder and thyme",
+    "Grated cheese"
+   ],
+   "amounts": {
+    "bell-pepper": [
+     4.0,
+     ""
+    ],
+    "Minced beef": [
+     200.0,
+     "g"
+    ],
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "corn": [
+     1.0,
+     "cob"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "Curry powder and thyme": [
+     1.0,
+     "tsp"
+    ],
+    "Grated cheese": [
+     0.5,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Halve tatashe and remove seeds.",
+    "Brown beef with onion, garlic, ata rodo, curry and thyme. Add chopped tomatoes and corn, cook 5 minutes.",
+    "Stir in the cooked rice.",
+    "Fill the peppers, top with cheese and bake at 190C for 25 minutes."
+   ],
+   "tip": null,
+   "sortOrder": 1510
+  },
+  {
+   "sheetId": "R067",
+   "slug": "light-vegetable-egg-fried-rice",
+   "title": "Light Vegetable Egg Fried Rice",
+   "summary": "Party fried rice vegetables, with a fraction of the oil.",
+   "goal": "training",
+   "minutes": 30,
+   "serves": 3,
+   "basketSlugs": [
+    "carrot",
+    "green-beans",
+    "corn",
+    "spring-onion",
+    "garlic",
+    "ginger"
+   ],
+   "elsewhere": [
+    "Rice",
+    "Eggs",
+    "Soy sauce",
+    "Curry powder"
+   ],
+   "amounts": {
+    "Rice": [
+     2.0,
+     "cup"
+    ],
+    "Eggs": [
+     3.0,
+     ""
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "green-beans": [
+     100.0,
+     "g"
+    ],
+    "corn": [
+     1.0,
+     "cob"
+    ],
+    "spring-onion": [
+     3.0,
+     "stalk"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "Soy sauce": [
+     2.0,
+     "tbsp"
+    ],
+    "Curry powder": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Dice carrots and green beans. Slice corn off the cob.",
+    "Scramble the eggs in a hot pan, then remove.",
+    "Stir-fry garlic, ginger and vegetables 4 minutes.",
+    "Add rice, soy and curry powder. Fry until hot, fold in eggs and spring onion."
+   ],
+   "tip": "Day-old rice fries best.",
+   "sortOrder": 1520
+  },
+  {
+   "sheetId": "R068",
+   "slug": "kerala-style-okra-and-prawn-coconut-curry",
+   "title": "Kerala-Style Okra & Prawn Coconut Curry",
+   "summary": "Nigerian okra cooked whole so it stays crisp, not slimy.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 3,
+   "basketSlugs": [
+    "okra",
+    "onion",
+    "tomato",
+    "garlic",
+    "ginger",
+    "turmeric",
+    "chilli",
+    "coconut",
+    "lime"
+   ],
+   "elsewhere": [
+    "Prawns",
+    "Curry powder",
+    "Rice"
+   ],
+   "amounts": {
+    "Prawns": [
+     300.0,
+     "g"
+    ],
+    "okra": [
+     200.0,
+     "g"
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "turmeric": [
+     1.0,
+     "thumb"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coconut": [
+     0.5,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Curry powder": [
+     1.0,
+     "tbsp"
+    ],
+    "Rice": [
+     1.5,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Trim okra and leave whole. Pan-fry in oil for 4 minutes, then set aside.",
+    "Soften onion, add garlic, ginger, grated turmeric, ata rodo and curry powder.",
+    "Add chopped tomatoes and cook 5 minutes, then the coconut milk.",
+    "Add prawns and okra, simmer 4 minutes. Finish with lime. Serve with rice."
+   ],
+   "tip": null,
+   "sortOrder": 1530
+  },
+  {
+   "sheetId": "R069",
+   "slug": "garden-egg-ratatouille",
+   "title": "Garden Egg Ratatouille",
+   "summary": "Garden egg replaces aubergine. Zucchini optional.",
+   "goal": "family",
+   "minutes": 60,
+   "serves": 4,
+   "basketSlugs": [
+    "garden-egg",
+    "zucchini",
+    "bell-pepper",
+    "green-bell-pepper",
+    "tomato",
+    "onion",
+    "garlic",
+    "scent-leaf"
+   ],
+   "elsewhere": [
+    "Dried thyme"
+   ],
+   "amounts": {
+    "garden-egg": [
+     6.0,
+     ""
+    ],
+    "zucchini": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     2.0,
+     ""
+    ],
+    "green-bell-pepper": [
+     1.0,
+     ""
+    ],
+    "tomato": [
+     5.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     4.0,
+     "clove"
+    ],
+    "scent-leaf": [
+     1.0,
+     "handful"
+    ],
+    "Dried thyme": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cut all vegetables into similar bite-sized chunks.",
+    "Soften onion and garlic in olive oil, add peppers for 5 minutes.",
+    "Add garden eggs and zucchini for 5 minutes, then tomatoes and thyme.",
+    "Simmer gently 25 minutes. Finish with torn scent leaf."
+   ],
+   "tip": "Serve with rice, bread or grilled fish. Better the next day.",
+   "sortOrder": 1540
+  },
+  {
+   "sheetId": "R070",
+   "slug": "grilled-chicken-with-scent-leaf-chimichurri",
+   "title": "Grilled Chicken with Scent Leaf Chimichurri",
+   "summary": "Scent leaf (efirin) and parsley base, ata rodo for heat.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 2,
+   "basketSlugs": [
+    "scent-leaf",
+    "parsley",
+    "garlic",
+    "chilli",
+    "lime",
+    "sweet-potato"
+   ],
+   "elsewhere": [
+    "Chicken breast",
+    "Vinegar"
+   ],
+   "amounts": {
+    "Chicken breast": [
+     2.0,
+     ""
+    ],
+    "scent-leaf": [
+     1.0,
+     "bunch"
+    ],
+    "parsley": [
+     0.5,
+     "bunch"
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "sweet-potato": [
+     2.0,
+     ""
+    ],
+    "Vinegar": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Roast sweet potato wedges at 200C for 25 minutes.",
+    "Season and grill the chicken.",
+    "Finely chop scent leaf, parsley, garlic and ata rodo. Mix with vinegar, lime, olive oil and salt.",
+    "Slice chicken and spoon chimichurri over it. Serve with the wedges."
+   ],
+   "tip": "Chimichurri keeps a week in the fridge. Great on fish and eggs too.",
+   "sortOrder": 1550
+  },
+  {
+   "sheetId": "R071",
+   "slug": "foil-baked-fish-with-lemon-tomato-and-greens",
+   "title": "Foil-Baked Fish with Lemon, Tomato & Greens",
+   "summary": "Local fish, ginger and efo, with potatoes on the side.",
+   "goal": "lighter",
+   "minutes": 30,
+   "serves": 2,
+   "basketSlugs": [
+    "tomato",
+    "lemon",
+    "spinach",
+    "onion",
+    "garlic",
+    "ginger",
+    "scent-leaf",
+    "irish-potato"
+   ],
+   "elsewhere": [
+    "Fish fillets (croaker / snapper)"
+   ],
+   "amounts": {
+    "Fish fillets (croaker / snapper)": [
+     2.0,
+     ""
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "spinach": [
+     2.0,
+     "cup"
+    ],
+    "onion": [
+     0.5,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "ginger": [
+     1.0,
+     "thumb"
+    ],
+    "scent-leaf": [
+     1.0,
+     "handful"
+    ],
+    "irish-potato": [
+     300.0,
+     "g"
+    ]
+   },
+   "steps": [
+    "Boil potatoes until tender.",
+    "Lay efo on foil, top with fish, sliced tomatoes, onion, garlic, ginger and lemon slices.",
+    "Drizzle with olive oil, season, scatter herbs and seal the parcels.",
+    "Bake at 200C for 15 to 18 minutes. Serve with potatoes."
+   ],
+   "tip": null,
+   "sortOrder": 1560
+  },
+  {
+   "sheetId": "R072",
+   "slug": "ugu-and-groundnut-pesto-pasta",
+   "title": "Ugu & Groundnut Pesto Pasta",
+   "summary": "Ugu and groundnuts replace basil and pine nuts, which cost a fortune here.",
+   "goal": "training",
+   "minutes": 27,
+   "serves": 2,
+   "basketSlugs": [
+    "ugu",
+    "scent-leaf",
+    "groundnut",
+    "garlic",
+    "lemon",
+    "cherry-tomato"
+   ],
+   "elsewhere": [
+    "Pasta",
+    "Parmesan"
+   ],
+   "amounts": {
+    "Pasta": [
+     200.0,
+     "g"
+    ],
+    "ugu": [
+     2.0,
+     "cup"
+    ],
+    "scent-leaf": [
+     1.0,
+     "handful"
+    ],
+    "groundnut": [
+     0.33,
+     "cup"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "cherry-tomato": [
+     1.0,
+     "cup"
+    ],
+    "Parmesan": [
+     3.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Cook pasta.",
+    "Blanch ugu for 30 seconds, then cool in cold water and squeeze dry.",
+    "Blend ugu, scent leaf, groundnuts, garlic, lemon, parmesan and olive oil.",
+    "Toss pasta with pesto and a splash of pasta water. Top with halved tomatoes."
+   ],
+   "tip": "Skip the parmesan and add extra groundnuts to make it vegan.",
+   "sortOrder": 1570
+  },
+  {
+   "sheetId": "R073",
+   "slug": "roasted-pumpkin-and-ginger-soup",
+   "title": "Roasted Pumpkin & Ginger Soup",
+   "summary": "Elegede pumpkin, lots of ginger and fresh coconut milk.",
+   "goal": "family",
+   "minutes": 50,
+   "serves": 4,
+   "basketSlugs": [
+    "pumpkin",
+    "carrot",
+    "onion",
+    "garlic",
+    "ginger",
+    "coconut",
+    "chilli"
+   ],
+   "elsewhere": [
+    "Vegetable stock"
+   ],
+   "amounts": {
+    "pumpkin": [
+     1.0,
+     "kg"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "ginger": [
+     2.0,
+     "thumb"
+    ],
+    "coconut": [
+     0.25,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "Vegetable stock": [
+     3.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Roast pumpkin, carrots, onion and garlic with oil at 200C for 25 minutes.",
+    "Transfer to a pot with ginger, ata rodo and stock. Simmer 10 minutes.",
+    "Blend until smooth.",
+    "Stir in coconut milk and season."
+   ],
+   "tip": null,
+   "sortOrder": 1580
+  },
+  {
+   "sheetId": "R074",
+   "slug": "roasted-tomato-and-tatashe-soup",
+   "title": "Roasted Tomato & Tatashe Soup",
+   "summary": "Basically a smooth, lighter obe ata you eat with a spoon.",
+   "goal": "lighter",
+   "minutes": 45,
+   "serves": 4,
+   "basketSlugs": [
+    "tomato",
+    "bell-pepper",
+    "onion",
+    "garlic",
+    "chilli",
+    "basil"
+   ],
+   "elsewhere": [
+    "Stock",
+    "Crusty bread"
+   ],
+   "amounts": {
+    "tomato": [
+     8.0,
+     ""
+    ],
+    "bell-pepper": [
+     3.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     4.0,
+     "clove"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "basil": [
+     1.0,
+     "handful"
+    ],
+    "Stock": [
+     2.0,
+     "cup"
+    ],
+    "Crusty bread": [
+     4.0,
+     "slice"
+    ]
+   },
+   "steps": [
+    "Halve tomatoes and tatashe, roast with onion, garlic and ata rodo at 200C for 25 minutes.",
+    "Blend with stock until smooth.",
+    "Simmer 5 minutes and season.",
+    "Serve with torn basil and crusty bread."
+   ],
+   "tip": null,
+   "sortOrder": 1590
+  },
+  {
+   "sheetId": "R075",
+   "slug": "coconut-lemongrass-chicken-soup",
+   "title": "Coconut Lemongrass Chicken Soup",
+   "summary": "Fresh coconut milk, local lemongrass, and ginger in place of galangal.",
+   "goal": "busy",
+   "minutes": 35,
+   "serves": 3,
+   "basketSlugs": [
+    "coconut",
+    "lemongrass",
+    "ginger",
+    "mushrooms",
+    "chilli",
+    "lime",
+    "coriander",
+    "spring-onion"
+   ],
+   "elsewhere": [
+    "Chicken",
+    "Stock",
+    "Fish sauce"
+   ],
+   "amounts": {
+    "Chicken": [
+     300.0,
+     "g"
+    ],
+    "coconut": [
+     1.0,
+     ""
+    ],
+    "lemongrass": [
+     2.0,
+     "stalk"
+    ],
+    "ginger": [
+     2.0,
+     "thumb"
+    ],
+    "mushrooms": [
+     150.0,
+     "g"
+    ],
+    "chilli": [
+     0.5,
+     ""
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "spring-onion": [
+     2.0,
+     "stalk"
+    ],
+    "Stock": [
+     2.0,
+     "cup"
+    ],
+    "Fish sauce": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Make fresh coconut milk from the coconut.",
+    "Simmer stock with bruised lemongrass, sliced ginger and ata rodo for 5 minutes.",
+    "Add sliced chicken and mushrooms, cook 8 minutes.",
+    "Stir in coconut milk, fish sauce and lime juice. Top with coriander and spring onion."
+   ],
+   "tip": null,
+   "sortOrder": 1600
+  },
+  {
+   "sheetId": "R076",
+   "slug": "garden-minestrone",
+   "title": "Garden Minestrone",
+   "summary": "Cabbage, green beans and black-eyed beans make it local.",
+   "goal": "family",
+   "minutes": 55,
+   "serves": 4,
+   "basketSlugs": [
+    "carrot",
+    "onion",
+    "garlic",
+    "cabbage",
+    "green-beans",
+    "tomato",
+    "irish-potato",
+    "parsley"
+   ],
+   "elsewhere": [
+    "Beans",
+    "Small pasta",
+    "Stock"
+   ],
+   "amounts": {
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     3.0,
+     "clove"
+    ],
+    "cabbage": [
+     0.25,
+     "head"
+    ],
+    "green-beans": [
+     100.0,
+     "g"
+    ],
+    "tomato": [
+     4.0,
+     ""
+    ],
+    "irish-potato": [
+     1.0,
+     ""
+    ],
+    "parsley": [
+     1.0,
+     "handful"
+    ],
+    "Beans": [
+     1.0,
+     "cup"
+    ],
+    "Small pasta": [
+     0.5,
+     "cup"
+    ],
+    "Stock": [
+     4.0,
+     "cup"
+    ]
+   },
+   "steps": [
+    "Soften diced onion, carrots and garlic in olive oil.",
+    "Add chopped tomatoes, diced potato and stock. Simmer 15 minutes.",
+    "Add shredded cabbage, green beans, beans and pasta. Simmer 10 more.",
+    "Season and finish with herbs."
+   ],
+   "tip": null,
+   "sortOrder": 1610
+  },
+  {
+   "sheetId": "R077",
+   "slug": "baked-plantain-chips-with-lime-and-yaji",
+   "title": "Baked Plantain Chips with Lime & Yaji",
+   "summary": "Baked, not deep-fried.",
+   "goal": "training",
+   "minutes": 35,
+   "serves": 3,
+   "basketSlugs": [
+    "plantain",
+    "lime"
+   ],
+   "elsewhere": [
+    "Yaji (suya spice)"
+   ],
+   "amounts": {
+    "plantain": [
+     2.0,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Yaji (suya spice)": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Peel green plantains and slice very thin.",
+    "Toss with oil and salt, spread on a tray in one layer.",
+    "Bake at 180C for 20 to 25 minutes, turning once.",
+    "Finish with lime zest and yaji."
+   ],
+   "tip": null,
+   "sortOrder": 1620
+  },
+  {
+   "sheetId": "R078",
+   "slug": "guacamole-with-garden-egg-crudites",
+   "title": "Guacamole with Garden Egg Crudites",
+   "summary": "Garden egg, cucumber and carrot sticks to dip instead of tortilla chips.",
+   "goal": "busy",
+   "minutes": 15,
+   "serves": 3,
+   "basketSlugs": [
+    "avocado",
+    "tomato",
+    "onion",
+    "chilli",
+    "coriander",
+    "lime",
+    "garden-egg",
+    "cucumber",
+    "carrot"
+   ],
+   "elsewhere": [],
+   "amounts": {
+    "avocado": [
+     2.0,
+     ""
+    ],
+    "tomato": [
+     1.0,
+     ""
+    ],
+    "onion": [
+     0.25,
+     ""
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "garden-egg": [
+     4.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Mash avocados with lime juice and salt.",
+    "Fold in diced tomato, onion, ata rodo and coriander.",
+    "Cut garden eggs, cucumber and carrots into sticks.",
+    "Serve together."
+   ],
+   "tip": null,
+   "sortOrder": 1630
+  },
+  {
+   "sheetId": "R079",
+   "slug": "garden-egg-baba-ganoush",
+   "title": "Garden Egg Baba Ganoush",
+   "summary": "Charred garden eggs, with groundnut paste in place of tahini.",
+   "goal": "family",
+   "minutes": 30,
+   "serves": 4,
+   "basketSlugs": [
+    "garden-egg",
+    "garlic",
+    "lemon",
+    "parsley",
+    "carrot"
+   ],
+   "elsewhere": [
+    "Groundnut paste (peanut butter)",
+    "Ground cumin"
+   ],
+   "amounts": {
+    "garden-egg": [
+     8.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "parsley": [
+     1.0,
+     "handful"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "Groundnut paste (peanut butter)": [
+     2.0,
+     "tbsp"
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Char garden eggs over a flame or under the grill until soft and blackened.",
+    "Peel and roughly chop.",
+    "Mash with garlic, lemon, groundnut paste, cumin, olive oil and salt.",
+    "Top with parsley. Serve with carrot sticks or bread."
+   ],
+   "tip": null,
+   "sortOrder": 1640
+  },
+  {
+   "sheetId": "R080",
+   "slug": "sweet-potato-wedges-with-yaji-yoghurt",
+   "title": "Sweet Potato Wedges with Yaji Yoghurt",
+   "summary": "Yaji-spiced yoghurt dip instead of ketchup.",
+   "goal": "training",
+   "minutes": 40,
+   "serves": 3,
+   "basketSlugs": [
+    "sweet-potato",
+    "lime",
+    "garlic"
+   ],
+   "elsewhere": [
+    "Paprika",
+    "Plain yoghurt",
+    "Yaji (suya spice)"
+   ],
+   "amounts": {
+    "sweet-potato": [
+     3.0,
+     ""
+    ],
+    "lime": [
+     0.5,
+     ""
+    ],
+    "garlic": [
+     1.0,
+     "clove"
+    ],
+    "Paprika": [
+     1.0,
+     "tsp"
+    ],
+    "Plain yoghurt": [
+     0.5,
+     "cup"
+    ],
+    "Yaji (suya spice)": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cut sweet potatoes into wedges, toss with oil, paprika and salt.",
+    "Roast at 200C for 25 to 30 minutes.",
+    "Mix yoghurt with yaji, grated garlic and lime.",
+    "Serve wedges with the dip."
+   ],
+   "tip": null,
+   "sortOrder": 1650
+  },
+  {
+   "sheetId": "R081",
+   "slug": "black-eyed-bean-hummus-with-veggie-sticks",
+   "title": "Black-Eyed Bean Hummus with Veggie Sticks",
+   "summary": "Black-eyed beans and groundnut paste replace chickpeas and tahini.",
+   "goal": "busy",
+   "minutes": 15,
+   "serves": 4,
+   "basketSlugs": [
+    "garlic",
+    "lemon",
+    "carrot",
+    "cucumber",
+    "bell-pepper",
+    "garden-egg"
+   ],
+   "elsewhere": [
+    "Black-eyed beans",
+    "Groundnut paste (peanut butter)",
+    "Ground cumin"
+   ],
+   "amounts": {
+    "Black-eyed beans": [
+     2.0,
+     "cup"
+    ],
+    "Groundnut paste (peanut butter)": [
+     2.0,
+     "tbsp"
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "lemon": [
+     1.0,
+     ""
+    ],
+    "Ground cumin": [
+     1.0,
+     "tsp"
+    ],
+    "carrot": [
+     2.0,
+     ""
+    ],
+    "cucumber": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "garden-egg": [
+     2.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Blend beans, groundnut paste, garlic, lemon juice, cumin and olive oil with a splash of cold water until very smooth.",
+    "Season with salt.",
+    "Cut carrots, cucumber, tatashe and garden eggs into sticks.",
+    "Serve together."
+   ],
+   "tip": null,
+   "sortOrder": 1660
+  },
+  {
+   "sheetId": "R082",
+   "slug": "roasted-corn-with-lime-and-yaji-butter",
+   "title": "Roasted Corn with Lime & Yaji Butter",
+   "summary": "Roadside roasted corn meets yaji and lime. Pair with ube in season.",
+   "goal": "training",
+   "minutes": 20,
+   "serves": 4,
+   "basketSlugs": [
+    "corn",
+    "lime",
+    "coriander"
+   ],
+   "elsewhere": [
+    "Butter",
+    "Yaji (suya spice)",
+    "Grated cheese"
+   ],
+   "amounts": {
+    "corn": [
+     4.0,
+     "cob"
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "coriander": [
+     1.0,
+     "handful"
+    ],
+    "Butter": [
+     2.0,
+     "tbsp"
+    ],
+    "Yaji (suya spice)": [
+     1.0,
+     "tsp"
+    ],
+    "Grated cheese": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Roast corn over a flame or under the grill until charred all over.",
+    "Mix soft butter with yaji.",
+    "Brush corn with yaji butter.",
+    "Squeeze lime over and scatter coriander and cheese."
+   ],
+   "tip": "Fresh corn Apr to Aug. Bundle with ube as a rainy season drop.",
+   "sortOrder": 1670
+  },
+  {
+   "sheetId": "R083",
+   "slug": "okra-and-corn-succotash",
+   "title": "Okra & Corn Succotash",
+   "summary": "Nigerian okra and fresh corn, with ata rodo.",
+   "goal": "family",
+   "minutes": 25,
+   "serves": 4,
+   "basketSlugs": [
+    "okra",
+    "corn",
+    "tomato",
+    "onion",
+    "bell-pepper",
+    "garlic",
+    "chilli"
+   ],
+   "elsewhere": [
+    "Butter"
+   ],
+   "amounts": {
+    "okra": [
+     200.0,
+     "g"
+    ],
+    "corn": [
+     2.0,
+     "cob"
+    ],
+    "tomato": [
+     2.0,
+     ""
+    ],
+    "onion": [
+     1.0,
+     ""
+    ],
+    "bell-pepper": [
+     1.0,
+     ""
+    ],
+    "garlic": [
+     2.0,
+     "clove"
+    ],
+    "chilli": [
+     0.25,
+     ""
+    ],
+    "Butter": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Slice okra into rounds and cut kernels off the corn.",
+    "Soften onion, garlic and tatashe in oil and butter.",
+    "Add okra and corn, cook 6 minutes on high so the okra stays crisp.",
+    "Add diced tomatoes and ata rodo, cook 3 minutes. Season."
+   ],
+   "tip": null,
+   "sortOrder": 1680
+  },
+  {
+   "sheetId": "R084",
+   "slug": "banana-groundnut-nice-cream",
+   "title": "Banana Groundnut Nice Cream",
+   "summary": "Roasted groundnuts and dates make it taste like a Nigerian childhood treat.",
+   "goal": "fruit",
+   "minutes": 10,
+   "serves": 2,
+   "basketSlugs": [
+    "banana",
+    "groundnut",
+    "dates"
+   ],
+   "elsewhere": [
+    "Milk or tiger nut milk",
+    "Ground cinnamon"
+   ],
+   "amounts": {
+    "banana": [
+     4.0,
+     ""
+    ],
+    "groundnut": [
+     2.0,
+     "tbsp"
+    ],
+    "dates": [
+     3.0,
+     ""
+    ],
+    "Milk or tiger nut milk": [
+     2.0,
+     "tbsp"
+    ],
+    "Ground cinnamon": [
+     1.0,
+     "pinch"
+    ]
+   },
+   "steps": [
+    "Slice ripe bananas and freeze for at least 4 hours.",
+    "Blend frozen banana with dates and a splash of milk until creamy.",
+    "Pulse in half the groundnuts.",
+    "Serve straight away, topped with the rest of the groundnuts and cinnamon."
+   ],
+   "tip": "The best use for overripe bananas. Pairs well with a discounted 'smoothie bananas' SKU.",
+   "sortOrder": 1690
+  },
+  {
+   "sheetId": "R085",
+   "slug": "grilled-pineapple-with-coconut-and-lime",
+   "title": "Grilled Pineapple with Coconut & Lime",
+   "summary": "Toasted fresh coconut and lime zest.",
+   "goal": "family",
+   "minutes": 20,
+   "serves": 4,
+   "basketSlugs": [
+    "pineapple",
+    "coconut",
+    "lime"
+   ],
+   "elsewhere": [
+    "Honey",
+    "Ground cinnamon"
+   ],
+   "amounts": {
+    "pineapple": [
+     1.0,
+     ""
+    ],
+    "coconut": [
+     0.25,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ],
+    "Ground cinnamon": [
+     0.5,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Cut pineapple into thick wedges.",
+    "Brush with honey and dust with cinnamon.",
+    "Grill or pan-sear until caramelised, 3 minutes a side.",
+    "Toast grated coconut in a dry pan. Scatter over with lime zest."
+   ],
+   "tip": null,
+   "sortOrder": 1700
+  },
+  {
+   "sheetId": "R086",
+   "slug": "mango-coconut-rice-pudding",
+   "title": "Mango Coconut Rice Pudding",
+   "summary": "Local rice cooked in fresh coconut milk and sweetened with dates.",
+   "goal": "family",
+   "minutes": 40,
+   "serves": 4,
+   "basketSlugs": [
+    "coconut",
+    "mango",
+    "dates",
+    "lime"
+   ],
+   "elsewhere": [
+    "Rice"
+   ],
+   "amounts": {
+    "Rice": [
+     1.0,
+     "cup"
+    ],
+    "coconut": [
+     1.0,
+     ""
+    ],
+    "mango": [
+     2.0,
+     ""
+    ],
+    "dates": [
+     4.0,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ]
+   },
+   "steps": [
+    "Make coconut milk from the coconut, blending in the dates.",
+    "Simmer rice in the coconut milk with a pinch of salt, stirring often, for 25 to 30 minutes until creamy.",
+    "Cool slightly and stir in lime zest.",
+    "Serve topped with sliced mango."
+   ],
+   "tip": "Best Feb to May.",
+   "sortOrder": 1710
+  },
+  {
+   "sheetId": "R087",
+   "slug": "watermelon-lime-ice-pops",
+   "title": "Watermelon Lime Ice Pops",
+   "summary": "Watermelon, lime and mint.",
+   "goal": "family",
+   "minutes": 10,
+   "serves": 6,
+   "basketSlugs": [
+    "watermelon",
+    "lime",
+    "mint"
+   ],
+   "elsewhere": [
+    "Honey"
+   ],
+   "amounts": {
+    "watermelon": [
+     3.0,
+     "cup"
+    ],
+    "lime": [
+     2.0,
+     ""
+    ],
+    "mint": [
+     1.0,
+     "small bunch"
+    ],
+    "Honey": [
+     1.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Blend watermelon with lime juice and honey.",
+    "Finely chop mint and stir it in.",
+    "Pour into ice pop moulds or small cups with sticks.",
+    "Freeze at least 6 hours."
+   ],
+   "tip": null,
+   "sortOrder": 1720
+  },
+  {
+   "sheetId": "R088",
+   "slug": "no-churn-mango-passion-sorbet",
+   "title": "No-Churn Mango Passion Sorbet",
+   "summary": "Ripe local mangoes need almost no sugar.",
+   "goal": "family",
+   "minutes": 15,
+   "serves": 4,
+   "basketSlugs": [
+    "mango",
+    "passion-fruit",
+    "lime"
+   ],
+   "elsewhere": [
+    "Honey"
+   ],
+   "amounts": {
+    "mango": [
+     3.0,
+     ""
+    ],
+    "passion-fruit": [
+     3.0,
+     ""
+    ],
+    "lime": [
+     1.0,
+     ""
+    ],
+    "Honey": [
+     2.0,
+     "tbsp"
+    ]
+   },
+   "steps": [
+    "Peel and cube mangoes and freeze for 4 hours.",
+    "Blend frozen mango with passion fruit pulp, lime and honey until smooth.",
+    "Serve soft, or freeze 1 hour for scoops."
+   ],
+   "tip": "Best Feb to May.",
+   "sortOrder": 1730
+  },
+  {
+   "sheetId": "R089",
+   "slug": "crunchy-apple-pear-and-grape-salad",
+   "title": "Crunchy Apple, Pear & Grape Salad",
+   "summary": "Roasted groundnuts instead of walnuts, yoghurt instead of mayo.",
+   "goal": "lighter",
+   "minutes": 15,
+   "serves": 2,
+   "basketSlugs": [
+    "apple",
+    "pear",
+    "red-grapes",
+    "romaine-lettuce",
+    "groundnut",
+    "lemon"
+   ],
+   "elsewhere": [
+    "Greek yoghurt",
+    "Honey"
+   ],
+   "amounts": {
+    "apple": [
+     2.0,
+     ""
+    ],
+    "pear": [
+     1.0,
+     ""
+    ],
+    "red-grapes": [
+     1.0,
+     "cup"
+    ],
+    "romaine-lettuce": [
+     2.0,
+     "cup"
+    ],
+    "groundnut": [
+     0.33,
+     "cup"
+    ],
+    "lemon": [
+     0.5,
+     ""
+    ],
+    "Greek yoghurt": [
+     0.5,
+     "cup"
+    ],
+    "Honey": [
+     1.0,
+     "tsp"
+    ]
+   },
+   "steps": [
+    "Core and dice apples and pear. Halve the grapes.",
+    "Mix yoghurt, lemon juice and honey.",
+    "Toss fruit with lettuce and dressing.",
+    "Top with roasted groundnuts."
+   ],
+   "tip": "A natural recipe for the premium fruit box.",
+   "sortOrder": 1740
+  }
+ ]
+}

@@ -10,23 +10,38 @@ export type Goal = {
 export const GOALS: Goal[] = [
   {
     slug: "post-workout-recovery",
-    label: "Post-workout recovery",
+    label: "Train better",
     description: "Produce that people usually reach for after training.",
   },
   {
     slug: "family-household",
-    label: "Family and household eating",
+    label: "Feed the family",
     description: "Produce that works for a table of different ages and tastes.",
   },
   {
     slug: "general-wellness",
-    label: "General wellness",
+    label: "Eat well",
     description: "A steady spread of fruit and vegetables through the week.",
   },
   {
     slug: "weight-management",
-    label: "Weight management",
+    label: "Eat lighter",
     description: "Lower-calorie produce that is filling and easy to prep.",
+  },
+  {
+    slug: "busy-weeks",
+    label: "Eat well on busy weeks",
+    description: "Produce that needs little or no cooking, for long days.",
+  },
+  {
+    slug: "plant-based",
+    label: "More plants",
+    description: "Greens, roots and fruit to build meals around plants.",
+  },
+  {
+    slug: "fresh-fruit",
+    label: "Fresh fruit every week",
+    description: "Fruit for breakfasts, snacks and lunchboxes through the week.",
   },
 ];
 
@@ -60,11 +75,11 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
   },
   "general-wellness": {
     recipes: [
-      { title: "Soup pot vegetables", uses: ["ugu", "spinach", "tomato", "bell-pepper", "onion"], note: "What people usually put in a pot of soup during the week." },
+      { title: "A big garden salad", uses: ["romaine-lettuce", "cucumber", "tomato", "carrot"], note: "A bowl of greens alongside whatever's for dinner." },
       { title: "Mixed fruit through the week", uses: ["apple", "orange", "banana"], note: "Spread across a few days rather than eaten in one sitting." },
-      { title: "Soup box, as packed", uses: ["soup-box"], note: "Ugu, spinach, tomato, pepper and onion in one pack." },
+      { title: "Sautéed greens on the side", uses: ["spinach", "tomato", "onion"], note: "Two minutes in a pan, next to eggs, plantain or a wrap." },
     ],
-    addOns: ["ugu", "spinach", "orange"],
+    addOns: ["spinach", "cucumber", "orange"],
   },
   "weight-management": {
     recipes: [
@@ -73,6 +88,30 @@ const GOAL_PLANS: Record<string, GoalPlan> = {
       { title: "Cabbage and carrot slaw", uses: ["cabbage", "carrot"], note: "Shredded raw, dressed lightly." },
     ],
     addOns: ["cucumber", "cabbage", "carrot"],
+  },
+  "busy-weeks": {
+    recipes: [
+      { title: "Avocado and tomato on toast", uses: ["avocado", "tomato"], note: "Ready in five minutes, no cooking." },
+      { title: "Cucumber and tomato side", uses: ["cucumber", "tomato"], note: "Chopped and dressed while something else cooks." },
+      { title: "Fruit to grab on the way out", uses: ["banana", "orange"], note: "No knife needed." },
+    ],
+    addOns: ["avocado", "banana", "cucumber"],
+  },
+  "plant-based": {
+    recipes: [
+      { title: "Greens for the week", uses: ["spinach", "ugu", "tomato"], note: "Sautéed into eggs, wraps and sides through the week." },
+      { title: "Roast sweet potato and spinach", uses: ["sweet-potato", "spinach"], note: "A filling plate built around vegetables." },
+      { title: "Avocado on everything", uses: ["avocado", "tomato"], note: "Makes a plant-based plate feel like a meal." },
+    ],
+    addOns: ["spinach", "sweet-potato", "avocado"],
+  },
+  "fresh-fruit": {
+    recipes: [
+      { title: "A fruit plate for the morning", uses: ["pineapple", "mango", "pawpaw"], note: "Cut once, eaten over two or three breakfasts." },
+      { title: "Lunchbox fruit", uses: ["banana", "orange"], note: "Travels well and needs no knife." },
+      { title: "Watermelon in place of dessert", uses: ["watermelon"], note: "Cold from the fridge after dinner." },
+    ],
+    addOns: ["pineapple", "mango", "watermelon"],
   },
 };
 
@@ -92,7 +131,10 @@ export type AssistantContext = {
   favorites?: string[];
   /** Free-text dietary notes, used to drop obvious mismatches from add-ons. */
   dietaryNotes?: string;
-  householdSize?: number;
+  /** Onboarding household type: myself | partner | family-kids | housemates | mixed. */
+  householdType?: string;
+  /** Onboarding cook-time band: none | unpredictable | under-20 | under-30 | up-to-hour. */
+  cookTimeAvailable?: string;
 };
 
 function filterByDiet(slugs: string[], dietaryNotes?: string): string[] {

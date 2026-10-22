@@ -1,6 +1,22 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { spring } from "@/lib/motion/tokens";
+import { haptic } from "@/lib/haptics";
+import { ProductImage } from "@/components/product-image";
+import { Icon } from "@/components/ui/icon";
+
+/*
+ * What the customer is filling, on every page: a guest's cart, or a signed-in
+ * customer's delivery (this week's order). The server decides which (see
+ * lib/cart.ts); components just call setQuantity. Every change answers with a
+ * short toast: where it went, or why it couldn't be added, and a removal can
+ * be undone from the toast. On Home, the page refreshes quietly after changes
+ * so its suggestions and recipe counts follow the order.
+ */
 
 export type CartLine = {
   productId: string;
@@ -11,9 +27,12 @@ export type CartLine = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId: string | null;
   memberPrice: number;
   standardPrice: number;
   quantity: number;
+  soldOut?: boolean;
+  limited?: boolean;
 };
 
 export type CartSnapshot = {
@@ -24,6 +43,17 @@ export type CartSnapshot = {
   savingsIfMember: number;
   itemCount: number;
   isSubscriber: boolean;
+  /** On a plan that includes delivery (Member Plus). */
+  freeDelivery: boolean;
+  /** The customer's area fee. */
+  deliveryFee: number;
+  /** Order value for free delivery (a site setting). */
+  freeDeliveryThreshold: number;
+  /** "cart" for a guest; "delivery" for a signed-in customer. */
+  container: "cart" | "delivery";
+  deliveryId: string | null;
+  /** "your Wednesday order". */
+  deliveryLabel: string | null;
 };
 
 export type AddableProduct = {
@@ -35,8 +65,21 @@ export type AddableProduct = {
   minOrderQty: number;
   stepQty: number;
   imageEmoji: string;
+  cloudinaryPublicId?: string | null;
   memberPrice: number;
   standardPrice: number;
+  /** Shown, but staff marked it out of stock: it can't be added right now. */
+  soldOut?: boolean;
+};
+
+type Notice = {
+  id: number;
+  tone: "ok" | "error";
+  text: string;
+  showView: boolean;
+  action?: { label: string; run: () => void };
+  /** The product just added, shown as a thumbnail instead of the check. */
+  image?: { publicId: string | null; emoji: string; name: string };
 };
 
 type CartContextValue = CartSnapshot & {
@@ -44,49 +87,86 @@ type CartContextValue = CartSnapshot & {
   loadingProductId: string | null;
   openDrawer: () => void;
   closeDrawer: () => void;
+  /** Put this product at exactly `quantity` (0 removes it). */
   setQuantity: (product: AddableProduct, quantity: number) => Promise<void>;
+  /** The quantity of a product already in what's being filled. */
+  quantityOf: (productId: string) => number;
   refresh: () => Promise<void>;
+  /** Show a toast from elsewhere (bulk adds from recipes, Kachi). */
+  /** A short confirmation (or error) at the bottom of the screen, with an optional action like Undo. */
+  announce: (text: string, tone?: "ok" | "error", action?: { label: string; run: () => void }) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function recompute(items: CartLine[], isSubscriber: boolean): CartSnapshot {
+function recompute(items: CartLine[], base: CartSnapshot): CartSnapshot {
   const standardSubtotal = items.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
   const memberSubtotal = items.reduce((s, l) => s + l.memberPrice * l.quantity, 0);
   return {
+    ...base,
     items,
     standardSubtotal,
     memberSubtotal,
-    subtotal: isSubscriber ? memberSubtotal : standardSubtotal,
+    subtotal: base.isSubscriber ? memberSubtotal : standardSubtotal,
     savingsIfMember: standardSubtotal - memberSubtotal,
     itemCount: items.reduce((s, l) => s + l.quantity, 0),
-    isSubscriber,
   };
 }
 
-export function CartProvider({
-  children,
-  initial,
-}: {
-  children: React.ReactNode;
-  initial: CartSnapshot;
-}) {
+export function CartProvider({ children, initial }: { children: React.ReactNode; initial: CartSnapshot }) {
   const [state, setState] = useState<CartSnapshot>(initial);
   const [isOpen, setIsOpen] = useState(false);
   const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const refreshTimer = useRef<number | undefined>(undefined);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // The server is the truth: whenever the page is re-rendered on the server
+  // (a refresh after Kachi, a recipe or Home changed the order), take its view.
+  const initialKey = JSON.stringify([initial.deliveryId, initial.items.map((i) => [i.productId, i.quantity]), initial.isSubscriber]);
+  const lastKey = useRef(initialKey);
+  useEffect(() => {
+    if (initialKey === lastKey.current) return;
+    lastKey.current = initialKey;
+    setState(initial);
+  }, [initialKey, initial]);
+
+  const announce = useCallback((text: string, tone: "ok" | "error" = "ok", showView = tone === "ok", action?: Notice["action"], image?: Notice["image"]) => {
+    window.clearTimeout(timer.current);
+    if (tone === "error") haptic("error");
+    setNotice({ id: Date.now(), tone, text, showView, action, image });
+    timer.current = window.setTimeout(() => setNotice(null), tone === "error" ? 5000 : action ? 5000 : 3200);
+  }, []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+      window.clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
+  // Home shows things worked out from the order on the server (suggestions,
+  // what recipes still need); refresh it once the taps settle.
+  const settle = useCallback(() => {
+    if (pathname !== "/basket") return;
+    window.clearTimeout(refreshTimer.current);
+    refreshTimer.current = window.setTimeout(() => router.refresh(), 900);
+  }, [pathname, router]);
+
+  const setQuantityRef = useRef<CartContextValue["setQuantity"] | null>(null);
 
   const setQuantity: CartContextValue["setQuantity"] = useCallback(
     async (product, quantity) => {
       setLoadingProductId(product.id);
       const previous = state;
-
+      const before = state.items.find((i) => i.productId === product.id)?.quantity ?? 0;
       const nextItems =
         quantity <= 0
           ? state.items.filter((i) => i.productId !== product.id)
-          : state.items.some((i) => i.productId === product.id)
-          ? state.items.map((i) =>
-              i.productId === product.id ? { ...i, quantity } : i,
-            )
+          : before > 0
+          ? state.items.map((i) => (i.productId === product.id ? { ...i, quantity } : i))
           : [
               ...state.items,
               {
@@ -98,14 +178,15 @@ export function CartProvider({
                 minOrderQty: product.minOrderQty,
                 stepQty: product.stepQty,
                 imageEmoji: product.imageEmoji,
+                cloudinaryPublicId: product.cloudinaryPublicId ?? null,
                 memberPrice: product.memberPrice,
                 standardPrice: product.standardPrice,
                 quantity,
+                soldOut: product.soldOut ?? false,
+                limited: false,
               },
             ];
-
-      setState(recompute(nextItems, state.isSubscriber));
-      if (quantity > 0) setIsOpen(true);
+      setState(recompute(nextItems, state));
 
       try {
         const res = await fetch("/api/cart/items", {
@@ -113,22 +194,35 @@ export function CartProvider({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ productId: product.id, quantity }),
         });
-        if (!res.ok) throw new Error("Failed to update cart");
-        setState((await res.json()) as CartSnapshot);
-      } catch {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "That didn't go through. Try again.");
+        setState(data as CartSnapshot);
+        const where = (data as CartSnapshot).deliveryLabel ?? "your cart";
+        if (before === 0 && quantity > 0)
+          announce(`${product.name} added to ${where}`, "ok", true, undefined, { publicId: product.cloudinaryPublicId ?? null, emoji: product.imageEmoji, name: product.name });
+        else if (quantity <= 0 && before > 0)
+          announce(`${product.name} removed`, "ok", false, { label: "Undo", run: () => void setQuantityRef.current?.(product, before) });
+        settle();
+      } catch (e) {
         setState(previous);
+        announce(e instanceof Error ? e.message : "That didn't go through. Try again.", "error");
       } finally {
         setLoadingProductId(null);
       }
     },
-    [state],
+    [state, announce, settle],
   );
+  useEffect(() => {
+    setQuantityRef.current = setQuantity;
+  }, [setQuantity]);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/cart");
     if (!res.ok) return;
     setState((await res.json()) as CartSnapshot);
   }, []);
+
+  const quantityOf = useCallback((productId: string) => state.items.find((i) => i.productId === productId)?.quantity ?? 0, [state.items]);
 
   const value: CartContextValue = useMemo(
     () => ({
@@ -138,12 +232,79 @@ export function CartProvider({
       openDrawer: () => setIsOpen(true),
       closeDrawer: () => setIsOpen(false),
       setQuantity,
+      quantityOf,
       refresh,
+      announce: (text: string, tone: "ok" | "error" = "ok", action?: Notice["action"]) => announce(text, tone, false, action),
     }),
-    [state, isOpen, loadingProductId, setQuantity, refresh],
+    [state, isOpen, loadingProductId, setQuantity, quantityOf, refresh, announce],
   );
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  const signedIn = state.container === "delivery";
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      <div className="cart-toast pointer-events-none fixed inset-x-0 z-(--z-toast) flex justify-center px-4" data-signed-in={signedIn || undefined} aria-live="polite">
+        <AnimatePresence>
+          {notice && (
+            <motion.div
+              key={notice.id}
+              initial={{ opacity: 0, y: 24, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={spring.juicy}
+              // Swipe it down to dismiss, like a notification.
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0.05, bottom: 0.6 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 36 || info.velocity.y > 400) setNotice(null);
+              }}
+              role={notice.tone === "error" ? "alert" : "status"}
+              className={`pointer-events-auto flex max-w-md touch-none items-center gap-3 rounded-full py-2 pr-4 pl-2 text-sm shadow-[0_12px_32px_-8px_rgb(0_0_0/0.35)] ${notice.tone === "error" ? "bg-ember text-white" : "bg-carbon text-white"}`}
+            >
+              {notice.tone === "error" ? (
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/20">
+                  <Icon name="warning" size={16} weight="bold" />
+                </span>
+              ) : notice.image ? (
+                <motion.span initial={{ scale: 0.4, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={spring.juicy} className="shrink-0">
+                  <ProductImage publicId={notice.image.publicId} alt="" emoji={notice.image.emoji} sizes="28px" rounded="rounded-full" className="size-7 bg-white" emojiClassName="text-sm" />
+                </motion.span>
+              ) : (
+                <motion.span initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={spring.juicy} className="flex size-7 shrink-0 items-center justify-center rounded-full bg-mint-pop text-carbon">
+                  <Icon name="checkPlain" size={15} weight="bold" />
+                </motion.span>
+              )}
+              <span className="min-w-0">{notice.text}</span>
+              {notice.action && (
+                <button
+                  type="button"
+                  className="shrink-0 font-semibold text-mint-pop"
+                  onClick={() => {
+                    notice.action?.run();
+                    setNotice(null);
+                  }}
+                >
+                  {notice.action.label}
+                </button>
+              )}
+              {notice.showView &&
+                pathname !== "/basket" &&
+                (signedIn ? (
+                  <Link href="/basket" className="shrink-0 font-semibold text-mint-pop underline-offset-2 hover:underline" onClick={() => setNotice(null)}>
+                    View
+                  </Link>
+                ) : (
+                  <button type="button" className="shrink-0 font-semibold text-mint-pop" onClick={() => { setNotice(null); setIsOpen(true); }}>
+                    View
+                  </button>
+                ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {

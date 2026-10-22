@@ -2,91 +2,97 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { motion, useAnimate } from "motion/react";
 import { useCart } from "@/components/cart-provider";
-import { HeaderSearch } from "@/components/header-search";
+import { SearchBar } from "@/components/search-bar";
+import { MarketingNav } from "@/components/marketing/marketing-nav";
+import { Icon } from "@/components/ui/icon";
+import { RollingNumber } from "@/components/ui/rolling-number";
+import { CART_LANDED_EVENT } from "@/components/ui/fly-to-cart";
+import { press, spring } from "@/lib/motion/tokens";
+import { SITE_NAME } from "@/lib/site";
 
-const NAV = [
-  { href: "/fruits", label: "Fruits" },
-  { href: "/recipes", label: "Recipes" },
-  { href: "/boxes-baskets", label: "Boxes & Baskets" },
-  { href: "/fresh-cuts", label: "Fresh Cuts" },
-];
+// Icon-only controls still need an accessible name, so every use passes both
+// aria-label and title: the first for screen readers, the second for hover.
+// Matches the marketing nav's soft pills (it sits inside that header).
+const ICON_BUTTON =
+  "tap-target flex h-10 w-10 items-center justify-center rounded-full bg-[var(--hm-tint)] text-carbon transition-colors hover:bg-[var(--hm-tint-2)]";
 
-export function SiteHeader({
-  isSignedIn,
-  isSubscriber,
-}: {
-  isSignedIn: boolean;
-  isSubscriber: boolean;
-}) {
+export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   const pathname = usePathname();
   const cart = useCart();
+  const isSignedIn = signedIn;
+  // Nothing to search on the chat or account screens.
+  const showSearch = !pathname.startsWith("/assistant") && !pathname.startsWith("/account");
 
-  const links = isSubscriber
-    ? [...NAV, { href: "/basket", label: "Standing basket" }]
-    : NAV;
-
-  return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xl font-semibold tracking-tight text-ripe-green">
-            Ripe
-          </Link>
-
-          <nav className="hidden items-center gap-5 lg:flex">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm ${
-                  pathname === link.href ? "font-medium text-ripe-green" : "text-muted hover:text-foreground"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-3">
-            <HeaderSearch />
-            <Link
-              href={isSignedIn ? "/account" : "/login"}
-              aria-label={isSignedIn ? "Your account" : "Sign in"}
-              className="rounded-full border border-border px-3 py-2 text-sm hover:bg-ripe-green-light"
-            >
-              {isSignedIn ? "Account" : "Sign in"}
+  // Every signed-in page gets the same slim header: the wordmark (Home),
+  // search, and Ask Kachi spelled out. No cart: the customer's order is Home,
+  // one tap away in the dock. Search is a full field on desktop and a button
+  // to the search page on phones, so Home isn't pushed below the fold.
+  if (isSignedIn) {
+    return (
+      <header className="sticky top-0 z-40 border-b border-hairline bg-background/85 backdrop-blur-xl backdrop-saturate-150">
+        <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-0">
+          {/* On desktop the wordmark sits over the sidebar, and the rest lines up with the page. */}
+          <div className="shrink-0 lg:w-60 lg:px-6">
+            <Link href="/basket" className="logo-wordmark text-2xl text-carbon">
+              {SITE_NAME}
             </Link>
-            <button
-              onClick={cart.openDrawer}
-              aria-label="Open cart"
-              className="relative rounded-full border border-border px-3 py-2 text-sm hover:bg-ripe-green-light"
-            >
-              Cart
-              {cart.itemCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ripe-terracotta text-xs font-medium text-white">
-                  {cart.itemCount}
-                </span>
-              )}
-            </button>
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:pr-6 lg:pl-6">
+          <div className="flex-1">{showSearch && <div className="hidden max-w-md lg:block"><SearchBar compact /></div>}</div>
+          {showSearch && (
+            <Link href="/search" aria-label="Search produce and recipes" title="Search" className={`${ICON_BUTTON} lg:hidden`}>
+              <Icon name="search" size={20} />
+            </Link>
+          )}
+          {!pathname.startsWith("/assistant") && (
+            <Link href="/assistant" className="flex h-10 items-center gap-1.5 rounded-full bg-[var(--hm-tint)] px-3.5 text-sm font-semibold text-carbon transition-colors hover:bg-[var(--hm-tint-2)]">
+              <Icon name="assistant" size={18} />
+              Ask Kachi
+            </Link>
+          )}
           </div>
         </div>
+      </header>
+    );
+  }
 
-        {/* Mobile: nav scrolls horizontally under the bar */}
-        <nav className="mt-3 flex gap-4 overflow-x-auto lg:hidden">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`shrink-0 text-sm ${
-                pathname === link.href ? "font-medium text-ripe-green" : "text-muted"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </header>
+  // A signed-out visitor gets the same navigation as the homepage, plus the
+  // cart, since anyone can shop produce without an account.
+  return <MarketingNav variant="page" cart={<HeaderCartButton count={cart.itemCount} onOpen={cart.openDrawer} />} />;
+}
+
+/** The landing target for flyToCart(); does a small "gulp" when produce lands. */
+function HeaderCartButton({ count, onOpen }: { count: number; onOpen: () => void }) {
+  const [scope, animate] = useAnimate();
+
+  useEffect(() => {
+    const gulp = () => {
+      animate(scope.current, { scale: [1, 0.86, 1.08, 1] }, { duration: 0.42, times: [0, 0.25, 0.6, 1] });
+    };
+    window.addEventListener(CART_LANDED_EVENT, gulp);
+    return () => window.removeEventListener(CART_LANDED_EVENT, gulp);
+  }, [animate, scope]);
+
+  return (
+    <motion.button
+      ref={scope}
+      data-flight-target="cart"
+      onClick={onOpen}
+      whileTap={{ scale: press.scale }}
+      transition={spring.snappy}
+      aria-label={count > 0 ? `Open cart, ${count} items` : "Open cart"}
+      title="Cart"
+      className={`${ICON_BUTTON} relative`}
+    >
+      <Icon name="cart" size={22} />
+      {count > 0 && (
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1 text-xs font-semibold text-paper-white">
+          <RollingNumber value={count} />
+        </span>
+      )}
+    </motion.button>
   );
 }

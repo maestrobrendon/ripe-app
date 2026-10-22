@@ -10,8 +10,12 @@ export function formatNaira(amount: number): string {
 
 export const DELIVERY_DAY_LABEL: Record<string, string> = {
   MONDAY: "Monday",
+  TUESDAY: "Tuesday",
   WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
   FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {
@@ -28,10 +32,14 @@ export const ORDER_UNIT_LABEL: Record<string, string> = {
 };
 
 export const GOAL_LABEL: Record<string, string> = {
-  "general-wellness": "General wellness",
-  "weight-management": "Weight management",
-  "post-workout-recovery": "Post-workout recovery",
-  "family-household": "Family and household eating",
+  "weight-management": "Eat lighter",
+  "post-workout-recovery": "Train better",
+  "family-household": "Feed the family",
+  "busy-weeks": "Eat well on busy weeks",
+  "plant-based": "More plants",
+  "fresh-fruit": "Fresh fruit every week",
+  // Older accounts only; no longer offered.
+  "general-wellness": "Eat well",
   other: "Something else",
 };
 
@@ -41,16 +49,44 @@ export const SHOPPING_STYLE_LABEL: Record<string, string> = {
   "not-sure": "Not sure yet",
 };
 
-export const ORDER_STATUS_LABEL: Record<string, string> = {
-  RECEIVED: "Received",
-  SOURCED: "Sourced",
-  OUT_FOR_DELIVERY: "Out for delivery",
-  DELIVERED: "Delivered",
+export const HOUSEHOLD_TYPE_LABEL: Record<string, string> = {
+  myself: "Just myself",
+  partner: "Partner or spouse",
+  "family-kids": "Family with kids",
+  housemates: "Housemates",
+  mixed: "A mix of people",
 };
 
-export const ORDER_STATUS_STEPS = [
-  "RECEIVED",
-  "SOURCED",
-  "OUT_FOR_DELIVERY",
-  "DELIVERED",
+export const COOK_TIME_LABEL: Record<string, string> = {
+  none: "No time to cook",
+  unpredictable: "Unpredictable",
+  "under-20": "Under 20 minutes",
+  "under-30": "Under 30 minutes",
+  "up-to-hour": "Up to an hour",
+};
+
+export const PRODUCE_PREFERENCE_LABEL: Record<string, string> = {
+  fruits: "Fruits",
+  vegetables: "Vegetables",
+  "leafy-greens": "Leafy greens",
+  "root-veg": "Root veg",
+  herbs: "Herbs and spices",
+};
+
+// Order shown in onboarding. "everything" is the master toggle, handled separately.
+export const PRODUCE_PREFERENCE_OPTIONS = [
+  "fruits",
+  "vegetables",
+  "leafy-greens",
+  "root-veg",
+  "herbs",
 ] as const;
+
+export const MEAL_FORMAT_LABEL: Record<string, string> = {
+  "weeknight-dinners": "Quick weeknight dinners",
+  "cook-ahead": "Cook-ahead",
+  "packed-lunches": "Packed lunches",
+  "prep-breakfasts": "Preppable breakfasts",
+};
+
+// Order status labels live in src/lib/order-status.ts.
