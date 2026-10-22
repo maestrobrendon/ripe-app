@@ -19,8 +19,8 @@ import "../home-menu/home-menu.css";
 
 export const metadata = { title: "Get started. Basket" };
 
-export default async function StartPage({ searchParams }: { searchParams: Promise<{ next?: string; goal?: string; recipe?: string; ref?: string }> }) {
-  const { next, goal, recipe, ref } = await searchParams;
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ next?: string; goal?: string; recipe?: string; ref?: string; from?: string }> }) {
+  const { next, goal, recipe, ref, from } = await searchParams;
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
   const user = await getCurrentUser();
   if (user) redirect(safeNext ?? "/basket");
@@ -37,9 +37,11 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     getSiteSettings(),
     readCart(),
   ]);
-  // Came from the shop with a cart: sign-up is built around it instead of recipes.
+  // Sign-up is built around their cart only when they chose "Create my account" at checkout
+  // (?from=checkout). Every other way in is the usual onboarding; anything already in a
+  // cart still joins their first basket when the account is made.
   const lines = guestCart.items.filter((l) => !l.soldOut);
-  const cart = lines.length
+  const cart = from === "checkout" && lines.length
     ? {
         items: lines.map((l) => ({
           productId: l.productId,

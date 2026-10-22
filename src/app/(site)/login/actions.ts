@@ -14,7 +14,8 @@ export async function signIn(formData: FormData) {
   const contact = String(formData.get("contact") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const safeNext = safeNextPath(String(formData.get("next") ?? ""), "");
-  const nextParam = safeNext ? `&next=${encodeURIComponent(safeNext)}` : "";
+  // Kept through a failed attempt: where to go after, and whether they came from checkout.
+  const nextParam = (safeNext ? `&next=${encodeURIComponent(safeNext)}` : "") + (formData.get("from") === "checkout" ? "&from=checkout" : "");
 
   const ip = await clientIp();
   const byIp = rateLimit(`login:ip:${ip}`, 10, TEN_MINUTES);

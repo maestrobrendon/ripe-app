@@ -69,10 +69,10 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
               </p>
             </div>
             <div className="mt-6 grid gap-2.5">
-              <LinkButton href="/start?next=/checkout" size="lg" className="flex w-full justify-center">
+              <LinkButton href="/start?from=checkout&next=/checkout" size="lg" className="flex w-full justify-center">
                 Create my account
               </LinkButton>
-              <LinkButton href="/login?next=/checkout" size="lg" variant="secondary" className="flex w-full justify-center">
+              <LinkButton href="/login?next=/checkout&from=checkout" size="lg" variant="secondary" className="flex w-full justify-center">
                 I already have an account
               </LinkButton>
             </div>

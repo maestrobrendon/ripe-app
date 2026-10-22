@@ -7,9 +7,9 @@ import { signIn } from "./actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; next?: string; from?: string }>;
 }) {
-  const { error, next: nextRaw } = await searchParams;
+  const { error, next: nextRaw, from } = await searchParams;
   const next = safeNextPath(nextRaw, "");
 
   return (
@@ -24,6 +24,7 @@ export default async function LoginPage({
 
       <form action={signIn} className="mt-8 space-y-5">
         {next && <input type="hidden" name="next" value={next} />}
+        {from === "checkout" && <input type="hidden" name="from" value="checkout" />}
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium">Email or phone</span>
           <input name="contact" required autoComplete="username" placeholder="you@example.com or 0803…" className={authInput} />
@@ -49,7 +50,8 @@ export default async function LoginPage({
         New to Basket?
         <span className="h-px flex-1 bg-border" />
       </div>
-      <Link href="/start" className={authSecondaryButton}>
+      {/* From checkout's "I already have an account": making one instead keeps the checkout sign-up. */}
+      <Link href={from === "checkout" ? "/start?from=checkout&next=/checkout" : "/start"} className={authSecondaryButton}>
         Create an account
       </Link>
 
