@@ -125,5 +125,6 @@ describe("stop order quality", () => {
       at = next;
     }
     expect(cost(m, a, false)).toBeLessThan(cost(m, greedy, false));
-  });
+    // Plans a 30-stop route twice: heavier than most tests, so more room on a busy machine.
+  }, 30_000);
 });

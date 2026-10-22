@@ -18,7 +18,9 @@ import { Icon } from "@/components/ui/icon";
 import { MENU_GOALS, type MenuGoal, type MenuRecipe } from "../home-menu/recipes";
 import { useMenu } from "@/components/menu-provider";
 import { shortName } from "../home-menu/parts/shared";
-import { buildRecipeBasket, snapQuantity } from "./recipe-basket";
+import { haptic } from "@/lib/haptics";
+import { buildRecipeBasket, snapQuantity, type BasketLine } from "./recipe-basket";
+import { OwnBasketSheet } from "./own-basket-sheet";
 import { createAccountFromOnboarding, type StartState } from "./actions";
 
 type Zone = { slug: string; name: string; area: string; isServed: boolean; deliveryDays: DeliveryDay[]; cutoffHour: number };
@@ -147,8 +149,31 @@ export function StartFlow({
   const recipeSlugs = picked ?? MENU.filter((r) => r.goal === goal).map((r) => r.slug);
   const recipes = MENU.filter((r) => recipeSlugs.includes(r.slug));
   const built = buildRecipeBasket(recipes, adults, kids, candidates);
-  const lines = built.lines.map((l) => ({ ...l, quantity: overrides[l.productId] ?? l.quantity }));
+  const fromRecipes = built.lines.map((l) => ({ ...l, quantity: overrides[l.productId] ?? l.quantity }));
+  // Anything they added themselves ("Create your own basket"), shown first.
+  const inRecipes = new Set(built.lines.map((l) => l.productId));
+  const own: BasketLine[] = candidates
+    .filter((c) => !inRecipes.has(c.id) && (overrides[c.id] ?? 0) > 0)
+    .map((c) => ({ productId: c.id, slug: c.slug, name: c.name, imageEmoji: c.imageEmoji, cloudinaryPublicId: c.cloudinaryPublicId, standardPrice: c.standardPrice, minOrderQty: c.minOrderQty, stepQty: c.stepQty, quantity: overrides[c.id], usedBy: [] }));
+  const lines = [...own, ...fromRecipes];
   const kept = lines.filter((l) => l.quantity > 0);
+  // Once they've made it their own, recipe items they took out tuck away instead of crowding the list.
+  const tucked = own.length > 0 ? fromRecipes.filter((l) => l.quantity === 0) : [];
+  const [creating, setCreating] = useState(false);
+  const [savedOwn, setSavedOwn] = useState(0);
+  const saveOwn = (next: Record<string, number>) => {
+    // Every product either side knows about: what they picked, and what was there before (now 0 if dropped).
+    const ids = new Set([...Object.keys(next), ...lines.map((l) => l.productId)]);
+    setOverrides((o) => {
+      const out = { ...o };
+      for (const id of ids) out[id] = next[id] ?? 0;
+      return out;
+    });
+    setCreating(false);
+    setSavedOwn((n) => n + 1);
+    haptic("success");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const produce = kept.reduce((s, l) => s + l.standardPrice * l.quantity, 0);
   const delivery = quoteDelivery(produce, false, undefined, freeDeliveryThreshold);
   const people = adults + kids;
@@ -480,8 +505,26 @@ export function StartFlow({
                   )}
                 </div>
 
+                <AnimatePresence>
+                  {savedOwn > 0 && (
+                    <motion.p
+                      key={savedOwn}
+                      role="status"
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={spring.smooth}
+                      onAnimationComplete={() => window.setTimeout(() => setSavedOwn((n) => (n === savedOwn ? 0 : n)), 3200)}
+                      className="mt-4 flex items-center gap-2 rounded-[16px] bg-mint-pop/35 px-4 py-3 text-[14px] font-semibold"
+                    >
+                      <Icon name="checkPlain" size={16} weight="bold" />
+                      Saved. This is your basket now.
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+
                 <ul className="mt-5">
-                  {lines.map((l) => {
+                  {lines.filter((l) => !tucked.includes(l)).map((l) => {
                     const out = l.quantity === 0;
                     return (
                       <motion.li key={l.productId} layout="position" transition={spring.smooth} className="flex items-center gap-3 border-b border-(--hm-line) py-3 last:border-0">
@@ -498,7 +541,7 @@ export function StartFlow({
                         <span className={`min-w-0 flex-1 transition-opacity ${out ? "opacity-45" : ""}`}>
                           <b className="block truncate text-[15px] font-semibold">{shortName(l.name)}</b>
                           <small className="block truncate text-[13px] text-(--hm-ink-3)">
-                            {l.usedBy.length > 1 ? `In ${l.usedBy.length} recipes` : l.usedBy[0]}
+                            {l.usedBy.length === 0 ? "Your pick" : l.usedBy.length > 1 ? `In ${l.usedBy.length} recipes` : l.usedBy[0]}
                           </small>
                         </span>
                         {out ? (
@@ -517,6 +560,51 @@ export function StartFlow({
                     );
                   })}
                 </ul>
+
+                {tucked.length > 0 && (
+                  <details className="mt-3 text-[14px]">
+                    <summary className="cursor-pointer py-2 text-(--hm-ink-3)">
+                      Taken out from your recipes ({tucked.length})
+                    </summary>
+                    <ul>
+                      {tucked.map((l) => (
+                        <li key={l.productId} className="flex items-center justify-between gap-3 py-2">
+                          <span className="truncate text-(--hm-ink-2)">{shortName(l.name)}</span>
+                          <button type="button" onClick={() => setLine(l.productId, l.minOrderQty)} className="h-8 shrink-0 rounded-full bg-(--hm-tint) px-3 text-[13px] font-semibold">
+                            Add back
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+
+                {/* The quiet way to start from scratch: the making is the experience. */}
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: press.scale }}
+                  transition={spring.snappy}
+                  onClick={() => {
+                    haptic("light");
+                    setCreating(true);
+                  }}
+                  className="mt-5 flex w-full items-center gap-3 rounded-[18px] border border-dashed border-(--hm-line-2,#d4d4cf) px-4 py-3.5 text-left transition-colors hover:bg-(--hm-tint)"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-(--hm-tint)">
+                    <Icon name="plus" size={16} weight="bold" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <b className="block text-[15px] font-semibold">Create your own basket</b>
+                    <small className="block text-[13px] text-(--hm-ink-3)">Pick your own fruit and veg. Your recipes stay saved.</small>
+                  </span>
+                </motion.button>
+                <OwnBasketSheet
+                  open={creating}
+                  onClose={() => setCreating(false)}
+                  candidates={candidates}
+                  current={Object.fromEntries(kept.map((l) => [l.productId, l.quantity]))}
+                  onSave={saveOwn}
+                />
 
                 {built.elsewhere.length > 0 && (
                   <div className="mt-6">
@@ -817,7 +905,7 @@ function Stepper({ label, value, min, max, onChange }: { label: string; value: n
   );
 }
 
-function QtyStepper({ label, value, onLess, onMore }: { label: string; value: number; onLess: () => void; onMore: () => void }) {
+export function QtyStepper({ label, value, onLess, onMore }: { label: string; value: number; onLess: () => void; onMore: () => void }) {
   const btn = "grid h-8 w-8 place-items-center rounded-full text-base leading-none font-semibold";
   return (
     <div className="flex shrink-0 items-center gap-1 rounded-full bg-(--hm-tint) p-0.5">

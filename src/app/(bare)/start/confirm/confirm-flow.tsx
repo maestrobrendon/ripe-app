@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { press, spring } from "@/lib/motion/tokens";
 import { haptic } from "@/lib/haptics";
 import { formatNaira } from "@/lib/format";
-import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { placeOrder, type PaymentChoice } from "@/app/(site)/checkout/actions";
@@ -133,29 +132,7 @@ export function ConfirmFlow(p: {
               <>
                 <Kachi>You&apos;re in, {p.firstName}. Here&apos;s your basket. {p.transfer ? "Pay now and it's locked in." : "Confirm it and it's locked in."}</Kachi>
                 <Title>Your basket</Title>
-                <p className="mt-2 text-[15px] text-(--hm-ink-2)">{p.when}</p>
-                <ul className="hm-panel mt-5 divide-y divide-(--hm-line)">
-                  {p.lines.map((l, i) => (
-                    <motion.li key={l.productId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...spring.smooth, delay: 0.04 * i }} className="flex items-center gap-3 px-4 py-3">
-                      <ProductImage publicId={l.publicId} alt="" emoji={l.emoji} sizes="40px" className="size-10 shrink-0" rounded="rounded-xl" emojiClassName="text-lg" />
-                      <span className="min-w-0 flex-1">
-                        <b className="block truncate text-[15px] font-semibold">{l.name}</b>
-                        <span className="text-[13px] text-(--hm-ink-3)">{l.amount}</span>
-                      </span>
-                      <span className="shrink-0 text-[15px] tabular-nums">{formatNaira(l.total)}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-                <dl className="mt-4 grid gap-1.5 px-1 text-[15px]">
-                  <div className="flex justify-between text-(--hm-ink-2)">
-                    <dt>Delivery to {p.zone.name}</dt>
-                    <dd className="tabular-nums">{p.fee ? formatNaira(p.fee) : "Free"}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between pt-1">
-                    <dt className="font-semibold">Total</dt>
-                    <dd className="text-[24px] font-semibold tracking-[-0.02em] tabular-nums">{formatNaira(total)}</dd>
-                  </div>
-                </dl>
+                <Receipt name={p.contact.name} when={p.when} zone={p.zone.name} lines={p.lines} subtotal={p.subtotal} fee={p.fee} total={total} reference={p.reference} firstName={p.firstName} />
               </>
             )}
 
@@ -257,6 +234,94 @@ function CopyRow({ label, value, shown, big }: { label: string; value: string; s
       >
         {copied ? "Copied" : "Copy"}
       </button>
+    </div>
+  );
+}
+
+/**
+ * The basket as a till receipt: it prints out of a slot as the screen opens.
+ * Names and prices only, like the real thing; the reference matches the
+ * transfer on the next screen.
+ */
+function Receipt(r: { name: string; firstName: string; when: string; zone: string; lines: Line[]; subtotal: number; fee: number; total: number; reference: string }) {
+  const still = useReducedMotion();
+  const items = r.lines.length;
+  return (
+    <div className="mt-6">
+      {/* The printer's slot. */}
+      <div className="mx-auto h-2.5 w-[calc(100%+8px)] -translate-x-1 rounded-full bg-carbon/85" aria-hidden />
+      <motion.div
+        className="hm-receipt-shadow -mt-1 px-2.5"
+        initial={still ? false : { clipPath: "inset(0 0 100% 0)", y: -14 }}
+        animate={{ clipPath: "inset(0 0 0% 0)", y: 0 }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+      >
+        <div className="hm-receipt px-5 pt-7 pb-8 text-[14px]">
+          <div className="text-center">
+            <p className="logo-wordmark text-[26px] leading-none">Basket</p>
+            <p className="mt-2 text-[12px] tracking-[0.08em] text-(--hm-ink-3) uppercase">Fresh fruit and veg, Lagos</p>
+          </div>
+
+          <hr className="hm-receipt-rule my-4" />
+          <dl className="grid gap-1 text-[13px]">
+            <div className="flex justify-between gap-4">
+              <dt className="text-(--hm-ink-3)">For</dt>
+              <dd className="truncate font-medium">{r.name}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-(--hm-ink-3)">Arrives</dt>
+              <dd className="text-right font-medium">{r.when}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-(--hm-ink-3)">To</dt>
+              <dd className="font-medium">{r.zone}</dd>
+            </div>
+          </dl>
+
+          <hr className="hm-receipt-rule my-4" />
+          <ul className="grid gap-2.5">
+            {r.lines.map((l, i) => (
+              <motion.li
+                key={l.productId}
+                initial={still ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35 + Math.min(i, 12) * 0.05 }}
+                className="flex items-baseline gap-2"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{l.name}</span>
+                  <span className="block text-[12px] text-(--hm-ink-3)">{l.amount}</span>
+                </span>
+                <span className="shrink-0 tabular-nums">{formatNaira(l.total)}</span>
+              </motion.li>
+            ))}
+          </ul>
+
+          <hr className="hm-receipt-rule my-4" />
+          <dl className="grid gap-1.5">
+            <div className="flex justify-between text-(--hm-ink-2)">
+              <dt>
+                {items} {items === 1 ? "item" : "items"}
+              </dt>
+              <dd className="tabular-nums">{formatNaira(r.subtotal)}</dd>
+            </div>
+            <div className="flex justify-between text-(--hm-ink-2)">
+              <dt>Delivery</dt>
+              <dd className="tabular-nums">{r.fee ? formatNaira(r.fee) : "Free"}</dd>
+            </div>
+            <div className="mt-2 flex items-baseline justify-between border-t-2 border-carbon pt-3">
+              <dt className="text-[13px] font-semibold tracking-[0.08em] uppercase">Total</dt>
+              <dd className="text-[26px] leading-none font-semibold tracking-[-0.02em] tabular-nums">{formatNaira(r.total)}</dd>
+            </div>
+          </dl>
+
+          <hr className="hm-receipt-rule my-4" />
+          <div className="text-center">
+            <p className="font-mono text-[13px] tracking-[0.12em]">REF {r.reference}</p>
+            <p className="mt-2 text-[13px] text-(--hm-ink-2)">Thank you, {r.firstName}. Picked fresh for you.</p>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

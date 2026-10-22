@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { BUYABLE } from "@/lib/product";
 import {
   buildStarterPicks,
   DEFAULT_SEED_SLUGS,
@@ -10,7 +11,8 @@ export * from "@/lib/starter-basket-core";
 
 export async function getStarterCandidates(): Promise<StarterCandidate[]> {
   return prisma.product.findMany({
-    where: { category: { in: ["FRUIT", "VEGETABLE", "SEASONAL", "BOX_BUNDLE"] } },
+    // Only what can be bought this week, at a real price: anything else would be dropped at sign-up anyway.
+    where: { category: { in: ["FRUIT", "VEGETABLE", "SEASONAL", "BOX_BUNDLE"] }, standardPrice: { gt: 0 }, ...BUYABLE },
     select: {
       id: true,
       slug: true,
