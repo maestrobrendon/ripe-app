@@ -203,7 +203,7 @@ export function Closing({ signedIn }: { signedIn: boolean }) {
             <p className="hm-lede mt-4 max-w-[26rem]">Pick your fruit and veg, pick your day, and pay when it arrives. No membership needed for your first one.</p>
             <div className="mt-8">
               <MagneticLink href={signedIn ? "/basket" : "/start"} arrow>
-                {signedIn ? "Open your basket" : "Get started"}
+                {signedIn ? "Open your basket" : "Try a basket"}
               </MagneticLink>
             </div>
           </div>

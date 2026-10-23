@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { useRef, type CSSProperties } from "react";
 import { gsap, SplitText, useGSAP, motionQueries } from "@/lib/motion/gsap";
-import { MagneticLink, scrollToId } from "../../home-next/parts/runtime";
-import { MENU_GOALS, type MenuGoal } from "../recipes";
+import { MagneticLink } from "../../home-next/parts/runtime";
 
 /*
  * The illustration is one generated scene (public/assets/illustrations/hero,
@@ -128,16 +127,14 @@ function Side({ side }: { side: "left" | "right" }) {
   );
 }
 
-export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: (g: MenuGoal) => void }) {
+export function Hero({ signedIn }: { signedIn: boolean }) {
   const root = useRef<HTMLElement>(null);
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       mm.add(motionQueries.full, () => {
-        // The word slot and its screen-reader twin stay whole: the slot runs its
-        // own loop below, and splitting it would stack its two words as lines.
-        const split = SplitText.create(".hm-hero-title", { type: "lines,words", mask: "lines", ignore: ".hm-swap, .sr-only" });
+        const split = SplitText.create(".hm-hero-title", { type: "lines,words", mask: "lines" });
         gsap.set("[data-intro]", { visibility: "visible" });
 
         const layers = gsap.utils.toArray<HTMLElement>(".hm-layer");
@@ -185,24 +182,7 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
             },
             1.05,
           )
-          .from(role("flecks"), { autoAlpha: 0, scale: 0.9, duration: 1.2, stagger: 0.1 }, 1.2)
-          // The word slot rises with the words around it, in fourth place.
-          .from(".hm-swap", { yPercent: 115, duration: 1 }, 0.1 + 3 * 0.06);
-
-        // Then "meals" and "fruits" take turns: one slides up and out as the
-        // other rises in, with a pause on each.
-        const [meals, fruits] = gsap.utils.toArray<HTMLElement>(".hm-swap > span");
-        gsap.set(fruits, { y: 0, yPercent: 120 });
-        const turn = (from: HTMLElement, to: HTMLElement) =>
-          gsap
-            .timeline()
-            .to(from, { yPercent: -120, duration: 0.75, ease: "ripe.emphasized" })
-            .fromTo(to, { yPercent: 120 }, { yPercent: 0, duration: 0.75, ease: "ripe.emphasized" }, "<0.06");
-        gsap
-          .timeline({ repeat: -1, delay: 2.4 })
-          .add(turn(meals, fruits))
-          .add(turn(fruits, meals), "+=2.2")
-          .to({}, { duration: 2.2 });
+          .from(role("flecks"), { autoAlpha: 0, scale: 0.9, duration: 1.2, stagger: 0.1 }, 1.2);
 
         // Once everything has landed, each thing moves like itself: the
         // plates drift about their centres, the bowls bob, the limes rock,
@@ -290,59 +270,31 @@ export function Hero({ signedIn, onPickGoal }: { signedIn: boolean; onPickGoal: 
       <div className="relative mx-auto w-[min(1360px,calc(100%-32px))] lg:min-h-[640px]">
         <div className="relative z-20 mx-auto flex max-w-[620px] flex-col items-center text-center">
           {/* Four hand-set lines, sized to the column (see .hm-hero-title):
-              no line ever wraps on its own, at any width. */}
+              no line ever wraps on its own, at any width. One plain sentence:
+              what Basket is, and nothing a first visit has to decide. */}
           <div className="hm-hero-title-box w-full">
             <h1 className="hm-hero-title hm-display">
-              Your week
+              Fresh fruit
               <br />
-              of{" "}
-              {/* "meals" and "fruits" take turns in one slot, so the line
-                  says both: whichever you're after, it's planned and
-                  delivered. Screen readers hear the pair once. */}
-              <span className="sr-only">meals or fruits,</span>
-              {/* The two words are drawn by CSS (data-word), so the
-                  headline's text is the one sentence above, for search too. */}
-              <span className="hm-swap" aria-hidden>
-                <span data-word="meals," />
-                <span data-word="fruits," />
-              </span>
+              and veg,
               <br />
-              planned and
+              delivered
               <br />
-              delivered.
+              every week.
             </h1>
           </div>
 
-          <p data-intro data-hero-fade className="hm-lede mt-6 max-w-[34rem]">
-            Fresh fruit and vegetables every week, and exciting ways to eat them. Tell us what you&apos;re after and we&apos;ll build your basket, delivered on your day.
+          <p data-intro data-hero-fade className="hm-lede mt-6 max-w-[30rem]">
+            Pick what you like and your day. It keeps coming, with recipes so you actually eat it.
           </p>
 
           <div data-intro data-hero-fade className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <MagneticLink href={signedIn ? "/basket" : "/start"} arrow>
-              {signedIn ? "Open your basket" : "Get started"}
+              {signedIn ? "Open your basket" : "Try your first basket"}
             </MagneticLink>
             <MagneticLink href="#menu" variant="soft">
-              See this week&apos;s menu
+              See this week&apos;s recipes
             </MagneticLink>
-          </div>
-
-          <div data-intro data-hero-fade className="mt-12 w-full">
-            <p className="text-[14px] font-medium text-[var(--hm-ink-3)]">What are you working toward?</p>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              {MENU_GOALS.map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => {
-                    onPickGoal(g.id);
-                    scrollToId("menu");
-                  }}
-                  className="h-10 rounded-full bg-paper-white px-4 text-[14px] font-semibold shadow-[0_0_0_1px_var(--hm-line)] transition-[background-color,box-shadow] hover:bg-[#f3f5f0] hover:shadow-[0_0_0_1px_rgb(0_0_0/0.18)] active:scale-[0.97]"
-                >
-                  {g.short}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </div>

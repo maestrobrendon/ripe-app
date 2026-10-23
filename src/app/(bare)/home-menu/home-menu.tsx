@@ -7,7 +7,6 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { Hero } from "./parts/hero";
 import { Menu } from "./parts/menu";
 import { How } from "./parts/how";
-import { Inside } from "./parts/inside";
 import { Details } from "./parts/details";
 import { Price } from "./parts/price";
 import { Faq, Closing } from "./parts/closing";
@@ -15,12 +14,13 @@ import type { MenuGoal } from "./recipes";
 import type { MenuData } from "./types";
 
 /**
- * Seven sections, each one making people hungry, building trust, or
- * answering "how much": the promise, the menu, how it works (with Kachi),
- * what's inside a recipe, the small things, the price, the questions.
+ * Seven sections, and the page gets denser as it goes: the hero says what
+ * Basket is in one sentence, then what arrives (the produce, with the small
+ * things beside it), the recipes that make it worth eating, how it works,
+ * the price, the questions, and the closing invitation.
  *
- * One goal runs through the page. Pick it in the hero and the menu, Kachi's
- * demo and the price all follow.
+ * One goal runs through the page. Pick it in the menu and Kachi's demo and
+ * the price follow.
  */
 export function HomeMenu({ data }: { data: MenuData }) {
   const [goal, setGoal] = useState<MenuGoal>("lighter");
@@ -30,11 +30,10 @@ export function HomeMenu({ data }: { data: MenuData }) {
       <div className="hm">
         <MarketingNav variant="home" signedIn={data.signedIn} />
         <main>
-          <Hero signedIn={data.signedIn} onPickGoal={setGoal} />
+          <Hero signedIn={data.signedIn} />
+          <Details deliveryDay={data.deliveryDay} />
           <Menu goal={goal} onGoal={setGoal} products={data.products} signedIn={data.signedIn} />
           <How goal={goal} deliveryDay={data.deliveryDay} products={data.products} signedIn={data.signedIn} />
-          <Inside products={data.products} />
-          <Details deliveryDay={data.deliveryDay} />
           <Price
             goal={goal}
             onGoal={setGoal}

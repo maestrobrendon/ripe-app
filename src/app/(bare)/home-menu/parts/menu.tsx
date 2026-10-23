@@ -34,9 +34,9 @@ export function Menu({
       <div className="hm-wrap">
         <div>
           <Reveal className="max-w-[44rem]">
-            <Eyebrow>This week&apos;s menu</Eyebrow>
-            <h2 className="hm-h2">Recipes you&apos;ll want to cook, built from your basket.</h2>
-            <p className="hm-lede mt-4">Bowls, wraps, salads and quick pans from around the world, made with what&apos;s fresh this week. Most of every recipe arrives in your basket.</p>
+            <Eyebrow>This week&apos;s recipes</Eyebrow>
+            <h2 className="hm-h2">So none of it sits in the fridge.</h2>
+            <p className="hm-lede mt-4">Every week, recipes built from what&apos;s in your basket. Pick your goal and the menu follows.</p>
           </Reveal>
 
           <LayoutGroup id="hm-goal">

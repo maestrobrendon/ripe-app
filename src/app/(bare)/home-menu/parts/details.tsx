@@ -161,6 +161,8 @@ function TrialWidget() {
   );
 }
 
+const FACTS = ["Your day, every week", "Change it until the night before", "Pay when it arrives"];
+
 export function Details({ deliveryDay }: { deliveryDay: string }) {
   return (
     <section id="details" className="py-16 sm:py-24">
@@ -168,10 +170,19 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
         <div>
           <div className="lg:sticky lg:top-28">
             <Eyebrow className="text-[#0f7a48]">Fresh to your door</Eyebrow>
-            <h2 className="hm-h2">The fresh produce behind every recipe.</h2>
-            <p className="hm-lede mt-4 max-w-[26rem]">
-              Picked ripe, checked by hand and brought to your door on your day. And it bends around your week, right up to the night before.
-            </p>
+            <h2 className="hm-h2">What arrives.</h2>
+            <p className="hm-lede mt-4 max-w-[26rem]">Picked ripe, checked by hand, at your door on your day.</p>
+            {/* The three facts a first visit needs; the cards beside go deeper. */}
+            <ul className="mt-6 flex flex-col gap-2.5 text-[16px] font-medium">
+              {FACTS.map((f) => (
+                <li key={f} className="flex items-center gap-2.5">
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-mint-pop">
+                    <Check className="h-3 w-3" />
+                  </span>
+                  {f}
+                </li>
+              ))}
+            </ul>
             {/* The basket arriving, then unpacked at home: the produce is the
                 product, the recipes are what it turns into. */}
             <Reveal className="relative mt-8 pb-[12%] lg:max-w-[460px]">

@@ -112,7 +112,7 @@ export function MarketingNav({
             </Link>
           )}
           <MagneticLink href={signedIn ? "/basket" : "/start"} size="md" className="h-10! px-4.5! text-[14px]!">
-            {signedIn ? "Open your basket" : "Get started"}
+            {signedIn ? "Open your basket" : "Try a basket"}
           </MagneticLink>
           <button
             type="button"
@@ -138,7 +138,7 @@ export function MarketingNav({
             {!signedIn && (
               <div className="mt-8 grid gap-3">
                 <Link href="/start" onClick={() => setOpen(false)} className="flex h-13 items-center justify-center rounded-full bg-carbon text-[15px] font-semibold text-paper-white">
-                  Get started
+                  Try a basket
                 </Link>
                 <Link href="/login" onClick={() => setOpen(false)} className="flex h-13 items-center justify-center rounded-full bg-[var(--hm-tint)] text-[15px] font-semibold">
                   Sign in

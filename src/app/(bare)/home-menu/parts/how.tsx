@@ -218,51 +218,38 @@ function Delivery({ goal, deliveryDay, products }: { goal: MenuGoal; deliveryDay
   );
 }
 
-const ASKS = ["What can I make with what's left?", "Make Thursday vegetarian", "Something the kids will eat", "Swap the cabbage for something else"];
-
 export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal; deliveryDay: string; products: Record<string, MenuProduct>; signedIn: boolean }) {
   return (
     <section id="how" className="scroll-mt-20 py-16 sm:py-24">
       <div className="hm-wrap">
         <Reveal className="max-w-[40rem]">
           <Eyebrow className="text-electric-blue">How it works</Eyebrow>
-          <h2 className="hm-h2">From your goal to dinner, in three steps.</h2>
-          <p className="hm-lede mt-4">
-            Kachi is your food friend inside Basket. Tell her what you&apos;re after and she builds the week: the fruit and veg, and exciting ways to eat them.
-          </p>
+          <h2 className="hm-h2">Three steps, then it just keeps coming.</h2>
         </Reveal>
 
         <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-5">
-          <Step n={1} title="Tell Kachi your goal" body="Lose a little weight, train harder, feed four. Say it how you'd say it to a friend.">
+          <Step n={1} title="Tell us your goal" body="Eat lighter, feed the family, train harder. Say it the way you'd say it to a friend.">
             <KachiChat goal={goal} />
           </Step>
-          <Step n={2} title="Get a week you'll actually cook" body="Recipes that make fruit and veg the best part of the day, picked for your goal and your household. Swap any of them in a tap.">
+          <Step n={2} title="Get a week you'll actually cook" body="Recipes and the produce to make them, picked for your household. Swap any of them.">
             <WeekPlan goal={goal} />
           </Step>
-          <Step n={3} title="Confirm it, and it arrives" body={`A few days before your day we remind you on WhatsApp, email and the app. Confirm, and pay when it comes. Skip a week when you're away.`}>
+          <Step n={3} title="Confirm it, and it arrives" body="We remind you before each delivery. Pay when it comes.">
             <Delivery goal={goal} deliveryDay={deliveryDay} products={products} />
           </Step>
         </div>
 
-        <div className="mt-14 flex flex-col gap-6 rounded-[28px] bg-carbon p-6 text-paper-white sm:p-8 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-4">
-            <KachiMark className="h-11 w-11" />
-            <div>
-              <p className="text-[18px] font-semibold tracking-[-0.02em]">Kachi keeps planning with you all week.</p>
-              <p className="mt-1 max-w-[30rem] text-[15px] leading-relaxed text-paper-white/65">Kachi suggests food, not treatment. For anything medical, your doctor comes first.</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 md:max-w-[420px] md:justify-end">
-            {ASKS.map((a) => (
-              <span key={a} className="rounded-full bg-paper-white/10 px-3.5 py-2 text-[13px] font-medium text-paper-white/90">
-                {a}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="mt-6 flex justify-center">
+        {/* Kachi gets one line here. Who she is and isn't (not a nutritionist)
+            is answered in the questions, where someone who cares will look. */}
+        <div className="mt-14 flex flex-col items-center gap-5 text-center">
+          <p className="flex max-w-[34rem] items-start gap-3 text-left text-[16px] leading-relaxed text-[var(--hm-ink-2)]">
+            <KachiMark className="mt-0.5 h-7 w-7 shrink-0" />
+            <span>
+              <b className="font-semibold text-carbon">Kachi</b>, your planner inside Basket, keeps the week going: &ldquo;What can I make with what&apos;s left?&rdquo;
+            </span>
+          </p>
           <MagneticLink href={signedIn ? "/assistant" : `/start?goal=${goal}`} variant="soft" arrow>
-            {signedIn ? "Ask Kachi" : "Tell Kachi your goal"}
+            {signedIn ? "Ask Kachi" : "Tell us your goal"}
           </MagneticLink>
         </div>
       </div>

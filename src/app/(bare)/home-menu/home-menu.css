@@ -106,40 +106,17 @@
 }
 
 /* The hero headline is four hand-set lines. The type is sized to the
-   column, not the screen, so the widest line ("PLANNED AND", 7.66em in
-   the display face) always just fits: about 43px on a phone, capped at
-   60px from tablets up so the four lines don't swamp the hero. 7.9 leaves a
+   column, not the screen, so the widest line ("EVERY WEEK.", about 7.9em in
+   the display face) always just fits: about 42px on a phone, capped at
+   60px from tablets up so the four lines don't swamp the hero. 8.2 leaves a
    little room for rounding; nowrap keeps the four lines exactly as written
    even before the web font arrives. */
 .hm-hero-title-box {
   container-type: inline-size;
 }
 .hm-hero-title {
-  font-size: min(3.75rem, calc(100cqi / 7.9));
+  font-size: min(3.75rem, calc(100cqi / 8.2));
   white-space: nowrap;
-}
-
-/* "meals" and "fruits" share one slot on the second line: both words sit in
-   the same grid cell (so the slot is as wide as the longer one and the line
-   never jumps), and the slot clips them so one can slide out as the other
-   slides in. The padding keeps the caps clear of the clip edge; the negative
-   margin gives that space back so the line spacing is unchanged. Until the
-   hero script runs, and with reduced motion, only "meals" shows. */
-.hm-swap {
-  display: inline-grid;
-  justify-items: start;
-  overflow: clip;
-  padding-block: 0.1em;
-  margin-block: -0.1em;
-}
-.hm-swap > span {
-  grid-area: 1 / 1;
-}
-.hm-swap > span::before {
-  content: attr(data-word);
-}
-.hm-swap > span + span {
-  transform: translateY(120%);
 }
 
 /* Section headlines: the UI face, tight, sentence case. */

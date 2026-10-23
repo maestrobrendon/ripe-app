@@ -69,10 +69,8 @@ export function Price({
       <div className="hm-wrap grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
         <Reveal>
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
-          <h2 className="hm-h2">What a week of eating well costs.</h2>
-          <p className="hm-lede mt-4 max-w-[30rem]">
-            Pick a goal and your household and see what the produce costs. Members pay close to what we pay at the market; everyone else pays the market rate. Delivery is priced by your area, and free on Member Plus.
-          </p>
+          <h2 className="hm-h2">What a week costs.</h2>
+          <p className="hm-lede mt-4 max-w-[30rem]">Pick your household and see the number. Members pay close to market cost.</p>
           <div className="mt-8 flex flex-wrap gap-2" role="radiogroup" aria-label="Your goal">
             {MENU_GOALS.map((g) => (
               <button
