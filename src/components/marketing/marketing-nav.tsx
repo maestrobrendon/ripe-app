@@ -12,15 +12,16 @@ import "@/app/(bare)/home-menu/home-menu.css";
  * site reads as one place rather than a landing page bolted onto a shop.
  * Signed-in members get the app's own header and dock instead.
  *
- * "How it works" and "Questions" are homepage sections; from any other page
- * they go back to that section.
+ * "Home" is spelled out because not everyone knows the logo goes there.
+ * "How it works" is a homepage section; from any other page it goes back to
+ * that section. The questions are reachable from the homepage and the footer.
  */
 export const MARKETING_LINKS: { label: string; href: string }[] = [
+  { label: "Home", href: "/" },
   { label: "Recipes", href: "/recipes" },
   { label: "Fruit & veg", href: "/shop" },
   { label: "How it works", href: "/#how" },
   { label: "Pricing", href: "/subscribe" },
-  { label: "Questions", href: "/#faq" },
 ];
 
 export function MarketingNav({
@@ -88,8 +89,8 @@ export function MarketingNav({
       }`}
     >
       <div className="hm-wrap flex h-16 items-center justify-between gap-3 sm:h-18">
-        <Link href="/" className="logo-wordmark text-[24px] leading-none" aria-label="Basket, home">
-          Basket
+        <Link href="/" className="logo-wordmark text-[24px] leading-none" aria-label="BasketNG, home">
+          BasketNG
         </Link>
 
         <nav className="hidden items-center gap-0.5 text-[15px] font-medium lg:flex" aria-label="Main">

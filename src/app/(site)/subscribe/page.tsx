@@ -12,7 +12,7 @@ import { pendingPlanRequest } from "@/lib/plans";
 import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
-  title: "Pricing. Basket",
+  title: "Pricing. BasketNG",
   description: "Try one basket at market prices, or become a member: your baskets every week at member prices, a reminder before each delivery, and nothing charged automatically. Member Plus adds free delivery.",
 };
 

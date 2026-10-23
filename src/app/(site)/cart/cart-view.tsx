@@ -23,7 +23,7 @@ export function CartView() {
       {signedIn && (
         <Link href="/basket" className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted">
           <Icon name="caretDown" size={14} className="rotate-90" />
-          Basket
+          BasketNG
         </Link>
       )}
       <h1 className="text-2xl font-semibold sm:text-3xl">Your cart</h1>

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { DELIVERY_DAY_LABEL } from "@/lib/format";
 
-export const metadata = { title: "Delivery areas. Basket" };
+export const metadata = { title: "Delivery areas. BasketNG" };
 
 export default async function DeliveryAreasPage() {
   const zones = await prisma.deliveryZone.findMany({ orderBy: { sortOrder: "asc" } });

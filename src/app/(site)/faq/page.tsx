@@ -1,4 +1,4 @@
-export const metadata = { title: "FAQ. Basket" };
+export const metadata = { title: "FAQ. BasketNG" };
 
 const FAQS = [
   {

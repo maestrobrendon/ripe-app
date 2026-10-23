@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "About. Basket" };
+export const metadata = { title: "About. BasketNG" };
 
 export default function AboutPage() {
   return (

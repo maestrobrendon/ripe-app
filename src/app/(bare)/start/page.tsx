@@ -17,7 +17,7 @@ import { StartFlow } from "./start-flow";
 // Sign-up is a bare page (see src/proxy.ts) in the homepage's own look.
 import "../home-menu/home-menu.css";
 
-export const metadata = { title: "Get started. Basket" };
+export const metadata = { title: "Get started. BasketNG" };
 
 export default async function StartPage({ searchParams }: { searchParams: Promise<{ next?: string; goal?: string; recipe?: string; ref?: string; from?: string }> }) {
   const { next, goal, recipe, ref, from } = await searchParams;

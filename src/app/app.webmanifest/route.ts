@@ -12,8 +12,8 @@ import type { MetadataRoute } from "next";
 function manifest(): MetadataRoute.Manifest {
   return {
     id: "/basket",
-    name: "Basket",
-    short_name: "Basket",
+    name: "BasketNG",
+    short_name: "BasketNG",
     description: "Fresh fruit and vegetables every week, and exciting ways to eat them. Delivered across Lagos.",
     start_url: "/basket?source=app",
     scope: "/",

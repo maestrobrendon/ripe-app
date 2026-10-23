@@ -12,7 +12,7 @@ import "@/app/(bare)/home-menu/home-menu.css";
 
 const columns = (support: { whatsapp: string; email: string }): { title: string; links: [string, string][] }[] => [
   {
-    title: "Basket",
+    title: "BasketNG",
     links: [
       ["Recipes", "/recipes"],
       ["Fruit & veg", "/shop"],
@@ -47,7 +47,7 @@ export function MarketingFooter() {
       <div className="hm-wrap grid gap-10 sm:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <Link href="/" className="logo-wordmark text-[24px] leading-none">
-            Basket
+            BasketNG
           </Link>
           <p className="mt-3 max-w-[16rem] text-[14px] leading-relaxed text-[var(--hm-ink-3)]">Recipes and fresh produce for whatever you&apos;re working toward. Lagos.</p>
         </div>
@@ -73,7 +73,7 @@ export function MarketingFooter() {
         ))}
       </div>
       <div className="hm-wrap mt-12 flex flex-wrap justify-between gap-2 text-[13px] text-[var(--hm-ink-3)]">
-        <span>© {new Date().getFullYear()} Basket</span>
+        <span>© {new Date().getFullYear()} BasketNG</span>
       </div>
     </footer>
   );

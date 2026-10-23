@@ -23,7 +23,7 @@ import type { Metadata } from "next";
  * (src/app/(bare)/home-menu) became "/". Kept reachable for reference only.
  */
 export const metadata: Metadata = {
-  title: "Archived homepage. Basket",
+  title: "Archived homepage. BasketNG",
   robots: { index: false, follow: false },
 };
 

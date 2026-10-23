@@ -117,7 +117,7 @@ export function AdminMark({ className }: { className?: string }) {
     <span className={cx("inline-flex items-center gap-2", className)}>
       <span className="logo-wordmark grid h-8 w-8 place-items-center rounded-lg bg-carbon text-[18px] leading-none text-paper-white">B</span>
       <span className="text-[15px] font-semibold tracking-[-0.01em]">
-        Basket <span className="text-carbon/45">Admin</span>
+        BasketNG <span className="text-carbon/45">Admin</span>
       </span>
     </span>
   );

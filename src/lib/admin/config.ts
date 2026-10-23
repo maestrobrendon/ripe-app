@@ -24,6 +24,6 @@ export function rpId(): string {
   return process.env.WEBAUTHN_RP_ID?.trim().toLowerCase() || adminHost().split(":")[0];
 }
 
-export const RP_NAME = "Basket Admin";
+export const RP_NAME = "BasketNG Admin";
 
 export const isProduction = () => process.env.NODE_ENV === "production";

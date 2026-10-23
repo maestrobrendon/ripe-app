@@ -101,7 +101,7 @@ export function ConfirmFlow(p: {
       <header className="sticky top-0 z-30 bg-paper-white/92 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
           {index === 0 ? (
-            <span className="logo-wordmark text-[22px] leading-none">Basket</span>
+            <span className="logo-wordmark text-[22px] leading-none">BasketNG</span>
           ) : (
             <motion.button type="button" onClick={() => go(index - 1)} whileTap={{ scale: press.scale }} aria-label="Back" className="-ml-2 grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-(--hm-tint)">
               <Icon name="caretLeft" size={20} />
@@ -258,7 +258,7 @@ function Receipt(r: { name: string; firstName: string; when: string; zone: strin
       >
         <div className="hm-receipt px-5 pt-7 pb-8 text-[14px]">
           <div className="text-center">
-            <p className="logo-wordmark text-[26px] leading-none">Basket</p>
+            <p className="logo-wordmark text-[26px] leading-none">BasketNG</p>
             <p className="mt-2 text-[12px] tracking-[0.08em] text-(--hm-ink-3) uppercase">Fresh fruit and veg, Lagos</p>
           </div>
 

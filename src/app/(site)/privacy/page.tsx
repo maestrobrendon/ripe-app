@@ -3,7 +3,7 @@ import { LegalPage, type LegalSection } from "@/components/legal-page";
 import { SupportEmail } from "@/components/support-links";
 
 export const metadata = {
-  title: "Privacy policy. Basket",
+  title: "Privacy policy. BasketNG",
   description:
     "What personal data Basket collects, why we use it, who we share it with, how long we keep it, and your rights under the Nigeria Data Protection Act.",
 };

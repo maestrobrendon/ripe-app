@@ -3,7 +3,7 @@ import { LegalPage, type LegalSection } from "@/components/legal-page";
 import { SupportEmail } from "@/components/support-links";
 
 export const metadata = {
-  title: "Terms of service. Basket",
+  title: "Terms of service. BasketNG",
   description:
     "The terms for using Basket: accounts, orders, delivery, subscriptions, payment, Kachi and recipes.",
 };

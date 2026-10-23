@@ -13,7 +13,7 @@ import { WelcomeChoice } from "./welcome-choice";
 // The last beat of sign-up: a bare page (see src/proxy.ts) in the homepage's look.
 import "../home-menu/home-menu.css";
 
-export const metadata = { title: "You're in. Basket" };
+export const metadata = { title: "You're in. BasketNG" };
 
 /**
  * Straight after sign-up. The account is made and the first basket is saved,
@@ -48,8 +48,8 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   return (
     <div className="hm min-h-svh bg-paper-white text-carbon">
       <header className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center">
-        <Link href="/basket" className="logo-wordmark text-[22px] leading-none" aria-label="Basket">
-          Basket
+        <Link href="/basket" className="logo-wordmark text-[22px] leading-none" aria-label="BasketNG">
+          BasketNG
         </Link>
       </header>
 

@@ -10,7 +10,7 @@ import type { HomeData, ShowcaseGoal } from "./types";
 import "./home-next.css";
 
 export const metadata: Metadata = {
-  title: "Basket. Fresh produce, on your day, every week.",
+  title: "BasketNG. Fresh produce, on your day, every week.",
   description:
     "A basket of fresh fruit and vegetables that shows up on your day, every week. Farm-direct, across Lagos.",
   // A preview of the next homepage. Kept out of search until it replaces the live one.

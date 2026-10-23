@@ -49,8 +49,8 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
           tight ? "h-16" : "h-18 sm:h-21"
         }`}
       >
-        <Link href="/" className="logo-wordmark text-[26px] leading-none" aria-label="Basket, home">
-          Basket
+        <Link href="/" className="logo-wordmark text-[26px] leading-none" aria-label="BasketNG, home">
+          BasketNG
         </Link>
 
         <nav className="hidden items-center gap-8 text-[15px] font-medium md:flex" aria-label="Sections">

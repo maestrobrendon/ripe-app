@@ -11,7 +11,7 @@ import type { Prisma, Product, ProductCategory } from "@/generated/prisma/client
 import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
-  title: "Fruits. Basket",
+  title: "Fruits. BasketNG",
   description: "Every fruit and vegetable Basket sells, with the standard price and the member price side by side.",
 };
 

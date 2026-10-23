@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { readCart } from "@/lib/cart";
 import { KachiChat } from "./assistant-chat";
 
-export const metadata = { title: "Kachi. Basket" };
+export const metadata = { title: "Kachi. BasketNG" };
 
 /**
  * Kachi: one assistant for food questions and for changes to the order the

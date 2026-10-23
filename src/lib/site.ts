@@ -1,4 +1,4 @@
-export const SITE_NAME = "Basket";
+export const SITE_NAME = "BasketNG";
 
 /**
  * The customer site's own origin, for links in emails. Never built from the

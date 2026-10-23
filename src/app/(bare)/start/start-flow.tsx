@@ -280,8 +280,8 @@ export function StartFlow({
       <header className="sticky top-0 z-30 bg-paper-white/92 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
           {index === 0 ? (
-            <Link href="/" className="logo-wordmark text-[22px] leading-none" aria-label="Basket, home">
-              Basket
+            <Link href="/" className="logo-wordmark text-[22px] leading-none" aria-label="BasketNG, home">
+              BasketNG
             </Link>
           ) : (
             <motion.button

@@ -15,7 +15,7 @@ import { ConfirmFlow } from "./confirm-flow";
 // The same bare, step-by-step look as sign-up.
 import "../../home-menu/home-menu.css";
 
-export const metadata = { title: "Your basket. Basket" };
+export const metadata = { title: "Your basket. BasketNG" };
 
 /**
  * Straight after the account is made: their basket and paying for it, then

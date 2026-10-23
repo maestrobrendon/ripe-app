@@ -17,7 +17,7 @@ import "../home-next/home-next.css";
 import "./home-menu.css";
 
 export const metadata: Metadata = {
-  title: "Basket. Fresh fruit and veg, delivered every week in Lagos.",
+  title: "BasketNG. Fresh fruit and veg, delivered every week in Lagos.",
   description:
     "Pick your fruit and vegetables and your day, and it keeps coming, with recipes so you actually eat it. Delivered across Lagos. Pay when it arrives.",
 };

@@ -25,7 +25,7 @@ import { getMenuCards } from "./recipe-data";
 // The menu shares the homepage's look: soft tints, photo first.
 import "@/app/(bare)/home-menu/home-menu.css";
 
-export const metadata = { title: "Recipes. Basket" };
+export const metadata = { title: "Recipes. BasketNG" };
 
 const PLANNER_IMAGE_ID = "basket-recipes-unpacking";
 // The guest hero's photo collage: one tall, two stacked.

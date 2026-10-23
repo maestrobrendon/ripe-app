@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ? {
           manifest: "/app.webmanifest",
           // Installed on an iPhone's home screen, Basket opens full screen under its own name.
-          appleWebApp: { capable: true, title: "Basket", statusBarStyle: "default" as const },
+          appleWebApp: { capable: true, title: "BasketNG", statusBarStyle: "default" as const },
         }
       : {}),
   };

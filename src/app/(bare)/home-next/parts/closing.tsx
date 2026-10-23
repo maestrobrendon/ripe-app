@@ -309,7 +309,7 @@ export function Footer() {
       </div>
 
       <div className="mt-8 overflow-hidden" aria-hidden>
-        <p className="hn-wordmark logo-wordmark -mb-[0.2em] text-center text-[27vw] leading-[0.8] text-paper-white">Basket</p>
+        <p className="hn-wordmark logo-wordmark -mb-[0.2em] text-center text-[27vw] leading-[0.8] text-paper-white">BasketNG</p>
       </div>
     </footer>
   );
