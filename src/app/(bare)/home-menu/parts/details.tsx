@@ -293,8 +293,8 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
 
       {/* Phones: the four points one at a time, the scroll as the playhead. */}
       {stepped && (
-        <div ref={stage} className="relative mt-4 md:hidden" style={{ height: `${DETAILS.length * 70}svh` }} aria-label="What arrives">
-          <div className="sticky top-16 flex h-[calc(100svh-4rem)] flex-col overflow-hidden">
+        <div ref={stage} className="relative mt-4 md:hidden" style={{ height: `${DETAILS.length * 70}vh` }} aria-label="What arrives">
+          <div className="sticky top-16 flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
             <div className="hm-wrap flex items-center justify-between pt-6 text-[13px] font-semibold">
               <span className="inline-flex items-center gap-2">
                 <i className="h-2.5 w-2.5 rounded-full bg-[#0f7a48]" aria-hidden />
