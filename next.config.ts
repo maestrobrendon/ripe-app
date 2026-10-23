@@ -42,8 +42,19 @@ const nextConfig: NextConfig = {
   },
   // The old storefront collections now live on one page, /shop, as filters.
   // Fresh Cuts is discontinued; its address lands on the full list.
+  // The old vercel.app addresses send everyone to getbasket.ng, path kept.
   async redirects() {
     return [
+      ...[
+        ["getbasket.vercel.app", "https://www.getbasket.ng"],
+        ["ripeapp.vercel.app", "https://www.getbasket.ng"],
+        ["getbasket-admin.vercel.app", "https://admin.getbasket.ng"],
+      ].map(([host, to]) => ({
+        source: "/:path*",
+        has: [{ type: "host" as const, value: host }],
+        destination: `${to}/:path*`,
+        permanent: true,
+      })),
       { source: "/fruits", destination: "/shop?category=FRUIT", permanent: true },
       { source: "/boxes-baskets", destination: "/shop?category=BOX_BUNDLE", permanent: true },
       { source: "/fresh-cuts", destination: "/shop", permanent: true },

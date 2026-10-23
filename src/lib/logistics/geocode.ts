@@ -15,7 +15,7 @@ export type GeoHit = LatLng & { label: string };
 
 export type GeocodeOptions = {
   baseUrl?: string;
-  /** Who's asking, as Nominatim requires: "Basket/1.0 (hello@basket.ng)". */
+  /** Who's asking, as Nominatim requires: "Basket/1.0 (hello@getbasket.ng)". */
   userAgent: string;
   /** ISO country codes to search in, e.g. "ng". */
   countryCodes?: string;

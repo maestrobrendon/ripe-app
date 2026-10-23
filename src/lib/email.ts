@@ -11,7 +11,7 @@ async function replyTo(): Promise<string> {
     const { getSiteSettings } = await import("@/lib/site-settings");
     return (await getSiteSettings()).support.email;
   } catch {
-    return "hello@basket.ng";
+    return "hello@getbasket.ng";
   }
 }
 
@@ -24,7 +24,7 @@ type SendEmailInput = {
 
 export async function sendEmail({ to, subject, html, text }: SendEmailInput): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "Basket <no-reply@basket.ng>";
+  const from = process.env.RESEND_FROM_EMAIL || "Basket <no-reply@getbasket.ng>";
 
   if (!apiKey) {
     // No provider configured. Locally, print the message so flows like the

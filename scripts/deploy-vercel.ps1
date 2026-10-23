@@ -76,4 +76,4 @@ if ($LASTEXITCODE -ne 0) {
     throw "Deployment failed. Check the token belongs to $scope and has access to $project."
 }
 
-Write-Host "Done. Check https://getbasket.vercel.app"
+Write-Host "Done. Check https://www.getbasket.ng"
