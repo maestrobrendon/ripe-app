@@ -17,6 +17,8 @@ import { formatPhone } from "@/lib/phone";
 import { getOrCreateActiveDelivery } from "@/lib/order-container";
 import { OrderControls } from "./order-controls";
 import { PlacedMoment } from "./placed-moment";
+import { appOrigin } from "@/lib/site";
+import { deliveryEvent, googleCalendarUrl } from "@/lib/delivery-calendar";
 
 export const metadata = { title: "Your order" };
 
@@ -37,7 +39,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       deliveryRun: { include: { rider: true } },
       deliveryZone: { select: { cutoffHour: true } },
       issues: { orderBy: { createdAt: "desc" } },
-      basket: { select: { oneOff: true } },
+      basket: { select: { oneOff: true, name: true } },
     },
   });
   if (!order) notFound();
@@ -74,6 +76,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           pay={paymentLine({ paidAt: order.paidAt, paymentMethod: order.paymentMethod, total: order.total, status: order.status }, formatNaira)}
           receiptTo={order.customerEmail}
           calendarHref={`/orders/${order.id}/calendar${hasValidToken && !ownsIt ? `?t=${encodeURIComponent(t!)}` : ""}`}
+          googleCalendarHref={googleCalendarUrl(deliveryEvent({ ...order, basketName: order.basket?.name }), `${appOrigin()}/orders/${order.id}`)}
         />
       )}
 

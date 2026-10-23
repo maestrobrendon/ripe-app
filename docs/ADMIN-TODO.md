@@ -20,6 +20,7 @@ These need you, either because they're business decisions or because they involv
 | 6 | **Add a second Owner, or keep your recovery codes somewhere safe.** You're the only active staff member, with one passkey. | Admin → Staff → Invite | If that passkey and your codes are lost, the way back in is the command-line invite with `--force` (section 4). |
 | 7 | **Turn on the Vercel Firewall for the admin address** (consider a rate-limit rule and bot protection). | Vercel → ripe-app → Firewall | An extra layer in front of the sign-in page. |
 | 8 | **Check `RESEND_FROM_EMAIL` is set in Vercel production** to an address on a domain verified in Resend. | Vercel → Environment Variables | Order confirmations, status emails and staff security alerts are sent from it. |
+| 9 | **Test the email receipt end to end.** Place a real order on the live site with an inbox you can open (Gmail, plus one Outlook/Hotmail, which filters harder). Check it arrives (and not in spam), that the items, total, delivery date and order link are right, and how it looks on a phone. Then move it to Shipped/Delivered in the admin and check the status emails too. | getbasket.vercel.app, then Admin → Orders | The confirmation screen tells every customer "Receipt sent to …". If Resend isn't set up in production, or the sending domain isn't verified, nothing arrives and that line isn't true. Sending is `src/lib/customer-emails.ts` (`sendOrderConfirmation`). |
 
 ---
 

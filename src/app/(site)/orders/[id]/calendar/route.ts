@@ -1,8 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { formatNaira } from "@/lib/format";
-import { orderRef } from "@/lib/delivery-labels";
+import { deliveryEvent, icsStamp as stamp } from "@/lib/delivery-calendar";
 import { appOrigin } from "@/lib/site";
 
 /*
@@ -17,9 +16,11 @@ const tokenMatches = (a: string, b: string) => {
   return x.length === y.length && timingSafeEqual(x, y);
 };
 
+/** Lines over 75 characters continue on the next, indented by a space, as calendars expect. */
+const fold = (line: string) => (line.length <= 74 ? line : line.match(/.{1,73}/g)!.join("\r\n "));
+
 /** iCalendar text: escape commas, semicolons, backslashes and newlines. */
 const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\n/g, "\\n");
-const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,12 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const allowed = order && ((user && order.userId === user.id) || (t && tokenMatches(t, order.accessToken)));
   if (!order || !allowed) return new Response("Not found", { status: 404 });
 
-  // Delivery dates are stored as the Lagos day at midnight UTC; Lagos is UTC+1, so 9am to 5pm is 08:00 to 16:00 UTC.
-  const start = new Date(order.deliveryDate.getTime() + 8 * 3_600_000);
-  const end = new Date(order.deliveryDate.getTime() + 16 * 3_600_000);
-  const ref = orderRef(order.id);
-  const title = order.basket?.name?.trim() ? `Basket delivery: ${order.basket.name.trim()}` : "Basket delivery";
-  const pay = order.paidAt ? "Paid." : `Pay ${formatNaira(order.total)} when it arrives.`;
+  const e = deliveryEvent({ ...order, basketName: order.basket?.name });
 
   const ics = [
     "BEGIN:VCALENDAR",
@@ -45,13 +41,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${order.id}@basket`,
+    `UID:${e.uid}`,
     `DTSTAMP:${stamp(new Date())}`,
-    `DTSTART:${stamp(start)}`,
-    `DTEND:${stamp(end)}`,
-    `SUMMARY:${esc(title)}`,
-    `DESCRIPTION:${esc(`Order ${ref}. ${pay} Delivered between 9am and 5pm.`)}`,
-    `LOCATION:${esc(order.address)}`,
+    `DTSTART:${stamp(e.start)}`,
+    `DTEND:${stamp(e.end)}`,
+    `SUMMARY:${esc(e.title)}`,
+    `DESCRIPTION:${esc(e.details)}`,
+    `LOCATION:${esc(e.location)}`,
     `URL:${appOrigin()}/orders/${order.id}`,
     "BEGIN:VALARM",
     "TRIGGER:-PT1H",
@@ -60,12 +56,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
-  ].join("\r\n");
+  ]
+    .map(fold)
+    .join("\r\n");
 
   return new Response(ics, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `inline; filename="basket-${ref.slice(1).toLowerCase()}.ics"`,
+      "Content-Disposition": `inline; filename="basket-${e.ref.slice(1).toLowerCase()}.ics"`,
       "Cache-Control": "private, no-store",
     },
   });
