@@ -28,25 +28,55 @@ type Msg = {
 };
 type ThreadSummary = { id: string; title: string; updatedAt: Date; messageCount: number };
 
-const STARTERS = [
-  ["🥭", "What's good this week?"],
-  ["🥗", "Something fresh for lunch"],
-  ["🍍", "Plan my fruit for the week"],
-  ["🚚", "Where's my basket?"],
-] as const;
+/** Things to ask, in two rows that scroll. */
+const PROMPTS: [string, string][][] = [
+  [
+    ["🥭", "What's good this week?"],
+    ["🥗", "Something fresh for lunch"],
+    ["🚚", "Where's my basket?"],
+  ],
+  [
+    ["🍍", "Plan my fruit for the week"],
+    ["🧒", "Something the kids will eat"],
+    ["🥬", "Swap the cabbage for something else"],
+  ],
+];
 
-/** Each starter gets its own sticker colour, so the first screen feels like a kitchen, not a form. */
-const STARTER_TINTS = ["bg-mint-pop/35", "bg-sunburst/45", "bg-lavender", "bg-[#d1eafd]"];
-
-/** A line for the time of day; null on the server so the first render matches. */
-function timeGreeting(hour: number | null) {
-  if (hour === null) return "What are we eating?";
-  if (hour < 5) return "Up late? Let's find you something good to snack on.";
-  if (hour < 12) return "Morning! Breakfast, or plotting the week?";
-  if (hour < 17) return "Afternoon. Hungry, or just planning ahead?";
-  return "Evening. Something light, or something to share?";
+/** The big question, two lines, for the time of day; the server has no hour, so it asks the plain one. */
+function headline(hour: number | null): [string, string] {
+  if (hour === null) return ["What are we", "eating today?"];
+  if (hour < 5) return ["Up late? Let's", "find a snack."];
+  if (hour < 12) return ["Morning. What's", "for breakfast?"];
+  if (hour < 17) return ["Afternoon. What", "are we eating?"];
+  return ["Evening. Light,", "or to share?"];
 }
 const noSubscribe = () => () => {};
+
+/** One of the two big things Kachi does, as a card you tap to start. */
+function FeatureCard({ tint, icon, title, body, delay, onClick }: { tint: string; icon: "recipes" | "season"; title: string; body: string; delay: number; onClick: () => void }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...spring.smooth, delay }}
+      whileTap={{ scale: press.scale }}
+      className={`flex min-h-44 flex-col rounded-[24px] p-4 text-left ${tint}`}
+    >
+      <span className="flex items-start justify-between">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-paper-white">
+          <Icon name={icon} size={18} />
+        </span>
+        <span className="grid h-8 w-8 place-items-center rounded-full border border-carbon/15">
+          <Icon name="arrowUp" size={12} weight="bold" className="rotate-45" />
+        </span>
+      </span>
+      <b className="mt-auto block text-[17px] leading-snug font-semibold">{title}</b>
+      <small className="mt-1 block text-[13px] leading-snug text-carbon/65">{body}</small>
+    </motion.button>
+  );
+}
 
 const AFTER_CHANGE_REPLIES = ["What can I make with it?", "What else goes well?"];
 
@@ -106,7 +136,8 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
 
   useEffect(() => {
     const el = threadRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    // Follow the newest message; the empty screen starts at its top.
+    if (el && messages.length > 0) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const flash = (text: string) => {
@@ -296,48 +327,87 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
         {/* Thread */}
         <main ref={threadRef} aria-live="polite" className="flex-1 overflow-y-auto px-5 pb-4 pt-5">
           {messages.length === 0 ? (
-            <div className="flex min-h-full flex-col items-center justify-center py-3 text-center">
-              <div className="relative w-full overflow-hidden rounded-[28px] bg-[#d1eafd] px-5 pt-6 pb-5">
-                {/* Confetti of colour behind her: she's warm, not a form. */}
-                <span aria-hidden className="absolute -top-6 -left-6 h-24 w-24 rounded-full bg-sunburst/70" />
-                <span aria-hidden className="absolute -right-5 -bottom-8 h-24 w-24 rounded-full bg-lavender" />
-                <span aria-hidden className="absolute top-5 right-8 h-3 w-3 rounded-full bg-ember" />
-                <div className="relative flex flex-col items-center">
-                  <motion.span
-                    animate={{ rotate: [0, -10, 8, 0] }}
-                    transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 6, ease: "easeInOut" }}
-                    className="rounded-full bg-paper-white p-1.5 shadow-[0_10px_24px_-12px_rgb(0_0_0/0.4)]"
-                  >
-                    <KachiMark className="h-14 w-14" />
-                  </motion.span>
-                  <h1 className="mt-3 text-[30px] leading-tight font-extrabold tracking-tight">
-                    Hi {firstName} <span aria-hidden>👋</span>
-                  </h1>
-                  <p className="mt-1 max-w-75 text-[15px] leading-snug text-carbon/75">
-                    {timeGreeting(hour)} Tell me what you fancy and I&apos;ll find it, and sort {deliveryLabel} if you want.
-                  </p>
-                </div>
+            <div className="flex flex-col py-2">
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={spring.juicy}>
+                <KachiMark className="h-12 w-12" />
+              </motion.div>
+              <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ ...spring.smooth, delay: 0.1 }} className="mt-5 text-[15px] text-muted">
+                Hi {firstName} <span aria-hidden>👋</span>
+              </motion.p>
+              {/* The question arrives a word at a time, each one coming into focus. */}
+              <h1 className="mt-1.5 text-[32px] leading-[1.12] font-semibold tracking-[-0.03em]" aria-label={headline(hour).join(" ")}>
+                {headline(hour).map((line, li) => (
+                  <span key={line} className="block" aria-hidden>
+                    {line.split(" ").map((word, wi) => (
+                      <motion.span
+                        key={`${li}-${wi}`}
+                        initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ ...spring.smooth, delay: 0.15 + (li * 3 + wi) * 0.06 }}
+                        className="inline-block"
+                      >
+                        {word}&nbsp;
+                      </motion.span>
+                    ))}
+                  </span>
+                ))}
+              </h1>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <FeatureCard
+                  tint="bg-mint-pop/35"
+                  icon="recipes"
+                  title="Plan my week"
+                  body={`Recipes from what's in ${deliveryLabel}.`}
+                  delay={0.45}
+                  onClick={() => {
+                    haptic(6);
+                    send("Plan my week from my basket");
+                  }}
+                />
+                <FeatureCard
+                  tint="bg-sunburst/40"
+                  icon="season"
+                  title="What's good now"
+                  body="In season, and worth adding."
+                  delay={0.52}
+                  onClick={() => {
+                    haptic(6);
+                    send("What's good this week?");
+                  }}
+                />
               </div>
-              <div className="mt-4 grid w-full grid-cols-2 gap-2.5">
-                {STARTERS.map(([emoji, text], i) => (
-                  <motion.button
-                    key={text}
-                    onClick={() => send(text)}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...spring.snappy, delay: i * 0.04 }}
-                    whileTap={{ scale: press.scale }}
-                    className={`flex min-h-26 flex-col gap-2.5 rounded-[22px] p-3.5 text-left transition-[filter] hover:brightness-[0.97] active:brightness-95 ${STARTER_TINTS[i % STARTER_TINTS.length]}`}
-                  >
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-paper-white text-[22px] shadow-[0_6px_14px_-8px_rgb(0_0_0/0.35)]" aria-hidden>
-                      {emoji}
-                    </span>
-                    <b className="text-[15px] font-semibold leading-snug">{text}</b>
-                  </motion.button>
+
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="mt-6 text-[15px] font-semibold">
+                Try asking
+              </motion.p>
+              <div className="mt-2.5 flex flex-col gap-2">
+                {PROMPTS.map((row, ri) => (
+                  <div key={ri} className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none]">
+                    {row.map(([emoji, text], i) => (
+                      <motion.button
+                        key={text}
+                        type="button"
+                        onClick={() => {
+                          haptic(6);
+                          send(text);
+                        }}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ ...spring.snappy, delay: 0.7 + (ri * 3 + i) * 0.05 }}
+                        whileTap={{ scale: press.scale }}
+                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-soft-mist px-3.5 text-[14px] font-medium"
+                      >
+                        <span aria-hidden>{emoji}</span>
+                        {text}
+                      </motion.button>
+                    ))}
+                  </div>
                 ))}
               </div>
-              <p className="mt-4 flex justify-center gap-2 text-[13px] leading-snug text-muted">
-                <Icon name="shield" size={16} className="mt-px shrink-0 text-carbon" />
+
+              <p className="mt-6 flex gap-2 text-[12px] leading-snug text-muted">
+                <Icon name="shield" size={14} className="mt-px shrink-0" />
                 <span>I only touch your basket when you ask, you can undo anything, and I never pay for anything. Food ideas, not medical advice.</span>
               </p>
             </div>
@@ -468,7 +538,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tell Kachi what you fancy…"
+              placeholder="Ask me anything…"
               aria-label="Message Kachi"
               className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
             />
