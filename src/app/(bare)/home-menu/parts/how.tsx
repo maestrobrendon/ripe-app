@@ -35,7 +35,7 @@ function Step({ n, title, body, children }: { n: number; title: string; body: st
     // min-w-0: a grid item is otherwise as wide as its longest line (a
     // recipe name, the delivery row), which pushed the panels off a phone.
     <div className="flex min-w-0 flex-col">
-      <div className="hm-panel relative h-[300px] overflow-hidden p-5">{children}</div>
+      <div className="hm-panel relative h-[260px] overflow-hidden p-5 md:h-[300px]">{children}</div>
       <div className="mt-5 flex gap-3.5 pr-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-carbon text-[13px] font-bold text-paper-white">{n}</span>
         <div>
@@ -220,14 +220,15 @@ function Delivery({ goal, deliveryDay, products }: { goal: MenuGoal; deliveryDay
 
 export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal; deliveryDay: string; products: Record<string, MenuProduct>; signedIn: boolean }) {
   return (
-    <section id="how" className="scroll-mt-20 py-16 sm:py-24">
+    <section id="how" className="scroll-mt-20 py-12 sm:py-24">
       <div className="hm-wrap">
         <Reveal className="max-w-[40rem]">
           <Eyebrow className="text-electric-blue">How it works</Eyebrow>
           <h2 className="hm-h2">Three steps, then it just keeps coming.</h2>
         </Reveal>
 
-        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-5">
+        {/* Three across from tablets up; on phones, a rail you swipe through (see .hm-rail). */}
+        <div className="hm-rail mt-10 md:mt-12 md:grid md:grid-cols-3 md:gap-5">
           <Step n={1} title="Tell us your goal" body="Eat lighter, feed the family, train harder. Say it the way you'd say it to a friend.">
             <KachiChat goal={goal} />
           </Step>

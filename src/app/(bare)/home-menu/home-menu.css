@@ -146,6 +146,34 @@
   border-radius: 28px;
 }
 
+/* On phones, a set of peers (the recipes, the three steps) is a row you
+   swipe through one at a time, the next one's edge showing so there's
+   plainly more. From tablets up the same children lay out as a grid, which
+   the section sets with md: utilities. */
+@media (max-width: 767px) {
+  .hm-rail {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin-inline: -16px;
+    padding-inline: 16px;
+    scroll-padding-inline: 16px;
+  }
+  .hm-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .hm-rail > * {
+    flex: 0 0 min(82%, 340px);
+    scroll-snap-align: start;
+  }
+  /* The price card shows six of the basket's items and counts the rest. */
+  .hm-chips > :nth-child(n + 7):not(.hm-more) {
+    display: none;
+  }
+}
+
 /* Keyboard focus that is visible on white, tint and photos alike. */
 .hm :where(a, button, [role="tab"], [role="radio"]):focus-visible {
   outline: 2.5px solid var(--carbon);

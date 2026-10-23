@@ -93,7 +93,7 @@ export function KachiBubble() {
   // The page's own name, for "Cooking the chicken shawarma bowl?" and for
   // telling Kachi where the visitor is. Read after the page sets its title.
   useEffect(() => {
-    const t = window.setTimeout(() => setPageTitle(document.title.replace(/\s*(recipe)?\.\s*Basket$/i, "").replace(/^Basket\s*[—-].*$/, "")), 300);
+    const t = window.setTimeout(() => setPageTitle(document.title.replace(/\s*(recipe)?\.\s*BasketNG$/i, "").replace(/^BasketNG\s*[—-].*$/, "")), 300);
     return () => window.clearTimeout(t);
   }, [pathname]);
   const ctx = kachiContext(pathname, false, pageTitle.toLowerCase());
@@ -110,6 +110,8 @@ export function KachiBubble() {
 
   useEffect(() => {
     if (hidden || open || !ctx.nudge) return;
+    // On a phone the card would cover half the page; the launcher is enough there.
+    if (window.matchMedia("(max-width: 767px)").matches) return;
     const snoozed = read<number>(local, SNOOZE, 0) > Date.now();
     const seen = read<string[]>(session, SEEN, []);
     const chatted = read<Saved | null>(session, STORE, null)?.msgs.length;

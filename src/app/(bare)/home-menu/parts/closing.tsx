@@ -26,7 +26,8 @@ export function Faq({
 }) {
   const whatsapp = useWhatsappHref();
   const verb = useSupportVerb();
-  const [open, setOpen] = useState<number | null>(0);
+  // All closed to start: a list of questions reads at a glance, on a phone above all.
+  const [open, setOpen] = useState<number | null>(null);
   const names = zones.map((z) => z.name);
   const days = [...new Set(zones.flatMap((z) => z.days))];
   const dayList = days.length > 1 ? `${days.slice(0, -1).join(", ")} and ${days[days.length - 1]}` : days[0] ?? "";
@@ -119,7 +120,7 @@ export function Faq({
   ];
 
   return (
-    <section id="faq" className="scroll-mt-20 py-16 sm:py-24">
+    <section id="faq" className="scroll-mt-20 py-12 sm:py-24">
       <div className="hm-wrap grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <Reveal>
           <div className="lg:sticky lg:top-28">

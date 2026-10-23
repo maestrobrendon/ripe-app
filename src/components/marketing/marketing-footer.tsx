@@ -44,8 +44,9 @@ export function MarketingFooter() {
   const { support } = useSiteSettings();
   return (
     <footer className="hm border-t border-[var(--hm-line)] py-14">
-      <div className="hm-wrap grid gap-10 sm:grid-cols-[1.4fr_repeat(3,1fr)]">
-        <div>
+      {/* Phones: the brand across the top, then the link columns two abreast. */}
+      <div className="hm-wrap grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-[1.4fr_repeat(3,1fr)]">
+        <div className="col-span-2 sm:col-span-1">
           <Link href="/" className="logo-wordmark text-[24px] leading-none">
             BasketNG
           </Link>

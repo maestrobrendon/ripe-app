@@ -22,12 +22,13 @@ function useLoop(n: number, every: number) {
   return { ref, i: reduced ? n - 1 : i };
 }
 
+/** On phones the little demo stays out: each detail is a title and a line, in a list. */
 function Detail({ title, body, color, children }: { title: string; body: string; color: string; children: ReactNode }) {
   return (
-    <Reveal>
-      <div className="hm-panel grid h-[200px] place-items-center overflow-hidden p-6">{children}</div>
-      <h3 className={`mt-5 text-[15px] font-semibold ${color}`}>{title}</h3>
-      <p className="mt-1.5 max-w-[30rem] text-[17px] leading-relaxed text-carbon/80">{body}</p>
+    <Reveal className="border-t border-[var(--hm-line)] pt-5 md:border-0 md:pt-0">
+      <div className="hm-panel hidden h-[200px] place-items-center overflow-hidden p-6 md:grid">{children}</div>
+      <h3 className={`text-[15px] font-semibold md:mt-5 ${color}`}>{title}</h3>
+      <p className="mt-1.5 max-w-[30rem] text-[16px] leading-relaxed text-carbon/80 md:text-[17px]">{body}</p>
     </Reveal>
   );
 }
@@ -165,7 +166,7 @@ const FACTS = ["Your day, every week", "Change it until the night before", "Pay 
 
 export function Details({ deliveryDay }: { deliveryDay: string }) {
   return (
-    <section id="details" className="py-16 sm:py-24">
+    <section id="details" className="py-12 sm:py-24">
       <div className="hm-wrap grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <div>
           <div className="lg:sticky lg:top-28">
@@ -211,7 +212,7 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
             </Reveal>
           </div>
         </div>
-        <div className="grid gap-14">
+        <div className="grid gap-5 md:gap-14">
           <Detail title="A reminder before every delivery" color="text-[#0f7a48]" body="Your basket stays as you left it. A few days before your day we remind you to confirm it, and you can change anything until the evening before.">
             <EditWidget />
           </Detail>

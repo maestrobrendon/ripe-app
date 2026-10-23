@@ -65,13 +65,16 @@ export function Price({
   const memberSaving = standardProduce - memberProduce;
 
   return (
-    <section id="price" className="scroll-mt-20 py-16 sm:py-24">
-      <div className="hm-wrap grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
-        <Reveal>
+    <section id="price" className="scroll-mt-20 py-12 sm:py-24">
+      {/* min-w-0: a grid column would otherwise grow to fit the goal row's
+          full width on phones, pushing the card past the screen's edge. */}
+      <div className="hm-wrap grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+        <Reveal className="min-w-0">
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
           <h2 className="hm-h2">What a week costs.</h2>
           <p className="hm-lede mt-4 max-w-[30rem]">Pick your household and see the number. Members pay close to market cost.</p>
-          <div className="mt-8 flex flex-wrap gap-2" role="radiogroup" aria-label="Your goal">
+          {/* One row that scrolls on phones, so the six goals don't stack into two. */}
+          <div className="-mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 md:pb-0" role="radiogroup" aria-label="Your goal">
             {MENU_GOALS.map((g) => (
               <button
                 key={g.id}
@@ -79,7 +82,7 @@ export function Price({
                 role="radio"
                 aria-checked={goal === g.id}
                 onClick={() => onGoal(g.id)}
-                className={`h-10 rounded-full px-4 text-[14px] font-semibold transition-colors ${goal === g.id ? "bg-carbon text-paper-white" : "bg-[#f3f5f0] text-carbon/70 hover:text-carbon"}`}
+                className={`h-10 shrink-0 rounded-full px-4 text-[14px] font-semibold transition-colors ${goal === g.id ? "bg-carbon text-paper-white" : "bg-[#f3f5f0] text-carbon/70 hover:text-carbon"}`}
               >
                 {g.short}
               </button>
@@ -96,7 +99,7 @@ export function Price({
           </div>
         </Reveal>
 
-        <Reveal delay={0.1}>
+        <Reveal delay={0.1} className="min-w-0">
           <div className="rounded-[32px] bg-paper-white p-5 shadow-[0_0_0_1px_var(--hm-line),0_30px_60px_-40px_rgb(0_0_0/0.35)] sm:p-7">
             {memberFee != null && (
               <LayoutGroup id="hm-plan">
@@ -170,7 +173,9 @@ export function Price({
               </AnimatePresence>
             </div>
 
-            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="What would be in it">
+            <div className="hm-chips mt-2 flex flex-wrap gap-1.5" aria-label="What would be in it">
+              {/* Phones show six and count the rest (.hm-chips in home-menu.css). */}
+              {picks.length > 6 && <span className="hm-more order-last inline-flex h-8 items-center px-1 text-[13px] font-medium text-[var(--hm-ink-3)] md:hidden">+{picks.length - 6} more</span>}
               <AnimatePresence initial={false} mode="popLayout">
                 {picks.map((p) => (
                   <motion.span

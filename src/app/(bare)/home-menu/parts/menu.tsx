@@ -30,7 +30,7 @@ export function Menu({
   const trio = recipes.length >= 3;
 
   return (
-    <section id="menu" className="scroll-mt-20 py-16 sm:py-24">
+    <section id="menu" className="scroll-mt-20 py-12 sm:py-24">
       <div className="hm-wrap">
         <div>
           <Reveal className="max-w-[44rem]">
@@ -62,11 +62,12 @@ export function Menu({
           </LayoutGroup>
         </div>
 
-        {/* Three or more: one large card and a stack beside it. Fewer: equal cards side by side. */}
+        {/* Three or more: one large card and a stack beside it. Fewer: equal
+            cards side by side. On phones, a rail (see .hm-rail). */}
         <div
           id="hm-menu-grid"
           role="tabpanel"
-          className={`mt-6 grid gap-4 sm:gap-5 ${trio ? "md:grid-cols-[1.25fr_1fr] md:grid-rows-2" : "md:grid-cols-2"}`}
+          className={`hm-rail mt-6 md:grid md:gap-5 ${trio ? "md:grid-cols-[1.25fr_1fr] md:grid-rows-2" : "md:grid-cols-2"}`}
         >
           <AnimatePresence mode="popLayout" initial={false}>
             {recipes.map((r, i) => (
@@ -126,7 +127,7 @@ function RecipeCard({ recipe, products, large, tall = false, onOpen }: { recipe:
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className={large ? "hm-h3" : "text-[17px] leading-snug font-semibold tracking-[-0.02em]"}>{recipe.title}</h3>
-            {large && <p className="mt-2 text-[15px] leading-relaxed text-[var(--hm-ink-2)]">{recipe.hook}</p>}
+            {large && <p className="mt-2 hidden text-[15px] leading-relaxed text-[var(--hm-ink-2)] md:block">{recipe.hook}</p>}
           </div>
           <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-paper-white transition-transform duration-(--dur-base) group-hover:rotate-45" aria-hidden>
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
