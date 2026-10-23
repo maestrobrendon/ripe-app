@@ -242,7 +242,7 @@ export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal;
 
         {/* Kachi gets one line here. Who she is and isn't (not a nutritionist)
             is answered in the questions, where someone who cares will look. */}
-        <div className="mt-14 flex flex-col items-center gap-5 text-center">
+        <div className="mt-12 flex flex-col items-center gap-5 border-t border-[var(--hm-line)] pt-10 text-center md:mt-14">
           <p className="flex max-w-[34rem] items-start gap-3 text-left text-[16px] leading-relaxed text-[var(--hm-ink-2)]">
             <KachiMark className="mt-0.5 h-7 w-7 shrink-0" />
             <span>
