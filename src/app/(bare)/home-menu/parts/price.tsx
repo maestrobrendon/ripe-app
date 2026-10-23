@@ -30,6 +30,44 @@ function Stepper({ label, value, min, max, onChange }: { label: string; value: n
   );
 }
 
+/** The six goals as pills. Beside the card from laptops up; inside it, as the first input, below that. */
+function GoalPills({ goal, onGoal, className }: { goal: MenuGoal; onGoal: (g: MenuGoal) => void; className: string }) {
+  return (
+    <div className={className} role="radiogroup" aria-label="Your goal">
+      {MENU_GOALS.map((g) => (
+        <button
+          key={g.id}
+          type="button"
+          role="radio"
+          aria-checked={goal === g.id}
+          onClick={() => onGoal(g.id)}
+          className={`h-10 shrink-0 rounded-full px-4 text-[14px] font-semibold transition-colors ${goal === g.id ? "bg-carbon text-paper-white" : "bg-[#f3f5f0] text-carbon/70 hover:text-carbon"}`}
+        >
+          {g.short}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PriceLinks({ className }: { className: string }) {
+  return (
+    <div className={`flex flex-wrap gap-x-6 gap-y-2 text-[14px] font-semibold ${className}`}>
+      <Link href="/shop" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+        See every price
+      </Link>
+      <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+        Compare membership plans
+      </Link>
+    </div>
+  );
+}
+
+/** A small label over a group of controls in the card. */
+function Label({ children }: { children: string }) {
+  return <p className="text-[13px] font-semibold text-[var(--hm-ink-3)]">{children}</p>;
+}
+
 export function Price({
   goal,
   onGoal,
@@ -73,30 +111,11 @@ export function Price({
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
           <h2 className="hm-h2">What a week costs.</h2>
           <p className="hm-lede mt-4 max-w-[30rem]">Pick your household and see the number. Members pay close to market cost.</p>
-          {/* One row that scrolls on phones, so the six goals don't stack into two. */}
-          <div className="-mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 md:pb-0" role="radiogroup" aria-label="Your goal">
-            {MENU_GOALS.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                role="radio"
-                aria-checked={goal === g.id}
-                onClick={() => onGoal(g.id)}
-                className={`h-10 shrink-0 rounded-full px-4 text-[14px] font-semibold transition-colors ${goal === g.id ? "bg-carbon text-paper-white" : "bg-[#f3f5f0] text-carbon/70 hover:text-carbon"}`}
-              >
-                {g.short}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[14px] font-semibold">
-            <Link href="/shop" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
-              See every price
-            </Link>
-            <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
-              Compare membership plans
-            </Link>
-          </div>
+          {/* From laptops up the goal and the links sit here, beside the card.
+              Below that they move: the goal into the card as its first input,
+              the links under it, so the column reads as one flow. */}
+          <GoalPills goal={goal} onGoal={onGoal} className="mt-8 hidden flex-wrap gap-2 lg:flex" />
+          <PriceLinks className="mt-8 hidden lg:flex" />
         </Reveal>
 
         <Reveal delay={0.1} className="min-w-0">
@@ -126,12 +145,22 @@ export function Price({
               </LayoutGroup>
             )}
 
-            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-              <Stepper label="Adults" value={adults} min={1} max={8} onChange={setAdults} />
-              <Stepper label="Children" value={kids} min={0} max={8} onChange={setKids} />
+            <div className="mt-5 lg:hidden">
+              <Label>Goal</Label>
+              {/* Scrolls edge to edge of the card: the negative margins match its padding. */}
+              <GoalPills goal={goal} onGoal={onGoal} className="-mx-5 mt-2 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-7 sm:px-7" />
             </div>
 
-            <div className="mt-7 flex items-baseline justify-between gap-4">
+            <div className="mt-5">
+              <Label>Household</Label>
+              <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+                <Stepper label="Adults" value={adults} min={1} max={8} onChange={setAdults} />
+                <Stepper label="Children" value={kids} min={0} max={8} onChange={setKids} />
+              </div>
+            </div>
+
+            {/* The number is the point of the card: on its own line on phones, its caption beneath. */}
+            <div className="mt-7 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
               <RollingNumber value={total} format={formatNaira} className="text-[clamp(2.4rem,5vw,3rem)] leading-none font-semibold tracking-[-0.045em] tabular-nums" />
               <span className="text-[14px] text-[var(--hm-ink-2)]">a week, for the food</span>
             </div>
@@ -202,6 +231,7 @@ export function Price({
               {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)} a month. Your basket every week, nothing charged automatically.` : "Your first basket is a trial. You pay when it arrives."}
             </p>
           </div>
+          <PriceLinks className="mt-6 justify-center lg:hidden" />
         </Reveal>
       </div>
     </section>
