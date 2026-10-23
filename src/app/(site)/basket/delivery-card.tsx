@@ -5,10 +5,12 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
+import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
 import { haptic } from "@/lib/haptics";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { Button, LinkButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { ProductImage } from "@/components/product-image";
 import { useCart } from "@/components/cart-provider";
 import { DELIVERY_WINDOW, cutoffLabel, dayName, longDate, shortDate, timeLeft } from "@/lib/delivery-labels";
 import type { DeliveryDay } from "@/generated/prisma/enums";
@@ -79,6 +81,7 @@ export function DeliveryCard(props: {
   const router = useRouter();
   const cart = useCart();
   const now = useNow();
+  const reduced = useReducedMotion();
   const [sheet, setSheet] = useState<Sheet>(null);
   const [pending, start] = useTransition();
   const [name, setName] = useState(props.name ?? "");
@@ -129,134 +132,202 @@ export function DeliveryCard(props: {
       if (ok) cart.announce(ok, "ok", undo ? { label: "Undo", run: () => run(undo.action, undo.ok) } : undefined);
     });
 
-  const subtitle = [
-    status === "oneoff" ? `One-time · Delivery ${dayName(props.day)}` : status === "running" ? `Delivery every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used",
-    props.areaName,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const statusLine =
+    status === "oneoff" ? "One-time order" : status === "running" ? `Every ${dayName(props.day)}` : status === "paused" ? "Paused" : status === "trial" ? "Trial basket" : props.hasLiveOrder ? "Trial confirmed" : "Trial used";
   const urgent = left !== null && left < 6 * 3_600_000;
   const canChangeDay = props.dayOptions.length > 1;
+  const items = cart.items.filter((l) => !l.soldOut);
+  const faces = items.slice(0, 3);
+  const sideTab = props.member && status !== "oneoff";
+
+  // The one thing to do next, as the card's big pill.
+  const action: { label: string; href: string; icon: IconName; done?: boolean } =
+    status === "trial-used"
+      ? props.hasLiveOrder
+        ? { label: "Confirmed", href: "/orders", icon: "checkPlain", done: true }
+        : { label: "See membership", href: "/subscribe?reason=free-basket-used", icon: "spark" }
+      : area.state !== "ok"
+        ? { label: "Add your address", href: "/account/addresses?next=/basket", icon: "pin" }
+        : items.length === 0
+          ? { label: "Add produce", href: "/shop", icon: "plus" }
+          : { label: "Confirm basket", href: `/checkout?b=${deliveryId}`, icon: "checkPlain" };
+
+  // The card builds in order: the card, its words, the pill growing out of
+  // its icon, the faces popping in. Nothing moves with reduced motion.
+  const enter = (delay: number) => (reduced ? {} : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { ...spring.smooth, delay } });
+  const pop = (delay: number) => (reduced ? {} : { initial: { opacity: 0, scale: 0 }, animate: { opacity: 1, scale: 1 }, transition: { ...spring.juicy, delay } });
 
   return (
-    <section>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-[28px] leading-tight font-extrabold tracking-[-0.02em] sm:text-[32px]">{props.title}</h1>
-          <p className="mt-0.5 truncate text-[15px] text-muted">{subtitle}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            haptic("selection");
-            setSheet("menu");
-          }}
-          aria-label={`More for ${props.title}`}
-          className="tap-target mt-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-soft-mist transition-transform active:scale-95"
+    <section data-home-hero>
+      <div className="grid gap-2" style={{ gridTemplateColumns: sideTab ? "minmax(0,1fr) auto" : "minmax(0,1fr)" }}>
+        <motion.div
+          initial={reduced ? false : { opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={spring.smooth}
+          className="relative overflow-hidden rounded-[28px] bg-mint-pop p-5 text-carbon sm:p-6"
         >
-          <Icon name="more" size={20} weight="bold" />
-        </button>
-      </div>
-
-      {status === "trial-used" && props.hasLiveOrder ? (
-        <p className="mt-4 rounded-2xl bg-soft-mist px-4 py-3 text-sm">
-          Your trial basket is confirmed.{" "}
-          <Link href="/subscribe?reason=free-basket-used" className="font-semibold underline underline-offset-2">
-            Get it every week
-          </Link>
-        </p>
-      ) : status === "trial-used" ? (
-        <div className="mt-4 rounded-[22px] bg-surface p-4 ring-1 ring-hairline">
-          <p className="text-[17px] font-semibold">Keep this basket coming</p>
-          <p className="mt-1 text-sm text-muted">Your trial is used and your produce is saved. Members get it every week, at member prices.</p>
-          <LinkButton href="/subscribe?reason=free-basket-used" size="sm" className="mt-3">
-            See membership
-          </LinkButton>
-        </div>
-      ) : (
-        <>
-          {(status === "paused" || skippedDateIso) && (
-            <div className="mt-4 flex items-center gap-3 rounded-full bg-soft-mist py-1.5 pr-1.5 pl-4 text-sm">
-              <Icon name={status === "paused" ? "recurring" : "calendar"} size={16} className="shrink-0 text-muted" />
-              <p className="min-w-0 flex-1 truncate">
-                {status === "paused" ? "Paused. No reminders, no repeats." : <>Skipping {shortDate(skippedDateIso!)}</>}
-              </p>
+          <Curves />
+          <div className="relative">
+            <div className="flex items-start justify-between gap-3">
+              <motion.div {...enter(0.08)} className="min-w-0">
+                <h1 className="truncate text-[24px] leading-tight font-semibold tracking-[-0.02em] sm:text-[28px]">{props.title}</h1>
+                {area.state === "ok" && dateIso ? (
+                  <button
+                    type="button"
+                    disabled={!canChangeDay}
+                    onClick={() => {
+                      haptic("selection");
+                      setSheet("day");
+                    }}
+                    aria-label={canChangeDay ? `Next delivery ${longDate(dateIso)}. Change day` : undefined}
+                    className="mt-1 flex max-w-full items-start gap-1.5 text-left text-[14px] leading-snug text-carbon/75 enabled:active:opacity-70"
+                  >
+                    <Icon name="clock" size={15} className="mt-0.5 shrink-0" />
+                    <span>
+                      Next delivery: {shortDate(dateIso)}, {DELIVERY_WINDOW}
+                      {canChangeDay && <Icon name="caretDown" size={12} weight="bold" className="ml-1 inline-block align-middle" />}
+                    </span>
+                  </button>
+                ) : (
+                  <p className="mt-1 truncate text-[14px] text-carbon/75">
+                    {statusLine}
+                    {props.areaName ? ` · ${props.areaName}` : ""}
+                  </p>
+                )}
+              </motion.div>
               <button
                 type="button"
-                disabled={pending}
-                onClick={() =>
-                  status === "paused"
-                    ? run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`)
-                    : run(() => skipDate(deliveryId, skippedDateIso!, false), `${shortDate(skippedDateIso!)} is back on`)
-                }
-                className="shrink-0 rounded-full bg-surface px-3.5 py-1.5 text-[13px] font-semibold shadow-sm transition-transform active:scale-95"
-              >
-                {status === "paused" ? "Resume" : "Undo"}
-              </button>
-            </div>
-          )}
-
-          {area.state === "ok" && dateIso && cutoffIso && left !== null ? (
-            <div className="mt-4 overflow-hidden rounded-[22px] bg-surface ring-1 ring-hairline">
-              <button
-                type="button"
-                disabled={!canChangeDay}
                 onClick={() => {
                   haptic("selection");
-                  setSheet("day");
+                  setSheet("menu");
                 }}
-                aria-label={canChangeDay ? `Delivery ${longDate(dateIso)}. Change day` : undefined}
-                className="flex w-full items-start gap-3 p-4 text-left transition-colors enabled:active:bg-soft-mist"
+                aria-label={`More for ${props.title}`}
+                className="tap-target flex size-10 shrink-0 items-center justify-center rounded-full bg-carbon/10 transition-transform active:scale-95"
               >
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5 text-[20px] leading-tight font-semibold tracking-[-0.01em]">
-                    {longDate(dateIso)}
-                    {canChangeDay && <Icon name="caretDown" size={14} weight="bold" className="text-muted" />}
-                  </span>
-                  <span className="mt-1 block text-[14px] text-muted">
-                    {DELIVERY_WINDOW} · confirm by {cutoffLabel(cutoffIso)}
-                  </span>
-                </span>
-                <span
-                  suppressHydrationWarning
-                  className={`mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold tabular-nums ${urgent ? "bg-ember/12 text-ember" : "bg-mint-pop/25 text-[#0f7a48]"}`}
-                >
-                  {timeLeft(left)}
-                </span>
+                <Icon name="more" size={20} weight="bold" />
               </button>
-              {props.cycle && <CycleBars weekNumber={props.cycle.weekNumber} weeks={props.cycle.weeks} />}
             </div>
-          ) : area.state === "unserved" ? (
-            <div className="mt-4 rounded-[22px] bg-surface p-4 ring-1 ring-hairline">
-              <p className="font-semibold">We don&apos;t deliver to {area.name} yet</p>
-              <p className="mt-1 text-sm text-muted">We&apos;ll tell you when we reach you. You can still fill this basket.</p>
-              <LinkButton href="/account/addresses?next=/basket" variant="secondary" size="sm" className="mt-3">
-                Use another address
-              </LinkButton>
-            </div>
-          ) : (
-            <div className="mt-4 rounded-[22px] bg-surface p-4 ring-1 ring-hairline">
-              <p className="font-semibold">Where should we deliver?</p>
-              <p className="mt-1 text-sm text-muted">Add your address to see the days we come to you.</p>
-              <LinkButton href="/account/addresses?next=/basket" size="sm" className="mt-3">
-                Add your address
-              </LinkButton>
-            </div>
-          )}
 
-          {status === "oneoff" && area.state === "ok" && (
-            <p className="mt-2 px-1 text-[13px] text-muted">Comes once, then it&apos;s cleared. Your baskets aren&apos;t touched.</p>
-          )}
+            {(status === "paused" || skippedDateIso) && status !== "trial-used" && (
+              <motion.div {...enter(0.15)} className="mt-4 flex items-center gap-3 rounded-full bg-paper-white/70 py-1.5 pr-1.5 pl-4 text-[14px]">
+                <Icon name={status === "paused" ? "recurring" : "calendar"} size={16} className="shrink-0 text-carbon/60" />
+                <p className="min-w-0 flex-1 truncate">{status === "paused" ? "Paused. No reminders, no repeats." : <>Skipping {shortDate(skippedDateIso!)}</>}</p>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    status === "paused"
+                      ? run(() => setRepeating(deliveryId, true), `Every ${dayName(props.day)} again`)
+                      : run(() => skipDate(deliveryId, skippedDateIso!, false), `${shortDate(skippedDateIso!)} is back on`)
+                  }
+                  className="shrink-0 rounded-full bg-carbon px-3.5 py-1.5 text-[13px] font-semibold text-paper-white transition-transform active:scale-95"
+                >
+                  {status === "paused" ? "Resume" : "Undo"}
+                </button>
+              </motion.div>
+            )}
 
-          {status === "trial" && area.state === "ok" && (
-            <p className="mt-2 px-1 text-[13px] text-muted">
-              Your trial basket comes once.{" "}
-              <Link href="/subscribe" className="font-semibold text-carbon underline underline-offset-2">
-                Every week with membership
+            {status === "trial-used" && !props.hasLiveOrder && (
+              <motion.p {...enter(0.15)} className="mt-3 text-[14px] leading-snug text-carbon/80">
+                Your trial is used and your produce is saved. Members get it every week, at member prices.
+              </motion.p>
+            )}
+            {area.state === "unserved" && (
+              <motion.p {...enter(0.15)} className="mt-3 text-[14px] leading-snug text-carbon/80">
+                We don&apos;t deliver to {area.name} yet. We&apos;ll tell you when we reach you; you can still fill this basket.
+              </motion.p>
+            )}
+            {area.state === "none" && (
+              <motion.p {...enter(0.15)} className="mt-3 text-[14px] leading-snug text-carbon/80">
+                Add your address to see the days we come to you.
+              </motion.p>
+            )}
+
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center">
+                {faces.length > 0 ? (
+                  <>
+                    <div className="flex -space-x-2.5">
+                      {faces.map((l, i) => (
+                        <motion.span key={l.productId} {...pop(0.4 + i * 0.07)} className="block">
+                          <ProductImage publicId={l.cloudinaryPublicId} alt="" emoji={l.imageEmoji} sizes="40px" rounded="rounded-full" flavour="bg-paper-white" emojiClassName="text-lg" className="h-10 w-10 ring-2 ring-mint-pop" />
+                        </motion.span>
+                      ))}
+                    </div>
+                    <motion.span {...enter(0.55)} className="ml-2.5 shrink-0 rounded-full bg-carbon/10 px-2.5 py-1 text-[13px] font-semibold tabular-nums">
+                      {items.length === 1 ? "1 item" : `${items.length} items`}
+                    </motion.span>
+                  </>
+                ) : (
+                  <motion.span {...enter(0.4)} className="text-[14px] text-carbon/75">
+                    Nothing in it yet
+                  </motion.span>
+                )}
+              </div>
+              {/* The clock only becomes a badge when it's close; otherwise it's in the line under the pill. */}
+              {area.state === "ok" && left !== null && left > 0 && urgent && status !== "trial-used" && (
+                <motion.span {...enter(0.5)} suppressHydrationWarning className="shrink-0 rounded-full bg-ember px-2.5 py-1 text-[12px] font-semibold text-paper-white tabular-nums">
+                  {timeLeft(left)}
+                </motion.span>
+              )}
+            </div>
+
+            <motion.div initial={reduced ? false : { opacity: 0, scaleX: 0.18 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ ...spring.smooth, delay: 0.3 }} style={{ originX: 0 }} className="mt-4">
+              <Link
+                href={action.href}
+                onClick={() => haptic("light")}
+                className={`flex h-14 items-center gap-3 rounded-full p-1.5 pr-4 transition-transform active:scale-[0.98] ${action.done ? "bg-carbon/10" : "bg-paper-white shadow-[0_10px_24px_-14px_rgb(0_0_0/0.45)]"}`}
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-carbon text-paper-white">
+                  <Icon name={action.icon} size={18} weight="bold" />
+                </span>
+                <motion.span {...enter(0.45)} className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <b className="truncate text-[16px] font-semibold">{action.label}</b>
+                  {!action.done && <Icon name="caretRight" size={16} weight="bold" className="shrink-0 text-carbon/50" />}
+                </motion.span>
               </Link>
-            </p>
-          )}
-        </>
+            </motion.div>
+            {area.state === "ok" && cutoffIso && status !== "trial-used" && (
+              <motion.p {...enter(0.5)} suppressHydrationWarning className="mt-2.5 px-1 text-[12px] leading-snug text-carbon/70">
+                {left !== null && left > 0 && !urgent ? `${timeLeft(left)} · ` : ""}Confirm by {cutoffLabel(cutoffIso)}. Pay when it arrives.
+              </motion.p>
+            )}
+          </div>
+        </motion.div>
+
+        {sideTab && (
+          <motion.button
+            type="button"
+            {...enter(0.2)}
+            onClick={() => {
+              haptic("selection");
+              if (props.canAddMore) setSheet("new");
+              else router.push("/subscribe?reason=basket-limit");
+            }}
+            className="flex w-13 flex-col items-center justify-center gap-3 rounded-[24px] bg-mint-pop/40 py-5 text-carbon transition-colors active:bg-mint-pop/60"
+            aria-label="New basket"
+          >
+            <Icon name="plus" size={16} weight="bold" />
+            <span className="text-[13px] font-semibold [writing-mode:vertical-rl]">New basket</span>
+          </motion.button>
+        )}
+      </div>
+
+      {props.cycle && area.state === "ok" && status !== "trial-used" && (
+        <motion.div {...enter(0.25)} className="mt-2 rounded-[22px] bg-surface ring-1 ring-hairline">
+          <CycleBars weekNumber={props.cycle.weekNumber} weeks={props.cycle.weeks} />
+        </motion.div>
+      )}
+
+      {status === "oneoff" && area.state === "ok" && <p className="mt-2 px-1 text-[13px] text-muted">Comes once, then it&apos;s cleared. Your baskets aren&apos;t touched.</p>}
+
+      {status === "trial" && area.state === "ok" && (
+        <p className="mt-2 px-1 text-[13px] text-muted">
+          Your trial basket comes once.{" "}
+          <Link href="/subscribe" className="font-semibold text-carbon underline underline-offset-2">
+            Every week with membership
+          </Link>
+        </p>
       )}
 
       {/* ⋯ for this basket */}
@@ -409,13 +480,26 @@ const WEEK_TONE: Record<CycleWeekState, { bar: string; date: string }> = {
   before: { bar: "bg-carbon/[0.05]", date: "text-carbon/30" },
 };
 
-/** The four weeks of the membership cycle, as one quiet row inside the delivery card. */
+/** Thin arcs behind the hero, like the weave of a basket: decoration, never in the way. */
+function Curves() {
+  return (
+    <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full text-carbon/10" viewBox="0 0 400 260" fill="none" preserveAspectRatio="xMidYMid slice">
+      <path d="M-30 210c70-90 150 40 230-40s120-90 230-60" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M40-20c40 70-30 110 20 190s110 60 150 120" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M250-10c60 50 30 120 110 150" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="330" cy="44" r="3" fill="currentColor" />
+      <circle cx="62" cy="150" r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** The four weeks of the membership cycle, as one quiet row under the hero. */
 function CycleBars({ weekNumber, weeks }: { weekNumber: number; weeks: CycleWeek[] }) {
   const missed = weeks.filter((w) => w.state === "missed").length;
   const delivered = weeks.filter((w) => w.state === "delivered").length;
   const summary = missed ? `${missed} missed` : delivered ? `${delivered} delivered` : "On track";
   return (
-    <div className="border-t border-hairline px-4 pt-3 pb-4">
+    <div className="px-4 pt-3 pb-4">
       <p className="flex items-baseline justify-between text-[12px] text-muted">
         <span className="font-medium">Week {weekNumber} of 4</span>
         <span>{summary}</span>

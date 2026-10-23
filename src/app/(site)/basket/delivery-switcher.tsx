@@ -1,34 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Icon } from "@/components/ui/icon";
 import { selectDelivery } from "./actions";
-import { NewDeliverySheet, type DayOption } from "./new-delivery-sheet";
 
 /**
  * Which basket Home is showing ("My basket", "For Mum"). Switching also
- * changes where the shop, recipes and Kachi add things.
+ * changes where the shop, recipes and Kachi add things. Only shown when
+ * there's more than one; a new basket starts from the tab beside the hero.
  */
-export function DeliverySwitcher({
-  deliveries,
-  activeId,
-  canAddMore,
-  member,
-  dayOptions,
-}: {
-  deliveries: { id: string; label: string; itemCount: number; oneOff?: boolean }[];
-  activeId: string;
-  canAddMore: boolean;
-  member: boolean;
-  dayOptions: DayOption[];
-}) {
+export function DeliverySwitcher({ deliveries, activeId }: { deliveries: { id: string; label: string; itemCount: number; oneOff?: boolean }[]; activeId: string }) {
   const [pending, start] = useTransition();
   const [going, setGoing] = useState<string | null>(null);
-  const [newOpen, setNewOpen] = useState(false);
 
   return (
-    <nav aria-label="Your baskets" className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6">
+    <nav aria-label="Your baskets" className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6">
       {deliveries.map((d) => {
         const on = d.id === activeId;
         return (
@@ -50,18 +36,6 @@ export function DeliverySwitcher({
           </button>
         );
       })}
-      {canAddMore ? (
-        <button type="button" onClick={() => setNewOpen(true)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-hairline px-4 text-sm font-semibold">
-          <Icon name="plus" size={14} weight="bold" />
-          New basket
-        </button>
-      ) : (
-        <Link href={member ? "/subscribe?reason=basket-limit" : "/subscribe?reason=free-basket-used"} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-hairline px-4 text-sm font-semibold">
-          <Icon name="plus" size={14} weight="bold" />
-          New basket
-        </Link>
-      )}
-      <NewDeliverySheet open={newOpen} onClose={() => setNewOpen(false)} dayOptions={dayOptions} />
     </nav>
   );
 }

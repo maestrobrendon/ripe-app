@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/components/cart-provider";
 import { LinkButton } from "@/components/ui/button";
+import { spring } from "@/lib/motion/tokens";
 import { formatNaira } from "@/lib/format";
 import { quoteDelivery } from "@/lib/pricing";
 import { cutoffLabel, dayName, shortDate } from "@/lib/delivery-labels";
@@ -62,6 +65,17 @@ export function OrderSummary({
   const ready = canConfirm && t.count > 0 && Boolean(dateIso);
   const label = `Confirm ${dayName(day)}'s basket`;
 
+  // The hero card at the top carries the same action, so on phones the bar
+  // waits until the hero has scrolled away: one Confirm on screen at a time.
+  const [heroOnScreen, setHeroOnScreen] = useState(true);
+  useEffect(() => {
+    const hero = document.querySelector("[data-home-hero]");
+    if (!hero) return;
+    const io = new IntersectionObserver(([e]) => setHeroOnScreen(e.isIntersecting && e.intersectionRatio > 0.35), { threshold: [0, 0.35, 0.7] });
+    io.observe(hero);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <>
       <aside className="hidden lg:sticky lg:top-24 lg:block">
@@ -101,8 +115,17 @@ export function OrderSummary({
         </div>
       </aside>
 
-      {t.count > 0 && (
-        <div data-order-bar className="fixed inset-x-0 z-(--z-sticky) px-3 lg:hidden" style={{ bottom: "calc(var(--dock-height) + var(--dock-inset) + 0.5rem)" }}>
+      <AnimatePresence>
+      {t.count > 0 && !heroOnScreen && (
+        <motion.div
+          data-order-bar
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 16 }}
+          transition={spring.snappy}
+          className="fixed inset-x-0 z-(--z-sticky) px-3 lg:hidden"
+          style={{ bottom: "calc(var(--dock-height) + var(--dock-inset) + 0.5rem)" }}
+        >
           <div className="mx-auto flex max-w-[28rem] items-center gap-3 rounded-full border border-hairline bg-surface/95 p-1.5 pl-5 shadow-lg backdrop-blur">
             <div className="min-w-0 flex-1 leading-tight">
               <p className="font-semibold">{formatNaira(t.total)}</p>
@@ -125,8 +148,9 @@ export function OrderSummary({
               </LinkButton>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 }

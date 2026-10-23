@@ -18,7 +18,7 @@ import { DeliverySwitcher } from "./delivery-switcher";
 import { DeliveryCard, type AreaState, type BasketStatus } from "./delivery-card";
 import { LiveOrders, type LiveOrder } from "./live-orders";
 import { OrderLines } from "./order-lines";
-import { SuggestionRail } from "./suggestion-rail";
+import { SuggestionsCard, type Suggestion } from "./suggestions-card";
 import { CookThisWeek, type CookRecipe } from "./cook-this-week";
 import { OrderSummary } from "./order-summary";
 
@@ -117,6 +117,18 @@ export default async function HomePage() {
   ]);
   const usuals = usualRows.sort((a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99)).slice(0, 10);
 
+  // A short list with a reason on every line: their usuals first, then what's in season.
+  const favourite = new Set(user.preferences?.favoriteProductIds ?? []);
+  const topUsuals = usuals.slice(0, 3);
+  const suggestions: Suggestion[] = [
+    ...topUsuals.map((p) => ({ product: toCardData(p), reason: favourite.has(p.id) ? "One of your favourites" : "You order this most" })),
+    ...seasonRows
+      .filter((p) => !topUsuals.some((u) => u.id === p.id))
+      .slice(0, topUsuals.length ? 2 : 4)
+      .map((p) => ({ product: toCardData(p), reason: p.inSeason ? "In season now" : layout.season.subtitle })),
+  ];
+  const suggestAt = layout.order.find((s) => s !== "cook");
+
   const swaps: Record<string, ReturnType<typeof toAddable>> = {};
   for (const i of items) {
     if (i.product.availability !== "OUT_OF_STOCK") continue;
@@ -150,7 +162,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 pb-28 sm:px-6 sm:pt-6 lg:pb-12">
-      {(list.length > 1 || (member && canAddMore)) && <DeliverySwitcher deliveries={list} activeId={delivery.id} canAddMore={canAddMore} member={member} dayOptions={dayOptions} />}
+      {list.length > 1 && <DeliverySwitcher deliveries={list} activeId={delivery.id} />}
 
       <DeliveryCard
         title={labelOf(delivery)}
@@ -183,7 +195,7 @@ export default async function HomePage() {
             goalLabel={goal?.label ?? null}
           />
 
-          {/* In the order their goal puts first. */}
+          {/* In the order their goal puts first: the recipes, and the one list of what to add. */}
           {layout.order.map((section) =>
             section === "cook" ? (
               cook.length > 0 && (
@@ -198,11 +210,9 @@ export default async function HomePage() {
                   subtitle={withOverlap.length > 0 && !goal ? undefined : layout.cook.subtitle}
                 />
               )
-            ) : section === "usuals" ? (
-              usuals.length > 0 && <SuggestionRail key="usuals" title="Your usuals" subtitle="What you buy most, and your favourites." products={usuals.map(toCardData)} />
-            ) : (
-              seasonRows.length > 0 && <SuggestionRail key="season" title={layout.season.title} subtitle={layout.season.subtitle} products={seasonRows.map(toCardData)} />
-            ),
+            ) : section === suggestAt ? (
+              suggestions.length > 0 && <SuggestionsCard key="suggest" title="Kachi suggests" suggestions={suggestions} />
+            ) : null,
           )}
         </div>
 
