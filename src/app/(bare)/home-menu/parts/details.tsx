@@ -164,28 +164,32 @@ function TrialWidget() {
 
 const FACTS = ["Your day, every week", "Change it until the night before", "Pay when it arrives"];
 
-/** The four points, in the order they play. */
-const DETAILS: { title: string; color: string; body: string; widget: (day: string) => ReactNode }[] = [
+/** The four points, in the order they play. `short` labels the bars on phones. */
+const DETAILS: { title: string; short: string; color: string; body: string; widget: (day: string) => ReactNode }[] = [
   {
     title: "A reminder before every delivery",
+    short: "Reminder",
     color: "text-[#0f7a48]",
     body: "Your basket stays as you left it. A few days before your day we remind you to confirm it, and you can change anything until the evening before.",
     widget: () => <EditWidget />,
   },
   {
     title: "Skip a week when you're away",
+    short: "Skip",
     color: "text-electric-blue",
     body: "Travelling, or still working through last week's? Skip it and nothing comes. Nothing is ever charged automatically.",
     widget: (day) => <SkipWidget day={day} />,
   },
   {
     title: "Checked by hand before it leaves",
+    short: "Checked",
     color: "text-ember",
     body: "Every order is looked over before it goes out. Anything bruised gets swapped, not shipped.",
     widget: () => <CheckWidget />,
   },
   {
     title: "Your first basket is a trial",
+    short: "Trial",
     color: "text-voltage-violet",
     body: "Try one delivery at market prices, no membership needed. Join to have your baskets every week, at member prices.",
     widget: () => <TrialWidget />,
@@ -203,22 +207,25 @@ function PointBar({ index, progress }: { index: number; progress: MotionValue<nu
 }
 
 /**
- * From laptops up the section is tall and the stage sticks under the header,
- * so the reader's own scroll plays the four points one after another: each
- * one's bar fills, and its demo and words take the panel. Tapping a bar
- * scrolls to that point. On phones and tablets, and with reduced motion, the
- * points are a plain list.
+ * From tablets up: the headline, facts and photos stick on the left while the
+ * four points, each with its little demo, stack on the right.
+ *
+ * On phones the four points are told one at a time, the way the week is on
+ * the home-next test: under the intro, a tall strip whose stage sticks under
+ * the header, so the reader's own scroll is the playhead. Each point's bar
+ * fills as it plays; tapping a bar scrolls to it. With reduced motion the
+ * points are a plain list at every width.
  */
 export function Details({ deliveryDay }: { deliveryDay: string }) {
-  const root = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const stepped = !reduced;
   const [frame, setFrame] = useState(0);
-  const { scrollYProgress } = useScroll({ target: root, offset: ["start start", "end end"] });
+  const { scrollYProgress } = useScroll({ target: stage, offset: ["start start", "end end"] });
   useMotionValueEvent(scrollYProgress, "change", (p) => setFrame(Math.min(DETAILS.length - 1, Math.max(0, Math.floor(p * DETAILS.length)))));
 
   const pick = (i: number) => {
-    const el = root.current;
+    const el = stage.current;
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY;
     const range = el.offsetHeight - window.innerHeight;
@@ -228,10 +235,10 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
   const current = DETAILS[frame];
 
   return (
-    <section ref={root} id="details" className={`py-12 sm:py-24 ${stepped ? "lg:h-[360svh] lg:py-0" : ""}`}>
-      <div className={`hm-wrap grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 ${stepped ? "lg:sticky lg:top-[72px] lg:h-[calc(100svh-72px)] lg:items-center" : ""}`}>
+    <section id="details" className="py-12 sm:py-24">
+      <div className="hm-wrap grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <div>
-          <div className={stepped ? "" : "lg:sticky lg:top-28"}>
+          <div className="lg:sticky lg:top-28">
             <Eyebrow className="text-[#0f7a48]">Fresh to your door</Eyebrow>
             <h2 className="hm-h2">What arrives.</h2>
             <p className="hm-lede mt-4 max-w-[26rem]">Picked ripe, checked by hand, at your door on your day.</p>
@@ -274,56 +281,59 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
             </Reveal>
           </div>
         </div>
-        {/* The list: phones and tablets, and every width with reduced motion. */}
-        <div className={`grid gap-5 md:gap-14 ${stepped ? "lg:hidden" : ""}`}>
+        {/* The cards, as always, from tablets up; on phones only with reduced motion. */}
+        <div className={`grid gap-5 md:gap-14 ${stepped ? "max-md:hidden" : ""}`}>
           {DETAILS.map((d) => (
             <Detail key={d.title} title={d.title} color={d.color} body={d.body}>
               {d.widget(deliveryDay)}
             </Detail>
           ))}
         </div>
+      </div>
 
-        {/* The stage: one point at a time, as you scroll. */}
-        {stepped && (
-          <div className="hidden lg:flex lg:flex-col lg:gap-5">
-            <div className="flex items-center gap-5">
-              <div className="grid flex-1 grid-cols-4 gap-2" role="tablist" aria-label="What arrives">
-                {DETAILS.map((d, i) => (
-                  <button key={d.title} type="button" role="tab" aria-selected={i === frame} aria-label={d.title} onClick={() => pick(i)} className="py-2">
-                    <PointBar index={i} progress={scrollYProgress} />
-                  </button>
-                ))}
-              </div>
-              <span className="text-[13px] font-semibold text-[var(--hm-ink-3)] tabular-nums">
+      {/* Phones: the four points one at a time, the scroll as the playhead. */}
+      {stepped && (
+        <div ref={stage} className="relative mt-4 md:hidden" style={{ height: `${DETAILS.length * 70}svh` }} aria-label="What arrives">
+          <div className="sticky top-16 flex h-[calc(100svh-4rem)] flex-col overflow-hidden">
+            <div className="hm-wrap flex items-center justify-between pt-6 text-[13px] font-semibold">
+              <span className="inline-flex items-center gap-2">
+                <i className="h-2.5 w-2.5 rounded-full bg-[#0f7a48]" aria-hidden />
+                What arrives
+              </span>
+              <span className="text-[var(--hm-ink-3)] tabular-nums">
                 0{frame + 1} / 0{DETAILS.length}
               </span>
             </div>
-            <div className="hm-panel grid h-[min(400px,46svh)] place-items-center overflow-hidden p-8">
-              <AnimatePresence mode="wait" initial={false}>
+
+            <div className="hm-wrap relative flex flex-1 items-center" aria-live="polite">
+              <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                   key={frame}
-                  initial={{ opacity: 0, y: 14 }}
+                  initial={{ opacity: 0, y: 70 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid w-full place-items-center"
+                  exit={{ opacity: 0, y: -70 }}
+                  transition={spring.smooth}
+                  className="w-full"
                 >
-                  {/* The demos are drawn at card size; the stage has room for a little more. */}
-                  <div className="grid w-full scale-[1.15] place-items-center">{current.widget(deliveryDay)}</div>
+                  <div className="hm-panel grid h-[220px] place-items-center overflow-hidden p-5">{current.widget(deliveryDay)}</div>
+                  <h3 className={`mt-6 text-[15px] font-semibold ${current.color}`}>{current.title}</h3>
+                  <p className="mt-2 text-[19px] leading-snug font-medium tracking-[-0.02em] text-carbon">{current.body}</p>
                 </motion.div>
               </AnimatePresence>
             </div>
-            <div className="min-h-[6.5rem]" aria-live="polite">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div key={frame} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
-                  <h3 className={`text-[15px] font-semibold ${current.color}`}>{current.title}</h3>
-                  <p className="mt-1.5 max-w-[30rem] text-[17px] leading-relaxed text-carbon/80">{current.body}</p>
-                </motion.div>
-              </AnimatePresence>
+
+            {/* The four points, filling as you go. Kept above Kachi's launcher in the corner. */}
+            <div className="hm-wrap grid grid-cols-4 gap-1.5 pb-[88px]" role="tablist" aria-label="Points">
+              {DETAILS.map((d, i) => (
+                <button key={d.title} type="button" role="tab" aria-selected={i === frame} aria-label={d.title} onClick={() => pick(i)} className="text-left">
+                  <PointBar index={i} progress={scrollYProgress} />
+                  <span className={`mt-2 block text-xs font-semibold transition-opacity ${i === frame ? "opacity-100" : "opacity-40"}`}>{d.short}</span>
+                </button>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
