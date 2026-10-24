@@ -423,65 +423,54 @@ export default async function RecipesPage({
             ))}
           </div>
 
+          {/* Three tiers, top to bottom: who it's for (a small label and the
+              question), what's true this week (one quiet line), and where to
+              go (the tabs). Ask Kachi is already in the header. */}
           <div className="hm-wrap relative py-7 sm:py-10">
-            <div className="flex items-center justify-between gap-3">
-              <p className="inline-flex items-center gap-2 rounded-full bg-paper-white/75 py-1 pr-3.5 pl-1 text-[13px] font-semibold whitespace-nowrap">
-                <KachiMark className="h-6 w-6" />
-                Picked for you this week
-              </p>
-              <div aria-hidden className="flex shrink-0 max-[359px]:hidden lg:hidden">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-[13px] font-semibold text-carbon/70">
+                  <KachiMark className="h-5 w-5" />
+                  Picked for you this week
+                </p>
+                <h1 id="recipes-hello" className="hm-h2 mt-3 max-w-[15ch]">
+                  What are we cooking{firstName ? `, ${firstName}` : ""}?
+                </h1>
+              </div>
+              <div aria-hidden className="mt-1 flex shrink-0 max-[359px]:hidden lg:hidden">
                 {HEADER_DISHES.map((r, i) => (
                   <div
                     key={r.slug}
-                    className={`relative h-10 w-10 overflow-hidden rounded-full ring-[3px] ring-[#d1eafd] sm:h-12 sm:w-12 ${i ? "-ml-3 sm:-ml-3.5" : ""}`}
-                    style={{ rotate: `${[-8, 5, -3][i]}deg` }}
+                    className={`relative h-11 w-11 overflow-hidden rounded-full ring-[3px] ring-[#d1eafd] ${i ? "-ml-3.5" : ""}`}
+                    style={{ rotate: `${[-8, 5, -3][i]}deg`, marginTop: `${[0, 14, 4][i]}px` }}
                   >
-                    <Image src={r.image} alt="" fill sizes="48px" className="object-cover" />
+                    <Image src={r.image} alt="" fill sizes="44px" className="object-cover" />
                   </div>
                 ))}
               </div>
             </div>
 
-            <h1 id="recipes-hello" className="hm-h2 mt-4 max-w-[15ch]">
-              What are we cooking{firstName ? `, ${firstName}` : ""}?
-            </h1>
-
-            {/* What the suggestions are tuned to, as stickers. */}
-            <ul className="mt-5 flex flex-wrap gap-2 text-[13px] font-semibold">
-              {prefs?.primaryGoal && (
-                <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-mint-pop px-3">
-                  <span aria-hidden>🎯</span> {GOAL_LABEL[prefs.primaryGoal] ?? prefs.primaryGoal}
-                </li>
-              )}
-              {prefs?.householdType && (
-                <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-sunburst px-3">
-                  <span aria-hidden>🍽️</span> For {HOUSEHOLD_TYPE_LABEL[prefs.householdType]?.toLowerCase() ?? prefs.householdType}
-                </li>
-              )}
+            {/* What the week is tuned to, as one line rather than a pile of stickers. */}
+            <p className="mt-3 text-[15px] leading-relaxed text-carbon/70">
+              {[
+                `${menuCards.length} recipes`,
+                prefs?.primaryGoal ? (GOAL_LABEL[prefs.primaryGoal] ?? prefs.primaryGoal).toLowerCase() : null,
+                prefs?.householdType ? `for ${HOUSEHOLD_TYPE_LABEL[prefs.householdType]?.toLowerCase() ?? prefs.householdType}` : null,
+              ]
+                .filter(Boolean)
+                .join(", ")}
               {deliveryLine && (
-                <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-lavender px-3">
-                  <span aria-hidden>🧺</span> {deliveryLine}
-                </li>
+                <>
+                  <span aria-hidden> · </span>
+                  {deliveryLine}
+                </>
               )}
-              <li className="inline-flex h-8 items-center gap-1.5 rounded-full bg-paper-white/75 px-3">
-                <span aria-hidden>📖</span> {menuCards.length} recipes this week
-              </li>
-            </ul>
-
-            <div className="mt-6">
-              <Link
-                href="/assistant"
-                className="tap-target inline-flex h-11 items-center gap-2 rounded-full bg-carbon pr-5 pl-4 text-[14px] font-semibold text-paper-white transition hover:bg-carbon/85"
-              >
-                <Icon name="spark" size={16} />
-                Ask Kachi for ideas
-              </Link>
-            </div>
+            </p>
 
             {/* Three-tab shell (Basket vs. Cart addendum, Section 2): All
                 recipes, Meal plan, Produce list. Guests never see this:
                 they keep the single scrolling page below. */}
-            <nav aria-label="Recipes sections" className="mt-8 flex w-full max-w-md rounded-full bg-paper-white/70 p-1 sm:w-fit">
+            <nav aria-label="Recipes sections" className="mt-6 flex w-full max-w-md rounded-full bg-paper-white/70 p-1 sm:w-fit">
               {TABS.map((t) => (
                 <Link
                   key={t.id}
