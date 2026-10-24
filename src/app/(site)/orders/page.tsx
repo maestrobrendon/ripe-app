@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { formatNaira } from "@/lib/format";
-import { customerStatusLabel, OPEN_STATUSES } from "@/lib/order-status";
+import { CUSTOMER_STEPS, customerStatusLabel, OPEN_STATUSES } from "@/lib/order-status";
+import { readCart } from "@/lib/cart";
 import { orderRef, shortDate } from "@/lib/delivery-labels";
 import { ProductImage } from "@/components/product-image";
 import { LinkButton } from "@/components/ui/button";
@@ -32,6 +33,8 @@ export default async function OrdersPage() {
     },
   });
 
+  // Only needed when there's nothing here yet: what's waiting in the basket decides the button.
+  const cart = orders.length === 0 ? await readCart() : { items: [] };
   const open = orders.filter((o) => OPEN_STATUSES.includes(o.status)).reverse();
   const past = orders.filter((o) => !OPEN_STATUSES.includes(o.status));
 
@@ -41,13 +44,7 @@ export default async function OrdersPage() {
       <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">Orders</h1>
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl bg-surface p-8 text-center ring-1 ring-hairline">
-          <p className="font-semibold">No orders yet</p>
-          <p className="mt-1 text-sm text-muted">When you confirm an order, it shows up here with its progress.</p>
-          <LinkButton href="/basket" size="sm" className="mt-4">
-            Go to your order
-          </LinkButton>
-        </div>
+        <EmptyOrders itemCount={cart.items.filter((l) => !l.soldOut).length} />
       ) : (
         <>
           {open.length > 0 && <Group title="Coming up" orders={open} />}
@@ -55,6 +52,45 @@ export default async function OrdersPage() {
         </>
       )}
     </div>
+    </div>
+  );
+}
+
+/**
+ * Nothing here yet. Rather than a button that only says where to go, it
+ * shows what this page will hold (the four steps every order moves
+ * through, waiting to fill) and the one thing that gets it started: confirm
+ * the basket if it has produce in it, otherwise fill it.
+ */
+function EmptyOrders({ itemCount }: { itemCount: number }) {
+  const ready = itemCount > 0;
+  return (
+    <div className="mt-6 rounded-[26px] bg-surface px-6 pt-8 pb-6 text-center ring-1 ring-hairline">
+      <span className="mx-auto grid size-14 place-items-center rounded-full bg-mint-pop/30">
+        <Icon name="box" size={26} />
+      </span>
+      <p className="mt-4 text-[20px] font-semibold tracking-[-0.01em]">No orders yet</p>
+      <p className="mx-auto mt-1.5 max-w-[19rem] text-[15px] leading-snug text-muted">
+        {ready ? "Confirm your basket and you'll follow it here, from packing to your door." : "Fill your basket and confirm it, and you'll follow it here, from packing to your door."}
+      </p>
+
+      {/* What an order looks like here, not started yet. */}
+      <div className="mx-auto mt-6 max-w-[20rem]" aria-hidden>
+        <div className="flex gap-1.5">
+          {CUSTOMER_STEPS.map((s) => (
+            <span key={s} className="h-1.5 flex-1 rounded-full bg-carbon/10" />
+          ))}
+        </div>
+        <div className="mt-1.5 flex justify-between text-[11px] text-carbon/40">
+          {CUSTOMER_STEPS.map((s) => (
+            <span key={s}>{s}</span>
+          ))}
+        </div>
+      </div>
+
+      <LinkButton href={ready ? "/basket" : "/shop"} size="lg" className="mt-7 flex w-full justify-center">
+        {ready ? `Confirm your basket · ${itemCount} item${itemCount === 1 ? "" : "s"}` : "Start your basket"}
+      </LinkButton>
     </div>
   );
 }
