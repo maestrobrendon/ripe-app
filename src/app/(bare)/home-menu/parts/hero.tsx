@@ -267,7 +267,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         <Side side="right" />
       </div>
 
-      <div className="relative mx-auto w-[min(1360px,calc(100%-32px))] lg:min-h-[640px]">
+      <div className="relative mx-auto w-[min(1360px,calc(100%-32px))]">
         <div className="relative z-20 mx-auto flex max-w-[620px] flex-col items-center text-center">
           {/* Four hand-set lines, sized to the column (see .hm-hero-title):
               no line ever wraps on its own, at any width. One plain sentence:

@@ -94,10 +94,17 @@
    outward a little more as the screen narrows so the flanks never reach the
    headline. */
 @media (min-width: 1024px) {
+  /* One screen tall, with the headline block centred in it whatever the
+     monitor's height. The top padding clears the floating nav; the bottom
+     one matches it, so the block sits in the optical middle. */
   .hm-hero {
     --nav: 0px;
-    padding-top: 9rem;
-    padding-bottom: 6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: max(640px, 100svh);
+    padding-top: 5.5rem;
+    padding-bottom: 4rem;
   }
   .hm-hero-art {
     --s: calc(min(100cqw, 150cqh) / 1536);
