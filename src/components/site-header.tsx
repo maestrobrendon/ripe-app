@@ -31,11 +31,15 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   // one tap away in the dock. Search is a full field on desktop and a button
   // to the search page on phones, so Home isn't pushed below the fold.
   if (isSignedIn) {
+    // On a phone the browser already shows where you are, so the wordmark
+    // waits for desktop; on the Kachi screen that leaves nothing in the bar,
+    // so the bar itself waits for desktop too.
+    const onKachi = pathname.startsWith("/assistant");
     return (
-      <header className="sticky top-0 z-40 border-b border-hairline bg-background/85 backdrop-blur-xl backdrop-saturate-150">
+      <header className={`sticky top-0 z-40 border-b border-hairline bg-background/85 backdrop-blur-xl backdrop-saturate-150 ${onKachi ? "hidden lg:block" : ""}`}>
         <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-0">
           {/* On desktop the wordmark sits over the sidebar, and the rest lines up with the page. */}
-          <div className="shrink-0 lg:w-60 lg:px-6">
+          <div className="hidden shrink-0 lg:block lg:w-60 lg:px-6">
             <Link href="/basket" className="logo-wordmark text-2xl text-carbon">
               {SITE_NAME}
             </Link>

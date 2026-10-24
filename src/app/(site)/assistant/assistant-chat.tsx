@@ -296,10 +296,12 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
   const hour = useSyncExternalStore(noSubscribe, () => new Date().getHours(), () => null);
 
   return (
-    // Fills the screen under the 69px signed-in header (no search here) and
-    // above the dock, so the thread scrolls inside and the composer stays put.
+    // On phones the chat is pinned to the screen: from the top edge (the site
+    // header stays off this screen) down to just above the dock, so the page
+    // has nothing to scroll, the thread scrolls inside, and the composer can
+    // never slide under the menu. Desktop sits under its header as a column.
     <div>
-      <div className="mx-auto flex h-[calc(100svh-69px-var(--dock-clearance))] max-w-2xl flex-col lg:h-[calc(100svh-69px)]">
+      <div className="fixed inset-x-0 top-0 bottom-[calc(var(--dock-height)+var(--dock-inset)+0.75rem)] flex flex-col lg:static lg:mx-auto lg:h-[calc(100svh-69px)] lg:max-w-2xl">
         {/* Chat bar */}
         <div className="flex flex-none items-center gap-2 border-b border-hairline px-3 py-2.5">
           <button
