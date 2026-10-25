@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AnimatePresence, motion } from "motion/react";
 import { spring } from "@/lib/motion/tokens";
 import { haptic } from "@/lib/haptics";
+import { track } from "@/lib/analytics";
 import { ProductImage } from "@/components/product-image";
 import { Icon } from "@/components/ui/icon";
 
@@ -197,6 +198,13 @@ export function CartProvider({ children, initial }: { children: React.ReactNode;
         const data = await res.json().catch(() => null);
         if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "That didn't go through. Try again.");
         setState(data as CartSnapshot);
+        track(before === 0 ? "product_added" : quantity <= 0 ? "product_removed" : "product_quantity_changed", {
+          product: product.slug,
+          name: product.name,
+          from: before,
+          to: Math.max(0, quantity),
+          path: window.location.pathname,
+        });
         const where = (data as CartSnapshot).deliveryLabel ?? "your cart";
         if (before === 0 && quantity > 0)
           announce(`${product.name} added to ${where}`, "ok", true, undefined, { publicId: product.cloudinaryPublicId ?? null, emoji: product.imageEmoji, name: product.name });

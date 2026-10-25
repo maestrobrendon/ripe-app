@@ -120,7 +120,7 @@ export function Faq({
   ];
 
   return (
-    <section id="faq" className="scroll-mt-20 py-12 sm:py-24">
+    <section data-track-section="home-questions" id="faq" className="scroll-mt-20 py-12 sm:py-24">
       <div className="hm-wrap grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <Reveal>
           <div className="lg:sticky lg:top-28">
@@ -196,7 +196,7 @@ export function Closing({ signedIn }: { signedIn: boolean }) {
   );
 
   return (
-    <section ref={ref} className="pt-8 pb-20 sm:pb-28">
+    <section ref={ref} data-track-section="home-closing" className="pt-8 pb-20 sm:pb-28">
       <div className="hm-wrap">
         <div className="grid items-center gap-10 overflow-hidden rounded-[36px] bg-[#f3f5f0] p-8 sm:p-12 md:grid-cols-[1fr_1fr] lg:p-16">
           <div>

@@ -18,6 +18,7 @@ import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
 import { Analytics } from "@vercel/analytics/next";
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppSetup } from "@/components/app/app-setup";
 
@@ -91,6 +92,11 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
         </MotionProvider>
         {/* Vercel Web Analytics: page views only, no cookies. Never on the admin host. */}
         <Analytics />
+        {/* PostHog: behaviour, at the level each visitor chose (components/analytics). */}
+        <AnalyticsProvider
+          dockAware={Boolean(user)}
+          user={user ? { id: user.id, name: user.name, email: user.email, member: Boolean(user.subscriptionTierId), tier: user.subscriptionTier?.name ?? null } : null}
+        />
       </body>
     </html>
   );

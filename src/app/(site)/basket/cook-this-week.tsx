@@ -46,7 +46,7 @@ export function CookThisWeek({
 }) {
   const saved = new Set(savedIds);
   return (
-    <section className="mt-10" aria-labelledby="cook">
+    <section data-track-section="basket-cook-this-week" className="mt-10" aria-labelledby="cook">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="cook" className="text-xl font-semibold tracking-[-0.015em]">
           {title}

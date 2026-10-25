@@ -10,6 +10,7 @@ import { quoteDelivery } from "@/lib/pricing";
 import { DELIVERY_WINDOW, cutoffLabel, longDate } from "@/lib/delivery-labels";
 import { haptic } from "@/lib/haptics";
 import { placeOrder, type PaymentChoice } from "./actions";
+import { track } from "@/lib/analytics";
 
 type SavedAddress = {
   id: string;
@@ -79,6 +80,7 @@ export function CheckoutFlow(props: {
   const submit = () => {
     haptic("light");
     setError(null);
+    track("checkout_submitted", { flow: "checkout", payment, newAddress: adding, useCredit });
     start(async () => {
       const r = await placeOrder({
         basketId: props.basketId,
@@ -93,6 +95,7 @@ export function CheckoutFlow(props: {
       // Success navigates to the order. Anything else comes back as a sentence.
       if (r && !r.ok) {
         haptic("error");
+        track("checkout_failed", { flow: "checkout", error: r.error });
         setError(r.error);
         if (r.addressId && adding) {
           setAdding(false);

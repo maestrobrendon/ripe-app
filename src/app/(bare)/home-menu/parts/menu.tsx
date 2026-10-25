@@ -9,6 +9,7 @@ import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { MagneticLink, Reveal, setScrollLocked } from "../../home-next/parts/runtime";
 import { MENU_GOALS, type MenuGoal, type MenuRecipe } from "../recipes";
 import { useMenu } from "@/components/menu-provider";
+import { track } from "@/lib/analytics";
 import type { MenuProduct } from "../types";
 import { Check, Clock, Eyebrow, IngredientChip, People, ShareMeter, splitRecipe } from "./shared";
 
@@ -30,7 +31,7 @@ export function Menu({
   const trio = recipes.length >= 3;
 
   return (
-    <section id="menu" className="scroll-mt-20 py-12 sm:py-24">
+    <section data-track-section="home-recipes" id="menu" className="scroll-mt-20 py-12 sm:py-24">
       <div className="hm-wrap">
         <div>
           <Reveal className="max-w-[44rem]">
@@ -156,6 +157,7 @@ function RecipeSheet({ recipe, products, signedIn, onClose }: { recipe: MenuReci
 
   useEffect(() => {
     if (!recipe) return;
+    track("recipe_opened", { recipe: recipe.slug, goal: recipe.goal, where: "homepage-menu" });
     setScrollLocked(true);
     const opener = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();

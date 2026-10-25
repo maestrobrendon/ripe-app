@@ -9,6 +9,7 @@ import { spring, press } from "@/lib/motion/tokens";
 import type { KachiRecipe } from "@/lib/kachi-types";
 import type { GuestKachiReply } from "@/app/api/kachi/route";
 import { KACHI_HIDDEN, kachiContext } from "./kachi-context";
+import { clock, since, track } from "@/lib/analytics";
 
 /**
  * Kachi, on every page: a small mark in the corner that opens a chat, and
@@ -172,12 +173,15 @@ export function KachiBubble() {
           .filter((m) => !m.retry)
           .slice(-8)
           .map((m) => ({ role: m.role === "me" ? "user" : "assistant", content: m.text }));
+        const askedAt = clock();
+        if (!opts.replay) track("kachi_message_sent", { where: "bubble", path: pathname, length: message.length, firstInChat: msgs.length === 0 });
         const res = await fetch("/api/kachi", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages: turns, page: pageContext() }),
         });
         const data = (await res.json()) as GuestKachiReply;
+        track("kachi_replied", { where: "bubble", ms: since(askedAt), ok: !data.retry, recipes: data.recipes?.length ?? 0 });
         const reply: Msg = {
           id: uid(),
           role: "kachi",

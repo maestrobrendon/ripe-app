@@ -103,7 +103,7 @@ export function Price({
   const memberSaving = standardProduce - memberProduce;
 
   return (
-    <section id="price" className="scroll-mt-20 py-12 sm:py-24">
+    <section data-track-section="home-pricing" id="price" className="scroll-mt-20 py-12 sm:py-24">
       {/* min-w-0: a grid column would otherwise grow to fit the goal row's
           full width on phones, pushing the card past the screen's edge. */}
       <div className="hm-wrap grid items-start gap-10 lg:grid-cols-2 lg:gap-16">

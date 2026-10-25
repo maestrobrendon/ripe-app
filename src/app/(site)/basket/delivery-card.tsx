@@ -158,7 +158,7 @@ export function DeliveryCard(props: {
   const pop = (delay: number) => (reduced ? {} : { initial: { opacity: 0, scale: 0 }, animate: { opacity: 1, scale: 1 }, transition: { ...spring.juicy, delay } });
 
   return (
-    <section data-home-hero>
+    <section data-home-hero data-track-section="basket-hero">
       <div className="grid gap-2" style={{ gridTemplateColumns: sideTab ? "minmax(0,1fr) auto" : "minmax(0,1fr)" }}>
         <motion.div
           initial={reduced ? false : { opacity: 0, scale: 0.96 }}

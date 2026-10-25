@@ -20,6 +20,16 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // PostHog's endpoints end in a slash; don't redirect them.
+  skipTrailingSlashRedirect: true,
+  // Analytics through our own domain, so ad blockers don't drop it (see components/analytics).
+  async rewrites() {
+    return [
+      { source: "/ingest/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },
+      { source: "/ingest/array/:path*", destination: "https://us-assets.i.posthog.com/array/:path*" },
+      { source: "/ingest/:path*", destination: "https://us.i.posthog.com/:path*" },
+    ];
+  },
   async headers() {
     // Not on the admin host: src/proxy.ts gives it a stricter set of its own.
     const adminHost = process.env.ADMIN_HOST?.trim().toLowerCase();

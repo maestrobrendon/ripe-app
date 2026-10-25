@@ -37,6 +37,7 @@ export function SuggestionsCard({ title, suggestions }: { title: string; suggest
       initial={reduced ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...spring.smooth, delay: 0.2 }}
+      data-track-section="basket-suggestions"
       className="mt-5 rounded-[26px] bg-surface px-4 pt-4 pb-2 ring-1 ring-hairline sm:px-5 sm:pt-5"
       aria-label={title}
     >

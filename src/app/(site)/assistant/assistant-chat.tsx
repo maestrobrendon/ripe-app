@@ -12,6 +12,7 @@ import { ProductImage } from "@/components/product-image";
 import { formatNaira } from "@/lib/format";
 import { CUSTOMER_STEPS, customerStatusLabel, customerStep } from "@/lib/order-status";
 import { haptic, press, spring } from "@/lib/motion/tokens";
+import { clock, since, track } from "@/lib/analytics";
 import type { KachiCard, KachiReply, KachiScope } from "@/lib/kachi-types";
 import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges } from "./thread-actions";
 
@@ -164,6 +165,8 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     const typing: Msg = { id: typingId, role: "kachi", text: "", cards: [], typing: true };
     setMessages((ms) => (opts.replaceId ? ms.map((m) => (m.id === typingId ? typing : m)) : [...ms, typing]));
     let data: KachiReply;
+    const askedAt = clock();
+    if (!opts.replay) track("kachi_message_sent", { where: "assistant", length: text.length, firstInChat: messages.length === 0 });
     try {
       const res = await fetch("/api/assistant", {
         method: "POST",
@@ -176,6 +179,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     }
     const cards = (data.cards ?? []) as CardState[];
     const changed = cards.some((c) => c.type === "act");
+    track("kachi_replied", { where: "assistant", ms: since(askedAt), ok: !data.retry, cards: cards.map((c) => c.type), changedBasket: changed });
     setMessages((ms) =>
       ms.map((m) =>
         m.id === typingId

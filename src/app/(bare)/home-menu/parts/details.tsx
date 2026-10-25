@@ -235,7 +235,7 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
   const current = DETAILS[frame];
 
   return (
-    <section id="details" className="py-12 sm:py-24">
+    <section data-track-section="home-what-arrives" id="details" className="py-12 sm:py-24">
       <div className="hm-wrap grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <div>
           <div className="lg:sticky lg:top-28">

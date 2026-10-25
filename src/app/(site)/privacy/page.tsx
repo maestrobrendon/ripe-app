@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LegalPage, type LegalSection } from "@/components/legal-page";
 import { SupportEmail } from "@/components/support-links";
+import { PrivacyChoicesButton } from "@/components/analytics/privacy-choices-button";
 
 export const metadata = {
   title: "Privacy policy. BasketNG",
@@ -181,6 +182,11 @@ const SECTIONS: LegalSection[] = [
             sent to Google for processing.
           </li>
           <li>
+            <strong>Analytics:</strong> PostHog, in the United States, which records how the site is used
+            (see Cookies below). If you allow it and are signed in, that includes your name and email so a
+            session can be linked to your account.
+          </li>
+          <li>
             <strong>Delivery:</strong> our riders and delivery partners, who receive your name, address,
             phone number and order so they can deliver it.
           </li>
@@ -218,6 +224,15 @@ const SECTIONS: LegalSection[] = [
           Basket uses only the cookies it needs to work. We don&rsquo;t use advertising, analytics or
           cross-site tracking cookies. We count page visits with Vercel Web Analytics, which sets no cookies and
           doesn&rsquo;t identify you or follow you to other sites.
+        </p>
+        <p>
+          We also use PostHog to understand how the site is used. Without your OK it counts visits, clicks and time
+          on each page and section anonymously, storing nothing on your device. If you choose &ldquo;Allow&rdquo;, it
+          also remembers your device between visits, records your sessions (taps, scrolling and what&rsquo;s on
+          screen) and makes heatmaps, and if you&rsquo;re signed in it links this to your account so we can see where
+          people get stuck. Passwords, payment details and anything typed into a form are never recorded. You can
+          change your answer at any time.{" "}
+          <PrivacyChoicesButton className="font-semibold underline underline-offset-2" />
         </p>
         <ul>
           <li>

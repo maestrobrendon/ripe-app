@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { press, spring } from "@/lib/motion/tokens";
 import { haptic } from "@/lib/haptics";
+import { track } from "@/lib/analytics";
 import { formatNaira } from "@/lib/format";
 import { Icon } from "@/components/ui/icon";
 import { RollingNumber } from "@/components/ui/rolling-number";
@@ -61,6 +62,7 @@ export function ConfirmFlow(p: {
   const finish = () => {
     haptic("light");
     setError(null);
+    track("checkout_submitted", { flow: "signup", payment });
     start(async () => {
       const r = await placeOrder({
         basketId: p.basketId,
@@ -76,6 +78,7 @@ export function ConfirmFlow(p: {
       // Success goes to the confirmed order. Anything else is one sentence here.
       if (r && !r.ok) {
         haptic("error");
+        track("checkout_failed", { flow: "signup", error: r.error });
         setError(r.error);
       }
     });

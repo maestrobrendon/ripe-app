@@ -261,7 +261,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
   );
 
   return (
-    <section ref={root} className="hm-hero relative overflow-hidden">
+    <section ref={root} data-track-section="home-hero" className="hm-hero relative overflow-hidden">
       <div className="hm-hero-art" aria-hidden>
         <Side side="left" />
         <Side side="right" />

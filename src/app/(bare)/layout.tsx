@@ -7,6 +7,7 @@ import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
 import { Analytics } from "@vercel/analytics/next";
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -45,6 +46,8 @@ export default async function BareRootLayout({ children }: { children: React.Rea
         </MotionProvider>
         {/* Vercel Web Analytics: page views only, no cookies. Never on the admin host. */}
         <Analytics />
+        {/* PostHog: the homepage and sign-up are for visitors, so no account is attached here. */}
+        <AnalyticsProvider user={null} />
       </body>
     </html>
   );

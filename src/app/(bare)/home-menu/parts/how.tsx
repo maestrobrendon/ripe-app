@@ -220,7 +220,7 @@ function Delivery({ goal, deliveryDay, products }: { goal: MenuGoal; deliveryDay
 
 export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal; deliveryDay: string; products: Record<string, MenuProduct>; signedIn: boolean }) {
   return (
-    <section id="how" className="scroll-mt-20 py-12 sm:py-24">
+    <section data-track-section="home-how-it-works" id="how" className="scroll-mt-20 py-12 sm:py-24">
       <div className="hm-wrap">
         <Reveal className="max-w-[40rem]">
           <Eyebrow className="text-electric-blue">How it works</Eyebrow>

@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { spring } from "@/lib/motion/tokens";
 import { haptic } from "@/lib/haptics";
 import { toggleSavedRecipe } from "./actions";
+import { track } from "@/lib/analytics";
 
 /**
  * Sits as a sibling of the card's <Link>, absolutely positioned over it,
@@ -56,6 +57,7 @@ export function SaveRecipeButton({
       aria-label={saved ? "Remove from saved recipes" : "Save this recipe"}
       onClick={() => {
         haptic(saved ? "selection" : "light");
+        track(saved ? "recipe_unsaved" : "recipe_saved", { recipe: recipeId, path: window.location.pathname });
         setSaved((s) => !s);
         startTransition(async () => {
           await toggleSavedRecipe(recipeId);
