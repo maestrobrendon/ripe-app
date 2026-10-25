@@ -6,6 +6,7 @@ import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -42,6 +43,8 @@ export default async function BareRootLayout({ children }: { children: React.Rea
             <KachiBubble />
           </SiteSettingsProvider>
         </MotionProvider>
+        {/* Vercel Web Analytics: page views only, no cookies. Never on the admin host. */}
+        <Analytics />
       </body>
     </html>
   );

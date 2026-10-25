@@ -216,7 +216,8 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>
           Basket uses only the cookies it needs to work. We don&rsquo;t use advertising, analytics or
-          cross-site tracking cookies.
+          cross-site tracking cookies. We count page visits with Vercel Web Analytics, which sets no cookies and
+          doesn&rsquo;t identify you or follow you to other sites.
         </p>
         <ul>
           <li>

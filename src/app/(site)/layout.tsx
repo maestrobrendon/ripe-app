@@ -17,6 +17,7 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { PrimaryMobileNav } from "@/components/primary-mobile-nav";
 import { MotionProvider } from "@/components/motion-provider";
 import { KachiBubble } from "@/components/kachi/kachi-bubble";
+import { Analytics } from "@vercel/analytics/next";
 import { OfflineBanner } from "@/components/offline-banner";
 import { AppSetup } from "@/components/app/app-setup";
 
@@ -88,6 +89,8 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
           </ZoneProvider>
           </SiteSettingsProvider>
         </MotionProvider>
+        {/* Vercel Web Analytics: page views only, no cookies. Never on the admin host. */}
+        <Analytics />
       </body>
     </html>
   );
