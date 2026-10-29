@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, type CSSProperties } from "react";
-import { gsap, SplitText, useGSAP, motionQueries } from "@/lib/motion/gsap";
+import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { MagneticLink } from "../../home-next/parts/runtime";
 
 /*
@@ -114,9 +114,13 @@ function Side({ side }: { side: "left" | "right" }) {
                 width={l.w}
                 height={l.h}
                 sizes={sizes(l)}
-                // All of them are in the first screen: lazy loading would hold
-                // the small ones back until after the intro has played.
-                {...(l.preload ? { preload: true } : { loading: "eager" as const })}
+                // All of them are in the first screen, so none waits to be
+                // scrolled to; but they're decoration, so they queue behind the
+                // CSS and the headline instead of jumping ahead of them (on a
+                // slow connection, preloading all eleven held the first paint
+                // back by seconds).
+                loading="eager"
+                fetchPriority={l.preload ? "auto" : "low"}
                 draggable={false}
               />
             </div>
@@ -134,7 +138,8 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
     () => {
       const mm = gsap.matchMedia();
       mm.add(motionQueries.full, () => {
-        const split = SplitText.create(".hm-hero-title", { type: "lines,words", mask: "lines" });
+        // The words are CSS's job (.hm-line, .hm-rise in home-menu.css), so they
+        // show the moment the page paints; this timeline only sets the table.
         gsap.set("[data-intro]", { visibility: "visible" });
 
         const layers = gsap.utils.toArray<HTMLElement>(".hm-layer");
@@ -152,9 +157,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         // are put down from above, a hand reaches in, and the limes and herbs
         // are tossed on last.
         const tl = gsap.timeline({ defaults: { ease: "ripe.out" } });
-        tl.from(split.words, { yPercent: 115, duration: 1, stagger: 0.06 }, 0.1)
-          .from("[data-hero-fade]", { autoAlpha: 0, y: 18, duration: 0.8, stagger: 0.08 }, 0.5)
-          .from(
+        tl.from(
             role("plate"),
             {
               autoAlpha: 0,
@@ -228,8 +231,6 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
             scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
           });
         });
-
-        return () => split.revert();
       });
 
       // The layers lean toward the pointer, each at its own depth.
@@ -273,22 +274,22 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
               no line ever wraps on its own, at any width. One plain sentence:
               what Basket is, and nothing a first visit has to decide. */}
           <div className="hm-hero-title-box w-full">
+            {/* Each line rises out of its own mask, one after another, in CSS:
+                it plays from the first paint, without waiting for any script. */}
             <h1 className="hm-hero-title hm-display">
-              Fresh fruit
-              <br />
-              and veg,
-              <br />
-              delivered
-              <br />
-              every week.
+              {["Fresh fruit", "and veg,", "delivered", "every week."].map((line, i) => (
+                <span key={line} className="hm-line" style={{ "--i": i } as CSSProperties}>
+                  <span>{line}</span>
+                </span>
+              ))}
             </h1>
           </div>
 
-          <p data-intro data-hero-fade className="hm-lede mt-6 max-w-[30rem]">
+          <p className="hm-rise hm-lede mt-6 max-w-[30rem]" style={{ "--d": "0.45s" } as CSSProperties}>
             Pick what you like and your day. It keeps coming, with recipes so you actually eat it.
           </p>
 
-          <div data-intro data-hero-fade className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="hm-rise mt-8 flex flex-wrap items-center justify-center gap-3" style={{ "--d": "0.55s" } as CSSProperties}>
             <MagneticLink href={signedIn ? "/basket" : "/start"} arrow>
               {signedIn ? "Open your basket" : "Try your first basket"}
             </MagneticLink>

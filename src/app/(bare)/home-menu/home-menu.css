@@ -126,6 +126,42 @@
   white-space: nowrap;
 }
 
+/* The hero's words come in with CSS alone, so they're on screen from the
+   first paint rather than waiting for the animation script: each headline
+   line rises out of its own mask (--i staggers them), then the lede and the
+   buttons (--d) fade up. With reduced motion they simply appear. The padding
+   keeps the display face's caps clear of the clip; the margin gives it back. */
+.hm-line {
+  display: block;
+  overflow: clip;
+  padding-block: 0.08em;
+  margin-block: -0.08em;
+}
+.hm-line > span {
+  display: block;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hm-line > span {
+    animation: hm-line-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.05s + var(--i, 0) * 0.07s);
+  }
+  .hm-rise {
+    animation: hm-rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--d, 0s);
+  }
+}
+@keyframes hm-line-in {
+  from {
+    transform: translateY(110%);
+  }
+}
+@keyframes hm-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
 /* Section headlines: the UI face, tight, sentence case. */
 .hm-h2 {
   font-size: clamp(2rem, 4.2vw, 3.25rem);

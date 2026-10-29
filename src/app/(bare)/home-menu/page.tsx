@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getStarterCandidates } from "@/lib/starter-basket";
@@ -22,22 +23,37 @@ export const metadata: Metadata = {
     "Pick your fruit and vegetables and your day, and it keeps coming, with recipes so you actually eat it. Delivered across Lagos. Pay when it arrives.",
 };
 
+/**
+ * Everything the homepage shows that's the same for every visitor: the menu,
+ * its produce, the example basket's candidates, the areas and the cheapest
+ * plan. Kept for five minutes, so a visit isn't waiting on seven database
+ * round trips; an edit in the admin shows within five minutes.
+ */
+const homepageCatalogue = unstable_cache(
+  async () => {
+    const [menu, menuSlugs] = await Promise.all([getGuestMenu(), getMenuSlugs()]);
+    const [products, candidates, freshCuts, zones, tier] = await Promise.all([
+      prisma.product.findMany({
+        where: { slug: { in: menuSlugs } },
+        select: { slug: true, name: true, category: true, imageEmoji: true, cloudinaryPublicId: true },
+      }),
+      getStarterCandidates(),
+      prisma.product.findMany({ where: { tags: { has: FRESH_CUTS_TAG } }, select: { slug: true } }),
+      prisma.deliveryZone.findMany({
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { name: true, isServed: true, deliveryDays: true },
+      }),
+      prisma.subscriptionTier.findFirst({ orderBy: { monthlyFee: "asc" }, select: { monthlyFee: true } }),
+    ]);
+    return { menu, products, candidates, freshCuts, zones, tier };
+  },
+  ["homepage-catalogue"],
+  { revalidate: 300 },
+);
+
 export default async function HomeMenuPage() {
-  const [menu, menuSlugs] = await Promise.all([getGuestMenu(), getMenuSlugs()]);
-  const [user, products, candidates, freshCuts, zones, tier] = await Promise.all([
-    getCurrentUser(),
-    prisma.product.findMany({
-      where: { slug: { in: menuSlugs } },
-      select: { slug: true, name: true, category: true, imageEmoji: true, cloudinaryPublicId: true },
-    }),
-    getStarterCandidates(),
-    prisma.product.findMany({ where: { tags: { has: FRESH_CUTS_TAG } }, select: { slug: true } }),
-    prisma.deliveryZone.findMany({
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { name: true, isServed: true, deliveryDays: true },
-    }),
-    prisma.subscriptionTier.findFirst({ orderBy: { monthlyFee: "asc" }, select: { monthlyFee: true } }),
-  ]);
+  // Who's visiting is read fresh every time; the catalogue comes from the cache.
+  const [user, { menu, products, candidates, freshCuts, zones, tier }] = await Promise.all([getCurrentUser(), homepageCatalogue()]);
 
   const cutSlugs = new Set(freshCuts.map((p) => p.slug));
   const served = zones.filter((z) => z.isServed);

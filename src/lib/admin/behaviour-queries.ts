@@ -43,7 +43,7 @@ export const BEHAVIOUR_QUERIES = {
     group by path order by n desc limit 30`,
 
   sections: (d: number) => `
-    select properties.section as section, sum(toFloat(properties.seconds)) as total, avg(toFloat(properties.seconds)) as average, count() as views
+    select properties.section as section, sum(least(toFloat(properties.seconds), 600)) as total, avg(least(toFloat(properties.seconds), 600)) as average, count() as views
     from events where ${since(d)} and event = 'section_viewed'
     group by section order by total desc limit 20`,
 

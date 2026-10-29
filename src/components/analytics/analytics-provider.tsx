@@ -19,6 +19,30 @@ function grant(user: AnalyticsUser) {
   if (user) posthog.identify(user.id, { name: user.name, email: user.email, member: user.member, tier: user.tier });
 }
 
+/** Starts PostHog at the level the cookie choice allows. */
+function startPostHog(user: AnalyticsUser) {
+  const granted = readConsent() === "granted";
+  posthog.init(KEY!, {
+    // Through our own domain (next.config.ts rewrites), so blockers don't drop it.
+    api_host: "/ingest",
+    ui_host: "https://us.posthog.com",
+    defaults: "2025-05-24",
+    capture_pageview: "history_change",
+    capture_pageleave: true,
+    autocapture: true,
+    person_profiles: "identified_only",
+    persistence: granted ? "localStorage+cookie" : "memory",
+    disable_session_recording: !granted,
+    enable_heatmaps: granted,
+    capture_dead_clicks: granted,
+    capture_performance: { web_vitals: true },
+    session_recording: { maskAllInputs: true, maskTextSelector: "[data-ph-mask]" },
+    // Not used: saves a 37 KB script on every visit.
+    disable_surveys: true,
+  });
+  if (granted && user) posthog.identify(user.id, { name: user.name, email: user.email, member: user.member, tier: user.tier });
+}
+
 /**
  * Starts PostHog once per page load, at the level the visitor's cookie
  * choice allows, and shows the cookie banner until they've made one. Also times how long each [data-track-section]
@@ -43,24 +67,22 @@ export function AnalyticsProvider({ user, dockAware = false }: { user: Analytics
 
   useEffect(() => {
     if (!ENABLED || posthog.__loaded) return;
-    const granted = readConsent() === "granted";
-    posthog.init(KEY!, {
-      // Through our own domain (next.config.ts rewrites), so blockers don't drop it.
-      api_host: "/ingest",
-      ui_host: "https://us.posthog.com",
-      defaults: "2025-05-24",
-      capture_pageview: "history_change",
-      capture_pageleave: true,
-      autocapture: true,
-      person_profiles: "identified_only",
-      persistence: granted ? "localStorage+cookie" : "memory",
-      disable_session_recording: !granted,
-      enable_heatmaps: granted,
-      capture_dead_clicks: granted,
-      capture_performance: { web_vitals: true },
-      session_recording: { maskAllInputs: true, maskTextSelector: "[data-ph-mask]" },
-    });
-    if (granted && user) posthog.identify(user.id, { name: user.name, email: user.email, member: user.member, tier: user.tier });
+    // Started once the page has loaded and the browser is idle, so it never
+    // competes with what the visitor came to see. Page views still land:
+    // PostHog records the current page as it starts.
+    let cancelled = false;
+    const start = () => {
+      if (cancelled || posthog.__loaded) return;
+      startPostHog(user);
+    };
+    // Safari has no requestIdleCallback: a short timeout does the same job there.
+    const idle = () => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(start, { timeout: 4000 }) : setTimeout(start, 1500));
+    if (document.readyState === "complete") idle();
+    else window.addEventListener("load", idle, { once: true });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", idle);
+    };
   }, [user]);
 
   // "Cookie settings" in the footer and the policies opens the categories again.
