@@ -3,31 +3,54 @@
 import posthog from "posthog-js";
 
 /*
- * Product analytics (PostHog). Two levels:
+ * Product analytics (PostHog), governed by the cookie choice. Two levels:
  *
- *   Everyone:  page views, time on page, clicks (autocapture), web vitals and
- *              the named events below, with nothing stored in the browser,
- *              so nothing ties one visit to the next.
- *   "Allow":   the same, remembered across visits, plus session replay,
- *              heatmaps, dead-click detection, and (signed in) the account,
- *              so one person's journey can be followed end to end.
+ *   Before a choice, or analytics cookies rejected: page views, time on page,
+ *   clicks (autocapture), web vitals and the named events below, held in
+ *   memory only. Nothing is stored on the device, so nothing ties one visit
+ *   to the next.
+ *   Analytics cookies accepted: the same, remembered across visits, plus
+ *   session replay, heatmaps, dead-click detection, and (signed in) the
+ *   account, so one person's journey can be followed end to end.
  *
- * The choice lives in localStorage under CONSENT_KEY. Passwords, payment
- * and address fields are always masked in replays.
+ * The choice is a cookie of its own (CONSENT_COOKIE, 12 months), the way
+ * cookie banners work everywhere. Passwords, payment and address fields are
+ * always masked in replays. See /cookies for the full list.
  */
 
-export const CONSENT_KEY = "basketng.analytics-consent";
-export const OPEN_CONSENT_EVENT = "basketng:open-consent";
+export const CONSENT_COOKIE = "basket_cookie_consent";
+/** The earlier name of the choice, in localStorage; read once so nobody is asked twice. */
+const LEGACY_KEY = "basketng.analytics-consent";
+export const OPEN_CONSENT_EVENT = "basketng:open-cookie-settings";
+/** Fired once the visitor has answered the cookie banner, for prompts that wait their turn. */
+export const CONSENT_CHOSEN_EVENT = "basketng:cookie-choice";
 
+/** "granted": analytics cookies accepted. "denied": essential cookies only. null: not asked yet. */
 export type Consent = "granted" | "denied" | null;
 
 export function readConsent(): Consent {
   try {
-    const v = localStorage.getItem(CONSENT_KEY);
+    const m = document.cookie.match(new RegExp(`(?:^|; )${CONSENT_COOKIE}=([^;]*)`));
+    const v = m?.[1] ?? localStorage.getItem(LEGACY_KEY);
     return v === "granted" || v === "denied" ? v : null;
   } catch {
     return null;
   }
+}
+
+export function writeConsent(c: "granted" | "denied") {
+  try {
+    const secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${CONSENT_COOKIE}=${c}; Max-Age=${60 * 60 * 24 * 365}; Path=/; SameSite=Lax${secure}`;
+    localStorage.removeItem(LEGACY_KEY);
+  } catch {
+    /* the choice holds for this visit */
+  }
+}
+
+/** Opens the cookie settings from anywhere (footer, cookie policy, privacy policy). */
+export function openCookieSettings() {
+  window.dispatchEvent(new Event(OPEN_CONSENT_EVENT));
 }
 
 export function analyticsReady() {
@@ -47,7 +70,7 @@ export type AnalyticsEvent =
   | "checkout_submitted"
   | "checkout_failed"
   | "section_viewed"
-  | "analytics_consent";
+  | "cookie_consent";
 
 /** Record a named event. A no-op until PostHog has loaded, and on the server. */
 export function track(event: AnalyticsEvent, properties?: Record<string, unknown>) {

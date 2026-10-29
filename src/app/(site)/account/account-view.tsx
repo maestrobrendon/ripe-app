@@ -10,6 +10,7 @@ import { useCart } from "@/components/cart-provider";
 import { disablePush, enablePush, isInstalled, openGetApp, pushNeedsInstall } from "@/components/app/pwa";
 import { formatNaira, GOAL_LABEL, PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_OPTIONS } from "@/lib/format";
 import { MENU_GOALS } from "@/lib/menu-types";
+import { openCookieSettings } from "@/lib/analytics";
 import { cancelSubscription, withdrawPlanRequest } from "@/app/(site)/subscribe/actions";
 import {
   saveContact,
@@ -276,6 +277,7 @@ export function AccountView(props: Props) {
           <Row icon="download" tint="mist" title="Download my data" sub="Your account, addresses and orders, as a file" href="/account/data" download />
           <Row icon="doc" tint="mist" title="Terms of service" href="/terms" />
           <Row icon="shield" tint="mist" title="Privacy policy" href="/privacy" />
+          <Row icon="shield" tint="mist" title="Cookie settings" sub="Essential, or with analytics" onClick={openCookieSettings} />
         </Group>
 
         <Group>

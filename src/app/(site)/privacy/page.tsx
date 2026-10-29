@@ -183,7 +183,7 @@ const SECTIONS: LegalSection[] = [
           </li>
           <li>
             <strong>Analytics:</strong> PostHog, in the United States, which records how the site is used
-            (see Cookies below). If you allow it and are signed in, that includes your name and email so a
+            (see Cookies below). If you accept analytics cookies and are signed in, that includes your name and email so a
             session can be linked to your account.
           </li>
           <li>
@@ -221,40 +221,18 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          Basket uses only the cookies it needs to work. We don&rsquo;t use advertising, analytics or
-          cross-site tracking cookies. We count page visits with Vercel Web Analytics, which sets no cookies and
-          doesn&rsquo;t identify you or follow you to other sites.
+          We use essential cookies to keep you signed in, remember your basket and your delivery area. With
+          your OK we also use analytics cookies from PostHog to see how the site is used, including session
+          recordings and heatmaps; anything typed into a form is never recorded. We don&rsquo;t use advertising or
+          cross-site tracking cookies. Vercel Web Analytics also counts page views without cookies.
         </p>
         <p>
-          We also use PostHog to understand how the site is used. Without your OK it counts visits, clicks and time
-          on each page and section anonymously, storing nothing on your device. If you choose &ldquo;Allow&rdquo;, it
-          also remembers your device between visits, records your sessions (taps, scrolling and what&rsquo;s on
-          screen) and makes heatmaps, and if you&rsquo;re signed in it links this to your account so we can see where
-          people get stuck. Passwords, payment details and anything typed into a form are never recorded. You can
-          change your answer at any time.{" "}
-          <PrivacyChoicesButton className="font-semibold underline underline-offset-2" />
-        </p>
-        <ul>
-          <li>
-            <strong>Sign-in</strong> (<code>ripe_session</code>): keeps you signed in for up to 30 days.
-          </li>
-          <li>
-            <strong>Cart</strong> (<code>ripe_cart</code>): remembers your cart for up to 30 days, even
-            before you sign up.
-          </li>
-          <li>
-            <strong>Delivery area</strong> (<code>ripe_zone</code>): remembers the area you picked for up
-            to 180 days, so we show the right prices and days.
-          </li>
-          <li>
-            <strong>Planner allowance</strong> (<code>planner_uses_today</code>): counts free planner uses
-            for visitors who aren&rsquo;t signed in. It resets daily.
-          </li>
-        </ul>
-        <p>
-          We also keep a couple of small settings in your browser&rsquo;s session storage, such as whether
-          you closed the delivery-area prompt. These clear when you close the tab. Blocking cookies will
-          sign you out and empty your cart.
+          Every cookie, what it does and how long it lasts is in our{" "}
+          <Link href="/cookies" className="underline underline-offset-2">
+            cookie policy
+          </Link>
+          . You can change your choice at any time:{" "}
+          <PrivacyChoicesButton className="font-semibold underline underline-offset-2" />.
         </p>
       </>
     ),
@@ -366,5 +344,5 @@ const SECTIONS: LegalSection[] = [
 ];
 
 export default function PrivacyPage() {
-  return <LegalPage title="Privacy policy" lastUpdated="11 October 2026" summary={SUMMARY} sections={SECTIONS} />;
+  return <LegalPage title="Privacy policy" lastUpdated="29 October 2026" summary={SUMMARY} sections={SECTIONS} />;
 }

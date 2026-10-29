@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { Button } from "@/components/ui/button";
 import { spring } from "@/lib/motion/tokens";
+import { CONSENT_CHOSEN_EVENT, readConsent } from "@/lib/analytics";
 
 type Zone = { slug: string; name: string; area: string };
 
@@ -61,9 +62,18 @@ export function ZoneProvider({
 
   useEffect(() => {
     if (!autoOpen || zoneName || recentlyDismissed()) return;
-    // A beat after the page appears, so it reads as a question rather than a wall.
-    const t = window.setTimeout(() => setOpen(true), 800);
-    return () => window.clearTimeout(t);
+    // A beat after the page appears, so it reads as a question rather than a
+    // wall; and never on top of the cookie banner, which asks first.
+    let t = 0;
+    const ask = () => {
+      t = window.setTimeout(() => setOpen(true), 800);
+    };
+    if (readConsent() !== null) ask();
+    else window.addEventListener(CONSENT_CHOSEN_EVENT, ask, { once: true });
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener(CONSENT_CHOSEN_EVENT, ask);
+    };
   }, [zoneName, autoOpen]);
 
   useEffect(() => {

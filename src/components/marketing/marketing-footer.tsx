@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
 import { useSiteSettings } from "@/components/site-settings-provider";
 import { supportHref, whatsappReady } from "@/lib/support";
+import { PrivacyChoicesButton } from "@/components/analytics/privacy-choices-button";
 import "@/app/(bare)/home-menu/home-menu.css";
 
 /**
@@ -32,6 +33,7 @@ const columns = (support: { whatsapp: string; email: string }): { title: string;
       ["Questions", "/faq"],
       ["Terms", "/terms"],
       ["Privacy", "/privacy"],
+      ["Cookie policy", "/cookies"],
     ],
   },
   {
@@ -97,6 +99,7 @@ export function MarketingFooter() {
 
       <div className="hm-wrap mt-14 flex flex-wrap justify-between gap-2.5 border-t border-paper-white/15 pt-6 text-[13px] text-paper-white/55">
         <span>BasketNG, Lagos. {new Date().getFullYear()}.</span>
+        <PrivacyChoicesButton className="underline-offset-4 hover:text-paper-white hover:underline" />
         <span>Made for people who train, cook and care.</span>
       </div>
 

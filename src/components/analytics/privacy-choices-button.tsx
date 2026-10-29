@@ -1,12 +1,12 @@
 "use client";
 
-import { OPEN_CONSENT_EVENT } from "@/lib/analytics";
+import { openCookieSettings } from "@/lib/analytics";
 
-/** Opens the analytics question again, wherever it's shown. */
-export function PrivacyChoicesButton({ className = "" }: { className?: string }) {
+/** Opens the cookie settings, wherever it's shown. */
+export function PrivacyChoicesButton({ className = "", children = "Cookie settings" }: { className?: string; children?: React.ReactNode }) {
   return (
-    <button type="button" onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))} className={className}>
-      Change your analytics choice
+    <button type="button" onClick={openCookieSettings} className={className}>
+      {children}
     </button>
   );
 }
