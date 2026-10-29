@@ -1,6 +1,6 @@
 "use client";
 
-import posthog from "posthog-js";
+import type { PostHog } from "posthog-js";
 
 /*
  * Product analytics (PostHog), governed by the cookie choice. Two levels:
@@ -53,8 +53,27 @@ export function openCookieSettings() {
   window.dispatchEvent(new Event(OPEN_CONSENT_EVENT));
 }
 
+/*
+ * PostHog itself is downloaded only once the page has loaded (see
+ * components/analytics): at about 300 KB with session replay it was the
+ * biggest script on the first load. Until then, and on the server, ph is
+ * null and every call here quietly does nothing.
+ */
+let ph: PostHog | null = null;
+
+/** Loads PostHog (once) and hands it back. */
+export async function loadPostHog(): Promise<PostHog> {
+  if (!ph) ph = (await import("posthog-js")).default;
+  return ph;
+}
+
+/** The loaded, started PostHog, or null. */
+export function posthogNow(): PostHog | null {
+  return ph && ph.__loaded ? ph : null;
+}
+
 export function analyticsReady() {
-  return typeof window !== "undefined" && posthog.__loaded;
+  return typeof window !== "undefined" && posthogNow() !== null;
 }
 
 /** The named moments worth counting by name, rather than by which button was clicked. */
@@ -74,8 +93,7 @@ export type AnalyticsEvent =
 
 /** Record a named event. A no-op until PostHog has loaded, and on the server. */
 export function track(event: AnalyticsEvent, properties?: Record<string, unknown>) {
-  if (!analyticsReady()) return;
-  posthog.capture(event, properties);
+  posthogNow()?.capture(event, properties);
 }
 
 /** A timestamp for measuring how long something took, in milliseconds. */

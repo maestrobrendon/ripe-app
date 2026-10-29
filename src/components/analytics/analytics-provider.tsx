@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import posthog from "posthog-js";
-import { CONSENT_CHOSEN_EVENT, OPEN_CONSENT_EVENT, readConsent, track, writeConsent, type Consent } from "@/lib/analytics";
+import type { PostHog } from "posthog-js";
+import { CONSENT_CHOSEN_EVENT, OPEN_CONSENT_EVENT, loadPostHog, posthogNow, readConsent, track, writeConsent, type Consent } from "@/lib/analytics";
 import { ConsentBanner } from "./consent-banner";
 
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -13,14 +13,14 @@ const ENABLED = Boolean(KEY) && (process.env.NODE_ENV === "production" || proces
 export type AnalyticsUser = { id: string; name: string; email: string | null; member: boolean; tier: string | null } | null;
 
 /** Turns on everything analytics cookies cover, now and for this visit. */
-function grant(user: AnalyticsUser) {
+function grant(posthog: PostHog, user: AnalyticsUser) {
   posthog.set_config({ persistence: "localStorage+cookie", enable_heatmaps: true, capture_dead_clicks: true });
   posthog.startSessionRecording();
   if (user) posthog.identify(user.id, { name: user.name, email: user.email, member: user.member, tier: user.tier });
 }
 
 /** Starts PostHog at the level the cookie choice allows. */
-function startPostHog(user: AnalyticsUser) {
+function startPostHog(posthog: PostHog, user: AnalyticsUser) {
   const granted = readConsent() === "granted";
   posthog.init(KEY!, {
     // Through our own domain (next.config.ts rewrites), so blockers don't drop it.
@@ -66,14 +66,16 @@ export function AnalyticsProvider({ user, dockAware = false }: { user: Analytics
   }, []);
 
   useEffect(() => {
-    if (!ENABLED || posthog.__loaded) return;
+    if (!ENABLED || posthogNow()) return;
     // Started once the page has loaded and the browser is idle, so it never
     // competes with what the visitor came to see. Page views still land:
     // PostHog records the current page as it starts.
     let cancelled = false;
     const start = () => {
-      if (cancelled || posthog.__loaded) return;
-      startPostHog(user);
+      // Downloaded only now, so it's never part of the first load.
+      void loadPostHog().then((posthog) => {
+        if (!cancelled && !posthog.__loaded) startPostHog(posthog, user);
+      });
     };
     // Safari has no requestIdleCallback: a short timeout does the same job there.
     const idle = () => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(start, { timeout: 4000 }) : setTimeout(start, 1500));
@@ -146,8 +148,9 @@ export function AnalyticsProvider({ user, dockAware = false }: { user: Analytics
     setAsking(false);
     setInSettings(false);
     window.dispatchEvent(new Event(CONSENT_CHOSEN_EVENT));
-    if (!ENABLED) return;
-    if (c === "granted") grant(user);
+    const posthog = posthogNow();
+    if (!ENABLED || !posthog) return;
+    if (c === "granted") grant(posthog, user);
     else {
       posthog.stopSessionRecording();
       posthog.set_config({ persistence: "memory", enable_heatmaps: false, capture_dead_clicks: false });
