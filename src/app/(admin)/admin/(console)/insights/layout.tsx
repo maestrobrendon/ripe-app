@@ -7,6 +7,7 @@ export default async function InsightsLayout({ children }: { children: React.Rea
   const role = staff.role as Role;
   const items = [
     { href: "/insights", label: "Business", show: true },
+    { href: "/insights/behaviour", label: "Behaviour", show: true },
     { href: "/insights/demand", label: "Demand", show: true },
     { href: "/insights/kachi", label: "Kachi chats", show: can(role, "insights.kachi_review") },
     { href: "/insights/exports", label: "Exports", show: can(role, "reports.export") },
