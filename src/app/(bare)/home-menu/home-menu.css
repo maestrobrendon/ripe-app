@@ -150,6 +150,25 @@
     animation-delay: var(--d, 0s);
   }
 }
+/* The hero's illustrations arrive the same way: each layer carries how it
+   comes in (--tx, --ty, --rot, --sc, --dur, --ld, set in hero.tsx) and plays
+   it as soon as it paints. Individual transform properties (translate,
+   rotate, scale) leave `transform` free for nothing to fight over; the
+   script's idle and scroll motion lives on the inner .hm-tilt and .hm-float. */
+@media (prefers-reduced-motion: no-preference) {
+  .hm-layer {
+    animation: hm-layer-in var(--dur, 1.2s) cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--ld, 0.1s);
+  }
+}
+@keyframes hm-layer-in {
+  from {
+    opacity: 0;
+    translate: var(--tx, 0) var(--ty, 0);
+    rotate: var(--rot, 0deg);
+    scale: var(--sc, 1);
+  }
+}
 @keyframes hm-line-in {
   from {
     transform: translateY(110%);

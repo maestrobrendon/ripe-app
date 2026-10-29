@@ -72,19 +72,11 @@ export default async function HomeMenuPage() {
     memberFee: tier?.monthlyFee ?? null,
   };
 
+  // The hero's entrance is CSS (home-menu.css), so nothing is hidden before
+  // the first paint and nothing waits on a script to be shown.
   return (
-    <>
-      {/* Before first paint: hide the hero's intro pieces so the timeline can
-          bring them in without a flash. Skipped when motion is reduced. */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html:
-            "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('hn-js')",
-        }}
-      />
-      <MenuProvider menu={menu}>
-        <HomeMenu data={data} />
-      </MenuProvider>
-    </>
+    <MenuProvider menu={menu}>
+      <HomeMenu data={data} />
+    </MenuProvider>
   );
 }

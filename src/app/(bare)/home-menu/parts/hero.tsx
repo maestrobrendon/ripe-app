@@ -101,11 +101,42 @@ function sizes(l: Layer) {
   return `(min-width: 1024px) ${vw(1)}, (min-width: 640px) ${vw(0.85)}, ${vw(1.25)}`;
 }
 
+/** Where each layer is among its own role, for staggering ("the second lime"). */
+const ROLE_INDEX = new Map(LAYERS.map((l) => [l.name, LAYERS.filter((x) => x.role === l.role).indexOf(l)]));
+
+/**
+ * How each layer arrives, as CSS variables for .hm-layer's entrance in
+ * home-menu.css. In CSS rather than the animation script so the scene paints
+ * as soon as its images load, without waiting for any JavaScript: the plates
+ * slide in from their corners, the bowls are put down from above, a hand
+ * reaches in, the limes are tossed on and the herbs land last.
+ */
+function entrance(l: Layer): CSSProperties {
+  const fx = isLeft(l) ? -1 : 1;
+  const fy = isTop(l) ? -1 : 1;
+  const i = ROLE_INDEX.get(l.name) ?? 0;
+  const v = (tx: number, ty: number, rot: number, sc: number, dur: number, delay: number) =>
+    ({ "--tx": `${tx}px`, "--ty": `${ty}px`, "--rot": `${rot}deg`, "--sc": sc, "--dur": `${dur}s`, "--ld": `${delay}s` }) as CSSProperties;
+  switch (l.role) {
+    case "plate":
+      return v(fx * 140, fy * 90, fx * 6, 1, 1.5, 0.1 + i * 0.12);
+    case "bowl":
+      return v(0, -12, 0, 1.14, 0.9, 0.55 + i * 0.16);
+    case "hand":
+      return v(170, 120, 12, 1, 1.3, 0.85);
+    case "lime":
+      // A whole lime tumbles in; a cropped one slides in from past its edge.
+      return l.cut ? v(fx * 90, fy * 70, fx * 6, 1, 1.1, 1.05 + i * 0.09) : v(fx * 50, fy * 40, (i % 2 ? 1 : -1) * 150, 0.6, 1.1, 1.05 + i * 0.09);
+    case "flecks":
+      return v(0, 0, 0, 0.9, 1.2, 1.2 + i * 0.1);
+  }
+}
+
 function Side({ side }: { side: "left" | "right" }) {
   return (
     <div className="hm-side absolute inset-0" data-side={side}>
       {LAYERS.filter((l) => isLeft(l) === (side === "left")).map((l) => (
-        <div key={l.name} data-intro data-role={l.role} data-cut={l.cut} data-w={l.w} data-depth={l.depth} data-from={`${isLeft(l) ? -1 : 1},${isTop(l) ? -1 : 1}`} className="hm-layer" style={place(l)}>
+        <div key={l.name} data-role={l.role} data-cut={l.cut} data-w={l.w} data-depth={l.depth} data-from={`${isLeft(l) ? -1 : 1},${isTop(l) ? -1 : 1}`} className="hm-layer" style={{ ...place(l), ...entrance(l) }}>
           <div className="hm-tilt">
             <div className="hm-float">
               <Image
@@ -138,10 +169,9 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
     () => {
       const mm = gsap.matchMedia();
       mm.add(motionQueries.full, () => {
-        // The words are CSS's job (.hm-line, .hm-rise in home-menu.css), so they
-        // show the moment the page paints; this timeline only sets the table.
-        gsap.set("[data-intro]", { visibility: "visible" });
-
+        // The entrance is CSS's job (.hm-line, .hm-rise, .hm-layer in
+        // home-menu.css), so the hero paints without waiting for this script.
+        // From here on: each thing's idle motion, the scroll and the pointer.
         const layers = gsap.utils.toArray<HTMLElement>(".hm-layer");
         const role = (r: Role) => layers.filter((l) => l.dataset.role === r);
         // Which way is "out" for a layer, toward its own corner: x is -1 on
@@ -152,40 +182,6 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
         // they stay inside the bleed on a phone as on a desktop.
         const px = (el: HTMLElement) => el.offsetWidth / Number(el.dataset.w);
         const float = (el: HTMLElement) => el.querySelector<HTMLElement>(".hm-float")!;
-
-        // The table is set: the plates slide in from their corners, the bowls
-        // are put down from above, a hand reaches in, and the limes and herbs
-        // are tossed on last.
-        const tl = gsap.timeline({ defaults: { ease: "ripe.out" } });
-        tl.from(
-            role("plate"),
-            {
-              autoAlpha: 0,
-              x: (_, el) => out(el)[0] * 140,
-              y: (_, el) => out(el)[1] * 90,
-              rotation: (_, el) => out(el)[0] * 6,
-              duration: 1.5,
-              stagger: 0.12,
-            },
-            0.1,
-          )
-          .from(role("bowl"), { autoAlpha: 0, scale: 1.14, y: -12, duration: 0.9, ease: "ripe.emphasized", stagger: 0.16 }, 0.55)
-          .from(role("hand"), { autoAlpha: 0, x: 170, y: 120, rotation: 12, duration: 1.3, ease: "ripe.emphasized" }, 0.85)
-          // A whole lime tumbles in; a cropped one slides in from past its edge.
-          .from(
-            role("lime"),
-            {
-              autoAlpha: 0,
-              scale: (_, el) => (isCut(el) ? 1 : 0.6),
-              x: (_, el) => out(el)[0] * (isCut(el) ? 90 : 50),
-              y: (_, el) => out(el)[1] * (isCut(el) ? 70 : 40),
-              rotation: (i, el) => (isCut(el) ? out(el)[0] * 6 : (i % 2 ? 1 : -1) * 150),
-              duration: 1.1,
-              stagger: 0.09,
-            },
-            1.05,
-          )
-          .from(role("flecks"), { autoAlpha: 0, scale: 0.9, duration: 1.2, stagger: 0.1 }, 1.2);
 
         // Once everything has landed, each thing moves like itself: the
         // plates drift about their centres, the bowls bob, the limes rock,
