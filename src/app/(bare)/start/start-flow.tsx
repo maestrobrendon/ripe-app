@@ -248,7 +248,7 @@ export function StartFlow({
       "Continue"
     ),
     area: notListed ? "Continue anyway" : chosenZone ? `Continue in ${chosenZone.name}` : "Pick your area",
-    goal: "Continue",
+    goal: goal ? "Continue" : "Pick a goal to continue",
     table: `Continue for ${people} ${people === 1 ? "person" : "people"}`,
     recipes: recipes.length ? `Continue with ${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}` : "Pick a recipe",
     basket: (
@@ -811,7 +811,8 @@ export function StartFlow({
         </AnimatePresence>
       </main>
 
-      {/* The next move, always under the thumb. */}
+      {/* The next move, always under the thumb. Before an answer it's still a
+          clear, solid button that says what to do, never a faint shape. */}
       <div className="fixed inset-x-0 bottom-0 z-30 bg-linear-to-t from-paper-white from-70% to-paper-white/0 pt-6 pb-[max(16px,env(safe-area-inset-bottom))]">
         <div className="mx-auto w-[min(560px,calc(100%-32px))]">
           <motion.button
@@ -821,7 +822,7 @@ export function StartFlow({
             onClick={step === "account" ? undefined : () => go(index + 1)}
             whileTap={{ scale: press.scale }}
             transition={spring.snappy}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-opacity disabled:opacity-30"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-colors disabled:bg-(--hm-tint-2) disabled:text-carbon/60"
           >
             {step === "account" ? (pending ? "Setting you up…" : "Create my account") : cta[step]}
           </motion.button>

@@ -210,7 +210,7 @@ export function ConfirmFlow(p: {
             }}
             whileTap={{ scale: press.scale }}
             transition={spring.snappy}
-            className="flex h-14 w-full items-center justify-center gap-1.5 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-opacity disabled:opacity-30"
+            className="flex h-14 w-full items-center justify-center gap-1.5 rounded-full bg-carbon text-[16px] font-semibold text-paper-white transition-colors disabled:bg-(--hm-tint-2) disabled:text-carbon/60"
           >
             {cta[step]}
           </motion.button>
