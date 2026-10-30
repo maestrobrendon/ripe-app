@@ -9,6 +9,7 @@ import { useCart } from "@/components/cart-provider";
 import { LeafletMap } from "@/components/maps/leaflet-map";
 import { haptic } from "@/lib/haptics";
 import { pinMyAddress } from "./actions";
+import { locate, locateHelp, type LocateFailure } from "@/lib/locate";
 
 type Spot = { lat: number; lng: number };
 
@@ -39,19 +40,11 @@ function Pinner({ address, onDone }: { address: { id: string; label: string; lin
   };
 
   const here = () => {
-    if (!navigator.geolocation) return setError("Your browser can't share your location. Tap the map instead.");
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        drop({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      },
-      () => {
-        setLocating(false);
-        setError("We couldn't get your location. Tap the map where your gate is.");
-      },
-      { enableHighAccuracy: true, timeout: 10_000 },
-    );
+    locate()
+      .then((p) => drop({ lat: p.lat, lng: p.lng }))
+      .catch((reason: LocateFailure) => setError(locateHelp(reason, "Tap the map where your gate is.")))
+      .finally(() => setLocating(false));
   };
 
   const save = () =>

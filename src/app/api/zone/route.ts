@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many requests." }, { status: 429 });
   }
 
-  let body: { slug?: unknown; lat?: unknown; lng?: unknown };
+  let body: { slug?: unknown; lat?: unknown; lng?: unknown; accuracy?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
     Number.isFinite(body.lat) &&
     Number.isFinite(body.lng)
   ) {
-    zone = await resolveZoneByCoords(body.lat, body.lng);
+    const accuracy = typeof body.accuracy === "number" && Number.isFinite(body.accuracy) ? body.accuracy : 0;
+    zone = await resolveZoneByCoords(body.lat, body.lng, accuracy);
   }
 
   if (!zone) {

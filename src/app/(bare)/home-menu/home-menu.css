@@ -250,6 +250,33 @@
   }
 }
 
+/* Delivery areas: each area's dot breathes, gently and out of step, like a
+   live location. Still with reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .hm-area-pulse {
+    animation: hm-area-pulse 2.4s ease-out infinite;
+  }
+  li:nth-child(2n) > span > .hm-area-pulse {
+    animation-delay: 0.8s;
+  }
+  li:nth-child(3n) > span > .hm-area-pulse {
+    animation-delay: 1.6s;
+  }
+}
+.hm-area-pulse {
+  opacity: 0;
+}
+@keyframes hm-area-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
 /* Keyboard focus that is visible on white, tint and photos alike. */
 .hm :where(a, button, [role="tab"], [role="radio"]):focus-visible {
   outline: 2.5px solid var(--carbon);

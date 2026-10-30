@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getStarterCandidates } from "@/lib/starter-basket";
 import { FRESH_CUTS_TAG } from "@/lib/product";
 import { DELIVERY_DAY_LABEL } from "@/lib/format";
+import { daysPhrase } from "@/lib/delivery-labels";
 import { HomeMenu } from "./home-menu";
 import { getGuestMenu, getMenuSlugs } from "@/lib/menu";
 import { MenuProvider } from "@/components/menu-provider";
@@ -41,7 +42,7 @@ const homepageCatalogue = unstable_cache(
       prisma.product.findMany({ where: { tags: { has: FRESH_CUTS_TAG } }, select: { slug: true } }),
       prisma.deliveryZone.findMany({
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        select: { name: true, isServed: true, deliveryDays: true },
+        select: { slug: true, name: true, area: true, isServed: true, deliveryDays: true },
       }),
       prisma.subscriptionTier.findFirst({ orderBy: { monthlyFee: "asc" }, select: { monthlyFee: true } }),
     ]);
@@ -67,6 +68,8 @@ export default async function HomeMenuPage() {
     // Fresh Cuts is archived, so pre-cut items never pad the example basket.
     estimatorCandidates: candidates.filter((c) => !cutSlugs.has(c.slug)),
     zones: served.map((z) => ({ name: z.name, days: z.deliveryDays.map((d) => DELIVERY_DAY_LABEL[d] ?? d) })),
+    areas: served.map((z) => ({ slug: z.slug, name: z.name, area: z.area })),
+    areaDays: daysPhrase([...new Set(served.flatMap((z) => z.deliveryDays))]),
     comingSoon: zones.filter((z) => !z.isServed).map((z) => z.name),
     deliveryDay: DELIVERY_DAY_LABEL[commonDay] ?? "Friday",
     memberFee: tier?.monthlyFee ?? null,

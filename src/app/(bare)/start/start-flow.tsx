@@ -22,6 +22,7 @@ import { haptic } from "@/lib/haptics";
 import { buildRecipeBasket, snapQuantity, type BasketLine } from "./recipe-basket";
 import { OwnBasketSheet } from "./own-basket-sheet";
 import { createAccountFromOnboarding, type StartState } from "./actions";
+import { findMyArea, locateHelp } from "@/lib/locate";
 
 type Zone = { slug: string; name: string; area: string; isServed: boolean; deliveryDays: DeliveryDay[]; cutoffHour: number };
 type Dietary = "none" | "vegetarian" | "vegan" | "allergies";
@@ -141,6 +142,7 @@ export function StartFlow({
   const [zone, setZone] = useState<string | null>(served.some((z) => z.slug === initialZone) ? initialZone : null);
   const [notListed, setNotListed] = useState(false);
   const [locating, setLocating] = useState<"idle" | "finding" | "denied" | "outside">("idle");
+  const [locateNote, setLocateNote] = useState("");
   const [day, setDay] = useState<DeliveryDay | null>(() => {
     const z = served.find((x) => x.slug === initialZone);
     return z ? soonestDay(z) : null;
@@ -188,35 +190,19 @@ export function StartFlow({
     if (!day || !z.deliveryDays.includes(day)) setDay(soonestDay(z));
     fetch("/api/zone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: z.slug }) }).catch(() => {});
   };
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      setLocating("denied");
-      return;
-    }
+  const useMyLocation = async () => {
     setLocating("finding");
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const res = await fetch("/api/zone", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lat: coords.latitude, lng: coords.longitude }),
-          });
-          const data: { zone?: { slug: string } } = await res.json();
-          const found = served.find((z) => z.slug === data.zone?.slug);
-          if (found) pickZone(found);
-          else {
-            setZone(null);
-            setNotListed(true);
-            setLocating("outside");
-          }
-        } catch {
-          setLocating("denied");
-        }
-      },
-      () => setLocating("denied"),
-      { timeout: 10000, maximumAge: 600000 },
-    );
+    const found = await findMyArea();
+    const match = found.kind === "zone" ? served.find((z) => z.slug === found.zone.slug) : undefined;
+    if (match) pickZone(match);
+    else if (found.kind === "failed") {
+      setLocateNote(locateHelp(found.reason, "Pick your area below."));
+      setLocating("denied");
+    } else {
+      setZone(null);
+      setNotListed(true);
+      setLocating("outside");
+    }
   };
 
   const pickGoal = (g: MenuGoal) => {
@@ -642,7 +628,9 @@ export function StartFlow({
                   {locating === "finding" ? "Finding you…" : "Use my location"}
                 </motion.button>
                 {locating === "denied" && (
-                  <p className="mt-2.5 text-center text-[13px] text-(--hm-ink-2)">Couldn&apos;t get your location. Pick your area below instead.</p>
+                  <p role="status" className="mt-2.5 text-center text-[13px] text-(--hm-ink-2)">
+                    {locateNote}
+                  </p>
                 )}
 
                 <p className="mt-6 mb-2.5 text-[13px] font-semibold text-(--hm-ink-2)">Or pick your area</p>

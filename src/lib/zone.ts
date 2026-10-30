@@ -41,15 +41,20 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): num
 /**
  * Match coordinates to the nearest served zone whose radius contains them.
  * Returns null when the visitor is outside every served zone.
+ *
+ * accuracyM is how far off the phone says its fix may be: up to 1.5 km of
+ * it is given as slack at a zone's edge, so someone on the boundary isn't
+ * turned away because their phone placed them a street too far.
  */
-export async function resolveZoneByCoords(lat: number, lng: number) {
+export async function resolveZoneByCoords(lat: number, lng: number, accuracyM = 0) {
+  const slackKm = Math.min(Math.max(accuracyM, 0) / 1000, 1.5);
   const zones = await prisma.deliveryZone.findMany({ where: { isServed: true } });
   let best: { zone: (typeof zones)[number]; dist: number } | null = null;
 
   for (const zone of zones) {
     if (zone.centerLat == null || zone.centerLng == null) continue;
     const dist = distanceKm(lat, lng, zone.centerLat, zone.centerLng);
-    if (zone.radiusKm != null && dist > zone.radiusKm) continue;
+    if (zone.radiusKm != null && dist > zone.radiusKm + slackKm) continue;
     if (!best || dist < best.dist) best = { zone, dist };
   }
 

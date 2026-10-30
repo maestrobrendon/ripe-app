@@ -7,6 +7,7 @@ import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { Button } from "@/components/ui/button";
 import { spring } from "@/lib/motion/tokens";
 import { CONSENT_CHOSEN_EVENT, readConsent } from "@/lib/analytics";
+import { findMyArea, locateHelp } from "@/lib/locate";
 
 type Zone = { slug: string; name: string; area: string };
 
@@ -52,6 +53,8 @@ export function ZoneProvider({
   const [open, setOpen] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [status, setStatus] = useState<"idle" | "locating" | "out-of-area">("idle");
+  // Why "Use my location" didn't work, in words they can act on.
+  const [note, setNote] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [saved, setSaved] = useState(false);
   const router = useRouter();
@@ -102,16 +105,20 @@ export function ZoneProvider({
     router.refresh();
   };
 
-  const useLocation = () => {
-    if (!navigator.geolocation) {
-      setStatus("out-of-area");
-      return;
-    }
+  const useLocation = async () => {
+    setNote(null);
     setStatus("locating");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => applyZone({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setStatus("idle"),
-    );
+    const found = await findMyArea();
+    if (found.kind === "zone") {
+      setZoneName(found.zone.name);
+      setOpen(false);
+      setStatus("idle");
+      router.refresh();
+    } else if (found.kind === "outside") setStatus("out-of-area");
+    else {
+      setStatus("idle");
+      setNote(locateHelp(found.reason, "Choose your zone below."));
+    }
   };
 
   const dismiss = useCallback(() => {
@@ -214,6 +221,11 @@ export function ZoneProvider({
                   <Button onClick={useLocation} disabled={status === "locating"} className="mt-4 w-full">
                     {status === "locating" ? "Finding you…" : "Use my location"}
                   </Button>
+                  {note && (
+                    <p role="status" className="mt-2.5 text-sm text-muted">
+                      {note}
+                    </p>
+                  )}
 
                   <div className="mt-4">
                     <label className="mb-1 block text-sm font-medium">Or choose your zone</label>

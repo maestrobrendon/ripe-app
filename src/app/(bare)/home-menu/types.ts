@@ -15,6 +15,10 @@ export type MenuData = {
   products: Record<string, MenuProduct>;
   estimatorCandidates: StarterCandidate[];
   zones: { name: string; days: string[] }[];
+  /** The served areas, for the homepage's delivery-areas block. area lists the neighbourhoods. */
+  areas: { slug: string; name: string; area: string }[];
+  /** The days served areas get deliveries, as a phrase: "Thursday to Saturday". */
+  areaDays: string;
   comingSoon: string[];
   /** The delivery day most served zones share, e.g. "Wednesday". */
   deliveryDay: string;

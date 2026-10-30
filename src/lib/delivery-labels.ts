@@ -25,6 +25,20 @@ export const dayShort = (d: DeliveryDay) => dayName(d).slice(0, 3);
 /** An area's days in week order, whatever order the admin ticked them in. */
 export const inWeekOrder = (days: DeliveryDay[]) => WEEK_DAYS.filter((d) => days.includes(d));
 
+/**
+ * Days as a phrase: three or more in a row read as a range ("Thursday to
+ * Saturday"), anything else as a list ("Tuesday and Friday").
+ */
+export function daysPhrase(days: DeliveryDay[]): string {
+  const ordered = inWeekOrder(days);
+  if (ordered.length === 0) return "";
+  const idx = ordered.map((d) => WEEK_DAYS.indexOf(d));
+  const run = idx.every((v, i) => i === 0 || v === idx[i - 1] + 1);
+  if (run && ordered.length >= 3) return `${dayName(ordered[0])} to ${dayName(ordered[ordered.length - 1])}`;
+  const names = ordered.map(dayName);
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 const asDate = (d: Date | string) => (typeof d === "string" ? new Date(d) : d);
 
 /** "Wednesday 22 Oct" for a stored delivery date. */

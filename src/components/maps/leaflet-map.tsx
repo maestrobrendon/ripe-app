@@ -28,16 +28,51 @@ export type MapPin = {
 
 export type MapLine = { id: string; points: [number, number][]; color: string; dashed?: boolean };
 
+/** An area: a filled circle, its name always shown at its centre. */
+export type MapCircle = {
+  id: string;
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  color: string;
+  label?: string;
+  /** Drawn stronger: the area picked, or the one the visitor is in. */
+  active?: boolean;
+  /** A dashed outline: an area that isn't served yet. */
+  dashed?: boolean;
+};
+
 const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 type Leaflet = typeof import("leaflet");
-type Drawn = { pins: MapPin[]; lines: MapLine[]; fit: boolean; onDrag?: (id: string, p: LatLng) => void };
+type Drawn = { pins: MapPin[]; lines: MapLine[]; circles: MapCircle[]; fit: boolean; onDrag?: (id: string, p: LatLng) => void };
 
 /** Clear the layer and draw what's asked for; then fit the view to it. */
-function paint(leaflet: Leaflet, m: import("leaflet").Map, g: import("leaflet").LayerGroup, { pins, lines, fit }: Drawn, latest: { current: Drawn & { onPick?: (p: LatLng) => void } }) {
+function paint(leaflet: Leaflet, m: import("leaflet").Map, g: import("leaflet").LayerGroup, { pins, lines, circles, fit }: Drawn, latest: { current: Drawn & { onPick?: (p: LatLng) => void } }) {
   g.clearLayers();
   const bounds: [number, number][] = [];
+
+  for (const c of circles) {
+    const metres = c.radiusKm * 1000;
+    const shape = leaflet
+      .circle([c.lat, c.lng], {
+        radius: metres,
+        color: c.color,
+        weight: c.active ? 3 : 1.5,
+        opacity: c.dashed ? 0.6 : 0.9,
+        dashArray: c.dashed ? "6 6" : undefined,
+        fillColor: c.color,
+        fillOpacity: c.dashed ? 0.04 : c.active ? 0.3 : 0.14,
+        interactive: false,
+      })
+      .addTo(g);
+    if (c.label) shape.bindTooltip(c.label, { permanent: true, direction: "center", className: `map-area-label${c.active ? " is-active" : ""}${c.dashed ? " is-soon" : ""}` });
+    // An area that isn't served yet is drawn but not framed: Epe alone would zoom the map out to Ibadan.
+    if (c.dashed) continue;
+    const b = leaflet.latLng(c.lat, c.lng).toBounds(metres * 2);
+    bounds.push([b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]);
+  }
 
   for (const ln of lines) {
     if (ln.points.length < 2) continue;
@@ -67,6 +102,8 @@ export function LeafletMap({
   zoom = 12,
   pins = [],
   lines = [],
+  circles = [],
+  focus,
   onPick,
   onDrag,
   fit = true,
@@ -76,6 +113,9 @@ export function LeafletMap({
   zoom?: number;
   pins?: MapPin[];
   lines?: MapLine[];
+  circles?: MapCircle[];
+  /** Glide here (and to this zoom) whenever it changes. */
+  focus?: LatLng & { zoom: number };
   /** A click on the map, for choosing a point. */
   onPick?: (p: LatLng) => void;
   /** A pin dragged to a new place. */
@@ -89,9 +129,9 @@ export function LeafletMap({
   const map = useRef<import("leaflet").Map | null>(null);
   const layer = useRef<import("leaflet").LayerGroup | null>(null);
   // What to draw and who to tell, as of the last render (read by the map's own event handlers).
-  const latest = useRef<Drawn & { onPick?: (p: LatLng) => void }>({ pins, lines, fit, onPick, onDrag });
+  const latest = useRef<Drawn & { onPick?: (p: LatLng) => void }>({ pins, lines, circles, fit, onPick, onDrag });
   useEffect(() => {
-    latest.current = { pins, lines, fit, onPick, onDrag };
+    latest.current = { pins, lines, circles, fit, onPick, onDrag };
   });
 
   // The map itself, once. Leaflet touches `window`, so it loads in the browser only.
@@ -101,7 +141,7 @@ export function LeafletMap({
       if (cancelled || !box.current || map.current) return;
       const leaflet = (mod as unknown as { default?: Leaflet }).default ?? (mod as unknown as Leaflet);
       L.current = leaflet;
-      const m = leaflet.map(box.current, { zoomControl: true, attributionControl: true }).setView([center.lat, center.lng], zoom);
+      const m = leaflet.map(box.current, { zoomControl: true, attributionControl: true, zoomSnap: 0.25 }).setView([center.lat, center.lng], zoom);
       // OpenStreetMap refuses tiles asked for with no Referer (the admin sends none by default),
       // so tiles alone send the site's origin: never the page's path.
       leaflet.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIBUTION, referrerPolicy: "strict-origin" }).addTo(m);
@@ -110,7 +150,12 @@ export function LeafletMap({
       map.current = m;
       paint(leaflet, m, layer.current, latest.current, latest);
       // In a sheet or a resizing column the box changes size after Leaflet measured it.
-      resize = new ResizeObserver(() => m.invalidateSize());
+      // Reframe too, while it's still fitting itself: a fit made in a box that
+      // wasn't laid out yet shows half the country.
+      resize = new ResizeObserver(() => {
+        m.invalidateSize();
+        if (latest.current.fit && layer.current) paint(leaflet, m, layer.current, latest.current, latest);
+      });
       resize.observe(box.current);
     });
     let resize: ResizeObserver | null = null;
@@ -125,10 +170,21 @@ export function LeafletMap({
   }, []);
 
   // Redraw whenever what's on the map changes.
-  const signature = JSON.stringify([pins.map((p) => [p.id, p.lat, p.lng, p.text, p.color, p.faint, p.draggable]), lines.map((l) => [l.id, l.points.length, l.color, l.dashed, l.points[0], l.points[l.points.length - 1]])]);
+  const signature = JSON.stringify([
+    pins.map((p) => [p.id, p.lat, p.lng, p.text, p.color, p.faint, p.draggable]),
+    lines.map((l) => [l.id, l.points.length, l.color, l.dashed, l.points[0], l.points[l.points.length - 1]]),
+    circles.map((c) => [c.id, c.lat, c.lng, c.radiusKm, c.color, c.active, c.dashed, c.label]),
+  ]);
   useEffect(() => {
     if (L.current && map.current && layer.current) paint(L.current, map.current, layer.current, latest.current, latest);
   }, [signature]);
+
+  const focusKey = focus ? `${focus.lat},${focus.lng},${focus.zoom}` : "";
+  useEffect(() => {
+    if (focus && map.current) map.current.flyTo([focus.lat, focus.lng], focus.zoom, { duration: 0.8 });
+    // Keyed on the place itself, not the object, which is new every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey]);
 
   return <div ref={box} className={`relative z-0 w-full overflow-hidden rounded-2xl ring-1 ring-black/10 ${className}`} role="application" aria-label="Map" />;
 }
