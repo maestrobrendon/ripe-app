@@ -122,6 +122,42 @@ export async function setSuspended(staffId: string, suspend: boolean): Promise<A
   });
 }
 
+/**
+ * For someone who's lost their passkey or phone (or whose passkeys were made
+ * for the old admin address): their account is suspended until they set it up
+ * again, every session ends, and a fresh single-use link (24 hours) lets them
+ * choose a password and add a new passkey. Accepting it clears their old
+ * passkeys, authenticator app and recovery codes (acceptInviteAction).
+ */
+export async function resetSignIn(staffId: string): Promise<ActionResult<{ link: string; emailed: boolean }>> {
+  return staffAction("staff.invite", async (ctx) => {
+    const target = await prisma.staffUser.findUnique({ where: { id: String(staffId).slice(0, 40) } });
+    if (!target) return { ok: false, code: "INVALID", error: "That staff member doesn't exist." };
+    if (target.id === ctx.staff.id) return { ok: false, code: "FORBIDDEN", error: "You're signed in: add a new passkey on the Security page instead." };
+    if (!canManage(ctx, target.role as Role)) return { ok: false, code: "FORBIDDEN", error: "You can't reset that account." };
+
+    await prisma.staffUser.update({ where: { id: target.id }, data: { status: "SUSPENDED", failedLogins: 0, lockedUntil: null } });
+    await revokeAllSessions(target.id);
+    await prisma.staffInvite.updateMany({ where: { email: target.email, usedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
+    const token = randomToken();
+    await prisma.staffInvite.create({
+      data: { tokenHash: sha256Hex(token), email: target.email, name: target.name, role: target.role, invitedById: ctx.staff.id, expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
+    });
+    const link = `${adminOrigin()}/invite/${token}`;
+    const emailed = await sendEmail({
+      to: target.email,
+      subject: "Set up your Basket Admin sign-in again",
+      text: `${ctx.staff.name} reset your Basket Admin sign-in.\n\nSet it up again within 24 hours: ${link}\n\nYou'll choose a password and add a new passkey. Your old passkeys and codes stop working. If you didn't ask for this, tell ${ctx.staff.name}.`,
+      html: `<p>${escapeHtml(ctx.staff.name)} reset your Basket Admin sign-in.</p><p><a href="${link}">Set it up again</a> within 24 hours. You'll choose a password and add a new passkey; your old passkeys and codes stop working.</p><p>If you didn't ask for this, tell ${escapeHtml(ctx.staff.name)}.</p>`,
+    }).catch(() => false);
+
+    await auditStaff(ctx, { action: "staff.signin_reset", targetType: "StaffUser", targetId: target.id, summary: `Reset sign-in for ${target.email}; new setup link issued` });
+    await alertOwners("A staff sign-in was reset", [`${ctx.staff.name} reset the sign-in for ${target.name} (${target.email}). They'll set up a new passkey from a fresh link.`]);
+    revalidatePath("/staff");
+    return { ok: true, data: { link, emailed } };
+  });
+}
+
 export async function signOutStaffEverywhere(staffId: string): Promise<ActionResult<{ count: number }>> {
   return staffAction("security.sessions_manage", async (ctx) => {
     const target = await prisma.staffUser.findUnique({ where: { id: String(staffId).slice(0, 40) } });

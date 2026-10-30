@@ -61,6 +61,13 @@ async function main() {
   const existing = await prisma.staffUser.findUnique({ where: { email: email! } });
   if (existing?.status === "ACTIVE" && !force) fail(`${email} already has an active admin account.`);
 
+  // A locked-out Owner (lost passkeys, or passkeys made for an old admin address):
+  // the account waits, suspended and signed out, until the new link is used,
+  // which clears its old passkeys and codes and starts sign-in over.
+  if (existing?.status === "ACTIVE") {
+    await prisma.staffUser.update({ where: { id: existing.id }, data: { status: "SUSPENDED", failedLogins: 0, lockedUntil: null } });
+    await prisma.staffSession.deleteMany({ where: { staffId: existing.id } });
+  }
   await prisma.staffInvite.updateMany({ where: { email: email!, usedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
   const token = randomToken();
   const invite = await prisma.staffInvite.create({

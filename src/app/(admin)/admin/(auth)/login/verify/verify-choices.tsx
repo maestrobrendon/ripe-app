@@ -25,7 +25,7 @@ export function VerifyChoices({ hasPasskey, hasTotp, hasRecovery }: { hasPasskey
         if (result.ok) router.replace("/");
         else setPasskeyError(result.error ?? "That didn't work.");
       } catch {
-        setPasskeyError("The passkey prompt was closed or timed out. Try again.");
+        setPasskeyError("No passkey came back. Passkeys made before the admin moved to admin.getbasket.ng don't work here: use a recovery code, then add a new passkey under Security.");
       }
     });
 

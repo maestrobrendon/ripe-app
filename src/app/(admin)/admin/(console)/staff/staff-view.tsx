@@ -5,7 +5,7 @@ import { ROLE_LABEL, type Role } from "@/lib/admin/permissions";
 import type { ActionResult } from "@/lib/admin/guard";
 import { useAdminAction } from "../step-up";
 import { Alert, Badge, Button, Card, Field, Input, cx } from "../../_ui/kit";
-import { changeRole, inviteStaff, setSuspended, signOutStaffEverywhere, withdrawInvite } from "./actions";
+import { changeRole, inviteStaff, resetSignIn, setSuspended, signOutStaffEverywhere, withdrawInvite } from "./actions";
 
 export type StaffRow = {
   id: string;
@@ -32,7 +32,7 @@ export function StaffView({ rows, invites, assignable, perms }: { rows: StaffRow
   const run = useAdminAction();
   const [pending, start] = useTransition();
   const [notice, setNotice] = useState<{ tone: "error" | "success"; text: string } | null>(null);
-  const [link, setLink] = useState<{ url: string; emailed: boolean } | null>(null);
+  const [link, setLink] = useState<{ url: string; emailed: boolean; reset?: boolean } | null>(null);
   // Bumped after a successful invite so the form remounts closed and empty.
   const [formKey, setFormKey] = useState(0);
   const canAssign = (r: Role) => assignable.some((a) => a.value === r);
@@ -71,7 +71,7 @@ export function StaffView({ rows, invites, assignable, perms }: { rows: StaffRow
 
       {link && (
         <Alert tone="success">
-          Invite created.{" "}
+          {link.reset ? "Sign-in reset." : "Invite created."}{" "}
           {link.emailed ? "We emailed the link too. " : "Email isn't configured here, so send this link yourself over a channel you trust. "}
           It works once, for 24 hours, and won&apos;t be shown again:
           <span className="mt-2 block font-mono text-[12px] break-all select-all">{link.url}</span>
@@ -151,6 +151,25 @@ export function StaffView({ rows, invites, assignable, perms }: { rows: StaffRow
                             onClick={() => act(() => signOutStaffEverywhere(s.id), (d) => `Ended ${d.count} session${d.count === 1 ? "" : "s"}.`)}
                           >
                             {s.isMe ? "Sign out other devices" : "Sign out"}
+                          </Button>
+                        )}
+                        {perms.invite && manageable && !s.isMe && s.status !== "INVITED" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={pending}
+                            onClick={() => {
+                              if (!window.confirm(`Reset ${s.name}'s sign-in? Their passkeys and codes stop working, they're signed out, and they get a new link to set up again.`)) return;
+                              start(async () => {
+                                setNotice(null);
+                                setLink(null);
+                                const r = await run(() => resetSignIn(s.id));
+                                if (r.ok) setLink({ url: r.data.link, emailed: r.data.emailed, reset: true });
+                                else if (r.code !== "AUTH" && r.code !== "STEP_UP") setNotice({ tone: "error", text: r.error });
+                              });
+                            }}
+                          >
+                            Reset sign-in
                           </Button>
                         )}
                         {perms.suspend && manageable && s.status !== "INVITED" && (
