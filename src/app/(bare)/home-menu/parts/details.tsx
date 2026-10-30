@@ -207,6 +207,15 @@ const DETAILS: { title: string; short: string; headline: string; line: string; c
   },
 ];
 
+/**
+ * Where point i's stop sits in the phone strip. The strip is 70vh a point and
+ * plays over its height less one screen, so each point owns a band of
+ * (70 * n - 100) / n vh; the first stops as the strip pins, the others a
+ * little into their band, so the point has already changed when it settles.
+ */
+const BAND = (DETAILS.length * 70 - 100) / DETAILS.length;
+const SNAP = (i: number) => (i === 0 ? "0px" : `${BAND * i + 6}vh`);
+
 /** Fills with scroll across its own quarter of the section. */
 function PointBar({ index, progress }: { index: number; progress: MotionValue<number> }) {
   const fill = useTransform(progress, (p) => Math.min(1, Math.max(0, p * DETAILS.length - index)));
@@ -235,12 +244,10 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
   const { scrollYProgress } = useScroll({ target: stage, offset: ["start start", "end end"] });
   useMotionValueEvent(scrollYProgress, "change", (p) => setFrame(Math.min(DETAILS.length - 1, Math.max(0, Math.floor(p * DETAILS.length)))));
 
+  // Tapping a bar scrolls to that point's stop (see SNAP below).
   const pick = (i: number) => {
-    const el = stage.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    const range = el.offsetHeight - window.innerHeight;
-    scrollToY(top + range * ((i + 0.08) / DETAILS.length));
+    const stop = stage.current?.querySelectorAll<HTMLElement>(".hm-snap")[i];
+    if (stop) scrollToY(stop.getBoundingClientRect().top + window.scrollY);
   };
 
   const current = DETAILS[frame];
@@ -306,6 +313,11 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
       {/* Phones: the four points one at a time, the scroll as the playhead. */}
       {stepped && (
         <div ref={stage} className="relative mt-4 md:hidden" style={{ height: `${DETAILS.length * 70}vh` }} aria-label="What arrives">
+          {/* One stop per point, which a flick of the thumb can't carry past
+              (.hm-snap in home-menu.css), so each one gets its moment. */}
+          {DETAILS.map((d, i) => (
+            <span key={d.short} className="hm-snap pointer-events-none absolute inset-x-0 h-px" style={{ top: SNAP(i) }} aria-hidden />
+          ))}
           <div className="sticky top-16 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden">
             <div className="hm-wrap flex items-center justify-between pt-6 text-[13px] font-semibold">
               <span className="inline-flex items-center gap-2">
