@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
+import { TypeToConfirm } from "@/components/ui/type-to-confirm";
 import { useCart } from "@/components/cart-provider";
 import { ISSUE_KINDS, type IssueKind } from "@/lib/order-copy";
 import { cancelOrder, orderAgain } from "@/app/(site)/basket/actions";
@@ -47,7 +48,7 @@ export function OrderControls(props: {
       const r = await orderAgain(props.activeDeliveryId, props.orderId);
       setConfirm(null);
       if (!r.ok) return cart.announce(r.error, "error");
-      router.push("/basket");
+      router.push("/basket?toast=again");
     });
 
   const send = () =>
@@ -65,12 +66,28 @@ export function OrderControls(props: {
 
   return (
     <div className="mt-5">
-      {confirm ? (
+      {confirm === "cancel" ? (
         <div className="rounded-2xl bg-soft-mist p-4 text-sm">
-          <p>{confirm === "cancel" ? "Cancel this order? Your items go back to Home, so you can change them and confirm again." : "Put these items in your next order? They replace what's there now."}</p>
+          <p className="mb-3">Cancel this order? Your items go back to Home, so you can change them and confirm again. If you paid online, the money goes back the way you paid.</p>
+          <TypeToConfirm phrase="Cancel order">
+            {(ready) => (
+              <div className="flex gap-2">
+                <Button size="sm" variant="danger" loading={pending} disabled={!ready} onClick={cancel}>
+                  Cancel order
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setConfirm(null)}>
+                  Keep it
+                </Button>
+              </div>
+            )}
+          </TypeToConfirm>
+        </div>
+      ) : confirm === "again" ? (
+        <div className="rounded-2xl bg-soft-mist p-4 text-sm">
+          <p>Put these items in your next order? They replace what&apos;s there now.</p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" variant={confirm === "cancel" ? "danger" : "primary"} loading={pending} onClick={confirm === "cancel" ? cancel : again}>
-              {confirm === "cancel" ? "Cancel order" : "Yes, replace"}
+            <Button size="sm" variant="primary" loading={pending} onClick={again}>
+              Yes, replace
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setConfirm(null)}>
               Keep it

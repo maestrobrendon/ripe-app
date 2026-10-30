@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { sendEmailVerification } from "@/lib/email-verification";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, destroySession, destroyAllSessions, endOtherSessions } from "@/lib/session";
@@ -51,7 +52,10 @@ export async function saveContact(input: { name: string; phone: string; email: s
   // Neutral wording: this form shouldn't confirm whose details are registered.
   if (clash) return { ok: false, error: "That email or phone number can't be used. Try another." };
 
-  await prisma.user.update({ where: { id: user.id }, data: { name, phone, email } });
+  const emailChanged = email !== (user.email ?? null);
+  // A new address isn't confirmed until they open the link sent to it.
+  await prisma.user.update({ where: { id: user.id }, data: { name, phone, email, ...(emailChanged && { emailVerifiedAt: null }) } });
+  if (emailChanged && email) await sendEmailVerification(user.id, email, name).catch(() => false);
   if (contactChanged) {
     await endOtherSessions(user.id);
     if (user.email && user.email !== email) await sendContactChangedEmail(user.email).catch(() => {});

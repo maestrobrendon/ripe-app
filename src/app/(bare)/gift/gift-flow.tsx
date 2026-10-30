@@ -22,7 +22,7 @@ import { startGift } from "./actions";
 type Step = "intro" | "who" | "size" | "note" | "pay";
 const STEPS: Step[] = ["who", "size", "note", "pay"];
 
-export function GiftFlow({ signedIn, firstName, online }: { signedIn: boolean; firstName: string; online: boolean }) {
+export function GiftFlow({ signedIn, firstName, online, notice = null }: { signedIn: boolean; firstName: string; online: boolean; notice?: string | null }) {
   const router = useRouter();
   const still = useReducedMotion();
   const [step, setStep] = useState<Step>("intro");
@@ -92,6 +92,11 @@ export function GiftFlow({ signedIn, firstName, online }: { signedIn: boolean; f
                 <motion.div initial={{ y: 20, rotate: -6, opacity: 0 }} animate={{ y: 0, rotate: -3, opacity: 1 }} transition={spring.juicy} className="mx-auto max-w-[360px]">
                   <GiftCard design="berry" amount={15000} to="Mum" from={firstName || "you"} message="So you never run out of fruit." />
                 </motion.div>
+                {notice && (
+                  <p role="alert" className="mx-auto mt-6 max-w-[24rem] rounded-[18px] bg-ember/12 px-4 py-3 text-[14px] leading-snug">
+                    {notice}
+                  </p>
+                )}
                 <h1 className="mt-9 text-[clamp(2rem,7vw,2.6rem)] leading-[1.04] font-semibold tracking-[-0.045em] text-balance">Gift someone a basket.</h1>
                 <p className="mx-auto mt-3 max-w-[24rem] text-[17px] leading-snug text-carbon/65">
                   Fresh fruit and veg for someone in Lagos. They pick what they like, and we bring it to their door.

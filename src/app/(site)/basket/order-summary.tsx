@@ -108,7 +108,7 @@ export function OrderSummary({
           <p className="mt-3 text-xs text-muted">
             {gated
               ? "Your trial basket has been used. Members confirm their baskets every week and pay when they arrive."
-              : `Pay when it arrives, or by bank transfer. Nothing is charged automatically.${cutoffIso ? ` Confirm by ${cutoffLabel(cutoffIso)}.` : ""}`}
+              : `Pay when you confirm, by card, transfer or USSD. Nothing is charged automatically.${cutoffIso ? ` Confirm by ${cutoffLabel(cutoffIso)}.` : ""}`}
           </p>
 
           <Savings saving={t.saving} member={t.member} monthSaved={monthSaved} />

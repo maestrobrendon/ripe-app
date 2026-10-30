@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { awaitingPayment } from "@/lib/order-copy";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/site-settings";
@@ -68,7 +69,7 @@ export default async function AccountPage() {
 
   const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code, baskets, right, savedRecipes, pushDevices] = await Promise.all([
     prisma.order.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } }),
-    prisma.order.findFirst({ where: { userId: user.id, status: { in: OPEN_STATUSES } }, orderBy: { deliveryDate: "asc" }, select: { status: true, deliveryDate: true } }),
+    prisma.order.findFirst({ where: { userId: user.id, status: { in: OPEN_STATUSES } }, orderBy: { deliveryDate: "asc" }, select: { status: true, deliveryDate: true, paidAt: true, paymentMethod: true } }),
     prisma.order.count({ where: { userId: user.id } }),
     pendingPlanRequest(user.id),
     prisma.planRequest.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, include: { tier: { select: { name: true } } } }),
@@ -121,6 +122,7 @@ export default async function AccountPage() {
       dietaryNotes={user.preferences?.dietaryNotes ?? ""}
       online={paystackReady()}
       streak={streakData}
+      emailVerified={Boolean(user.emailVerifiedAt)}
       feedback={{ rewarded: feedbackRewarded, reward: FEEDBACK_REWARD }}
       membership={
         tier
@@ -139,7 +141,7 @@ export default async function AccountPage() {
               ? { state: "declined", tierName: declined.tier.name, monthlyFee: 0, renews: null, note: declined.decidedNote ?? null }
               : null
       }
-      orders={{ count: orderCount, live: liveOrder ? `${customerStatusLabel(liveOrder.status)} · ${shortDate(liveOrder.deliveryDate)}` : null }}
+      orders={{ count: orderCount, live: liveOrder ? `${customerStatusLabel(liveOrder.status, awaitingPayment(liveOrder))} · ${shortDate(liveOrder.deliveryDate)}` : null }}
       notify={{ whatsapp: user.notifyWhatsApp, email: user.notifyEmail, push: user.notifyPush }}
       baskets={{ names: baskets.map(basketName), running: baskets.filter((b) => b.isStanding).length }}
       savedRecipes={savedRecipes}

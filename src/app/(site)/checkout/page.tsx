@@ -33,7 +33,7 @@ import { CheckoutFlow } from "./checkout-flow";
  * becomes their order when they do.
  */
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ b?: string; pay?: string }> }) {
-  const { b, pay } = await searchParams;
+  const { b } = await searchParams;
   const user = await getCurrentUser();
 
   if (!user) {
@@ -66,7 +66,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
             <div className="mt-5 flex items-start gap-2.5 rounded-2xl bg-soft-mist p-3.5 text-left">
               <KachiMark className="size-8 shrink-0" />
               <p className="text-[14px] leading-snug">
-                Your cart&apos;s saved and comes with you. Make a free account in about a minute, then pay now or when it arrives. Your call.
+                Your cart&apos;s saved and comes with you. Make a free account in about a minute, then pay in a minute, by card, transfer or USSD.
               </p>
             </div>
             <div className="mt-6 grid gap-2.5">
@@ -162,7 +162,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
       <BackButton fallback="/basket" label="Your basket" />
       <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{basket.oneOff ? "Confirm your one-time order" : basket.name?.trim() ? `Confirm ${basketName(basket)}` : "Confirm your basket"}</h1>
-      <p className="mt-1 text-[15px] text-muted">Nothing is charged automatically. Pay now, or when it arrives.</p>
+      <p className="mt-1 text-[15px] text-muted">Nothing is charged automatically. Your basket is confirmed once it&apos;s paid.</p>
 
       <CheckoutFlow
         basketId={basket.id}
@@ -187,7 +187,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         transfer={transferReady(settings.transfer) ? settings.transfer : null}
         // Chose "pay now" at sign-up: the transfer option is already picked.
         online={paystackReady()}
-        initialPayment={pay === "now" ? (paystackReady() ? "ONLINE" : transferReady(settings.transfer) ? "TRANSFER" : "POD") : "POD"}
+        initialPayment={paystackReady() ? "ONLINE" : "TRANSFER"}
         draftDefaults={{ line1: user.address ?? "", zoneId: zones.some((z) => z.id === user.deliveryZoneId) ? user.deliveryZoneId : null }}
       />
     </div>

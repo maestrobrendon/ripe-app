@@ -63,10 +63,14 @@ export function ShoppingListSheet({
 
   const addToOrder = () =>
     startTransition(async () => {
-      const { added, label } = await addShoppingListItems(Array.from(selected));
-      cart.announce(added ? `Added ${added} to ${label}` : `It's all in ${label} already`);
-      onClose();
-      router.refresh();
+      try {
+        const { added, label } = await addShoppingListItems(Array.from(selected));
+        cart.announce(added ? `Added ${added} to ${label}` : `It's all in ${label} already`);
+        onClose();
+        router.refresh();
+      } catch {
+        cart.announce("That didn't go through. Check your connection and try again.", "error");
+      }
     });
 
   // A tick shows at once; the server keeps it for next time.

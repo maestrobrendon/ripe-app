@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useActionToast } from "@/lib/use-action-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ProductImage } from "@/components/product-image";
@@ -32,6 +33,7 @@ export function RecipeLibrary({
   const [openId, setOpenId] = useState<string | null>(null);
   const [pickingFor, setPickingFor] = useState<RecipeSheetData | null>(null);
   const [isPending, startTransition] = useTransition();
+  const guard = useActionToast();
   const router = useRouter();
 
   const open = recipes.find((r) => r.id === openId) ?? null;
@@ -39,12 +41,14 @@ export function RecipeLibrary({
   const pick = (day: MealPlanDay, slot: MealSlotKey) => {
     if (!pickingFor) return;
     const recipeId = pickingFor.id;
-    startTransition(async () => {
-      await setMealSlot(0, day, slot, { kind: "recipe", recipeId });
-      setPickingFor(null);
-      setOpenId(null);
-      router.push("/recipes?tab=planner");
-    });
+    startTransition(() =>
+      guard(async () => {
+        await setMealSlot(0, day, slot, { kind: "recipe", recipeId });
+        setPickingFor(null);
+        setOpenId(null);
+        router.push("/recipes?tab=planner");
+      }, "Added to your meal plan"),
+    );
   };
 
   return (

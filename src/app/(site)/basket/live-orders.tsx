@@ -1,5 +1,6 @@
 "use client";
 
+import { TypeToConfirm } from "@/components/ui/type-to-confirm";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Button, LinkButton } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { useCart } from "@/components/cart-provider";
 import { useSupportVerb, useWhatsappHref } from "@/components/support-links";
 import { formatNaira } from "@/lib/format";
 import { CUSTOMER_STEPS, customerStep } from "@/lib/order-status";
-import { orderHeadline, paymentLine } from "@/lib/order-copy";
+import { awaitingPayment, orderHeadline, paymentLine } from "@/lib/order-copy";
 import type { OrderStatus } from "@/generated/prisma/enums";
 import { cancelOrder, orderAgain } from "./actions";
 
@@ -47,7 +48,8 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
   const cart = useCart();
   const [pending, start] = useTransition();
   const [confirming, setConfirming] = useState<null | "cancel" | "again">(null);
-  const { title, body } = orderHeadline(o);
+  const waiting = awaitingPayment({ paidAt: o.paid ? "paid" : null, paymentMethod: o.paymentMethod, status: o.status });
+  const { title, body } = orderHeadline({ ...o, awaitingPayment: waiting });
   const step = customerStep(o.status);
   const helpHref = useWhatsappHref(`Hi, it's about order ${o.ref}.`);
   const helpVerb = useSupportVerb();
@@ -98,12 +100,28 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
         {o.ref} · {o.itemCount} item{o.itemCount === 1 ? "" : "s"} · {paymentLine({ paidAt: o.paid ? o.deliveryDateIso : null, paymentMethod: o.paymentMethod, total: o.total, status: o.status }, formatNaira)}
       </p>
 
-      {confirming ? (
+      {confirming === "cancel" ? (
         <div className="mt-3 rounded-xl bg-soft-mist p-3 text-sm">
-          <p>{confirming === "cancel" ? "Cancel this order? Your items stay here, so you can change them and confirm again." : "Put these items back in your basket? They replace what's there now."}</p>
+          <p className="mb-3">Cancel this order? Your items stay here, so you can change them and confirm again.</p>
+          <TypeToConfirm phrase="Cancel order">
+            {(ready) => (
+              <div className="flex gap-2">
+                <Button size="sm" variant="danger" loading={pending} disabled={!ready} onClick={cancel}>
+                  Cancel order
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setConfirming(null)}>
+                  Keep it
+                </Button>
+              </div>
+            )}
+          </TypeToConfirm>
+        </div>
+      ) : confirming === "again" ? (
+        <div className="mt-3 rounded-xl bg-soft-mist p-3 text-sm">
+          <p>Put these items back in your basket? They replace what&apos;s there now.</p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" variant={confirming === "cancel" ? "danger" : "primary"} loading={pending} onClick={confirming === "cancel" ? cancel : again}>
-              {confirming === "cancel" ? "Cancel order" : "Yes, add them"}
+            <Button size="sm" variant="primary" loading={pending} onClick={again}>
+              Yes, add them
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setConfirming(null)}>
               Keep it
@@ -112,6 +130,11 @@ function OrderCard({ deliveryId, order: o }: { deliveryId: string; order: LiveOr
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          {waiting && (
+            <LinkButton href={`/orders/${o.id}?pay=1`} size="sm">
+              Pay {formatNaira(o.total)} now
+            </LinkButton>
+          )}
           {o.rider && (
             <LinkButton href={`tel:${o.rider.phone}`} size="sm" className="inline-flex items-center gap-1.5">
               <Icon name="phone" size={14} weight="bold" />

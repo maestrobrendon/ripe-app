@@ -23,8 +23,8 @@ import { Field, Kachi, Title } from "../start-flow";
  *      the confirmed order. The address comes first because it sets the
  *      delivery fee, so the amount charged is the order's own total.
  *
- * Without Paystack, step 3 is our bank details before the address instead;
- * without either, step 1 says Confirm and they pay the rider.
+ * Without Paystack, step 3 is our bank details before the address instead.
+ * There's no paying at the door: a basket is confirmed once it's paid.
  */
 
 type Line = { productId: string; name: string; amount: string; total: number; publicId: string | null; emoji: string };
@@ -56,7 +56,7 @@ export function ConfirmFlow(p: {
     window.scrollTo({ top: 0 });
   };
 
-  const [payment, setPayment] = useState<PaymentChoice>(p.online ? "ONLINE" : p.transfer ? "TRANSFER" : "POD");
+  const [payment] = useState<PaymentChoice>(p.online ? "ONLINE" : "TRANSFER");
   const paysNow = total > 0 && (p.online || Boolean(p.transfer));
   const [line1, setLine1] = useState("");
   const [landmark, setLandmark] = useState("");
@@ -102,7 +102,7 @@ export function ConfirmFlow(p: {
       </>
     ),
     pay: "I've sent it",
-    where: pending ? "Placing your order…" : payment === "ONLINE" ? "Continue to payment" : "Place my order",
+    where: pending ? "Placing your order…" : payment === "ONLINE" && total > 0 ? "Continue to payment" : "Place my order",
   };
 
   return (
@@ -156,16 +156,6 @@ export function ConfirmFlow(p: {
                   <CopyRow label="Amount" value={String(total)} shown={formatNaira(total)} />
                   <CopyRow label="Reference" value={p.reference} />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPayment("POD");
-                    go(steps.indexOf("where"));
-                  }}
-                  className="mt-4 w-full py-2 text-center text-[13px] text-(--hm-ink-3) underline decoration-(--hm-line) underline-offset-4"
-                >
-                  Pay when it arrives instead
-                </button>
               </>
             )}
 
@@ -179,15 +169,6 @@ export function ConfirmFlow(p: {
                   <Field label="Nearest landmark (optional)" name="landmark" placeholder="Opposite the filling station" value={landmark} onChange={(e) => setLandmark(e.target.value)} />
                   {needsPhone && <Field label="Phone for the rider" name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />}
                 </div>
-                {p.online && (
-                  <button
-                    type="button"
-                    onClick={() => setPayment(payment === "ONLINE" ? "POD" : "ONLINE")}
-                    className="mt-4 w-full py-2 text-center text-[13px] text-(--hm-ink-3) underline decoration-(--hm-line) underline-offset-4"
-                  >
-                    {payment === "ONLINE" ? "Pay when it arrives instead" : "Pay now instead"}
-                  </button>
-                )}
                 {error && (
                   <p role="alert" className="mt-4 rounded-[18px] bg-ember/12 p-4 text-[14px] leading-relaxed">
                     {error}
@@ -218,7 +199,7 @@ export function ConfirmFlow(p: {
           </motion.button>
           {step === "basket" && (
             <Link href="/basket" onClick={() => haptic("selection")} className="mx-auto mt-2 block w-fit py-1.5 text-[13px] text-(--hm-ink-3) underline decoration-(--hm-line) underline-offset-4">
-              Pay later
+              Not now, keep it saved
             </Link>
           )}
         </div>

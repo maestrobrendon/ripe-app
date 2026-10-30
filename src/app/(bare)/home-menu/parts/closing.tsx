@@ -43,7 +43,7 @@ export function Faq({
       a: (
         <>
           Your basket is the fruit and vegetables you want each week, and it stays as you left it. A few days before each delivery we remind you on WhatsApp, email and the app to
-          confirm it. You pay when it arrives, or by transfer. Nothing is ever charged automatically, and a week you don&apos;t confirm simply doesn&apos;t come.
+          confirm it, and you pay when you confirm: by card, bank transfer or USSD. Nothing is ever charged automatically, and a week you don&apos;t confirm simply doesn&apos;t come.
         </>
       ),
     },
@@ -210,7 +210,7 @@ export function Closing({ signedIn }: { signedIn: boolean }) {
         <div className="grid items-center gap-10 overflow-hidden rounded-[36px] bg-[#f3f5f0] p-8 sm:p-12 md:grid-cols-[1fr_1fr] lg:p-16">
           <div>
             <h2 className="hm-h2">Start with a trial basket.</h2>
-            <p className="hm-lede mt-4 max-w-[26rem]">Pick your fruit and veg, pick your day, and pay when it arrives. No membership needed for your first one.</p>
+            <p className="hm-lede mt-4 max-w-[26rem]">Pick your fruit and veg, pick your day, and pay in a minute when you confirm. No membership needed for your first one.</p>
             <div className="mt-8">
               <MagneticLink href={signedIn ? "/basket" : "/start"} arrow>
                 {signedIn ? "Open your basket" : "Try a basket"}

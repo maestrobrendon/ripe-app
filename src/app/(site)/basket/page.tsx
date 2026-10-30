@@ -8,6 +8,7 @@ import { cutoffFor, lagosDate, nextDeliveryDate } from "@/lib/delivery-dates";
 import { basketLabels, deliveryName, orderRef } from "@/lib/delivery-labels";
 import { basketCycle, confirmRight } from "@/lib/basket-rules";
 import { customerStatusLabel } from "@/lib/order-status";
+import { awaitingPayment } from "@/lib/order-copy";
 import { creditBalance } from "@/lib/credit";
 import { getMenu } from "@/lib/menu";
 import { buyableFor, fitRecipe } from "@/lib/recipe-fit";
@@ -241,7 +242,7 @@ function toLiveOrders(rows: Awaited<ReturnType<typeof liveOrdersFor>>, fallbackC
       ref: orderRef(o.id),
       basketLabel: otherBasket(o.basketId),
       status: o.status,
-      statusLabel: customerStatusLabel(o.status),
+      statusLabel: customerStatusLabel(o.status, awaitingPayment(o)),
       deliveryDateIso: o.deliveryDate.toISOString(),
       cutoffIso: cutoff.toISOString(),
       canCancel: o.status === "RECEIVED" && now < cutoff.getTime(),

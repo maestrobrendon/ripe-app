@@ -52,7 +52,7 @@ function comparison(avgSaving: number): { label: string; cells: [Cell, Cell, Cel
 const FAQ = [
   { q: "Do I need a membership to try it?", a: "No. Your first basket is a trial: one delivery at market prices. To have your basket every week, or more than one basket, become a member." },
   { q: "Why are member prices so much lower?", a: "Membership is how we make our money, so members pay close to what we pay at the market. Everyone else pays the market rate." },
-  { q: "When do I pay for food?", a: "When it arrives, by transfer or card to the rider, or by bank transfer before it's packed. A few days before each delivery we remind you on WhatsApp, email and the app; you confirm it yourself, change it until the evening before, or skip the week." },
+  { q: "When do I pay for food?", a: "When you confirm your basket, by card, bank transfer or USSD; it's confirmed once paid. A few days before each delivery we remind you on WhatsApp, email and the app; you confirm it yourself, change it until the evening before, or skip the week." },
   { q: "How much is delivery?", a: "It depends on where you are. Each delivery area has its own fee, shown before you pay. Delivery is free on Member Plus." },
   { q: "How is the membership paid?", a: "Once a month, online with a card, bank transfer or USSD through Paystack. Nothing is charged automatically: we remind you when it's due, and you pay it yourself." },
   { q: "Can I switch plans or cancel?", a: "Yes, anytime, from this page or your account. If you cancel, your baskets stop coming every week; their produce stays saved." },
@@ -91,7 +91,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
           <h1 className="hm-h2 mx-auto max-w-[20ch]">Fruit and veg every week, close to market cost.</h1>
           <p className="hm-lede mx-auto mt-4 max-w-2xl">
             Try your first basket at market prices. Members get their baskets every week at member prices, with a reminder before each
-            delivery. You confirm, and pay when it arrives: nothing is charged automatically.
+            delivery. You confirm and pay yourself: nothing is charged automatically.
           </p>
         </div>
       </section>
@@ -129,7 +129,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
               charged automatically.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              {online && <PayButton start={payForPlan.bind(null, pending.tier.slug)} label={`Pay ${formatNaira(pending.tier.monthlyFee)}`} note={false} className="w-56" />}
+              {online && <PayButton start={payForPlan.bind(null, pending.tier.slug)} label={`Pay ${formatNaira(pending.tier.monthlyFee)}`} note={false} className="w-56" paidMessage="joined=1" />}
               <WithdrawRequestButton />
             </div>
           </div>
@@ -153,7 +153,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
           <article className="flex flex-col rounded-[28px] bg-paper-white p-7 shadow-[0_0_0_1px_var(--hm-line)]">
             <h2 className="text-[17px] font-semibold">Trial basket</h2>
             <p className="mt-3 text-[2.4rem] leading-none font-semibold tracking-[-0.045em]">₦0</p>
-            <p className="mt-1.5 text-[14px] text-[var(--hm-ink-2)]">No fee. Pay for the produce when it arrives.</p>
+            <p className="mt-1.5 text-[14px] text-[var(--hm-ink-2)]">No fee. Pay for the produce when you confirm.</p>
             <ul className="mt-6 flex-1 space-y-2.5 text-[15px]">
               {[
                 "One basket, delivered once",
@@ -222,6 +222,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                         label={`${currentSlug ? "Move up" : "Join"} · ${formatNaira(tier.monthlyFee)}`}
                         tone={featured ? "light" : "dark"}
                         note={false}
+                        paidMessage="joined=1"
                       />
                       <p className={`mt-2 text-center text-[12px] ${featured ? "text-paper-white/60" : "text-[var(--hm-ink-2)]"}`}>
                         Starts the moment it&apos;s paid. Card, transfer or USSD. Nothing renews by itself.

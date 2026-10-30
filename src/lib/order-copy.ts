@@ -18,8 +18,19 @@ const OPEN: OrderStatus[] = ["RECEIVED", "CONFIRMED", "PICKING", "PACKED", "OUT_
  * it has been.
  */
 
+/**
+ * Placed but not paid, so not confirmed yet: an order only counts once it's
+ * paid. Old pay-on-delivery orders (from before it was retired) were
+ * confirmed without paying, so they never wait.
+ */
+export function awaitingPayment(o: { paidAt: Date | string | null; paymentMethod: string; status: OrderStatus }): boolean {
+  return !o.paidAt && o.status === "RECEIVED" && !/delivery/i.test(o.paymentMethod);
+}
+
 export type OrderForCopy = {
   status: OrderStatus;
+  /** Placed but not paid yet (awaitingPayment above). */
+  awaitingPayment?: boolean;
   deliveryDateIso: string;
   cutoffIso: string;
   canCancel: boolean;
@@ -28,9 +39,16 @@ export type OrderForCopy = {
 
 export function orderHeadline(o: OrderForCopy): { title: string; body: string } {
   const day = longDate(o.deliveryDateIso);
+  // Never paid and its day has gone: it didn't go out, so it isn't "late".
+  if (o.awaitingPayment && o.status === "RECEIVED" && isPast(o.deliveryDateIso)) {
+    return { title: "Not paid in time", body: `This basket for ${day} wasn't paid, so it didn't go out. Confirm it again for your next delivery day.` };
+  }
   // Its day has gone and it hasn't arrived: say so, never "arriving" on a past date.
   if (OPEN.includes(o.status) && isPast(o.deliveryDateIso)) {
     return { title: "Running late", body: `This was due ${day} and hasn't reached you yet. Message us and we'll sort it straight away.` };
+  }
+  if (o.awaitingPayment && o.status === "RECEIVED") {
+    return { title: "Waiting for payment", body: `Your basket for ${day} is held for you. It's confirmed the moment it's paid, before ${cutoffLabel(o.cutoffIso)}.` };
   }
   switch (o.status) {
     case "RECEIVED":

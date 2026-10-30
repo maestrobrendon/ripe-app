@@ -36,5 +36,5 @@ export async function resetPassword(formData: FormData) {
   await prisma.session.deleteMany({ where: { userId } });
 
   await createSession(userId);
-  redirect("/basket");
+  redirect("/basket?toast=password");
 }

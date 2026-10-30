@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { initializeTransaction, paystackReady, verifyTransaction, type StartedPayment } from "@/lib/paystack";
+import { initializeTransaction, paystackReady, refundTransaction, verifyTransaction, type StartedPayment } from "@/lib/paystack";
 import { activatePlan } from "@/lib/plans";
 import { audit } from "@/lib/admin/audit";
 import { sendPaymentReceipt } from "@/lib/customer-emails";
@@ -66,7 +66,7 @@ function started(p: StartedPayment): StartResult {
 
 /** Opens a payment for what's still owed on one of the customer's orders. */
 export async function startOrderPayment(userId: string, orderId: string): Promise<StartResult> {
-  if (!paystackReady()) return { ok: false, error: "Paying online isn't available right now. Pay on delivery or by transfer." };
+  if (!paystackReady()) return { ok: false, error: "Paying online isn't available right now. Try again shortly, or pay by transfer." };
   const order = await prisma.order.findFirst({
     where: { id: orderId, userId },
     select: { id: true, total: true, paidAt: true, status: true, customerEmail: true, accessToken: true, user: { select: { email: true } } },
@@ -265,6 +265,31 @@ export async function settlePayment(reference: string, source: "page" | "callbac
 
   await audit({ actorType: "SYSTEM", action: "payment.received", targetType: "Payment", targetId: payment.id, summary: `${formatNaira(payment.amount)} ${payment.kind.toLowerCase()} payment by ${how} (${source})` }).catch(() => {});
   return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: false, giftCode: payment.gift?.code };
+}
+
+export type RefundResult = { ok: true; amount: number; how: string } | { ok: false; error: string } | { ok: true; amount: 0; how: null };
+
+/**
+ * Sends back whatever was paid online for an order that won't be delivered
+ * (the customer cancelled before cutoff), through Paystack, to the card or
+ * account they paid with, and records it. Nothing paid online: nothing to do.
+ */
+export async function refundOrderOnline(orderId: string, userId: string | null, reason: string): Promise<RefundResult> {
+  const payment = await prisma.payment.findFirst({ where: { orderId, status: "SUCCESS" }, orderBy: { paidAt: "desc" } });
+  const amount = payment ? payment.amount - payment.refundedAmount : 0;
+  if (!payment || amount <= 0) return { ok: true, amount: 0, how: null };
+  try {
+    await refundTransaction(payment.reference, amount, `${orderRef(orderId)}: ${reason}`);
+  } catch (e) {
+    await audit({ actorType: "SYSTEM", action: "payment.refund_failed", targetType: "Payment", targetId: payment.id, summary: String((e as Error).message).slice(0, 200) }).catch(() => {});
+    return { ok: false, error: "We couldn't start your refund just now, so the order is unchanged. Message us and we'll sort it straight away." };
+  }
+  const how = `Paystack, back to the ${payment.channel === "card" ? "card" : "account"} you paid with`;
+  await prisma.$transaction([
+    prisma.payment.update({ where: { id: payment.id }, data: { refundedAmount: { increment: amount } } }),
+    prisma.creditRecord.create({ data: { kind: "REFUND", userId, orderId, amount, method: how, reason: reason.slice(0, 300), staffName: "Automatic" } }),
+  ]);
+  return { ok: true, amount, how };
 }
 
 /** The last month of membership the customer paid for online, if any. */

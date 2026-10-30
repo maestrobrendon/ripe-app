@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { sendEmailVerification } from "@/lib/email-verification";
 import { collectPendingClaims } from "@/lib/pending-claims";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -163,6 +164,8 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   await createSession(userId);
   // A gift opened, or feedback given, before they had an account.
   await collectPendingClaims(userId);
+  // Confirm the email is theirs, so receipts and reminders reach them. Never blocks signing up.
+  if (email) await sendEmailVerification(userId, email, name).catch(() => false);
   // Anything they put in a cart before signing up goes into their order too.
   await mergeGuestCartIntoBasket(userId).catch(() => {});
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useActionToast } from "@/lib/use-action-toast";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Icon } from "@/components/ui/icon";
 import type { MealPlanDay, MealSlotKey } from "@/lib/meal-plan-types";
@@ -37,6 +38,7 @@ export function AddMealSheet({
   const [query, setQuery] = useState("");
   const [defining, setDefining] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const guard = useActionToast();
 
   const q = query.trim().toLowerCase();
   const matchedOwn = ownMealOptions.filter((m) => !q || m.name.toLowerCase().includes(q));
@@ -52,18 +54,22 @@ export function AddMealSheet({
   };
 
   const pickOwn = (ownMealId: string) =>
-    startTransition(async () => {
-      await setMealSlot(weekOffset, day, slot, { kind: "own", ownMealId });
-      close();
-      onDone();
-    });
+    startTransition(() =>
+      guard(async () => {
+        await setMealSlot(weekOffset, day, slot, { kind: "own", ownMealId });
+        close();
+        onDone();
+      }, "Added to your plan"),
+    );
 
   const pickRecipe = (recipeId: string) =>
-    startTransition(async () => {
-      await setMealSlot(weekOffset, day, slot, { kind: "recipe", recipeId });
-      close();
-      onDone();
-    });
+    startTransition(() =>
+      guard(async () => {
+        await setMealSlot(weekOffset, day, slot, { kind: "recipe", recipeId });
+        close();
+        onDone();
+      }, "Added to your plan"),
+    );
 
   if (defining !== null) {
     return (
@@ -166,6 +172,7 @@ function NewMealSheet({
   const [picked, setPicked] = useState<string[]>([]);
   const [extra, setExtra] = useState("");
   const [isPending, startTransition] = useTransition();
+  const guard = useActionToast();
 
   const toggle = (item: string) =>
     setPicked((p) => (p.includes(item) ? p.filter((x) => x !== item) : [...p, item]));
@@ -178,10 +185,12 @@ function NewMealSheet({
   };
 
   const save = () =>
-    startTransition(async () => {
-      const { id } = await addOwnMeal(name, picked);
-      onSaved(id);
-    });
+    startTransition(() =>
+      guard(async () => {
+        const { id } = await addOwnMeal(name, picked);
+        onSaved(id);
+      }, "Meal saved"),
+    );
 
   return (
     <BottomSheet open={open} onClose={onBack} title="What goes into it?">

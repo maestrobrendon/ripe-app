@@ -8,6 +8,7 @@ import { spring } from "@/lib/motion/tokens";
 import { haptic } from "@/lib/haptics";
 import { toggleSavedRecipe } from "./actions";
 import { track } from "@/lib/analytics";
+import { useCart } from "@/components/cart-provider";
 
 /**
  * Sits as a sibling of the card's <Link>, absolutely positioned over it,
@@ -28,6 +29,7 @@ export function SaveRecipeButton({
 }) {
   const [saved, setSaved] = useState(initialSaved);
   const [isPending, startTransition] = useTransition();
+  const cart = useCart();
 
   const baseClass = inline
     ? "tap-target inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-[14px] font-semibold"
@@ -58,9 +60,17 @@ export function SaveRecipeButton({
       onClick={() => {
         haptic(saved ? "selection" : "light");
         track(saved ? "recipe_unsaved" : "recipe_saved", { recipe: recipeId, path: window.location.pathname });
-        setSaved((s) => !s);
+        const next = !saved;
+        setSaved(next);
         startTransition(async () => {
-          await toggleSavedRecipe(recipeId);
+          try {
+            await toggleSavedRecipe(recipeId);
+            cart.announce(next ? "Saved to your recipes" : "Removed from saved recipes");
+          } catch {
+            // Put the heart back as it was, and say so.
+            setSaved(!next);
+            cart.announce("That didn't save. Check your connection and try again.", "error");
+          }
         });
       }}
       className={`${baseClass} disabled:opacity-60 ${saved ? "text-ember" : "text-muted hover:text-carbon"}`}

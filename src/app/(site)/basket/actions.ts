@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { refundOrderOnline } from "@/lib/payments";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -218,6 +219,9 @@ export async function cancelOrder(orderId: string): Promise<Result> {
   if (order.status !== "RECEIVED") return fail("We've already started on this order. Message us and we'll help.");
   const cutoff = cutoffFor(order.deliveryDate, order.deliveryZone?.cutoffHour ?? 18);
   if (Date.now() >= cutoff.getTime()) return fail("This order has closed. Message us and we'll help.");
+  // Paid online: the money goes back first. If Paystack won't take the refund, the order stays as it is.
+  const refund = await refundOrderOnline(order.id, user.id, "Cancelled by the customer before cutoff");
+  if (!refund.ok) return fail(refund.error);
   await prisma.order.update({
     where: { id: order.id },
     data: {
@@ -225,7 +229,15 @@ export async function cancelOrder(orderId: string): Promise<Result> {
       cancelledAt: new Date(),
       cancelReason: "Cancelled by the customer",
       version: { increment: 1 },
-      events: { create: { kind: "STATUS", fromStatus: "RECEIVED", toStatus: "CANCELLED", actorName: "Customer", note: "Cancelled by the customer before cutoff" } },
+      events: {
+        create: {
+          kind: "STATUS",
+          fromStatus: "RECEIVED",
+          toStatus: "CANCELLED",
+          actorName: "Customer",
+          note: `Cancelled by the customer before cutoff${refund.amount ? ` · ₦${refund.amount.toLocaleString("en-NG")} refunded by ${refund.how}` : ""}`,
+        },
+      },
     },
   });
   await audit({ actorType: "CUSTOMER", actorId: user.id, action: "order.cancelled_by_customer", targetType: "Order", targetId: order.id, summary: "Cancelled before cutoff" });

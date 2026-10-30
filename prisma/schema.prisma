@@ -180,17 +180,19 @@ model DeliveryZone {
 }
 
 model User {
-  id                        String               @id @default(cuid())
+  id                        String                   @id @default(cuid())
   name                      String
-  email                     String?              @unique
-  phone                     String?              @unique
+  email                     String?                  @unique
+  // When they opened the link we emailed to that address. Cleared when the email changes.
+  emailVerifiedAt           DateTime?
+  phone                     String?                  @unique
   passwordHash              String?
   address                   String?
   deliveryZoneId            String?
-  deliveryZone              DeliveryZone?        @relation(fields: [deliveryZoneId], references: [id])
+  deliveryZone              DeliveryZone?            @relation(fields: [deliveryZoneId], references: [id])
   // Subscription is an optional upgrade on top of an account. Null for non-members.
   subscriptionTierId        String?
-  subscriptionTier          SubscriptionTier?    @relation(fields: [subscriptionTierId], references: [id])
+  subscriptionTier          SubscriptionTier?        @relation(fields: [subscriptionTierId], references: [id])
   // When the current membership started; the monthly renewal date is derived
   // from it. Null for non-members and for members from before it existed.
   subscribedAt              DateTime?
@@ -202,20 +204,20 @@ model User {
   deliveryDay               DeliveryDay?
   // Basket-order shipping day, chosen during onboarding. Null until then.
   shoppingWindowDay         ShoppingWindowDay?
-  householdAdults           Int                  @default(1)
-  householdKids             Int                  @default(0)
-  onboardingCompleted       Boolean              @default(false)
+  householdAdults           Int                      @default(1)
+  householdKids             Int                      @default(0)
+  onboardingCompleted       Boolean                  @default(false)
   // The one-time "your basket is saved, nothing is auto-charged" explainer.
   // Shown once on a member's first basket visit after signup, then never again.
-  basketIntroSeen           Boolean              @default(false)
+  basketIntroSeen           Boolean                  @default(false)
   // An unsubscribed account gets exactly one basket, ever, at standard pricing.
   // This flips permanently on creation; it never resets, even if that basket
   // is later deleted.
-  hasCreatedFreeTrialBasket Boolean              @default(false)
+  hasCreatedFreeTrialBasket Boolean                  @default(false)
   // Member-only: when on, a new week's meal plan is seeded by cloning the
   // previous week's timetable instead of fresh recipe suggestions. Off by
   // default, and meaningless for a non-subscriber, who has no weekly plan.
-  mealPlanRepeats           Boolean              @default(false)
+  mealPlanRepeats           Boolean                  @default(false)
   preferences               UserPreferences?
   streak                    StreakStatus?
   sessions                  Session[]
@@ -231,23 +233,24 @@ model User {
   // The customer asked us to delete their account; staff erase it (NDPA).
   deletionRequestedAt       DateTime?
   // How we may message them: order updates and weekly reminders.
-  notifyWhatsApp            Boolean              @default(true)
-  notifyEmail               Boolean              @default(true)
+  notifyWhatsApp            Boolean                  @default(true)
+  notifyEmail               Boolean                  @default(true)
   // App (push) notifications: sent once a provider is connected, logged until then.
-  notifyPush                Boolean              @default(true)
+  notifyPush                Boolean                  @default(true)
   // Their own invite code, and who invited them (a user id), if anyone.
-  referralCode              String?              @unique
+  referralCode              String?                  @unique
   referredById              String?
   // When the invite reward was paid out for this (invited) customer.
   referralRewardedAt        DateTime?
-  createdAt                 DateTime             @default(now())
+  createdAt                 DateTime                 @default(now())
   notes                     CustomerNote[]
   credits                   CreditRecord[]
   planRequests              PlanRequest[]
   payments                  Payment[]
   feedback                  Feedback[]
-  giftsSent                 Gift[]               @relation("GiftSender")
-  giftsClaimed              Gift[]               @relation("GiftClaimer")
+  giftsSent                 Gift[]                   @relation("GiftSender")
+  giftsClaimed              Gift[]                   @relation("GiftClaimer")
+  emailVerifications        EmailVerificationToken[]
   streakRewards             StreakReward[]
   carts                     Cart[]
   baskets                   Basket[]
@@ -1340,4 +1343,20 @@ model StreakReward {
   createdAt DateTime @default(now())
 
   @@unique([userId, weeks])
+}
+
+/**
+ * A link emailed to confirm an address is theirs. Single use, 48 hours; only the latest one works.
+ */
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }

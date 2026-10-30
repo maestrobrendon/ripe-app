@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useActionToast } from "@/lib/use-action-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
@@ -85,6 +86,7 @@ export function WeeklyMealPlanBuilder({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const guard = useActionToast();
   const [view, setView] = useState<"day" | "week">("day");
   const [selectedDay, setSelectedDay] = useState<MealPlanDay>(todayAsPlanDay());
   const [addTarget, setAddTarget] = useState<{ day: MealPlanDay; slot: MealSlotKey } | null>(null);
@@ -99,23 +101,29 @@ export function WeeklyMealPlanBuilder({
   const anyFilled = days.some((d) => MEAL_SLOTS.some((s) => d.slots[s]));
 
   const openRecipe = (recipeId: string) =>
-    startTransition(async () => {
-      const data = await getRecipeDetail(recipeId);
-      if (data) setRecipeSheet(data);
-    });
+    startTransition(() =>
+      guard(async () => {
+        const data = await getRecipeDetail(recipeId);
+        if (data) setRecipeSheet(data);
+      }),
+    );
 
   const clearSlot = (day: MealPlanDay, slot: MealSlotKey) =>
-    startTransition(async () => {
-      await setMealSlot(weekOffset, day, slot, null);
-      setMenuTarget(null);
-      router.refresh();
-    });
+    startTransition(() =>
+      guard(async () => {
+        await setMealSlot(weekOffset, day, slot, null);
+        setMenuTarget(null);
+        router.refresh();
+      }, "Taken off your plan"),
+    );
 
   const toggleRepeat = () =>
-    startTransition(async () => {
-      await setMealPlanRepeats(!repeatsEnabled);
-      router.refresh();
-    });
+    startTransition(() =>
+      guard(async () => {
+        await setMealPlanRepeats(!repeatsEnabled);
+        router.refresh();
+      }, repeatsEnabled ? "Your plan won't repeat" : "Your plan repeats each week"),
+    );
 
   const menuSlot = menuTarget ? dayView(menuTarget.day).slots[menuTarget.slot] : null;
 
@@ -155,12 +163,14 @@ export function WeeklyMealPlanBuilder({
           <button
             disabled={isPending}
             onClick={() =>
-              startTransition(async () => {
-                const { added, label } = await sendWeekMissingToOrder(weekOffset);
-                cart.announce(added ? `Added ${added} to ${label}` : `Everything's already in ${label}`);
-                setWeekSent(true);
-                router.refresh();
-              })
+              startTransition(() =>
+                guard(async () => {
+                  const { added, label } = await sendWeekMissingToOrder(weekOffset);
+                  cart.announce(added ? `Added ${added} to ${label}` : `Everything's already in ${label}`);
+                  setWeekSent(true);
+                  router.refresh();
+                }),
+              )
             }
             className="rounded-full bg-carbon px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
           >
@@ -234,14 +244,12 @@ export function WeeklyMealPlanBuilder({
               <button
                 disabled={isPending}
                 onClick={() =>
-                  startTransition(async () => {
-                    await setMealPlanDayStatus(
-                      weekOffset,
-                      selectedDay,
-                      current.status === "SKIPPED" ? "PLANNED" : "SKIPPED",
-                    );
-                    router.refresh();
-                  })
+                  startTransition(() =>
+                    guard(async () => {
+                      await setMealPlanDayStatus(weekOffset, selectedDay, current.status === "SKIPPED" ? "PLANNED" : "SKIPPED");
+                      router.refresh();
+                    }, current.status === "SKIPPED" ? "Day's back on your plan" : "Day skipped"),
+                  )
                 }
                 className="ml-auto rounded-full border border-border px-3 py-1 text-xs font-medium hover:bg-sky-wash disabled:opacity-50"
               >
@@ -292,11 +300,13 @@ export function WeeklyMealPlanBuilder({
               <button
                 disabled={isPending}
                 onClick={() =>
-                  startTransition(async () => {
-                    const r = await sendDayIngredientsToBasket(weekOffset, selectedDay);
-                    cart.announce(r.added ? `Added ${r.added} to your order` : "Everything for this day is already in your order");
-                    router.refresh();
-                  })
+                  startTransition(() =>
+                    guard(async () => {
+                      const r = await sendDayIngredientsToBasket(weekOffset, selectedDay);
+                      cart.announce(r.added ? `Added ${r.added} to your order` : "Everything for this day is already in your order");
+                      router.refresh();
+                    }),
+                  )
                 }
                 className="mt-3 text-sm font-semibold text-carbon underline disabled:opacity-50"
               >

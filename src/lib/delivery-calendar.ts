@@ -15,7 +15,7 @@ export function deliveryEvent(o: OrderLike) {
   const end = new Date(o.deliveryDate.getTime() + 16 * 3_600_000);
   const ref = orderRef(o.id);
   const title = o.basketName?.trim() ? `Basket delivery: ${o.basketName.trim()}` : "Basket delivery";
-  const pay = o.paidAt ? "Paid." : `Pay ${formatNaira(o.total)} when it arrives.`;
+  const pay = o.paidAt ? "Paid." : `Pay ${formatNaira(o.total)} to confirm it.`;
   return { uid: `${o.id}@basket`, ref, title, start, end, details: `Order ${ref}. ${pay} Delivered between 9am and 5pm.`, location: o.address };
 }
 

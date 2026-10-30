@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
+import { UrlToast } from "@/components/url-toast";
 import "../globals.css";
 import { fontVariables } from "@/brand/fonts";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
@@ -64,6 +66,10 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
           <SiteSettingsProvider settings={settings}>
           <ZoneProvider initialZoneName={zoneName} autoOpen={!user}>
             <CartProvider initial={cart}>
+                {/* One-off messages carried in the address (?paid=1 and the like). */}
+                <Suspense fallback={null}>
+                  <UrlToast />
+                </Suspense>
                 {/* The "Freshly selected..." banner is marketing for guests only. */}
                 {!user && <AnnouncementBar />}
                 <SiteHeader signedIn={Boolean(user)} />

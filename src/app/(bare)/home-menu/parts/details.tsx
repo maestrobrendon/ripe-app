@@ -162,7 +162,7 @@ function TrialWidget() {
   );
 }
 
-const FACTS = ["Your day, every week", "Change it until the night before", "Pay when it arrives"];
+const FACTS = ["Your day, every week", "Change it until the night before", "Pay in a minute, by card or transfer"];
 
 /**
  * The four points, in the order they play. On phones each is told in a few
@@ -200,7 +200,7 @@ const DETAILS: { title: string; short: string; headline: string; line: string; c
     title: "Your first basket is a trial",
     short: "Trial",
     headline: "Your first one is a trial.",
-    line: "Market prices, no membership, and you pay when it arrives.",
+    line: "Market prices, no membership, and you pay in a minute when you confirm.",
     color: "text-voltage-violet",
     body: "Try one delivery at market prices, no membership needed. Join to have your baskets every week, at member prices.",
     widget: () => <TrialWidget />,

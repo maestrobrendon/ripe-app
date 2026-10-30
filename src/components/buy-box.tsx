@@ -116,7 +116,7 @@ export function BuyBox({
           [
             ["quality", "Checked by hand before it leaves"],
             ["undo", "Bruised or wrong? We put it right"],
-            ["payment", "Pay when it arrives"],
+            ["payment", "Pay by card, transfer or USSD"],
           ] as const
         ).map(([icon, text]) => (
           <li key={text} className="flex items-center gap-2.5">

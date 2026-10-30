@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { customerStatusLabel } from "@/lib/order-status";
+import { awaitingPayment } from "@/lib/order-copy";
 import {
   getOwnedBasket,
   getUserBaskets,
@@ -183,7 +184,7 @@ export async function toolGetOrderStatus(user: CurrentUser, args: { order_id: st
       orderId: order.id,
       status: order.status,
       // What the customer sees on their order page; use these words with them.
-      statusLabel: customerStatusLabel(order.status),
+      statusLabel: customerStatusLabel(order.status, awaitingPayment(order)),
       deliveryDate: order.deliveryDate.toISOString(),
       total: order.total,
       paid: Boolean(order.paidAt),

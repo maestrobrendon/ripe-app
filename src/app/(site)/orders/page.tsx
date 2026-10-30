@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { awaitingPayment } from "@/lib/order-copy";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -128,7 +129,7 @@ function Group({ title, orders }: { title: string; orders: Row[] }) {
                 </p>
               </div>
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${o.status === "OUT_FOR_DELIVERY" ? "bg-mint-pop/40" : o.status === "CANCELLED" || o.status === "REFUNDED" || o.status === "FAILED_DELIVERY" ? "bg-soft-mist text-muted" : "bg-soft-mist"}`}>
-                {customerStatusLabel(o.status)}
+                {customerStatusLabel(o.status, awaitingPayment(o))}
               </span>
               <Icon name="caretRight" size={16} className="shrink-0 text-muted" />
             </Link>

@@ -12,7 +12,7 @@ import { transferReady } from "@/lib/site-settings-schema";
 import { supportHref } from "@/lib/support";
 import { cutoffFor } from "@/lib/delivery-dates";
 import { DELIVERY_WINDOW, longDate, orderRef, quantityLabel } from "@/lib/delivery-labels";
-import { orderHeadline, paymentLine, ISSUE_KINDS } from "@/lib/order-copy";
+import { awaitingPayment, orderHeadline, paymentLine, ISSUE_KINDS } from "@/lib/order-copy";
 import { formatPhone } from "@/lib/phone";
 import { getOrCreateActiveDelivery } from "@/lib/order-container";
 import { OrderControls } from "./order-controls";
@@ -57,7 +57,9 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const cutoff = cutoffFor(order.deliveryDate, order.deliveryZone?.cutoffHour ?? 18);
   const canCancel = ownsIt && order.status === "RECEIVED" && checkOpen(cutoff);
   const rider = order.status === "OUT_FOR_DELIVERY" && order.deliveryRun?.rider ? order.deliveryRun.rider : null;
-  const { title, body } = orderHeadline({ status: order.status, deliveryDateIso: order.deliveryDate.toISOString(), cutoffIso: cutoff.toISOString(), canCancel, rider });
+  // Placed but not paid: not confirmed yet, so no "Basket confirmed" moment, just the payment.
+  const waiting = awaitingPayment(order);
+  const { title, body } = orderHeadline({ status: order.status, deliveryDateIso: order.deliveryDate.toISOString(), cutoffIso: cutoff.toISOString(), canCancel, rider, awaitingPayment: waiting });
   const step = customerStep(order.status) ?? -1;
   const stopped = order.status === "CANCELLED" || order.status === "REFUNDED";
   const canReport = ownsIt && (order.status === "DELIVERED" || order.status === "FAILED_DELIVERY") && withinDays(order.deliveredAt ?? order.deliveryDate, 7);
@@ -74,7 +76,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <BackButton fallback="/orders" label="Orders" />
       )}
 
-      {placed && !stopped && (
+      {placed && !stopped && !waiting && (
         <PlacedMoment
           title={order.basket?.oneOff ? "Order confirmed" : "Basket confirmed"}
           when={`${longDate(order.deliveryDate)}, ${DELIVERY_WINDOW}`}
@@ -87,7 +89,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
       <p className="mt-4 text-sm text-muted">Order {ref}</p>
       {/* Just confirmed: the moment above already says it, so the heading is for screen readers only. */}
-      <h1 className={placed && !stopped ? "sr-only" : "mt-1 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]"}>{title}</h1>
+      <h1 className={placed && !stopped && !waiting ? "sr-only" : "mt-1 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]"}>{title}</h1>
       <p className="mt-1 text-sm text-muted">{body}</p>
 
       {!stopped && step >= 0 && (

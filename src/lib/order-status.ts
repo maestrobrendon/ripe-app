@@ -98,7 +98,9 @@ export function customerStep(status: OrderStatus): number | null {
 }
 
 /** The short label a customer sees for an order. */
-export function customerStatusLabel(status: OrderStatus): string {
+/** awaitingPayment: placed but not paid yet (see awaitingPayment in order-copy), so not confirmed. */
+export function customerStatusLabel(status: OrderStatus, awaitingPayment = false): string {
+  if (awaitingPayment && status === "RECEIVED") return "Waiting for payment";
   if (status === "FAILED_DELIVERY") return "Delivery missed";
   if (status === "CANCELLED") return "Cancelled";
   if (status === "REFUNDED") return "Refunded";

@@ -69,7 +69,7 @@ export async function GET(request: Request) {
 
     const text =
       kind === "ready"
-        ? `Hi ${first}, ${name} is ready for ${day}: ${items}, about ${formatNaira(total)}. Confirm it by ${cutoffLabel(cycle.cutoff)} and pay when it arrives. Change or skip it if you need to: ${link}`
+        ? `Hi ${first}, ${name} is ready for ${day}: ${items}, about ${formatNaira(total)}. Confirm and pay by ${cutoffLabel(cycle.cutoff)}. Change or skip it if you need to: ${link}`
         : `Hi ${first}, ${name} for ${day} closes at ${cutoffLabel(cycle.cutoff).split(" ")[1]} today and isn't confirmed yet. Confirm it now to get it: ${link}`;
     const subject = kind === "ready" ? `${name} is ready for ${day}` : `${name} closes today`;
 
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
       dedupeKey: `reminder:${kind}:${b.id}:${ymd(cycle.date)}`,
       email: { to: b.user.email, subject, text: `${text}\n\nNothing is ever charged automatically. A week you don't confirm simply doesn't go out.` },
       whatsapp: { to: b.user.phone, text: `Basket: ${text}` },
-      push: { title: subject, body: kind === "ready" ? `Confirm by ${cutoffLabel(cycle.cutoff)}. Pay when it arrives.` : "Tap to confirm it now.", url: `/checkout?b=${b.id}` },
+      push: { title: subject, body: kind === "ready" ? `Confirm and pay by ${cutoffLabel(cycle.cutoff)}.` : "Tap to confirm it now.", url: `/checkout?b=${b.id}` },
     }).catch(() => {});
     if (kind === "ready") ready++;
     else lastCall++;

@@ -24,7 +24,7 @@ export function WelcomeChoice({ canConfirm, checkoutHref, areaName }: { canConfi
           >
             <span className="min-w-0 flex-1">
               <b className="block text-[18px] font-semibold">Confirm it now</b>
-              <span className="mt-1 block text-[14px] leading-snug text-paper-white/70">Then choose: pay when it arrives, or pay now by transfer.</span>
+              <span className="mt-1 block text-[14px] leading-snug text-paper-white/70">Then pay in a minute, by card, transfer or USSD.</span>
             </span>
             <Icon name="caretRight" size={20} className="shrink-0 transition-transform group-hover:translate-x-0.5" />
           </Link>

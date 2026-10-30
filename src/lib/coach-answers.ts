@@ -101,7 +101,7 @@ export const COACH_ANSWERS: CoachAnswer[] = [
     id: "payment-methods",
     keywords: ["payment method", "card", "transfer", "pay with", "bank"],
     answer:
-      "Pay online when you confirm, with a card, bank transfer or USSD through Paystack, or pay when your order arrives, by transfer or card to the rider. Any unpaid order has a Pay now button on its page.",
+      "When you confirm your basket: online with a card, bank transfer or USSD through Paystack, or by transfer to our account. It's confirmed once paid, and any unpaid order has a Pay now button on its page. We don't take payment at the door.",
   },
   {
     id: "human",

@@ -89,13 +89,21 @@ export function ZoneProvider({
   }, [open, zones.length]);
 
   const applyZone = async (payload: { slug?: string; lat?: number; lng?: number }) => {
-    const res = await fetch("/api/zone", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (data.outOfArea) {
+    setNote(null);
+    let data: { zone?: { name: string }; outOfArea?: boolean };
+    try {
+      const res = await fetch("/api/zone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      data = await res.json();
+      if (!res.ok && !data.outOfArea) throw new Error();
+    } catch {
+      setNote("That didn't save. Check your connection and pick your area again.");
+      return;
+    }
+    if (data.outOfArea || !data.zone) {
       setStatus("out-of-area");
       return;
     }
@@ -138,11 +146,15 @@ export function ZoneProvider({
   }, [open, dismiss]);
 
   const joinWaitlist = async () => {
-    await fetch("/api/waitlist", {
+    const res = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
-    });
+    }).catch(() => null);
+    if (!res?.ok) {
+      setNote(res?.status === 400 ? "That email doesn't look right." : "That didn't go through. Try again in a moment.");
+      return;
+    }
     setSaved(true);
   };
 
@@ -205,6 +217,11 @@ export function ZoneProvider({
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  {note && !saved && (
+                    <p role="alert" className="mt-2.5 text-sm text-[#9a2c00]">
+                      {note}
+                    </p>
+                  )}
                   <button onClick={() => setStatus("idle")} className="mt-4 text-sm text-carbon underline">
                     Back
                   </button>

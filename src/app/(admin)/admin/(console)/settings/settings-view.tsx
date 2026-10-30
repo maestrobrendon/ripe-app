@@ -60,7 +60,7 @@ export function SettingsView({ settings, defaults, changed, canManage }: { setti
         hint="Customers who choose bank transfer at checkout pay into this account, with their order number as the reference. Mark those orders paid once the money arrives. Leave it empty to offer pay on delivery only."
         changed={changed.transfer}
         canManage={canManage}
-        warn={!settings.transfer.accountNumber ? "No account yet, so checkout offers pay on delivery only." : undefined}
+        warn={!settings.transfer.accountNumber ? "No account yet, so checkout offers paying online (Paystack) only." : undefined}
         read={(f) => ({ bankName: String(f.get("bankName") ?? ""), accountName: String(f.get("accountName") ?? ""), accountNumber: String(f.get("accountNumber") ?? "").replace(/\D/g, "") })}
       >
         <Field label="Bank" htmlFor="s-bank">

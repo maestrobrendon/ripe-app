@@ -3,7 +3,7 @@ export const metadata = { title: "FAQ. BasketNG" };
 const FAQS = [
   {
     q: "How does a basket work?",
-    a: "Your basket is the fruit and vegetables you want each week, and it stays as you left it. A few days before each delivery we remind you on WhatsApp, email and the app to confirm it. You pay when it arrives. Nothing is ever charged automatically, and a week you don't confirm simply doesn't come.",
+    a: "Your basket is the fruit and vegetables you want each week, and it stays as you left it. A few days before each delivery we remind you on WhatsApp, email and the app to confirm it, and you pay when you confirm. Nothing is ever charged automatically, and a week you don't confirm simply doesn't come.",
   },
   {
     q: "Do I need a membership?",
@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "How is payment handled?",
-    a: "Pay online when you confirm, with a card, bank transfer or USSD through Paystack, or pay when your basket arrives, by transfer or card to the rider. Any unpaid order has a Pay now button on its page.",
+    a: "When you confirm your basket: online with a card, bank transfer or USSD through Paystack, or by transfer to our account. Your basket is confirmed once it's paid, and any unpaid order has a Pay now button on its page. We don't take payment at the door.",
   },
 ];
 

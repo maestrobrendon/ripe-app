@@ -165,9 +165,9 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          You pay online when you confirm (card, bank transfer or USSD, processed by Paystack, which
-          holds your card details; we never see or store them), or when your order arrives, by
-          transfer or card to the rider. Account credit (from invites or to put a problem right) comes
+          You pay when you confirm your order: online (card, bank transfer or USSD, processed by
+          Paystack, which holds your card details; we never see or store them), or by transfer to our
+          account. An order is confirmed once it&rsquo;s paid; we don&rsquo;t take payment on delivery. Account credit (from invites or to put a problem right) comes
           off your next order. A refund for an order paid online goes back to the card or account you
           paid with.
         </p>

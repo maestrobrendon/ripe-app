@@ -25,6 +25,7 @@ export function PayButton({
   className = "",
   note = true,
   tone = "dark",
+  paidMessage = "paid=1",
 }: {
   start: () => Promise<StartResult>;
   label: string;
@@ -36,6 +37,8 @@ export function PayButton({
   note?: boolean;
   /** "light" on a dark card. */
   tone?: "dark" | "light";
+  /** Without onPaid: the message the page shows once it reloads (see UrlToast), e.g. "joined=1". */
+  paidMessage?: string;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
@@ -51,8 +54,14 @@ export function PayButton({
         setPhase("done");
         setMessage(null);
         haptic("success");
-        onPaid?.(r);
-        router.refresh();
+        if (onPaid) {
+          onPaid(r);
+          router.refresh();
+        } else {
+          // The page reloads without this button, so it says so itself, in the usual pop-up.
+          router.replace(`${window.location.pathname}?${paidMessage}`, { scroll: false });
+          router.refresh();
+        }
         return;
       }
       if (r.status !== "PENDING") {
@@ -78,20 +87,42 @@ export function PayButton({
       haptic("error");
       return;
     }
+    // Paystack's own page, which comes back to /api/payments/paystack/callback
+    // and then to the order. Used whenever the checkout can't open in this page.
+    const leave = () => window.location.assign(s.authorizationUrl);
     try {
       const PaystackPop = (await import("@paystack/inline-js")).default;
       setPhase("paying");
+      // Some browsers (Brave's shields, strict content blockers) stop the
+      // in-page checkout from loading without any error: nothing appears and
+      // the button just waits. If it hasn't shown within a few seconds, go to
+      // Paystack's page instead.
+      let shown = false;
+      const watchdog = window.setTimeout(() => {
+        if (!shown) leave();
+      }, 6000);
       new PaystackPop().resumeTransaction(s.accessCode, {
-        onSuccess: (t) => void check(t.reference || s.reference),
+        onLoad: () => {
+          shown = true;
+          window.clearTimeout(watchdog);
+        },
+        onSuccess: (t) => {
+          window.clearTimeout(watchdog);
+          void check(t.reference || s.reference);
+        },
         onCancel: () => {
+          window.clearTimeout(watchdog);
           setPhase("idle");
           setMessage("Payment cancelled. Nothing was charged.");
         },
-        onError: () => window.location.assign(s.authorizationUrl),
+        onError: () => {
+          window.clearTimeout(watchdog);
+          leave();
+        },
       });
     } catch {
       // The checkout couldn't load in the page: use Paystack's own page instead.
-      window.location.assign(s.authorizationUrl);
+      leave();
     }
   };
 

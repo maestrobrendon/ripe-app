@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { settlePayment } from "@/lib/payments";
 import { appOrigin } from "@/lib/site";
+import { prisma } from "@/lib/prisma";
 
 /*
  * Where Paystack sends the customer back after paying on its own page (the
@@ -17,5 +18,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${appOrigin()}/orders/${r.orderId}?paid=${r.ok ? 1 : 0}${token}`);
   }
   if (r.ok && r.kind === "GIFT" && r.giftCode) return NextResponse.redirect(`${appOrigin()}/gift/${r.giftCode}?sent=1`);
+  if (!r.ok) {
+    // Not an order: a gift goes back to the gift page, a membership to the plans.
+    const p = await prisma.payment.findUnique({ where: { reference }, select: { kind: true } });
+    if (p?.kind === "GIFT") return NextResponse.redirect(`${appOrigin()}/gift?paid=0`);
+  }
   return NextResponse.redirect(`${appOrigin()}/${r.ok ? "basket?joined=1" : "subscribe?paid=0"}`);
 }

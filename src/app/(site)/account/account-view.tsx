@@ -15,6 +15,7 @@ import { cancelSubscription, withdrawPlanRequest } from "@/app/(site)/subscribe/
 import { payForPlan } from "@/lib/payment-actions";
 import { PayButton } from "@/components/payments/pay-button";
 import { StreakCard, type StreakCardData } from "@/components/streak/streak-card";
+import { TypeToConfirm } from "@/components/ui/type-to-confirm";
 import {
   saveContact,
   savePreferences,
@@ -47,6 +48,7 @@ type Props = {
   /** Paystack is set up: the month can be paid here. */
   online: boolean;
   streak: StreakCardData;
+  emailVerified: boolean;
   /** Whether they've had the feedback reward yet, and what it is. */
   feedback: { rewarded: boolean; reward: number };
   orders: { count: number; live: string | null };
@@ -135,6 +137,7 @@ export function AccountView(props: Props) {
   const todo: { icon: IconName; title: string; sub: string; href?: string; sheet?: Sheet }[] = [];
   if (!props.address) todo.push({ icon: "pin", title: "Add your delivery address", sub: "So we know which days we come to you", href: "/account/addresses?next=/account" });
   if (!props.phone) todo.push({ icon: "phone", title: "Add a phone number", sub: "The rider calls it on the day", sheet: "profile" });
+  if (props.email && !props.emailVerified) todo.push({ icon: "send", title: "Confirm your email", sub: "So receipts and reminders reach you", href: "/verify-email" });
 
   return (
     <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
@@ -815,14 +818,20 @@ function DeleteSheet({ requested, onDone, onError, onClose }: { requested: boole
       <p className={LEDE}>
         We&apos;ll delete your account, addresses, deliveries and Kachi chats within 30 days. Order records we must keep for tax are kept without your name and contact details. Any credit is lost.
       </p>
-      <Actions>
-        <Button size="lg" variant="danger" className="w-full" loading={pending} onClick={() => run(requestDeletion, "We've got your request")}>
-          Delete my account
-        </Button>
-        <Button size="lg" variant="secondary" className="w-full" onClick={onClose}>
-          Keep it
-        </Button>
-      </Actions>
+      <div className="mt-5">
+        <TypeToConfirm phrase="Delete account">
+          {(ready) => (
+            <Actions>
+              <Button size="lg" variant="danger" className="w-full" loading={pending} disabled={!ready} onClick={() => run(requestDeletion, "We've got your request")}>
+                Delete my account
+              </Button>
+              <Button size="lg" variant="secondary" className="w-full" onClick={onClose}>
+                Keep it
+              </Button>
+            </Actions>
+          )}
+        </TypeToConfirm>
+      </div>
     </>
   );
 }

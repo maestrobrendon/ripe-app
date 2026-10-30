@@ -289,7 +289,7 @@ export function DeliveryCard(props: {
             </motion.div>
             {area.state === "ok" && cutoffIso && status !== "trial-used" && (
               <motion.p {...enter(0.5)} suppressHydrationWarning className="mt-2.5 px-1 text-[12px] leading-snug text-carbon/70">
-                {left !== null && left > 0 && !urgent ? `${timeLeft(left)} · ` : ""}Confirm by {cutoffLabel(cutoffIso)}. Pay when it arrives.
+                {left !== null && left > 0 && !urgent ? `${timeLeft(left)} · ` : ""}Confirm and pay by {cutoffLabel(cutoffIso)}.
               </motion.p>
             )}
           </div>

@@ -241,7 +241,7 @@ export function Price({
               {signedIn ? "Open your basket" : "Build my basket"}
             </MagneticLink>
             <p className="mt-3 text-center text-[13px] text-[var(--hm-ink-3)]">
-              {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)} a month. Your basket every week, nothing charged automatically.` : "Your first basket is a trial. You pay when it arrives."}
+              {isMember && memberFee != null ? `Membership is ${formatNaira(memberFee)} a month. Your basket every week, nothing charged automatically.` : "Your first basket is a trial. Pay when you confirm, by card, transfer or USSD."}
             </p>
           </div>
           <PriceLinks className="mt-6 justify-center lg:hidden" />

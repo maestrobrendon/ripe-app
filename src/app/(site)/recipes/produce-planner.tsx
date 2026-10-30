@@ -214,18 +214,27 @@ export function PlanView({
   const [isPending, startTransition] = useTransition();
   const [madeBasket, setMadeBasket] = useState(false);
   const [saved, setSaved] = useState(false);
+  const cart = useCart();
+  const oops = () => cart.announce("That didn't go through. Check your connection and try again.", "error");
 
   const addLines = async (lines: PlanLine[], key: string) => {
     setBusy(true);
-    await fetch("/api/cart/bulk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })) }),
-    });
-    await onRefresh();
-    setBusy(false);
-    if (key === "all") setAddedAll(true);
-    else setAdded((a) => ({ ...a, [key]: true }));
+    try {
+      const res = await fetch("/api/cart/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })) }),
+      });
+      if (!res.ok) throw new Error();
+      await onRefresh();
+      if (key === "all") setAddedAll(true);
+      else setAdded((a) => ({ ...a, [key]: true }));
+      cart.announce(`Added ${lines.length} ${lines.length === 1 ? "item" : "items"} to your basket`);
+    } catch {
+      oops();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const allLines = Array.from(
@@ -240,24 +249,34 @@ export function PlanView({
 
   const handleMakeBasket = () =>
     startTransition(async () => {
-      await makeThisMyBasket(allLines.map((l) => ({ productId: l.productId, quantity: l.quantity })));
-      setMadeBasket(true);
+      try {
+        await makeThisMyBasket(allLines.map((l) => ({ productId: l.productId, quantity: l.quantity })));
+        setMadeBasket(true);
+        cart.announce("This is your basket now");
+      } catch {
+        oops();
+      }
     });
 
   const handleSave = () =>
     startTransition(async () => {
-      await saveProducePlan({
-        weekStart: new Date().toISOString(),
-        householdSize: servings ?? 1,
-        goal: goalId,
-        theme: plan.title,
-        items: allLines.map((l) => ({
-          productId: l.productId,
-          quantity: l.quantity,
-          prep: prepByProductId.get(l.productId) ?? "either",
-        })),
-      });
-      setSaved(true);
+      try {
+        await saveProducePlan({
+          weekStart: new Date().toISOString(),
+          householdSize: servings ?? 1,
+          goal: goalId,
+          theme: plan.title,
+          items: allLines.map((l) => ({
+            productId: l.productId,
+            quantity: l.quantity,
+            prep: prepByProductId.get(l.productId) ?? "either",
+          })),
+        });
+        setSaved(true);
+        cart.announce("Plan saved");
+      } catch {
+        oops();
+      }
     });
 
   return (

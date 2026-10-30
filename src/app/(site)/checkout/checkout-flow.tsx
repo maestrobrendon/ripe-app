@@ -64,7 +64,7 @@ export function CheckoutFlow(props: {
   });
   const [contact, setContact] = useState(props.contact);
   const [editContact, setEditContact] = useState(!props.contact.name || !props.contact.phone);
-  const [payment, setPayment] = useState<PaymentChoice>(props.initialPayment ?? "POD");
+  const [payment, setPayment] = useState<PaymentChoice>(props.initialPayment ?? "ONLINE");
   const [useCredit, setUseCredit] = useState(props.credit > 0);
   const [showItems, setShowItems] = useState(props.lines.length <= 4);
   const [error, setError] = useState<string | null>(null);
@@ -250,8 +250,7 @@ export function CheckoutFlow(props: {
           {props.online && (
             <PayOption on={payment === "ONLINE"} onClick={() => setPayment("ONLINE")} title="Pay now" sub="Card, bank transfer or USSD, through Paystack. Takes a minute, on the next screen." />
           )}
-          <PayOption on={payment === "POD"} onClick={() => setPayment("POD")} title="Pay when it arrives" sub="Transfer or card to the rider at your door. Nothing to pay now." />
-          {props.transfer && (
+                    {props.transfer && (
             <PayOption on={payment === "TRANSFER"} onClick={() => setPayment("TRANSFER")} title="Transfer to our account" sub="Into our bank account yourself, before it's packed. The details come next." />
           )}
         </div>
@@ -318,7 +317,7 @@ export function CheckoutFlow(props: {
         {props.oneOff ? "Confirm order" : "Confirm basket"} · {formatNaira(total)}
       </Button>
       <p className="-mt-1 text-center text-xs text-muted">
-        {payment === "POD" ? "You pay when it arrives." : payment === "ONLINE" ? "You'll pay on the next screen." : "Transfer once you see your order number."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.
+        {payment === "ONLINE" ? "You'll pay on the next screen; it's confirmed once paid." : "Transfer once you see your order number; it's confirmed once it arrives."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.
       </p>
     </div>
   );

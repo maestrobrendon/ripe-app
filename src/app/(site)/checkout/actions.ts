@@ -24,7 +24,8 @@ import { appOrigin } from "@/lib/site";
 import { formatNaira } from "@/lib/format";
 import { basketName, cutoffLabel, longDate, orderRef } from "@/lib/delivery-labels";
 
-export type PaymentChoice = "POD" | "TRANSFER" | "ONLINE";
+// Pay on delivery was retired (30 Oct 2026): an order is paid before it goes out.
+export type PaymentChoice = "TRANSFER" | "ONLINE";
 
 export type CheckoutInput = {
   basketId: string;
@@ -43,14 +44,14 @@ export type CheckoutInput = {
 export type CheckoutResult = { ok: false; error: string; addressId?: string };
 
 // "Pay online" becomes "Paid online (card ending 4081)" once Paystack confirms it (src/lib/payments.ts).
-const PAYMENT_LABEL: Record<PaymentChoice, string> = { POD: "Pay on delivery", TRANSFER: "Bank transfer", ONLINE: "Pay online" };
+const PAYMENT_LABEL: Record<PaymentChoice, string> = { TRANSFER: "Bank transfer", ONLINE: "Pay online" };
 const LIVE = { notIn: ["CANCELLED", "REFUNDED"] as ("CANCELLED" | "REFUNDED")[] };
 
 /**
  * Place this week's order for one delivery. Prices, the delivery fee, the
  * date and credit are all worked out here, never taken from the page.
- * Nothing is charged here: pay on delivery, a transfer staff mark as paid,
- * or "Pay now", which opens Paystack on the order's page once it exists.
+ * Nothing is charged here: "Pay now" opens Paystack on the order's page once
+ * it exists, or a transfer that staff mark as paid. It's confirmed once paid.
  */
 export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> {
   const ip = await clientIp();
@@ -101,9 +102,10 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
   const creditApplied = input.useCredit ? Math.min(await creditBalance(user.id), subtotal + fee) : 0;
   const total = subtotal + fee - creditApplied;
 
-  if (input.payment === "TRANSFER" && !transferReady(settings.transfer)) return { ok: false, error: "Bank transfer isn't available right now. Choose pay on delivery.", addressId: address.id };
-  if (input.payment === "ONLINE" && !paystackReady()) return { ok: false, error: "Paying online isn't available right now. Choose pay on delivery.", addressId: address.id };
-  const payment: PaymentChoice = input.payment === "TRANSFER" ? "TRANSFER" : input.payment === "ONLINE" ? "ONLINE" : "POD";
+  if (input.payment === "TRANSFER" && !transferReady(settings.transfer)) return { ok: false, error: "Bank transfer isn't available right now. Choose Pay now.", addressId: address.id };
+  if (input.payment === "ONLINE" && !paystackReady()) return { ok: false, error: "Paying online isn't available right now. Choose bank transfer, or try again shortly.", addressId: address.id };
+  const payment: PaymentChoice = input.payment === "TRANSFER" ? "TRANSFER" : "ONLINE";
+  if (payment === "ONLINE" && !paystackReady() && !transferReady(settings.transfer)) return { ok: false, error: "Paying isn't available right now. Try again shortly.", addressId: address.id };
 
   /* One order per delivery per date */
   const order = await prisma.$transaction(async (tx) => {
@@ -177,7 +179,7 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
       ? `Please transfer ${formatNaira(total)} to ${settings.transfer.accountName}, ${settings.transfer.bankName} ${settings.transfer.accountNumber}, with ${ref} as the reference.`
       : payment === "ONLINE"
         ? `Pay ${formatNaira(total)} online from your order page if you haven't yet: ${link}`
-        : `Pay ${formatNaira(total)} when it arrives, by transfer or card.`;
+        : `Pay ${formatNaira(total)} to confirm it: ${link}`;
   await Promise.all([
     sendOrderConfirmation({ ...order, items: snapshot.map((s) => ({ name: s.name, quantity: s.quantity })) }).catch(() => {}),
     notify({

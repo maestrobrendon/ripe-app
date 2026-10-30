@@ -21,7 +21,7 @@ import "./home-menu.css";
 export const metadata: Metadata = {
   title: "BasketNG. Fresh fruit and veg, delivered every week in Lagos.",
   description:
-    "Pick your fruit and vegetables and your day, and it keeps coming, with recipes so you actually eat it. Delivered across Lagos. Pay when it arrives.",
+    "Pick your fruit and vegetables and your day, and it keeps coming, with recipes so you actually eat it. Delivered across Lagos. Pay when you confirm, by card, transfer or USSD.",
 };
 
 /**
