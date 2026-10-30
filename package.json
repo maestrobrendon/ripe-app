@@ -13,6 +13,7 @@
     "admin:create-owner": "tsx --conditions=react-server prisma/scripts/create-owner.ts",
     "menu:import": "tsx --conditions=react-server prisma/scripts/import-menu.ts",
     "library:import": "tsx --conditions=react-server prisma/scripts/import-library.ts",
+    "menu:apply": "tsx --conditions=react-server --env-file=.env.local prisma/scripts/apply-menu.ts",
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:watch": "vitest",

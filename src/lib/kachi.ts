@@ -271,7 +271,7 @@ export function parseNext(text: string) {
   return { text: text.slice(0, m.index).trim(), suggestions };
 }
 
-export const RECIPE_RULES = `Recipes: when a recipe from the library below fits, suggest it by writing its marker exactly as shown, for example [[green-mango-crunch-salad]], right after its name. The app turns each marker into a card the customer can open. Suggest at most three. Only use markers from the library; for anything else, describe it in words.`;
+export const RECIPE_RULES = `Recipes: when a recipe from the library below fits, suggest it by writing its marker exactly as shown, for example [[nigerian-salad-bowl]], right after its name. The app turns each marker into a card the customer can open. Suggest at most three. Only use markers from the library; for anything else, describe it in words.`;
 
 function ordersContext(orders: Orders) {
   if (orders.length === 0) return "This customer has no orders yet.";

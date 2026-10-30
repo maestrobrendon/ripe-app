@@ -29,9 +29,9 @@ export const metadata = { title: "Recipes. BasketNG" };
 
 const PLANNER_IMAGE_ID = "basket-recipes-unpacking";
 // The guest hero's photo collage: one tall, two stacked.
-const HERO_RECIPES = ["chicken-shawarma-bowl", "mango-passion-smoothie-bowl", "garden-egg-shakshuka"];
+const HERO_RECIPES = ["nigerian-salad-bowl", "nigerian-fruit-salad-with-condensed-milk", "chunky-vegetable-stew-ata-dindin-style"];
 // The signed-in header's little table of dishes.
-const HEADER_SLUGS = ["sweet-potato-burrito-bowl", "green-mango-crunch-salad", "avocado-dodo-toast"];
+const HEADER_SLUGS = ["chicken-suya-power-bowl", "nigerian-party-coleslaw-with-sweet-corn", "avocado-toast-with-ata-rodo-salsa"];
 
 /** These dishes if they're still on the menu, topped up from the rest of it if an editor removed one. */
 function pickDishes(menu: MenuRecipe[], slugs: string[]): MenuRecipe[] {
@@ -92,7 +92,8 @@ export default async function RecipesPage({
         ...(ingredientProduct ? { ingredientProductIds: { has: ingredientProduct.id } } : {}),
         ...(isSavedFilter ? { id: { in: Array.from(savedRecipeIds) } } : {}),
       },
-      orderBy: { title: "asc" },
+      // The dishes people here already eat first, the less familiar after (sortOrder, set with the menu).
+      orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     }),
     prisma.recipe.count({ where: { status: "PUBLISHED", onMenu: false, image: { not: null }, NOT: { image: "" } } }),
   ]);

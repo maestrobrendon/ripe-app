@@ -13,3 +13,19 @@ beetroot-salad.jpg: Magda Ehlers, https://www.pexels.com/photo/vibrant-summer-sa
 frittata.jpg: Shameel Mukkath, https://www.pexels.com/photo/scrambled-eggs-with-green-onions-on-black-skillet-pan-5639284/
 cook.jpg (unused so far): Andrea Piacquadio, https://www.pexels.com/photo/cheerful-woman-cutting-potatoes-in-kitchen-3960597/
 produce.jpg (unused so far): Viktoria Slowikowska, https://www.pexels.com/photo/5677717/
+
+Menu v2 (30 Oct 2026). Stock photos from Unsplash (Unsplash License: free for
+commercial use; downloads recorded through the Unsplash API), cropped to 4:3:
+- avocado-toast-with-ata-rodo-salsa.jpg: Jasper Gribble (@jaspergribble), https://unsplash.com/photos/8RxCzAKmSOA
+- fruit-skewers-with-yoghurt-dip.jpg: Karolina Kołodziejczak (@rabbit_in_blue), https://unsplash.com/photos/jwEYbteLoKo
+- garlic-stir-fried-efo-tete.jpg: Buddy AN (@stbuddyp), https://unsplash.com/photos/KHUEKqoa_b8
+- greek-salad-with-wara.jpg: Shoeib Abolhassani (@shoeibabhn), https://unsplash.com/photos/25SHQMgsWEQ
+- tomato-and-egg-stir-fry.jpg: Helen Van (@uynnha), https://unsplash.com/photos/6QE9lltiDvc
+Generated for BasketNG (Fish Audio, gpt-image-2.5 Sunburst, 30 Oct 2026), prompts written from each recipe's ingredients:
+- garden-egg-chopped-salad.jpg
+- chicken-suya-power-bowl.jpg
+Generated for BasketNG (Recraft, 30 Oct 2026; gpt-image-2.5 Sunburst or Recraft v4.1), prompts written from each recipe's ingredients:
+- chicken-shawarma-salad-bowl.jpg, boiled-yam-and-pepper-egg-sauce.jpg, nigerian-party-coleslaw-with-sweet-corn.jpg (Sunburst)
+- nigerian-salad-bowl.jpg, vegetable-egg-sauce.jpg, crunchy-groundnut-cabbage-slaw.jpg, chunky-vegetable-stew-ata-dindin-style.jpg,
+  ugu-and-tatashe-greens-stew.jpg, nigerian-fruit-salad-with-condensed-milk.jpg, chilli-lime-fruit-cup-yaji-edition.jpg,
+  nigerian-mixed-vegetable-sauce.jpg (Recraft v4.1)
