@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { renderEmail, type EmailContent } from "@/lib/email-layout";
 import { pushConfigured, sendWebPush } from "@/lib/web-push";
 
 /*
@@ -28,7 +29,7 @@ type Message = {
   kind: string;
   dedupeKey: string;
   essential?: boolean;
-  email?: { to: string | null | undefined; subject: string; text: string; html?: string };
+  email?: { to: string | null | undefined; subject: string; text: string; html?: string; button?: EmailContent["button"]; tag?: EmailContent["tag"] };
   whatsapp?: { to: string | null | undefined; text: string };
   /** A short app notification; `url` is where tapping it goes. */
   push?: { title: string; body: string; url: string };
@@ -41,8 +42,6 @@ async function claim(dedupeKey: string, data: { userId: string | null; channel: 
     return null; // Already sent (or being sent) under this key.
   }
 }
-
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /**
  * Whatever WhatsApp provider is connected. None yet, so the message stays in
@@ -70,8 +69,11 @@ export async function notify(m: Message): Promise<void> {
   if (m.email?.to && (m.essential || prefs?.notifyEmail !== false)) {
     const row = await claim(`${m.dedupeKey}:email`, { userId: m.userId, channel: "EMAIL", kind: m.kind, to: m.email.to, body: m.email.text });
     if (row) {
-      const html = m.email.html ?? `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.55;color:#111">${escapeHtml(m.email.text).replace(/\n/g, "<br>")}</div>`;
-      const ok = await sendEmail({ to: m.email.to, subject: m.email.subject, text: m.email.text, html });
+      // Plain-text messages get the shared layout: the subject as the heading, each paragraph as one.
+      const body = m.email.html
+        ? { text: m.email.text, html: m.email.html }
+        : renderEmail({ heading: m.email.subject, paragraphs: m.email.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean), button: m.email.button, tag: m.email.tag, staff: !m.userId });
+      const ok = await sendEmail({ to: m.email.to, subject: m.email.subject, ...body });
       await prisma.notificationLog.update({ where: { id: row.id }, data: { status: ok ? "SENT" : "FAILED" } });
     }
   }

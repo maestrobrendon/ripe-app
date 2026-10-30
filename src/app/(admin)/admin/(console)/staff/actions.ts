@@ -4,12 +4,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/email-layout";
 import { staffAction, auditStaff, type ActionResult } from "@/lib/admin/guard";
 import { assignableRoles, ROLE_LABEL, ROLES, type Role } from "@/lib/admin/permissions";
 import { randomToken, sha256Hex } from "@/lib/admin/crypto";
 import { adminOrigin } from "@/lib/admin/config";
 import { revokeAllSessions, type StaffContext } from "@/lib/admin/session";
-import { alertOwners, escapeHtml } from "@/lib/admin/alerts";
+import { alertOwners } from "@/lib/admin/alerts";
 
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -49,8 +50,14 @@ export async function inviteStaff(input: { email: string; name: string; role: st
     const emailed = await sendEmail({
       to: email,
       subject: "You're invited to Basket Admin",
-      text: `${ctx.staff.name} invited you to Basket Admin as ${ROLE_LABEL[role]}.\n\nSet up your account within 24 hours: ${link}\n\nYou'll choose a password and add a passkey or authenticator app. If you weren't expecting this, ignore it.`,
-      html: `<p>${escapeHtml(ctx.staff.name)} invited you to Basket Admin as <b>${escapeHtml(ROLE_LABEL[role])}</b>.</p><p><a href="${link}">Set up your account</a> within 24 hours. You'll choose a password and add a passkey or authenticator app.</p><p>If you weren't expecting this, ignore it.</p>`,
+      ...renderEmail({
+        staff: true,
+        tag: { label: "Invitation", tone: "violet" },
+        heading: "You're invited to Basket Admin",
+        paragraphs: [`${ctx.staff.name} invited you to join as ${ROLE_LABEL[role]}. You'll choose a password and add a passkey or authenticator app.`],
+        button: { href: link, label: "Set up your account" },
+        finePrint: ["The link works for 24 hours.", "If you weren't expecting this, ignore it."],
+      }),
     }).catch(() => false);
 
     await auditStaff(ctx, { action: "staff.invite.created", targetType: "StaffInvite", targetId: invite.id, summary: `Invited ${email} as ${ROLE_LABEL[role]}` });
@@ -147,8 +154,14 @@ export async function resetSignIn(staffId: string): Promise<ActionResult<{ link:
     const emailed = await sendEmail({
       to: target.email,
       subject: "Set up your Basket Admin sign-in again",
-      text: `${ctx.staff.name} reset your Basket Admin sign-in.\n\nSet it up again within 24 hours: ${link}\n\nYou'll choose a password and add a new passkey. Your old passkeys and codes stop working. If you didn't ask for this, tell ${ctx.staff.name}.`,
-      html: `<p>${escapeHtml(ctx.staff.name)} reset your Basket Admin sign-in.</p><p><a href="${link}">Set it up again</a> within 24 hours. You'll choose a password and add a new passkey; your old passkeys and codes stop working.</p><p>If you didn't ask for this, tell ${escapeHtml(ctx.staff.name)}.</p>`,
+      ...renderEmail({
+        staff: true,
+        tag: { label: "Security", tone: "sun" },
+        heading: "Set up your sign-in again",
+        paragraphs: [`${ctx.staff.name} reset your Basket Admin sign-in. You'll choose a password and add a new passkey. Your old passkeys and codes stop working.`],
+        button: { href: link, label: "Set it up again" },
+        finePrint: ["The link works for 24 hours.", `If you didn't ask for this, tell ${ctx.staff.name}.`],
+      }),
     }).catch(() => false);
 
     await auditStaff(ctx, { action: "staff.signin_reset", targetType: "StaffUser", targetId: target.id, summary: `Reset sign-in for ${target.email}; new setup link issued` });

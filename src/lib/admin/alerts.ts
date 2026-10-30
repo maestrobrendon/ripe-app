@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/email-layout";
 import { adminOrigin } from "./config";
 
 /**
@@ -10,10 +11,14 @@ import { adminOrigin } from "./config";
  */
 export async function alertOwners(subject: string, lines: string[]): Promise<void> {
   const owners = await prisma.staffUser.findMany({ where: { role: "OWNER", status: "ACTIVE" }, select: { email: true } }).catch(() => []);
-  const footer = `Review the audit log: ${adminOrigin()}/audit`;
-  const text = [...lines, "", footer].join("\n");
-  const html = `${lines.map((l) => `<p>${escapeHtml(l)}</p>`).join("")}<p><a href="${adminOrigin()}/audit">Review the audit log</a></p>`;
-  await Promise.all(owners.map((o) => sendEmail({ to: o.email, subject: `[Basket Admin] ${subject}`, text, html }).catch(() => false)));
+  const body = renderEmail({
+    staff: true,
+    tag: { label: "Admin alert", tone: "ember" },
+    heading: subject,
+    paragraphs: lines,
+    button: { href: `${adminOrigin()}/audit`, label: "Review the audit log" },
+  });
+  await Promise.all(owners.map((o) => sendEmail({ to: o.email, subject: `[Basket Admin] ${subject}`, ...body }).catch(() => false)));
 }
 
 export function escapeHtml(s: string): string {

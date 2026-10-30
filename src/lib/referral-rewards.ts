@@ -30,7 +30,7 @@ export async function rewardInviteIfDue(userId: string | null) {
       userId: referrer.id,
       kind: "invite.rewarded",
       dedupeKey: `invite.rewarded:${userId}`,
-      email: { to: referrer.email, subject: `${formatNaira(REFERRAL_REWARD)} credit for your invite`, text },
+      email: { to: referrer.email, subject: `${formatNaira(REFERRAL_REWARD)} credit for your invite`, text, tag: { label: "Invite reward", tone: "lavender" } },
       whatsapp: { to: referrer.phone, text: `Basket: ${text}` },
     }).catch(() => {});
   }

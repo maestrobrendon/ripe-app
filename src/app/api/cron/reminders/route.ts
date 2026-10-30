@@ -77,7 +77,14 @@ export async function GET(request: Request) {
       userId: b.user.id,
       kind: `reminder.${kind}`,
       dedupeKey: `reminder:${kind}:${b.id}:${ymd(cycle.date)}`,
-      email: { to: b.user.email, subject, text: `${text}\n\nNothing is ever charged automatically. A week you don't confirm simply doesn't go out.` },
+      email: {
+        to: b.user.email,
+        subject,
+        // The link becomes the button, so the paragraph ends before it.
+        text: `${text.replace(/: https?:\/\/\S+$/, ".")}\n\nNothing is ever charged automatically. A week you don't confirm simply doesn't go out.`,
+        button: { href: link, label: kind === "ready" ? "Confirm and pay" : "Confirm it now" },
+        tag: { label: kind === "ready" ? "Your basket" : "Closes today", tone: kind === "ready" ? "mint" : "sun" },
+      },
       whatsapp: { to: b.user.phone, text: `Basket: ${text}` },
       push: { title: subject, body: kind === "ready" ? `Confirm and pay by ${cutoffLabel(cycle.cutoff)}.` : "Tap to confirm it now.", url: `/checkout?b=${b.id}` },
     }).catch(() => {});

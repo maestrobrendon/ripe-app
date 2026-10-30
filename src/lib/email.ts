@@ -1,4 +1,5 @@
 import "server-only";
+import { renderEmail } from "@/lib/email-layout";
 
 // Transactional email via Resend's HTTP API. No SDK dependency, so the only
 // thing that needs installing is an API key. RESEND_API_KEY is read from the
@@ -69,12 +70,13 @@ export async function sendSignupAttemptEmail(to: string, origin: string): Promis
   await sendEmail({
     to,
     subject: "Someone tried to create a Basket account with your email",
-    text: `Someone just tried to create a new Basket account with this email address. You already have one.\n\nSign in: ${origin}/login\nForgot your password? ${origin}/forgot-password\n\nIf this wasn't you, you can ignore this email. Your account hasn't changed.`,
-    html: `
-      <p>Someone just tried to create a new Basket account with this email address. You already have one.</p>
-      <p><a href="${origin}/login">Sign in</a> or <a href="${origin}/forgot-password">reset your password</a>.</p>
-      <p>If this wasn't you, you can ignore this email. Your account hasn't changed.</p>
-    `,
+    ...renderEmail({
+      tag: { label: "Security", tone: "sun" },
+      heading: "You already have an account",
+      paragraphs: ["Someone just tried to create a new Basket account with this email address. You already have one, so nothing new was made."],
+      button: { href: `${origin}/login`, label: "Sign in" },
+      finePrint: [`Forgot your password? Reset it here: ${origin}/forgot-password`, "If this wasn't you, you can ignore this email. Your account hasn't changed."],
+    }),
   });
 }
 
@@ -83,11 +85,12 @@ export async function sendContactChangedEmail(to: string): Promise<void> {
   await sendEmail({
     to,
     subject: "Your Basket contact details were changed",
-    text: "The email address or phone number on your Basket account was just changed, and your other devices were signed out. If this was you, there's nothing to do. If it wasn't, reply to this email straight away so we can lock the account.",
-    html: `
-      <p>The email address or phone number on your Basket account was just changed, and your other devices were signed out.</p>
-      <p>If this was you, there's nothing to do. If it wasn't, reply to this email straight away so we can lock the account.</p>
-    `,
+    ...renderEmail({
+      tag: { label: "Security", tone: "sun" },
+      heading: "Your contact details changed",
+      paragraphs: ["The email address or phone number on your Basket account was just changed, and your other devices were signed out.", "If this was you, there's nothing to do."],
+      finePrint: ["If it wasn't you, reply to this email straight away so we can lock the account."],
+    }),
   });
 }
 
@@ -95,11 +98,12 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
   await sendEmail({
     to,
     subject: "Reset your Basket password",
-    text: `We got a request to reset your Basket password. Use this link within 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-    html: `
-      <p>We got a request to reset your Basket password.</p>
-      <p><a href="${resetUrl}">Reset your password</a> (link expires in 30 minutes)</p>
-      <p>If you did not request this, you can ignore this email.</p>
-    `,
+    ...renderEmail({
+      tag: { label: "Security", tone: "sun" },
+      heading: "Reset your password",
+      paragraphs: ["We got a request to reset your Basket password. Tap below to choose a new one."],
+      button: { href: resetUrl, label: "Choose a new password" },
+      finePrint: ["The link works for 30 minutes.", "If you didn't ask for this, you can ignore this email. Your password stays the same."],
+    }),
   });
 }

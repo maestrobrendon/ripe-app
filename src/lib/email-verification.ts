@@ -2,6 +2,7 @@ import "server-only";
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/email-layout";
 import { appOrigin } from "@/lib/site";
 
 /*
@@ -24,8 +25,13 @@ export async function sendEmailVerification(userId: string, email: string, name?
   return sendEmail({
     to: email,
     subject: "Confirm your email for BasketNG",
-    text: `${first ? `Hi ${first}, ` : ""}tap this link to confirm this is your email, so your receipts and basket reminders reach you:\n\n${link}\n\nIt works for 48 hours. If you didn't sign up for BasketNG, ignore this email.`,
-    html: `<p>${first ? `Hi ${first}, ` : ""}confirm this is your email, so your receipts and basket reminders reach you.</p><p><a href="${link}">Confirm my email</a></p><p>The link works for 48 hours. If you didn't sign up for BasketNG, ignore this email.</p>`,
+    ...renderEmail({
+      tag: { label: "One quick step", tone: "blue" },
+      heading: first ? `${first}, confirm your email` : "Confirm your email",
+      paragraphs: ["Tap below so we know this is you, and your receipts and basket reminders reach you."],
+      button: { href: link, label: "Confirm my email" },
+      finePrint: ["The link works for 48 hours.", "If you didn't sign up for BasketNG, ignore this email."],
+    }),
   });
 }
 
