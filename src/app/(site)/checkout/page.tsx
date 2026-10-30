@@ -17,6 +17,7 @@ import { confirmRight } from "@/lib/basket-rules";
 import { basketName } from "@/lib/delivery-labels";
 import { getSiteSettings } from "@/lib/site-settings";
 import { transferReady } from "@/lib/site-settings-schema";
+import { paystackReady } from "@/lib/paystack";
 import { addressFee, getLogistics, zoneFee } from "@/lib/delivery-logistics";
 import { LinkButton } from "@/components/ui/button";
 import { ProductImage } from "@/components/product-image";
@@ -161,7 +162,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-10 sm:px-6 sm:pt-6">
       <BackButton fallback="/basket" label="Your basket" />
       <h1 className="mt-2 text-[28px] leading-tight font-bold tracking-[-0.02em] sm:text-[32px]">{basket.oneOff ? "Confirm your one-time order" : basket.name?.trim() ? `Confirm ${basketName(basket)}` : "Confirm your basket"}</h1>
-      <p className="mt-1 text-[15px] text-muted">Nothing is charged automatically. You pay when it arrives.</p>
+      <p className="mt-1 text-[15px] text-muted">Nothing is charged automatically. Pay now, or when it arrives.</p>
 
       <CheckoutFlow
         basketId={basket.id}
@@ -185,7 +186,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         credit={credit}
         transfer={transferReady(settings.transfer) ? settings.transfer : null}
         // Chose "pay now" at sign-up: the transfer option is already picked.
-        initialPayment={pay === "now" && transferReady(settings.transfer) ? "TRANSFER" : "POD"}
+        online={paystackReady()}
+        initialPayment={pay === "now" ? (paystackReady() ? "ONLINE" : transferReady(settings.transfer) ? "TRANSFER" : "POD") : "POD"}
         draftDefaults={{ line1: user.address ?? "", zoneId: zones.some((z) => z.id === user.deliveryZoneId) ? user.deliveryZoneId : null }}
       />
     </div>

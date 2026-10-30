@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 /*
- * Membership plans. Until there's a payment gateway, joining or moving up a
- * paid plan is a request (PlanRequest) that Finance approves in the admin
- * once payment is confirmed; nothing on the customer site grants a paid plan
- * by itself. Moving down or cancelling costs nothing, so it happens at once.
+ * Membership plans. Joining or moving up a paid plan is paid online through
+ * Paystack, and the plan starts once Paystack confirms it (src/lib/payments.ts).
+ * Without Paystack it's a request (PlanRequest) that Finance approves in the
+ * admin once a transfer is confirmed. Nothing on the site grants a paid plan
+ * without a payment. Moving down or cancelling costs nothing, so it happens at once.
  *
  * Locally, PLAN_SELF_SERVE=1 restores instant plan changes so the member
  * experience can be tested without the admin. It is ignored in production.

@@ -154,6 +154,7 @@ model SubscriptionTier {
   sortOrder  Int
   users      User[]
   requests   PlanRequest[]
+  payments   Payment[]
 }
 
 // A Lagos delivery zone. Boundaries start as a centre point plus a radius,
@@ -243,6 +244,7 @@ model User {
   notes                     CustomerNote[]
   credits                   CreditRecord[]
   planRequests              PlanRequest[]
+  payments                  Payment[]
   carts                     Cart[]
   baskets                   Basket[]
   orders                    Order[]
@@ -768,6 +770,7 @@ model Order {
   version        Int            @default(0)
   events         OrderEvent[]
   credits        CreditRecord[]
+  payments       Payment[]
   updatedAt      DateTime       @default(now()) @updatedAt
   createdAt      DateTime       @default(now())
 
@@ -893,22 +896,22 @@ model Rider {
  * A rider's trip on one day: an ordered list of stops (orders).
  */
 model DeliveryRun {
-  id        String            @id @default(cuid())
+  id          String            @id @default(cuid())
   // Lagos midnight of the delivery day.
-  day       DateTime
-  name      String
-  riderId   String?
-  rider     Rider?            @relation(fields: [riderId], references: [id], onDelete: SetNull)
-  status    DeliveryRunStatus @default(PLANNING)
-  notes     String?
+  day         DateTime
+  name        String
+  riderId     String?
+  rider       Rider?            @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  status      DeliveryRunStatus @default(PLANNING)
+  notes       String?
   /// The planned route, from Logistics: road distance, drive time, and the line to draw.
   distanceKm  Float?
   durationMin Int?
   geometry    Json?
-  orders    Order[]
-  startedAt DateTime?
-  doneAt    DateTime?
-  createdAt DateTime          @default(now())
+  orders      Order[]
+  startedAt   DateTime?
+  doneAt      DateTime?
+  createdAt   DateTime          @default(now())
 
   @@index([day])
 }
@@ -1206,4 +1209,51 @@ model PushSubscription {
   lastSentAt DateTime?
 
   @@index([userId])
+}
+
+/**
+ * One online payment through Paystack: an order, or a month of membership.
+ * The reference is ours (BSK-PAY-…); Paystack is asked to confirm it before
+ * anything is marked paid, by the page that took the payment and again by
+ * Paystack's webhook, whichever arrives first. Amounts are in naira, like
+ * every other price here; Paystack is sent kobo.
+ */
+model Payment {
+  id             String            @id @default(cuid())
+  reference      String            @unique
+  kind           PaymentKind
+  status         PaymentStatus     @default(PENDING)
+  amount         Int
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId        String?
+  order          Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  tierId         String?
+  tier           SubscriptionTier? @relation(fields: [tierId], references: [id])
+  // How they paid, from Paystack: card, bank, ussd, bank_transfer…
+  channel        String?
+  cardLast4      String?
+  // Paystack's own transaction id, for its dashboard and refunds.
+  gatewayId      String?
+  paidAt         DateTime?
+  refundedAmount Int               @default(0)
+  failureReason  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@index([status, createdAt])
+}
+
+enum PaymentKind {
+  ORDER
+  MEMBERSHIP
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  ABANDONED
 }

@@ -12,6 +12,8 @@ import { formatNaira, GOAL_LABEL, PRODUCE_PREFERENCE_LABEL, PRODUCE_PREFERENCE_O
 import { MENU_GOALS } from "@/lib/menu-types";
 import { openCookieSettings } from "@/lib/analytics";
 import { cancelSubscription, withdrawPlanRequest } from "@/app/(site)/subscribe/actions";
+import { payForPlan } from "@/lib/payment-actions";
+import { PayButton } from "@/components/payments/pay-button";
 import {
   saveContact,
   savePreferences,
@@ -25,8 +27,8 @@ import {
 } from "./actions";
 
 type Membership =
-  | { state: "member"; tierName: string; monthlyFee: number; renews: string | null }
-  | { state: "pending"; tierName: string; monthlyFee: number; renews: null }
+  | { state: "member"; tierName: string; tierSlug: string; monthlyFee: number; renews: string | null; paidThisMonth: boolean }
+  | { state: "pending"; tierName: string; tierSlug: string; monthlyFee: number; renews: null }
   | { state: "declined"; tierName: string; monthlyFee: number; renews: null; note: string | null };
 
 type Props = {
@@ -41,6 +43,8 @@ type Props = {
   likes: string[];
   dietaryNotes: string;
   membership: Membership | null;
+  /** Paystack is set up: the month can be paid here. */
+  online: boolean;
   orders: { count: number; live: string | null };
   notify: { whatsapp: boolean; email: boolean; push: boolean };
   /** The customer's baskets, by name, and how many come every week. */
@@ -298,7 +302,7 @@ export function AccountView(props: Props) {
         <ContactForm {...props} onSaved={() => saved("Saved")} onError={failed} />
       </BottomSheet>
       <BottomSheet desktopDialog open={sheet === "member"} onClose={() => setSheet(null)} title={m?.state === "member" ? "Your membership" : "Membership"}>
-        <MembershipSheet membership={m} onDone={saved} onError={failed} />
+        <MembershipSheet membership={m} online={props.online} onDone={saved} onError={failed} />
       </BottomSheet>
       <BottomSheet desktopDialog open={sheet === "invite"} onClose={() => setSheet(null)} title="Invite friends">
         <InviteSheet invite={props.invite} name={props.name} onCopied={() => cart.announce("Link copied")} />
@@ -599,7 +603,7 @@ function ContactForm({ name, phone, email, hasPassword, onSaved, onError }: Prop
   );
 }
 
-function MembershipSheet({ membership: m, onDone, onError }: { membership: Membership | null; onDone: (message: string) => void; onError: (m: string) => void }) {
+function MembershipSheet({ membership: m, online, onDone, onError }: { membership: Membership | null; online: boolean; onDone: (message: string) => void; onError: (m: string) => void }) {
   const [pending, start] = useTransition();
   const [asking, setAsking] = useState(false);
 
@@ -613,7 +617,15 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
             {formatNaira(m.monthlyFee)} a month{m.renews ? ` · next due ${m.renews}` : ""}
           </p>
         </div>
-        <p className={`${LEDE} mt-4`}>Nothing is charged automatically: we message you when it&apos;s due, and you pay by transfer.</p>
+        {online &&
+          (m.paidThisMonth ? (
+            <p className="mt-4 flex items-center gap-2 text-[15px] font-semibold text-[#0f7a48]">
+              <Icon name="check" size={18} /> This month is paid
+            </p>
+          ) : (
+            <PayButton start={payForPlan.bind(null, m.tierSlug)} label={`Pay this month · ${formatNaira(m.monthlyFee)}`} className="mt-4" onPaid={() => onDone("Payment received")} />
+          ))}
+        <p className={`${LEDE} mt-4`}>Nothing is charged automatically: we message you when it&apos;s due, and you pay it yourself{online ? ", here" : " by transfer"}.</p>
         {asking ? (
           <div className="mt-5 rounded-2xl bg-soft-mist p-4">
             <p className="text-[15px]">Member prices and any free delivery end straight away, and your baskets stop coming every week. Their produce stays saved.</p>
@@ -656,8 +668,10 @@ function MembershipSheet({ membership: m, onDone, onError }: { membership: Membe
     return (
       <>
         <p className={LEDE}>
-          You asked to join {m.tierName} ({formatNaira(m.monthlyFee)} a month). We&apos;ll send payment details within one working day, and it starts once payment arrives.
+          You asked to join {m.tierName} ({formatNaira(m.monthlyFee)} a month).{" "}
+          {online ? "Pay the first month and it starts straight away." : "We'll send payment details within one working day, and it starts once payment arrives."}
         </p>
+        {online && <PayButton start={payForPlan.bind(null, m.tierSlug)} label={`Pay ${formatNaira(m.monthlyFee)} and start`} className="mt-4" onPaid={() => onDone(`Welcome to ${m.tierName}`)} />}
         <Actions>
           <Button
             size="lg"

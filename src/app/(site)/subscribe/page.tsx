@@ -9,6 +9,9 @@ import { Check, Eyebrow } from "@/app/(bare)/home-menu/parts/shared";
 import { startSubscription } from "./actions";
 import { CancelMembershipButton, SwitchPlanButton, WithdrawRequestButton } from "./plan-buttons";
 import { pendingPlanRequest } from "@/lib/plans";
+import { paystackReady } from "@/lib/paystack";
+import { payForPlan } from "@/lib/payment-actions";
+import { PayButton } from "@/components/payments/pay-button";
 import "@/app/(bare)/home-menu/home-menu.css";
 
 export const metadata: Metadata = {
@@ -51,7 +54,7 @@ const FAQ = [
   { q: "Why are member prices so much lower?", a: "Membership is how we make our money, so members pay close to what we pay at the market. Everyone else pays the market rate." },
   { q: "When do I pay for food?", a: "When it arrives, by transfer or card to the rider, or by bank transfer before it's packed. A few days before each delivery we remind you on WhatsApp, email and the app; you confirm it yourself, change it until the evening before, or skip the week." },
   { q: "How much is delivery?", a: "It depends on where you are. Each delivery area has its own fee, shown before you pay. Delivery is free on Member Plus." },
-  { q: "How is the membership paid?", a: "Once a month, by transfer. Nothing is charged automatically: we message you when it's due." },
+  { q: "How is the membership paid?", a: "Once a month, online with a card, bank transfer or USSD through Paystack. Nothing is charged automatically: we remind you when it's due, and you pay it yourself." },
   { q: "Can I switch plans or cancel?", a: "Yes, anytime, from this page or your account. If you cancel, your baskets stop coming every week; their produce stays saved." },
   { q: "Which plan is right for me?", a: "Member covers almost everyone. Member Plus is for people who want first pick of seasonal produce and faster help when something needs sorting." },
 ];
@@ -66,6 +69,8 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
   ]);
 
   const currentSlug = user?.subscriptionTier?.slug ?? null;
+  // With Paystack, joining or moving up is paid on the spot and starts at once.
+  const online = paystackReady();
   const pending = user ? await pendingPlanRequest(user.id) : null;
   const discounted = all.filter((p) => p.memberPrice < p.standardPrice);
   const saving = discounted.length ? discounted.reduce((s, p) => s + (1 - p.memberPrice / p.standardPrice), 0) / discounted.length : 0;
@@ -119,10 +124,14 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
         <div className="hm-wrap mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-sunburst/25 px-5 py-4">
             <p className="max-w-2xl text-[15px]">
-              {requested ? "Request sent. " : ""}You asked to join <b className="font-semibold">{pending.tier.name}</b>. We&apos;ll email payment details within one
-              working day, and your plan starts once payment is confirmed. Nothing is charged automatically.
+              {requested ? "Request sent. " : ""}You asked to join <b className="font-semibold">{pending.tier.name}</b>.{" "}
+              {online ? "Pay the first month and it starts straight away." : "We'll email payment details within one working day, and your plan starts once payment is confirmed."} Nothing is
+              charged automatically.
             </p>
-            <WithdrawRequestButton />
+            <div className="flex flex-wrap items-center gap-3">
+              {online && <PayButton start={payForPlan.bind(null, pending.tier.slug)} label={`Pay ${formatNaira(pending.tier.monthlyFee)}`} note={false} className="w-56" />}
+              <WithdrawRequestButton />
+            </div>
           </div>
         </div>
       )}
@@ -205,6 +214,19 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
                     <Link href={joinHref} className={`${solid} ${button}`}>
                       Join as {tier.name === "Member" ? "a member" : tier.name}
                     </Link>
+                  ) : online && (!currentSlug || tier.monthlyFee > (user.subscriptionTier?.monthlyFee ?? 0)) ? (
+                    // Joining, or moving up: the month is paid here and the plan starts at once.
+                    <>
+                      <PayButton
+                        start={payForPlan.bind(null, tier.slug)}
+                        label={`${currentSlug ? "Move up" : "Join"} · ${formatNaira(tier.monthlyFee)}`}
+                        tone={featured ? "light" : "dark"}
+                        note={false}
+                      />
+                      <p className={`mt-2 text-center text-[12px] ${featured ? "text-paper-white/60" : "text-[var(--hm-ink-2)]"}`}>
+                        Starts the moment it&apos;s paid. Card, transfer or USSD. Nothing renews by itself.
+                      </p>
+                    </>
                   ) : currentSlug ? (
                     <SwitchPlanButton slug={tier.slug} name={tier.name} className={`${solid} ${button}`} />
                   ) : (

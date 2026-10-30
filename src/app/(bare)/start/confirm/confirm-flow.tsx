@@ -17,13 +17,14 @@ import { Field, Kachi, Title } from "../start-flow";
  *
  *   1. Your basket: what's in it and what it comes to. Pay now, big; Pay
  *      later, small, straight into their account with the basket saved.
- *   2. Pay: the bank details, the exact amount and a reference to use.
- *      (Paystack goes here when it's connected: card in, same screen.)
- *   3. Where: the street and a landmark, and a phone for the rider only if
+ *   2. Where: the street and a landmark, and a phone for the rider only if
  *      we don't have one. Saved to the account as their Home address.
+ *   3. Pay: with Paystack (card, bank transfer or USSD), which opens over
+ *      the confirmed order. The address comes first because it sets the
+ *      delivery fee, so the amount charged is the order's own total.
  *
- * Without bank transfer set up there's nothing to pay now, so step 1 says
- * Confirm instead and step 2 is skipped: they pay the rider.
+ * Without Paystack, step 3 is our bank details before the address instead;
+ * without either, step 1 says Confirm and they pay the rider.
  */
 
 type Line = { productId: string; name: string; amount: string; total: number; publicId: string | null; emoji: string };
@@ -39,10 +40,12 @@ export function ConfirmFlow(p: {
   when: string;
   zone: { id: string; name: string };
   transfer: Transfer | null;
+  /** Paystack is set up. */
+  online: boolean;
   reference: string;
 }) {
   const total = p.subtotal + p.fee;
-  const steps = p.transfer ? (["basket", "pay", "where"] as const) : (["basket", "where"] as const);
+  const steps = !p.online && p.transfer ? (["basket", "pay", "where"] as const) : (["basket", "where"] as const);
   type Step = (typeof steps)[number];
   const [[index, dir], setIndex] = useState<[number, 1 | -1]>([0, 1]);
   const step: Step = steps[index];
@@ -51,7 +54,8 @@ export function ConfirmFlow(p: {
     window.scrollTo({ top: 0 });
   };
 
-  const [payment, setPayment] = useState<PaymentChoice>(p.transfer ? "TRANSFER" : "POD");
+  const [payment, setPayment] = useState<PaymentChoice>(p.online ? "ONLINE" : p.transfer ? "TRANSFER" : "POD");
+  const paysNow = p.online || Boolean(p.transfer);
   const [line1, setLine1] = useState("");
   const [landmark, setLandmark] = useState("");
   const [phone, setPhone] = useState(p.contact.phone);
@@ -86,7 +90,7 @@ export function ConfirmFlow(p: {
 
   const ready: Record<Step, boolean> = { basket: true, pay: true, where: line1.trim().length > 3 && (!needsPhone || phone.trim().length >= 7) };
   const cta: Record<Step, React.ReactNode> = {
-    basket: p.transfer ? (
+    basket: paysNow ? (
       <>
         Pay <RollingNumber value={total} format={formatNaira} /> now
       </>
@@ -96,7 +100,7 @@ export function ConfirmFlow(p: {
       </>
     ),
     pay: "I've sent it",
-    where: pending ? "Placing your order…" : "Place my order",
+    where: pending ? "Placing your order…" : payment === "ONLINE" ? "Continue to payment" : "Place my order",
   };
 
   return (
@@ -133,7 +137,7 @@ export function ConfirmFlow(p: {
           >
             {step === "basket" && (
               <>
-                <Kachi>You&apos;re in, {p.firstName}. Here&apos;s your basket. {p.transfer ? "Pay now and it's locked in." : "Confirm it and it's locked in."}</Kachi>
+                <Kachi>You&apos;re in, {p.firstName}. Here&apos;s your basket. {paysNow ? "Pay now and it's locked in." : "Confirm it and it's locked in."}</Kachi>
                 <Title>Your basket</Title>
                 <Receipt name={p.contact.name} when={p.when} zone={p.zone.name} lines={p.lines} subtotal={p.subtotal} fee={p.fee} total={total} reference={p.reference} firstName={p.firstName} />
               </>
@@ -165,7 +169,7 @@ export function ConfirmFlow(p: {
 
             {step === "where" && (
               <>
-                <Kachi>{payment === "TRANSFER" ? "Got it, thank you. " : ""}Last bit: where should I send it?</Kachi>
+                <Kachi>{payment === "TRANSFER" ? "Got it, thank you. " : ""}{payment === "ONLINE" ? "Where should I send it? Then you'll pay, and it's done." : "Last bit: where should I send it?"}</Kachi>
                 <Title>Where should we bring it?</Title>
                 <p className="mt-2 text-[15px] text-(--hm-ink-2)">In {p.zone.name}. We&apos;ll save it as your Home address.</p>
                 <div className="mt-6 space-y-3">
@@ -173,6 +177,15 @@ export function ConfirmFlow(p: {
                   <Field label="Nearest landmark (optional)" name="landmark" placeholder="Opposite the filling station" value={landmark} onChange={(e) => setLandmark(e.target.value)} />
                   {needsPhone && <Field label="Phone for the rider" name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />}
                 </div>
+                {p.online && (
+                  <button
+                    type="button"
+                    onClick={() => setPayment(payment === "ONLINE" ? "POD" : "ONLINE")}
+                    className="mt-4 w-full py-2 text-center text-[13px] text-(--hm-ink-3) underline decoration-(--hm-line) underline-offset-4"
+                  >
+                    {payment === "ONLINE" ? "Pay when it arrives instead" : "Pay now instead"}
+                  </button>
+                )}
                 {error && (
                   <p role="alert" className="mt-4 rounded-[18px] bg-ember/12 p-4 text-[14px] leading-relaxed">
                     {error}

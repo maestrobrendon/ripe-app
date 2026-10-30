@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "How is payment handled?",
-    a: "You pay when your basket arrives, by transfer or card to the rider. You can also pay by bank transfer before it's packed, using your order number as the reference. Paying by card online is coming.",
+    a: "Pay online when you confirm, with a card, bank transfer or USSD through Paystack, or pay when your basket arrives, by transfer or card to the rider. Any unpaid order has a Pay now button on its page.",
   },
 ];
 

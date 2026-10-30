@@ -187,6 +187,11 @@ const SECTIONS: LegalSection[] = [
             session can be linked to your account.
           </li>
           <li>
+            <strong>Payments:</strong> Paystack, in Nigeria, which processes payments you make online. It
+            receives your email and the amount, and handles your card or bank details itself; we never
+            see or store them.
+          </li>
+          <li>
             <strong>Delivery:</strong> our riders and delivery partners, who receive your name, address,
             phone number and order so they can deliver it.
           </li>

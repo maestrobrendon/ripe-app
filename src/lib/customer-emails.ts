@@ -104,3 +104,12 @@ export async function sendPlanDecision(to: string | null, name: string, tierName
     : [`We couldn't start your ${tierName} plan this time.`, ...(note ? [note] : []), "You can keep shopping as you go, and ask again anytime."];
   await send(to, approved ? `Welcome to ${tierName}` : `About your ${tierName} request`, await wrap(lines, { href: `${appOrigin()}/${approved ? "basket" : "subscribe"}`, label: approved ? "Open your basket" : "See plans" }));
 }
+
+/** A receipt for an online payment: what it was for, how much, and how they paid. */
+export async function sendPaymentReceipt(to: string | null, input: { amount: number; what: string; how: string; reference: string; link: string; linkLabel: string }) {
+  await send(
+    to,
+    `Payment received: ${formatNaira(input.amount)}`,
+    await wrap([`Thank you. We've received ${formatNaira(input.amount)} for ${input.what}, by ${input.how}.`, `Reference: ${input.reference}`], { href: input.link, label: input.linkLabel }),
+  );
+}

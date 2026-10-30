@@ -67,6 +67,7 @@ export function paymentLine(o: { paidAt: Date | string | null; paymentMethod: st
   if (o.status === "DELIVERED") return `${naira(o.total)} to pay · ${o.paymentMethod}`;
   if (/transfer/i.test(o.paymentMethod)) return `Bank transfer · waiting for ${naira(o.total)}`;
   if (/delivery/i.test(o.paymentMethod)) return `Pay ${naira(o.total)} when it arrives`;
+  if (/online/i.test(o.paymentMethod)) return `${naira(o.total)} to pay online`;
   return o.paymentMethod;
 }
 

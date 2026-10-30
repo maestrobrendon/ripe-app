@@ -101,7 +101,7 @@ export const COACH_ANSWERS: CoachAnswer[] = [
     id: "payment-methods",
     keywords: ["payment method", "card", "transfer", "pay with", "bank"],
     answer:
-      "You pay when your order arrives, by transfer or card to the rider, or by bank transfer before it's packed. Paying by card online is coming.",
+      "Pay online when you confirm, with a card, bank transfer or USSD through Paystack, or pay when your order arrives, by transfer or card to the rider. Any unpaid order has a Pay now button on its page.",
   },
   {
     id: "human",

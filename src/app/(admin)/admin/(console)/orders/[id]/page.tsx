@@ -26,6 +26,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       credits: { orderBy: { createdAt: "asc" } },
       issues: { orderBy: { createdAt: "desc" } },
       user: { select: { id: true, subscriptionTier: { select: { name: true } } } },
+      payments: { where: { status: "SUCCESS" }, orderBy: { paidAt: "desc" }, take: 1, select: { reference: true, gatewayId: true, channel: true, cardLast4: true, refundedAmount: true } },
     },
   });
   if (!order) notFound();
@@ -66,6 +67,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             canCancel={canCancel}
             canRefund={canRefund}
             leftToRefund={order.total - refunded}
+            paidOnline={order.payments.length > 0}
           />
 
           <Card title={`Items (${order.items.length})`} className="p-0! overflow-hidden">
@@ -189,6 +191,14 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 <dt className="text-carbon/50">Method</dt>
                 <dd>{order.paymentMethod}</dd>
               </div>
+              {order.payments[0] && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-carbon/50">Paystack</dt>
+                  <dd className="truncate font-mono text-[12px]" title={`Transaction ${order.payments[0].gatewayId ?? ""}`}>
+                    {order.payments[0].reference}
+                  </dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-carbon/50">Paid</dt>
                 <dd>{order.paidAt ? when(order.paidAt) : /delivery/i.test(order.paymentMethod) ? "On delivery" : "Not yet"}</dd>

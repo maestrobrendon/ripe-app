@@ -57,7 +57,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
     <>
       <PageHeader
         title="Memberships"
-        description="Who's on a paid plan, and requests waiting for payment to be confirmed. Until there's a payment gateway, a plan only starts when Finance approves it here."
+        description="Who's on a paid plan, and requests waiting for payment to be confirmed. A plan paid online through Paystack starts by itself; one paid by transfer starts when Finance approves it here."
       />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

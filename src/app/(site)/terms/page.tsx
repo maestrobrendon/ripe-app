@@ -134,7 +134,8 @@ const SECTIONS: LegalSection[] = [
         <ul>
           <li>
             <strong>Billing.</strong> The membership fee is due monthly from the day you join, until
-            you cancel. It&rsquo;s paid by transfer; nothing is charged automatically.
+            you cancel. You pay each month yourself, online through Paystack or by transfer; nothing is
+            charged automatically, and your card is never stored by us.
           </li>
           <li>
             <strong>Your weekly order.</strong> Nothing is ordered on its own. You confirm each
@@ -164,10 +165,11 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          You pay when your order arrives, by transfer or card to the rider, or by bank transfer before
-          it&rsquo;s packed, using your order number as the reference. Account credit (from invites or
-          to put a problem right) comes off your next order. We&rsquo;ll update these terms before card
-          payments online start.
+          You pay online when you confirm (card, bank transfer or USSD, processed by Paystack, which
+          holds your card details; we never see or store them), or when your order arrives, by
+          transfer or card to the rider. Account credit (from invites or to put a problem right) comes
+          off your next order. A refund for an order paid online goes back to the card or account you
+          paid with.
         </p>
       </>
     ),

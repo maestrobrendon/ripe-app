@@ -12,6 +12,8 @@ import { formatPhone } from "@/lib/phone";
 import { basketName, orderRef, shortDate } from "@/lib/delivery-labels";
 import { confirmRight } from "@/lib/basket-rules";
 import { AccountView } from "./account-view";
+import { paystackReady } from "@/lib/paystack";
+import { lastMembershipPayment } from "@/lib/payments";
 
 export const metadata = { title: "Me" };
 
@@ -21,6 +23,18 @@ function nextRenewal(start: Date) {
   const d = new Date(start);
   while (d <= now) d.setMonth(d.getMonth() + 1);
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
+}
+
+/** When the current month of membership began: the last monthly anniversary of the start. */
+function cycleStart(start: Date) {
+  const now = new Date();
+  const d = new Date(start);
+  while (true) {
+    const next = new Date(d);
+    next.setMonth(next.getMonth() + 1);
+    if (next > now) return d;
+    d.setMonth(d.getMonth() + 1);
+  }
 }
 
 /** A code to share, made the first time someone looks for it. */
@@ -72,6 +86,8 @@ export default async function AccountPage() {
   const first = user.name?.split(" ")[0] ?? "";
   const helpText = `Hi, it's ${first || "a Basket customer"}${user.phone ? ` (${formatPhone(user.phone)})` : ""}.${lastOrder ? ` My last order was ${orderRef(lastOrder.id)}.` : ""} `;
 
+  const lastPaid = tier ? await lastMembershipPayment(user.id) : null;
+
   return (
     <AccountView
       name={user.name ?? ""}
@@ -84,11 +100,20 @@ export default async function AccountPage() {
       goal={user.preferences?.primaryGoal ?? ""}
       likes={user.preferences?.producePreferences ?? []}
       dietaryNotes={user.preferences?.dietaryNotes ?? ""}
+      online={paystackReady()}
       membership={
         tier
-          ? { state: "member", tierName: tier.name, monthlyFee: tier.monthlyFee, renews: user.subscribedAt ? nextRenewal(user.subscribedAt) : null }
+          ? {
+              state: "member",
+              tierName: tier.name,
+              tierSlug: tier.slug,
+              monthlyFee: tier.monthlyFee,
+              renews: user.subscribedAt ? nextRenewal(user.subscribedAt) : null,
+              // Paid online since this month began (a month paid by transfer is marked by staff, not here).
+              paidThisMonth: Boolean(lastPaid?.paidAt && user.subscribedAt && lastPaid.paidAt >= cycleStart(user.subscribedAt)),
+            }
           : pending
-            ? { state: "pending", tierName: pending.tier.name, monthlyFee: pending.tier.monthlyFee, renews: null }
+            ? { state: "pending", tierName: pending.tier.name, tierSlug: pending.tier.slug, monthlyFee: pending.tier.monthlyFee, renews: null }
             : declined
               ? { state: "declined", tierName: declined.tier.name, monthlyFee: 0, renews: null, note: declined.decidedNote ?? null }
               : null

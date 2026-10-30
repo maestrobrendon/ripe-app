@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { paystackReady } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { isMember, ownedDelivery, priceFor } from "@/lib/order-container";
@@ -61,6 +62,7 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
       fee={fee}
       when={`${longDate(cycle.date)}, ${DELIVERY_WINDOW}`}
       zone={{ id: zone.id, name: zone.name }}
+      online={paystackReady()}
       transfer={transfer ? { bankName: transfer.bankName, accountNumber: transfer.accountNumber, accountName: transfer.accountName } : null}
       reference={`BSK-${basket.id.slice(-6).toUpperCase()}`}
     />

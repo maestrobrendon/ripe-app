@@ -18,6 +18,9 @@ import { getOrCreateActiveDelivery } from "@/lib/order-container";
 import { OrderControls } from "./order-controls";
 import { PlacedMoment } from "./placed-moment";
 import { appOrigin } from "@/lib/site";
+import { paystackReady } from "@/lib/paystack";
+import { payForOrder } from "@/lib/payment-actions";
+import { PayButton } from "@/components/payments/pay-button";
 import { deliveryEvent, googleCalendarUrl } from "@/lib/delivery-calendar";
 
 export const metadata = { title: "Your order" };
@@ -29,8 +32,8 @@ function tokenMatches(a: string, b: string): boolean {
 }
 
 /** One order: where it is, what's in it, how it's paid, and what can still be done about it. */
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ t?: string; placed?: string; report?: string }> }) {
-  const [{ id }, { t, placed, report }, user] = await Promise.all([params, searchParams, getCurrentUser()]);
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ t?: string; placed?: string; report?: string; pay?: string }> }) {
+  const [{ id }, { t, placed, report, pay }, user] = await Promise.all([params, searchParams, getCurrentUser()]);
 
   const order = await prisma.order.findUnique({
     where: { id },
@@ -61,6 +64,8 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const activeDelivery = ownsIt && user ? await getOrCreateActiveDelivery(user) : null;
   const activeCount = activeDelivery ? await prisma.basketItem.count({ where: { basketId: activeDelivery.id } }) : 0;
   const unpaidTransfer = !order.paidAt && /transfer/i.test(order.paymentMethod) && !stopped && transferReady(settings.transfer);
+  // Any unpaid order can be paid online, whatever was chosen at checkout.
+  const payOnline = ownsIt && !order.paidAt && !stopped && order.total > 0 && paystackReady();
 
   return (
     <div className="min-h-[calc(100svh-3.5rem)] bg-grouped">
@@ -111,9 +116,17 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </div>
       )}
 
+      {payOnline && (
+        <div className="mt-5 rounded-2xl bg-surface p-4 ring-1 ring-hairline">
+          <p className="font-semibold">{formatNaira(order.total)} to pay</p>
+          <p className="mt-0.5 mb-3.5 text-sm text-muted">Pay now and it&apos;s settled before the rider comes.</p>
+          <PayButton start={payForOrder.bind(null, order.id)} label={`Pay ${formatNaira(order.total)} now`} autoStart={pay === "1"} />
+        </div>
+      )}
+
       {unpaidTransfer && (
         <div className="mt-5 rounded-2xl border border-hairline bg-surface p-4 text-sm">
-          <p className="font-semibold">Transfer {formatNaira(order.total)} to</p>
+          <p className="font-semibold">{payOnline ? "Or transfer" : "Transfer"} {formatNaira(order.total)} to</p>
           <p className="mt-1">
             {settings.transfer.accountName}
             <br />

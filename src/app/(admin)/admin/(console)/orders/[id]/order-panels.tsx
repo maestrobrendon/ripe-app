@@ -36,6 +36,8 @@ export function OrderActions(props: {
   canCancel: boolean;
   canRefund: boolean;
   leftToRefund: number;
+  /** Paid through Paystack: a refund can go back the same way. */
+  paidOnline?: boolean;
 }) {
   const { go, pending, notice } = useRun();
   const [mode, setMode] = useState<"none" | "cancel" | "refund">("none");
@@ -102,7 +104,8 @@ export function OrderActions(props: {
                   orderId: props.orderId,
                   version: props.version,
                   amount: Math.round(Number(f.get("amount"))),
-                  method: String(f.get("method") ?? ""),
+                  method: f.get("viaPaystack") ? "Paystack" : String(f.get("method") ?? ""),
+                  viaPaystack: Boolean(f.get("viaPaystack")),
                   reason: String(f.get("reason") ?? ""),
                 }),
               "Refund recorded and the customer emailed.",
@@ -113,16 +116,28 @@ export function OrderActions(props: {
           <Field label="Amount (₦)" htmlFor="refund-amount" hint={`Up to ₦${props.leftToRefund.toLocaleString("en-NG")}`}>
             <Input id="refund-amount" name="amount" type="number" inputMode="numeric" min={1} max={props.leftToRefund} required defaultValue={props.leftToRefund} />
           </Field>
-          <Field label="Paid back by" htmlFor="refund-method">
-            <Input id="refund-method" name="method" required maxLength={80} placeholder="Bank transfer, ref 1234" />
-          </Field>
+          {props.paidOnline ? (
+            <label className="flex items-start gap-2.5 self-end pb-2 text-[13px]">
+              <input type="checkbox" name="viaPaystack" defaultChecked className="mt-0.5" />
+              <span>
+                <b className="font-semibold">Send it back through Paystack</b>
+                <span className="block text-carbon/55">To the card or account they paid with. Untick to record one you sent yourself.</span>
+              </span>
+            </label>
+          ) : (
+            <Field label="Paid back by" htmlFor="refund-method">
+              <Input id="refund-method" name="method" required maxLength={80} placeholder="Bank transfer, ref 1234" />
+            </Field>
+          )}
           <div className="sm:col-span-2">
             <Field label="Reason" htmlFor="refund-reason">
               <Input id="refund-reason" name="reason" required maxLength={500} placeholder="e.g. Two items missing" />
             </Field>
           </div>
           <p className="text-[12px] text-carbon/55 sm:col-span-2">
-            This records money you have already sent back. There&apos;s no payment gateway yet, so nothing is paid out from here.
+            {props.paidOnline
+              ? "With the box ticked, Paystack sends the money back now; it reaches the customer in a few working days. Unticked, this only records a refund you've sent yourself."
+              : "This records money you have already sent back. The order wasn't paid online, so nothing is paid out from here."}
           </p>
           <div className="sm:col-span-2">
             <Button type="submit" size="sm" disabled={pending}>

@@ -45,6 +45,8 @@ export function CheckoutFlow(props: {
   contact: { name: string; phone: string; email: string };
   credit: number;
   transfer: { bankName: string; accountName: string; accountNumber: string } | null;
+  /** Paystack is set up: "Pay now" opens its checkout on the next screen. */
+  online: boolean;
   /** For a first address: what the account already knows. */
   draftDefaults?: { line1: string; zoneId: string | null };
 }) {
@@ -245,11 +247,13 @@ export function CheckoutFlow(props: {
       {/* Payment */}
       <Section title="How you'll pay">
         <div className="grid gap-2">
+          {props.online && (
+            <PayOption on={payment === "ONLINE"} onClick={() => setPayment("ONLINE")} title="Pay now" sub="Card, bank transfer or USSD, through Paystack. Takes a minute, on the next screen." />
+          )}
           <PayOption on={payment === "POD"} onClick={() => setPayment("POD")} title="Pay when it arrives" sub="Transfer or card to the rider at your door. Nothing to pay now." />
           {props.transfer && (
-            <PayOption on={payment === "TRANSFER"} onClick={() => setPayment("TRANSFER")} title="Pay now by transfer" sub="Into our bank account, before it's packed. The details come next." />
+            <PayOption on={payment === "TRANSFER"} onClick={() => setPayment("TRANSFER")} title="Transfer to our account" sub="Into our bank account yourself, before it's packed. The details come next." />
           )}
-          <PayOption on={false} disabled title="Card" sub="Coming soon" />
         </div>
         {payment === "TRANSFER" && props.transfer && (
           <p className="mt-3 rounded-xl bg-soft-mist p-3 text-sm">
@@ -314,7 +318,7 @@ export function CheckoutFlow(props: {
         {props.oneOff ? "Confirm order" : "Confirm basket"} · {formatNaira(total)}
       </Button>
       <p className="-mt-1 text-center text-xs text-muted">
-        {payment === "POD" ? "You pay when it arrives." : "Transfer once you see your order number."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.
+        {payment === "POD" ? "You pay when it arrives." : payment === "ONLINE" ? "You'll pay on the next screen." : "Transfer once you see your order number."} You can change or cancel it until {when ? cutoffLabel(when.cutoffIso) : "the day before"}.
       </p>
     </div>
   );

@@ -12,6 +12,7 @@ import { grantCredit } from "@/lib/credit";
 import { notify } from "@/lib/notify";
 import { formatNaira } from "@/lib/format";
 import { orderRef } from "@/lib/delivery-labels";
+import { refundTransaction } from "@/lib/paystack";
 import type { OrderStatus } from "@/generated/prisma/enums";
 
 /*
@@ -41,7 +42,7 @@ export async function setOrderStatus(input: { orderId: string; to: string; versi
   });
 }
 
-export async function recordRefund(input: { orderId: string; version: number; amount: number; method: string; reason: string }): Promise<ActionResult> {
+export async function recordRefund(input: { orderId: string; version: number; amount: number; method: string; reason: string; viaPaystack?: boolean }): Promise<ActionResult> {
   return staffAction("orders.refund", async (ctx) => {
     const parsed = z
       .object({ orderId: id, version: z.number().int().min(0), amount: z.number().int().positive().max(100_000_000), method: z.string().trim().min(2).max(80), reason: z.string().trim().min(3).max(500) })
@@ -60,16 +61,30 @@ export async function recordRefund(input: { orderId: string; version: number; am
     }
     const full = refunded + amount === order.total;
 
+    // Paid online: Paystack sends the money back first, and only then is it recorded.
+    let paidBackBy = method;
+    if (input.viaPaystack) {
+      const payment = await prisma.payment.findFirst({ where: { orderId, status: "SUCCESS" }, orderBy: { paidAt: "desc" } });
+      if (!payment) return { ok: false, code: "CONFLICT", error: "This order wasn't paid through Paystack. Untick the box and record how you paid it back." };
+      try {
+        await refundTransaction(payment.reference, amount, `${orderRef(orderId)}: ${reason}`);
+      } catch (e) {
+        return { ok: false, code: "CONFLICT", error: `Paystack didn't accept the refund: ${(e as Error).message}. Nothing was recorded.` };
+      }
+      await prisma.payment.update({ where: { id: payment.id }, data: { refundedAmount: { increment: amount } } });
+      paidBackBy = `Paystack, back to the ${payment.channel === "card" ? "card" : "account"} they paid with`;
+    }
+
     const ok = await prisma.$transaction(async (tx) => {
       const { count } = await tx.order.updateMany({ where: { id: orderId, version }, data: { version: { increment: 1 }, ...(full && { status: "REFUNDED" }) } });
       if (count === 0) return false;
-      await tx.creditRecord.create({ data: { kind: "REFUND", userId: order.userId, orderId, amount, method, reason, staffId: ctx.staff.id, staffName: ctx.staff.name } });
+      await tx.creditRecord.create({ data: { kind: "REFUND", userId: order.userId, orderId, amount, method: paidBackBy, reason, staffId: ctx.staff.id, staffName: ctx.staff.name } });
       await tx.orderEvent.create({
         data: {
           orderId,
           kind: "REFUND",
           ...(full && { fromStatus: order.status, toStatus: "REFUNDED" }),
-          note: `₦${amount.toLocaleString("en-NG")} by ${method}: ${reason}`,
+          note: `₦${amount.toLocaleString("en-NG")} by ${paidBackBy}: ${reason}`,
           staffId: ctx.staff.id,
           actorName: ctx.staff.name,
         },
@@ -82,10 +97,10 @@ export async function recordRefund(input: { orderId: string; version: number; am
       action: "orders.refund_recorded",
       targetType: "Order",
       targetId: orderId,
-      summary: `₦${amount.toLocaleString("en-NG")} refunded on #${orderId.slice(-8).toUpperCase()} by ${method}${full ? " (full)" : ""}`,
-      diff: { amount, method, reason },
+      summary: `₦${amount.toLocaleString("en-NG")} refunded on #${orderId.slice(-8).toUpperCase()} by ${paidBackBy}${full ? " (full)" : ""}`,
+      diff: { amount, method: paidBackBy, reason },
     });
-    await sendRefundEmail(order, amount, method);
+    await sendRefundEmail(order, amount, paidBackBy);
     done(orderId);
     return { ok: true, data: undefined };
   });
