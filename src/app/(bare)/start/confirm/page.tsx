@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { creditBalance } from "@/lib/credit";
 import { paystackReady } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
@@ -44,6 +45,8 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
   // The area's fee (by distance from the depot when Logistics prices that way); the address comes after paying.
   const fee = quoteDelivery(subtotal, hasFreeDelivery(user.subscriptionTier?.slug), zoneFee(zone, await getLogistics()), settings.delivery.freeThreshold).fee;
   const transfer = transferReady(settings.transfer) ? settings.transfer : null;
+  // A gift or a reward they already have comes off this first basket.
+  const credit = Math.min(await creditBalance(user.id), subtotal + fee);
 
   return (
     <ConfirmFlow
@@ -60,6 +63,7 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
       }))}
       subtotal={subtotal}
       fee={fee}
+      credit={credit}
       when={`${longDate(cycle.date)}, ${DELIVERY_WINDOW}`}
       zone={{ id: zone.id, name: zone.name }}
       online={paystackReady()}

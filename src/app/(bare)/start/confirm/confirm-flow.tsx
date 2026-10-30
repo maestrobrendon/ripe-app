@@ -37,6 +37,8 @@ export function ConfirmFlow(p: {
   lines: Line[];
   subtotal: number;
   fee: number;
+  /** Gift or reward credit that comes off this basket. */
+  credit: number;
   when: string;
   zone: { id: string; name: string };
   transfer: Transfer | null;
@@ -44,7 +46,7 @@ export function ConfirmFlow(p: {
   online: boolean;
   reference: string;
 }) {
-  const total = p.subtotal + p.fee;
+  const total = Math.max(0, p.subtotal + p.fee - p.credit);
   const steps = !p.online && p.transfer ? (["basket", "pay", "where"] as const) : (["basket", "where"] as const);
   type Step = (typeof steps)[number];
   const [[index, dir], setIndex] = useState<[number, 1 | -1]>([0, 1]);
@@ -55,7 +57,7 @@ export function ConfirmFlow(p: {
   };
 
   const [payment, setPayment] = useState<PaymentChoice>(p.online ? "ONLINE" : p.transfer ? "TRANSFER" : "POD");
-  const paysNow = p.online || Boolean(p.transfer);
+  const paysNow = total > 0 && (p.online || Boolean(p.transfer));
   const [line1, setLine1] = useState("");
   const [landmark, setLandmark] = useState("");
   const [phone, setPhone] = useState(p.contact.phone);
@@ -76,7 +78,7 @@ export function ConfirmFlow(p: {
         phone,
         email: p.contact.email,
         payment,
-        useCredit: false,
+        useCredit: p.credit > 0,
         reference: payment === "TRANSFER" ? p.reference : undefined,
       });
       // Success goes to the confirmed order. Anything else is one sentence here.
@@ -139,7 +141,7 @@ export function ConfirmFlow(p: {
               <>
                 <Kachi>You&apos;re in, {p.firstName}. Here&apos;s your basket. {paysNow ? "Pay now and it's locked in." : "Confirm it and it's locked in."}</Kachi>
                 <Title>Your basket</Title>
-                <Receipt name={p.contact.name} when={p.when} zone={p.zone.name} lines={p.lines} subtotal={p.subtotal} fee={p.fee} total={total} reference={p.reference} firstName={p.firstName} />
+                <Receipt name={p.contact.name} when={p.when} zone={p.zone.name} lines={p.lines} subtotal={p.subtotal} fee={p.fee} credit={p.credit} total={total} reference={p.reference} firstName={p.firstName} />
               </>
             )}
 
@@ -259,7 +261,7 @@ function CopyRow({ label, value, shown, big }: { label: string; value: string; s
  * Names and prices only, like the real thing; the reference matches the
  * transfer on the next screen.
  */
-function Receipt(r: { name: string; firstName: string; when: string; zone: string; lines: Line[]; subtotal: number; fee: number; total: number; reference: string }) {
+function Receipt(r: { name: string; firstName: string; when: string; zone: string; lines: Line[]; subtotal: number; fee: number; credit: number; total: number; reference: string }) {
   const still = useReducedMotion();
   const items = r.lines.length;
   return (
@@ -325,6 +327,12 @@ function Receipt(r: { name: string; firstName: string; when: string; zone: strin
               <dt>Delivery</dt>
               <dd className="tabular-nums">{r.fee ? formatNaira(r.fee) : "Free"}</dd>
             </div>
+            {r.credit > 0 && (
+              <div className="flex justify-between font-semibold text-(--hm-basket-ink)">
+                <dt>Gift and credit</dt>
+                <dd className="tabular-nums">−{formatNaira(r.credit)}</dd>
+              </div>
+            )}
             <div className="mt-2 flex items-baseline justify-between border-t-2 border-carbon pt-3">
               <dt className="text-[13px] font-semibold tracking-[0.08em] uppercase">Total</dt>
               <dd className="text-[26px] leading-none font-semibold tracking-[-0.02em] tabular-nums">{formatNaira(r.total)}</dd>

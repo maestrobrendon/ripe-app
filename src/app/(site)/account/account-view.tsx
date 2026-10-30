@@ -14,6 +14,7 @@ import { openCookieSettings } from "@/lib/analytics";
 import { cancelSubscription, withdrawPlanRequest } from "@/app/(site)/subscribe/actions";
 import { payForPlan } from "@/lib/payment-actions";
 import { PayButton } from "@/components/payments/pay-button";
+import { StreakCard, type StreakCardData } from "@/components/streak/streak-card";
 import {
   saveContact,
   savePreferences,
@@ -45,6 +46,9 @@ type Props = {
   membership: Membership | null;
   /** Paystack is set up: the month can be paid here. */
   online: boolean;
+  streak: StreakCardData;
+  /** Whether they've had the feedback reward yet, and what it is. */
+  feedback: { rewarded: boolean; reward: number };
   orders: { count: number; live: string | null };
   notify: { whatsapp: boolean; email: boolean; push: boolean };
   /** The customer's baskets, by name, and how many come every week. */
@@ -153,6 +157,9 @@ export function AccountView(props: Props) {
           <Icon name="caretRight" size={16} className="shrink-0 text-carbon/35" />
         </button>
 
+        {/* Weeks in a row with a basket: the reason to come back. */}
+        <StreakCard data={props.streak} />
+
         {todo.length > 0 && (
           <Group title="To do">
             {todo.map((t) =>
@@ -194,6 +201,17 @@ export function AccountView(props: Props) {
             sub={props.invite.credit > 0 ? "Comes off your next order" : "After their first delivery"}
           />
         </div>
+
+        <Group title="Give and share">
+          <Row icon="gift" tint="ember" title="Gift a basket" sub="Fresh fruit and veg for someone you love" href="/gift" />
+          <Row
+            icon="send"
+            tint="sun"
+            title="Tell us how we're doing"
+            sub={props.feedback.rewarded ? "Two minutes, one question at a time" : `Two minutes, and ${formatNaira(props.feedback.reward)} credit for you`}
+            href="/feedback"
+          />
+        </Group>
 
         <Group title="Orders">
           <Row icon="box" tint="mint" title="Your orders" sub={props.orders.live ?? (props.orders.count ? `${props.orders.count} so far` : "None yet")} href="/orders" />

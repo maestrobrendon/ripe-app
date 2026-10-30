@@ -134,8 +134,9 @@ export async function placeOrder(input: CheckoutInput): Promise<CheckoutResult> 
         deliveryFee: fee,
         creditApplied,
         total,
-        paymentMethod: PAYMENT_LABEL[payment],
-        paidAt: null,
+        // Fully covered by credit (a gift, a reward): nothing left to pay.
+        paymentMethod: total === 0 ? "Paid with account credit" : PAYMENT_LABEL[payment],
+        paidAt: total === 0 ? new Date() : null,
         itemSnapshot: snapshot,
         basketId: basket.id,
         events: {

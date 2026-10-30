@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { appOrigin } from "@/lib/site";
 import { formatNaira } from "@/lib/format";
 import { orderRef } from "@/lib/delivery-labels";
+import { deliverGift } from "@/lib/gifts";
 
 /*
  * Online payments, through Paystack. Two things are paid for: an order (any
@@ -124,8 +125,32 @@ export async function startMembershipPayment(userId: string, tierId: string): Pr
   }
 }
 
+/** Opens a payment for a gift basket the customer is sending. */
+export async function startGiftPayment(userId: string, giftId: string): Promise<StartResult> {
+  if (!paystackReady()) return { ok: false, error: "Paying online isn't available right now." };
+  const gift = await prisma.gift.findFirst({ where: { id: giftId, senderId: userId, status: "PENDING" }, include: { sender: { select: { email: true } } } });
+  if (!gift) return { ok: false, error: "We couldn't find that gift. Start again." };
+  if (!gift.sender.email) return { ok: false, error: "Add an email to your account first: Paystack sends your receipt there." };
+  const reference = newReference();
+  await prisma.payment.create({ data: { reference, kind: "GIFT", amount: gift.amount, userId, giftId: gift.id } });
+  try {
+    return started(
+      await initializeTransaction({
+        email: gift.sender.email,
+        amount: gift.amount,
+        reference,
+        callbackUrl: `${appOrigin()}/api/payments/paystack/callback`,
+        metadata: { kind: "GIFT", giftId: gift.id, for: gift.recipientName },
+      }),
+    );
+  } catch (e) {
+    await prisma.payment.update({ where: { reference }, data: { status: "FAILED", failureReason: String((e as Error).message).slice(0, 300) } });
+    return { ok: false, error: "We couldn't open the payment just now. Try again in a moment." };
+  }
+}
+
 export type Settled =
-  | { ok: true; kind: "ORDER" | "MEMBERSHIP"; orderId: string | null; accessToken: string | null; alreadySettled: boolean }
+  | { ok: true; kind: "ORDER" | "MEMBERSHIP" | "GIFT"; orderId: string | null; accessToken: string | null; alreadySettled: boolean; giftCode?: string }
   | { ok: false; status: "PENDING" | "FAILED" | "ABANDONED" | "UNKNOWN"; message: string; orderId: string | null };
 
 /**
@@ -135,11 +160,11 @@ export type Settled =
 export async function settlePayment(reference: string, source: "page" | "callback" | "webhook"): Promise<Settled> {
   const payment = await prisma.payment.findUnique({
     where: { reference },
-    include: { order: { select: { id: true, accessToken: true, customerEmail: true, customerPhone: true, paidAt: true } }, tier: true, user: { select: { email: true, name: true, phone: true } } },
+    include: { order: { select: { id: true, accessToken: true, customerEmail: true, customerPhone: true, paidAt: true } }, tier: true, gift: true, user: { select: { email: true, name: true, phone: true } } },
   });
   if (!payment) return { ok: false, status: "UNKNOWN", message: "We don't recognise that payment.", orderId: null };
   const orderId = payment.orderId;
-  if (payment.status === "SUCCESS") return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: true };
+  if (payment.status === "SUCCESS") return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: true, giftCode: payment.gift?.code };
 
   let tx;
   try {
@@ -181,7 +206,7 @@ export async function settlePayment(reference: string, source: "page" | "callbac
     where: { reference, status: { not: "SUCCESS" } },
     data: { status: "SUCCESS", paidAt, channel: tx.channel, cardLast4: tx.cardLast4, gatewayId: String(tx.id), failureReason: null },
   });
-  if (flipped.count === 0) return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: true };
+  if (flipped.count === 0) return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: true, giftCode: payment.gift?.code };
 
   if (payment.kind === "ORDER" && payment.order) {
     const order = payment.order;
@@ -224,8 +249,22 @@ export async function settlePayment(reference: string, source: "page" | "callbac
     refresh("/account", "/subscribe", "/basket");
   }
 
+  if (payment.kind === "GIFT" && payment.gift) {
+    await prisma.gift.updateMany({ where: { id: payment.gift.id, status: "PENDING" }, data: { status: "ACTIVE", paidAt } });
+    await deliverGift(payment.gift.id).catch(() => {});
+    await sendPaymentReceipt(payment.user.email, {
+      amount: payment.amount,
+      what: `a gift basket for ${payment.gift.recipientName}`,
+      how,
+      reference,
+      link: `${appOrigin()}/gift/${payment.gift.code}`,
+      linkLabel: "See the gift",
+    }).catch(() => {});
+    refresh("/gift", "/account");
+  }
+
   await audit({ actorType: "SYSTEM", action: "payment.received", targetType: "Payment", targetId: payment.id, summary: `${formatNaira(payment.amount)} ${payment.kind.toLowerCase()} payment by ${how} (${source})` }).catch(() => {});
-  return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: false };
+  return { ok: true, kind: payment.kind, orderId, accessToken: payment.order?.accessToken ?? null, alreadySettled: false, giftCode: payment.gift?.code };
 }
 
 /** The last month of membership the customer paid for online, if any. */

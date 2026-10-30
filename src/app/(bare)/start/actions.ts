@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { collectPendingClaims } from "@/lib/pending-claims";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
@@ -27,7 +28,7 @@ const DIETARY_NOTE: Record<string, string | null> = {
   vegan: "Vegan",
 };
 
-export type StartState = { error: "missing" | "failed" | "throttled" | null };
+export type StartState = { error: "missing" | "contact" | "failed" | "throttled" | null };
 
 function clampCount(raw: unknown, min: number, max: number): number {
   const n = Math.floor(Number(raw));
@@ -76,6 +77,8 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
     zone && zone.deliveryDays.includes(requestedDay) ? requestedDay : (zone?.deliveryDays[0] ?? "FRIDAY");
 
   const { email, phone } = normalizeContact(contact);
+  // Something they can sign in with again: a real email or a Nigerian phone number.
+  if (!(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && !phone) return { error: "contact" };
 
   // Always hash so the "already exists" path costs the same as a real signup.
   const passwordHash = await hashPassword(password);
@@ -158,6 +161,8 @@ export async function createAccountFromOnboarding(_prev: StartState, formData: F
   }
 
   await createSession(userId);
+  // A gift opened, or feedback given, before they had an account.
+  await collectPendingClaims(userId);
   // Anything they put in a cart before signing up goes into their order too.
   await mergeGuestCartIntoBasket(userId).catch(() => {});
 

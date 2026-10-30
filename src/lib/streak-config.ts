@@ -9,6 +9,8 @@ export type Milestone = {
   weeks: number;
   label: string;
   reward: string;
+  /** Account credit (naira) paid once on reaching it, if the reward is credit. */
+  credit?: number;
   /** Whether reaching this milestone unlocks early seasonal access. */
   earlySeasonalAccess?: boolean;
 };
@@ -18,6 +20,7 @@ export const STREAK_MILESTONES: Milestone[] = [
     weeks: 4,
     label: "4-week streak",
     reward: `${formatNaira(DELIVERY_CREDIT_NAIRA)} delivery credit`,
+    credit: DELIVERY_CREDIT_NAIRA,
   },
   {
     weeks: 12,

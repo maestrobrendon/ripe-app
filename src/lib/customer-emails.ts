@@ -113,3 +113,19 @@ export async function sendPaymentReceipt(to: string | null, input: { amount: num
     await wrap([`Thank you. We've received ${formatNaira(input.amount)} for ${input.what}, by ${input.how}.`, `Reference: ${input.reference}`], { href: input.link, label: input.linkLabel }),
   );
 }
+
+/** A gift basket arriving: who it's from, their note, and the link to claim it. */
+export async function sendGiftEmail(to: string, input: { fromName: string; recipientName: string; amount: number; message: string | null; link: string }) {
+  await send(
+    to,
+    `${input.fromName} sent you a basket`,
+    await wrap(
+      [
+        `${input.recipientName.split(/\s+/)[0]}, ${input.fromName} has sent you ${formatNaira(input.amount)} of fresh fruit and veg from BasketNG.`,
+        ...(input.message ? [`"${input.message}"`] : []),
+        "Open it, pick what you'd like, and we'll bring it to your door in Lagos.",
+      ],
+      { href: input.link, label: "Open your gift" },
+    ),
+  );
+}

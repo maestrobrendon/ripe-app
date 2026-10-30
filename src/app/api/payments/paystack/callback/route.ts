@@ -16,5 +16,6 @@ export async function GET(request: Request) {
     const token = r.ok && r.accessToken ? `&t=${encodeURIComponent(r.accessToken)}` : "";
     return NextResponse.redirect(`${appOrigin()}/orders/${r.orderId}?paid=${r.ok ? 1 : 0}${token}`);
   }
+  if (r.ok && r.kind === "GIFT" && r.giftCode) return NextResponse.redirect(`${appOrigin()}/gift/${r.giftCode}?sent=1`);
   return NextResponse.redirect(`${appOrigin()}/${r.ok ? "basket?joined=1" : "subscribe?paid=0"}`);
 }

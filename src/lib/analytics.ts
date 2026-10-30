@@ -89,7 +89,11 @@ export type AnalyticsEvent =
   | "checkout_submitted"
   | "checkout_failed"
   | "section_viewed"
-  | "cookie_consent";
+  | "cookie_consent"
+  | "feedback_submitted"
+  | "gift_started"
+  | "gift_opened"
+  | "gift_claimed";
 
 /** Record a named event. A no-op until PostHog has loaded, and on the server. */
 export function track(event: AnalyticsEvent, properties?: Record<string, unknown>) {

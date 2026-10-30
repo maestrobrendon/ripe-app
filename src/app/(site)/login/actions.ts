@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { collectPendingClaims } from "@/lib/pending-claims";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession } from "@/lib/session";
 import { verifyPassword, contactWhere } from "@/lib/auth";
@@ -39,6 +40,8 @@ export async function signIn(formData: FormData) {
   if (user.suspendedAt || user.erasedAt) redirect("/login?error=suspended");
 
   await createSession(user.id);
+  // A gift opened, or feedback given, before signing in.
+  await collectPendingClaims(user.id);
   await mergeGuestCartIntoBasket(user.id);
   // Every signed-in arrival lands on Home, this week's order.
   redirect(safeNext || "/basket");

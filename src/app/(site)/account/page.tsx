@@ -12,6 +12,10 @@ import { formatPhone } from "@/lib/phone";
 import { basketName, orderRef, shortDate } from "@/lib/delivery-labels";
 import { confirmRight } from "@/lib/basket-rules";
 import { AccountView } from "./account-view";
+import { badgesFor, streakDetails } from "@/lib/streak";
+import { STREAK_MILESTONES } from "@/lib/streak-config";
+import { hadFeedbackReward, FEEDBACK_REWARD } from "@/lib/feedback";
+import type { StreakCardData } from "@/components/streak/streak-card";
 import { paystackReady } from "@/lib/paystack";
 import { lastMembershipPayment } from "@/lib/payments";
 
@@ -87,6 +91,21 @@ export default async function AccountPage() {
   const helpText = `Hi, it's ${first || "a Basket customer"}${user.phone ? ` (${formatPhone(user.phone)})` : ""}.${lastOrder ? ` My last order was ${orderRef(lastOrder.id)}.` : ""} `;
 
   const lastPaid = tier ? await lastMembershipPayment(user.id) : null;
+  const [streak, feedbackRewarded] = await Promise.all([streakDetails(user.id), hadFeedbackReward(user.id)]);
+  const badges = await badgesFor(user.id, streak.longestStreakWeeks);
+  const nextM = STREAK_MILESTONES.find((m) => m.weeks === streak.nextMilestoneWeeks) ?? null;
+  const prevWeeks = [...STREAK_MILESTONES].reverse().find((m) => m.weeks <= streak.currentStreakWeeks)?.weeks ?? 0;
+  const streakData: StreakCardData = {
+    current: streak.currentStreakWeeks,
+    longest: streak.longestStreakWeeks,
+    progress: nextM ? (streak.currentStreakWeeks - prevWeeks) / (nextM.weeks - prevWeeks) : 1,
+    next: nextM ? { weeks: nextM.weeks, reward: nextM.reward, toGo: nextM.weeks - streak.currentStreakWeeks } : null,
+    weeks: streak.weeks,
+    thisWeekDone: streak.thisWeekDone,
+    justRewarded: streak.justRewarded,
+    milestones: STREAK_MILESTONES.map((m) => ({ weeks: m.weeks, label: m.label, reward: m.reward, reached: streak.longestStreakWeeks >= m.weeks })),
+    badges,
+  };
 
   return (
     <AccountView
@@ -101,6 +120,8 @@ export default async function AccountPage() {
       likes={user.preferences?.producePreferences ?? []}
       dietaryNotes={user.preferences?.dietaryNotes ?? ""}
       online={paystackReady()}
+      streak={streakData}
+      feedback={{ rewarded: feedbackRewarded, reward: FEEDBACK_REWARD }}
       membership={
         tier
           ? {

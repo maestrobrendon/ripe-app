@@ -768,6 +768,8 @@ export function StartFlow({
                       </>
                     ) : state.error === "missing"
                       ? "Add your name, an email or phone number, and a password of at least 8 characters."
+                      : state.error === "contact"
+                        ? "That doesn't look like an email or a phone number. Try you@example.com or 0803 123 4567."
                       : "Too many sign-ups from this network. Wait a little and try again."}
                   </p>
                 )}

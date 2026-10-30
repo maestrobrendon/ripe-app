@@ -16,7 +16,7 @@ export type KachiContext = {
 };
 
 /** Where the bubble stays out of the way: focused flows, and Kachi's own page. */
-export const KACHI_HIDDEN = [/^\/start/, /^\/welcome/, /^\/assistant/, /^\/checkout/, /^\/login/, /^\/forgot-password/, /^\/reset-password/, /^\/onboarding/];
+export const KACHI_HIDDEN = [/^\/start/, /^\/feedback/, /^\/gift/, /^\/welcome/, /^\/assistant/, /^\/checkout/, /^\/login/, /^\/forgot-password/, /^\/reset-password/, /^\/onboarding/];
 
 export function kachiContext(pathname: string, signedIn: boolean, pageTitle: string): KachiContext {
   if (pathname === "/") {

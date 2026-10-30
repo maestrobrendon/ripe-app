@@ -245,6 +245,10 @@ model User {
   credits                   CreditRecord[]
   planRequests              PlanRequest[]
   payments                  Payment[]
+  feedback                  Feedback[]
+  giftsSent                 Gift[]               @relation("GiftSender")
+  giftsClaimed              Gift[]               @relation("GiftClaimer")
+  streakRewards             StreakReward[]
   carts                     Cart[]
   baskets                   Basket[]
   orders                    Order[]
@@ -1230,6 +1234,8 @@ model Payment {
   order          Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
   tierId         String?
   tier           SubscriptionTier? @relation(fields: [tierId], references: [id])
+  giftId         String?
+  gift           Gift?             @relation(fields: [giftId], references: [id], onDelete: SetNull)
   // How they paid, from Paystack: card, bank, ussd, bank_transfer…
   channel        String?
   cardLast4      String?
@@ -1249,6 +1255,7 @@ model Payment {
 enum PaymentKind {
   ORDER
   MEMBERSHIP
+  GIFT
 }
 
 enum PaymentStatus {
@@ -1256,4 +1263,81 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   ABANDONED
+}
+
+/**
+ * One answer to /feedback: a question at a time, every one optional. A
+ * signed-in customer (or one who signs in at the end) gets FEEDBACK_REWARD
+ * in account credit, once per account.
+ */
+model Feedback {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // 1 (not happy) to 5 (love it).
+  mood         Int?
+  // How likely they'd recommend us, 0 to 10.
+  nps          Int?
+  loves        String[]
+  improve      String[]
+  weeklyDriver String?
+  recipeWish   String?
+  message      String?
+  contactOk    Boolean  @default(false)
+  contact      String?
+  rewarded     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}
+
+/**
+ * A basket given to someone: the sender pays a value through Paystack, and
+ * the recipient opens /gift/<code>, claims it, and spends it as account
+ * credit on a basket they choose. ACTIVE once paid; CLAIMED once credited.
+ */
+model Gift {
+  id               String     @id @default(cuid())
+  code             String     @unique
+  amount           Int
+  senderId         String
+  sender           User       @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  fromName         String
+  recipientName    String
+  // A phone or email, as the sender gave it, for sending them the link.
+  recipientContact String?
+  message          String?
+  // The card's look: "mint" | "sun" | "berry" | "leaf".
+  design           String     @default("mint")
+  status           GiftStatus @default(PENDING)
+  paidAt           DateTime?
+  claimedById      String?
+  claimedBy        User?      @relation("GiftClaimer", fields: [claimedById], references: [id], onDelete: SetNull)
+  claimedAt        DateTime?
+  payments         Payment[]
+  createdAt        DateTime   @default(now())
+
+  @@index([senderId, createdAt])
+}
+
+enum GiftStatus {
+  PENDING
+  ACTIVE
+  CLAIMED
+  CANCELLED
+}
+
+/**
+ * A streak milestone's reward, given once per customer per milestone.
+ */
+model StreakReward {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeks     Int
+  amount    Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, weeks])
 }
