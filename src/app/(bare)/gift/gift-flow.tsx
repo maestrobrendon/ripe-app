@@ -53,7 +53,7 @@ export function GiftFlow({ signedIn, firstName, online }: { signedIn: boolean; f
 
   return (
     <div className="hm min-h-svh bg-paper-white text-carbon">
-      <header className="sticky top-0 z-30 bg-paper-white/92 backdrop-blur-md">
+      <header className="relative z-30 bg-paper-white">
         <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
           {step === "intro" ? (
             <Link href="/" className="logo-wordmark text-[22px] leading-none">
@@ -88,7 +88,7 @@ export function GiftFlow({ signedIn, firstName, online }: { signedIn: boolean; f
             transition={spring.smooth}
           >
             {step === "intro" && (
-              <div className="pt-4 text-center">
+              <div className="flex min-h-[calc(100svh-15rem)] flex-col justify-center text-center">
                 <motion.div initial={{ y: 20, rotate: -6, opacity: 0 }} animate={{ y: 0, rotate: -3, opacity: 1 }} transition={spring.juicy} className="mx-auto max-w-[360px]">
                   <GiftCard design="berry" amount={15000} to="Mum" from={firstName || "you"} message="So you never run out of fruit." />
                 </motion.div>

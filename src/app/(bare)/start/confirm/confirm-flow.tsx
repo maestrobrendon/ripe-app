@@ -107,7 +107,7 @@ export function ConfirmFlow(p: {
 
   return (
     <div className="hm min-h-svh bg-paper-white text-carbon">
-      <header className="sticky top-0 z-30 bg-paper-white/92 backdrop-blur-md">
+      <header className="relative z-30 bg-paper-white">
         <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
           {index === 0 ? (
             <span className="logo-wordmark text-[22px] leading-none">BasketNG</span>

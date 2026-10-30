@@ -531,3 +531,47 @@ button:not(:disabled):active {
   background: rgb(255 255 255 / 0.8);
   color: rgb(0 0 0 / 0.5);
 }
+
+/* The 404 (src/components/not-found-view.tsx): the avocado zero rocks, the
+   produce around it drifts, the sparkles twinkle. Still with reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .nf-rock {
+    animation: nf-rock 3.2s ease-in-out infinite;
+    transform-origin: 50% 85%;
+  }
+  .nf-float {
+    animation: nf-float 7s ease-in-out infinite;
+  }
+  .nf-twinkle {
+    animation: nf-twinkle 2.4s ease-in-out infinite;
+  }
+}
+@keyframes nf-rock {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg) translateY(-4px);
+  }
+}
+@keyframes nf-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -14px;
+  }
+}
+@keyframes nf-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    scale: 0.7;
+  }
+  50% {
+    opacity: 1;
+    scale: 1;
+  }
+}

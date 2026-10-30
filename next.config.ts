@@ -22,6 +22,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // PostHog's endpoints end in a slash; don't redirect them.
   skipTrailingSlashRedirect: true,
+  // One 404 for addresses the site doesn't have (src/app/global-not-found.tsx): the
+  // app has two root layouts, so there's no single layout to build it from.
+  experimental: { globalNotFound: true },
   // Analytics through our own domain, so ad blockers don't drop it (see components/analytics).
   async rewrites() {
     return [

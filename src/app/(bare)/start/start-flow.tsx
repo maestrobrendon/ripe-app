@@ -263,7 +263,7 @@ export function StartFlow({
   return (
     <div className="hm min-h-svh bg-paper-white text-carbon">
       {/* Top bar: a way back, and how far along you are. */}
-      <header className="sticky top-0 z-30 bg-paper-white/92 backdrop-blur-md">
+      <header className="relative z-30 bg-paper-white">
         <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
           {index === 0 ? (
             <Link href="/" className="logo-wordmark text-[22px] leading-none" aria-label="BasketNG, home">

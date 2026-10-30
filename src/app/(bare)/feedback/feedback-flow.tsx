@@ -134,7 +134,7 @@ export function FeedbackFlow({ firstName, signedIn, reward }: { firstName: strin
 
   return (
     <motion.div className="hm min-h-svh text-carbon" animate={{ backgroundColor: bg }} transition={{ duration: 0.6 }}>
-      <header className="sticky top-0 z-30">
+      <header className="relative z-30">
         <div className="mx-auto flex h-16 w-[min(560px,calc(100%-32px))] items-center gap-4">
           {step === "intro" || step === "done" ? (
             <Link href="/" className="logo-wordmark text-[22px] leading-none">
@@ -176,7 +176,7 @@ export function FeedbackFlow({ firstName, signedIn, reward }: { firstName: strin
             {kachi[step] && <Say>{kachi[step]}</Say>}
 
             {step === "intro" && (
-              <div className="pt-6 text-center">
+              <div className="flex min-h-[calc(100svh-15rem)] flex-col justify-center text-center">
                 <motion.p initial={{ scale: 0.5, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={spring.juicy} className="text-[64px] leading-none" aria-hidden>
                   💬
                 </motion.p>
@@ -475,7 +475,7 @@ function Confetti() {
 
 function Thanks({ result, signedIn, mood }: { result: { reward: "credited" | "already" | "claim-by-signing-in"; amount: number }; signedIn: boolean; mood: number | null }) {
   return (
-    <div className="pt-6 text-center">
+    <div className="flex min-h-[calc(100svh-15rem)] flex-col justify-center text-center">
       <Confetti />
       <motion.p initial={{ scale: 0.3, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={spring.juicy} className="text-[72px] leading-none" aria-hidden>
         {result.reward === "credited" ? "🎁" : "🙏"}
