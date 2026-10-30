@@ -8,9 +8,9 @@
  *
  *   import { gsap, ScrollTrigger, useGSAP, motionQueries } from "@/lib/motion/gsap";
  *
- * GSAP owns: timelines, scroll choreography (ScrollTrigger), headline reveals
- * (SplitText), cross-layout flights (Flip), path drawing (DrawSVG,
- * MotionPath), number tweens. It never animates something Motion also
+ * GSAP owns: timelines, scroll choreography (ScrollTrigger), number tweens.
+ * Headline reveals (SplitText) live in ./split-text, so only the pages that
+ * split a headline download it. It never animates something Motion also
  * animates on the same element.
  */
 
@@ -18,17 +18,13 @@ import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { CustomEase } from "gsap/CustomEase";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
-import { Flip } from "gsap/Flip";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import { bezier, duration, gsapEase } from "./tokens";
 
 let registered = false;
 
 function register() {
   if (registered || typeof window === "undefined") return;
-  gsap.registerPlugin(useGSAP, CustomEase, ScrollTrigger, SplitText, Flip, DrawSVGPlugin, MotionPathPlugin);
+  gsap.registerPlugin(useGSAP, CustomEase, ScrollTrigger);
 
   const b = (p: readonly number[]) => p.join(",");
   CustomEase.create(gsapEase.out, b(bezier.out));
@@ -65,4 +61,4 @@ export const motionQueries = {
   touch: "(hover: none)",
 } as const;
 
-export { gsap, useGSAP, ScrollTrigger, SplitText, Flip, CustomEase };
+export { gsap, useGSAP, ScrollTrigger, CustomEase };

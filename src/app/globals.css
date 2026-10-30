@@ -76,7 +76,7 @@
      pulled from Google Fonts. The UI face stands in for Aeonik and uses
      Inter, the type spec's own first fallback. */
   --font-display: var(--font-dr-kabel), "Arial Black", Impact, sans-serif;
-  --font-ui: var(--font-inter), Arial, Helvetica, sans-serif;
+  --font-ui: var(--font-naira), var(--font-inter), Arial, Helvetica, sans-serif;
 
   --radius-control: var(--radius-control);
   --radius-input: var(--radius-input);
@@ -99,7 +99,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-naira), var(--font-inter), Arial, Helvetica, sans-serif;
   font-size: 1rem;
   line-height: 1.5;
   letter-spacing: -0.011em;

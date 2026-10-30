@@ -17,7 +17,8 @@
  */
 
 import { useRef, type ElementType, type ReactNode } from "react";
-import { gsap, SplitText, useGSAP, motionQueries } from "@/lib/motion/gsap";
+import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
+import { SplitText } from "@/lib/motion/split-text";
 import { duration, gsapEase, stagger } from "@/lib/motion/tokens";
 import { cn } from "@/lib/cn";
 

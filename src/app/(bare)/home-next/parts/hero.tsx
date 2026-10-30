@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { gsap, SplitText, useGSAP, motionQueries } from "@/lib/motion/gsap";
+import { gsap, useGSAP, motionQueries } from "@/lib/motion/gsap";
+import { SplitText } from "@/lib/motion/split-text";
 import { MagneticLink } from "./runtime";
 import { ProduceSticker } from "./produce";
 import type { FarmProduct } from "../types";
