@@ -238,10 +238,12 @@
 
 /* What arrives on phones: the page snaps to each of the four points, and
    scroll-snap-stop keeps a fast flick from carrying past one, so a swipe
-   moves one point at a time. Touch screens only: there the browser does the
-   scrolling, not Lenis. Proximity leaves the rest of the page free. */
+   moves one point at a time. Only while the section is on or near the
+   screen (details.tsx sets .hm-snapping), so the rest of the page scrolls
+   exactly as it always has. Touch screens only: there the browser does the
+   scrolling, not Lenis. */
 @media (max-width: 767px) and (pointer: coarse) {
-  html:has(.hm-snap) {
+  html.hm-snapping {
     scroll-snap-type: y proximity;
   }
   .hm-snap {

@@ -250,6 +250,22 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
     if (stop) scrollToY(stop.getBoundingClientRect().top + window.scrollY);
   };
 
+  // Snapping is on only while the strip is on screen or about to be: from
+  // just over half a screen before it, so a flick that starts above it still
+  // stops on its first point, until it has scrolled off the top. Everywhere
+  // else the page scrolls as normal.
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const html = document.documentElement;
+    const io = new IntersectionObserver(([e]) => html.classList.toggle("hm-snapping", e.isIntersecting), { rootMargin: "0px 0px 60% 0px" });
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      html.classList.remove("hm-snapping");
+    };
+  }, [stepped]);
+
   const current = DETAILS[frame];
 
   return (
