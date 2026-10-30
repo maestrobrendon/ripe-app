@@ -454,6 +454,25 @@ model Recipe {
   status               RecipeStatus  @default(PUBLISHED)
   sortOrder            Int           @default(0)
   version              Int           @default(0)
+  // From the recipe library sheet (v2, Oct 2026). Null for recipes made in the admin.
+  // Stews & Sauces | Breakfast Plates | Salads & Cooked Sides | Fruit Plates & Desserts | Bowls & Snacks
+  category             String?
+  // Egg sauce, slaw, salsa, curry base … (finer than category)
+  subtype              String?
+  // What the customer eats it with and brings themselves (rice, protein, bread).
+  serveWith            String?
+  // The recipe this one is adapted from, and a photo there for art direction only.
+  sourceSite           String?
+  sourceUrl            String?
+  referenceImageUrl    String?
+  // Per serving, from the produce alone: { perServing: { vitaminC_mg: … }, pctDaily: { vitaminC: 0.64 … }, strongest, produceGrams }
+  nutrition            Json?
+  // "Best for better vitamin C intake: …", written by the sheet's formula.
+  healthTagline        String?
+  // Other nutrients above a quarter of a day, e.g. "Folate (34%), Potassium (36%)".
+  alsoStrongIn         String?
+  // One or two sentences on why the hero produce is good for you.
+  healthNote           String?
   updatedAt            DateTime      @default(now()) @updatedAt
   createdAt            DateTime      @default(now())
   savedBy              SavedRecipe[]

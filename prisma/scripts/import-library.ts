@@ -1,12 +1,18 @@
 /**
- * Loads the Produce & Recipe Library (docs/Basket_Produce_and_Recipe_Library.xlsx,
- * exported to prisma/data/library.json) into the catalogue and the Recipe table.
+ * Loads the Produce & Recipe Library (docs/Basket_Produce_and_Recipe_Library_v2.xlsx,
+ * exported to prisma/data/library.json by `npm run library:export`) into the
+ * catalogue and the Recipe table.
  *
  * - Products the sheet has that the catalogue doesn't are created hidden, like
  *   a new product in the admin, so they can be priced and finished before
  *   anyone sees them. Products that already exist are left alone.
  * - Recipes are created as drafts, off the menu, for review in the admin.
- *   A recipe whose slug already exists is left alone unless --force is given.
+ * - A draft that already exists keeps its title, ingredients and method, and
+ *   gets only the library's newer fields filled in (category, what you add,
+ *   source, nutrition, health tagline). --force rewrites the whole draft.
+ * - A published or on-menu recipe is never touched, even with --force.
+ * - Recipes the library dropped (drinks, soups, plantain-led plates) stay as
+ *   drafts; they are counted, not deleted.
  * - Basket does no drink recipes, so any published drink recipe still in the
  *   table goes back to draft.
  *
@@ -52,6 +58,23 @@ type LibraryRecipe = {
   amounts: Record<string, [number, string]>;
   steps: string[];
   sortOrder: number;
+  category: string | null;
+  subtype: string | null;
+  serveWith: string | null;
+  sourceSite: string | null;
+  sourceUrl: string | null;
+  referenceImageUrl: string | null;
+  nutrition: {
+    perServing: Record<string, number | null>;
+    pctDaily: Record<string, number | null>;
+    strongest: string | null;
+    produceGrams: number;
+    kcal: number | null;
+    protein_g: number | null;
+  } | null;
+  healthTagline: string | null;
+  alsoStrongIn: string | null;
+  healthNote: string | null;
 };
 
 /** Slugs of drink recipes from before the library dropped them. */
@@ -61,7 +84,11 @@ async function main() {
   const { prisma } = await import("../../src/lib/prisma");
   const { audit } = await import("../../src/lib/admin/audit");
   const { MENU_GOALS } = await import("../../src/lib/menu-types");
-  const library = (await import("../data/library.json")).default as unknown as { products: LibraryProduct[]; recipes: LibraryRecipe[] };
+  const library = (await import("../data/library.json")).default as unknown as {
+    products: LibraryProduct[];
+    recipes: LibraryRecipe[];
+    dropped?: { slug: string }[];
+  };
 
   let productsCreated = 0;
   let productsKept = 0;
@@ -107,14 +134,31 @@ async function main() {
   const products = await prisma.product.findMany({ select: { id: true, slug: true } });
   const idBySlug = new Map(products.map((p) => [p.slug, p.id]));
 
+  const missingProducts = library.recipes.flatMap((r) => r.basketSlugs.filter((s) => !idBySlug.has(s)).map((s) => `${r.slug}: ${s}`));
+  if (missingProducts.length) throw new Error(`Recipes use products that don't exist:\n${missingProducts.join("\n")}`);
+
   let recipesCreated = 0;
   let recipesUpdated = 0;
+  let recipesFilled = 0;
   let recipesKept = 0;
+  const protectedSlugs: string[] = [];
   for (const r of library.recipes) {
-    const missing = r.basketSlugs.filter((s) => !idBySlug.has(s));
-    if (missing.length) throw new Error(`${r.slug} uses products that don't exist: ${missing.join(", ")}`);
     const starter = MENU_GOALS.find((g) => g.id === r.goal)?.starterSlug;
+    // The library's newer fields. New columns, so filling them never changes what a draft says.
+    const extra = {
+      category: r.category ?? null,
+      subtype: r.subtype ?? null,
+      serveWith: r.serveWith ?? null,
+      sourceSite: r.sourceSite ?? null,
+      sourceUrl: r.sourceUrl ?? null,
+      referenceImageUrl: r.referenceImageUrl ?? null,
+      nutrition: r.nutrition ?? undefined,
+      healthTagline: r.healthTagline ?? null,
+      alsoStrongIn: r.alsoStrongIn ?? null,
+      healthNote: r.healthNote ?? null,
+    };
     const data = {
+      ...extra,
       title: r.title,
       summary: r.summary,
       goal: r.goal,
@@ -133,9 +177,18 @@ async function main() {
       status: "DRAFT" as const,
       sortOrder: r.sortOrder,
     };
-    const existing = await prisma.recipe.findUnique({ where: { slug: r.slug }, select: { id: true } });
+    const existing = await prisma.recipe.findUnique({ where: { slug: r.slug }, select: { id: true, status: true, onMenu: true, category: true } });
+    if (existing && (existing.status === "PUBLISHED" || existing.onMenu)) {
+      protectedSlugs.push(r.slug);
+      continue;
+    }
     if (existing && !force) {
-      recipesKept++;
+      if (existing.category === r.category && existing.category !== null) {
+        recipesKept++;
+      } else {
+        await prisma.recipe.update({ where: { id: existing.id }, data: extra });
+        recipesFilled++;
+      }
       continue;
     }
     if (existing) {
@@ -149,7 +202,15 @@ async function main() {
 
   const drinks = await prisma.recipe.updateMany({ where: { slug: { in: DRINK_SLUGS }, status: "PUBLISHED" }, data: { status: "DRAFT", onMenu: false } });
 
-  const summary = `Library import: ${productsCreated} products created hidden (${productsKept} already existed), ${recipesCreated} draft recipes created, ${recipesUpdated} updated, ${recipesKept} left as they were, ${drinks.count} drink recipe(s) moved to draft.`;
+  const droppedSlugs = (library.dropped ?? []).map((d) => d.slug);
+  const droppedStill = droppedSlugs.length ? await prisma.recipe.count({ where: { slug: { in: droppedSlugs } } }) : 0;
+
+  const summary =
+    `Library import: ${productsCreated} products created hidden (${productsKept} already existed), ` +
+    `${recipesCreated} draft recipes created, ${recipesUpdated} rewritten, ${recipesFilled} drafts given the new library fields, ` +
+    `${recipesKept} left as they were, ${protectedSlugs.length} published or on the menu and not touched` +
+    `${protectedSlugs.length ? ` (${protectedSlugs.join(", ")})` : ""}, ` +
+    `${droppedStill} recipe(s) the library dropped still in the table as drafts, ${drinks.count} drink recipe(s) moved to draft.`;
   await audit({ actorType: "SYSTEM", action: "catalogue.library_imported", summary });
   console.log(`${prod ? "PRODUCTION" : "Development"}: ${summary}`);
   await prisma.$disconnect();
