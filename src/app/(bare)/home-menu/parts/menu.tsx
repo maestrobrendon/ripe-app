@@ -37,7 +37,10 @@ export function Menu({
           <Reveal className="max-w-[44rem]">
             <Eyebrow>This week&apos;s recipes</Eyebrow>
             <h2 className="hm-h2">So none of it sits in the fridge.</h2>
-            <p className="hm-lede mt-4">Every week, recipes built from what&apos;s in your basket. Pick your goal and the menu follows.</p>
+            <p className="hm-lede mt-4">
+              <span className="md:hidden">Recipes from what&apos;s in your basket. Pick a goal.</span>
+              <span className="max-md:hidden">Every week, recipes built from what&apos;s in your basket. Pick your goal and the menu follows.</span>
+            </p>
           </Reveal>
 
           <LayoutGroup id="hm-goal">
@@ -87,8 +90,10 @@ export function Menu({
           </AnimatePresence>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-[#f3f5f0] px-5 py-4 sm:px-6">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]">
+        {/* On phones the cards say "8 of 10 ingredients in your basket" themselves,
+            so the key is left out and only the link stays. */}
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-[#f3f5f0] px-5 py-4 max-md:mt-6 max-md:justify-center max-md:bg-transparent max-md:p-0 sm:px-6">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] max-md:hidden">
             <span className="inline-flex items-center gap-2">
               <i className="h-2 w-5 rounded-full bg-mint-pop" aria-hidden /> In your basket
             </span>

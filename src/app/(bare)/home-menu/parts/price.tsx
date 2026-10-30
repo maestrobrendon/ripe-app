@@ -56,7 +56,7 @@ function PriceLinks({ className }: { className: string }) {
       <Link href="/shop" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
         See every price
       </Link>
-      <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+      <Link href="/subscribe" className="underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon max-md:hidden">
         Compare membership plans
       </Link>
     </div>
@@ -103,14 +103,18 @@ export function Price({
   const memberSaving = standardProduce - memberProduce;
 
   return (
-    <section data-track-section="home-pricing" id="price" className="scroll-mt-20 py-12 sm:py-24">
+    // On phones the section sits on the tint, so it reads as its own block and the white card stands out on it.
+    <section data-track-section="home-pricing" id="price" className="scroll-mt-20 py-12 max-md:bg-[var(--hm-tint)] sm:py-24">
       {/* min-w-0: a grid column would otherwise grow to fit the goal row's
           full width on phones, pushing the card past the screen's edge. */}
       <div className="hm-wrap grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
         <Reveal className="min-w-0">
           <Eyebrow className="text-[#0f7a48]">Pricing</Eyebrow>
           <h2 className="hm-h2">What a week costs.</h2>
-          <p className="hm-lede mt-4 max-w-[30rem]">Pick your household and see the number. Members pay close to market cost.</p>
+          <p className="hm-lede mt-4 max-w-[30rem]">
+            <span className="md:hidden">Pick your household. See the number.</span>
+            <span className="max-md:hidden">Pick your household and see the number. Members pay close to market cost.</span>
+          </p>
           {/* From laptops up the goal and the links sit here, beside the card.
               Below that they move: the goal into the card as its first input,
               the links under it, so the column reads as one flow. */}
@@ -122,7 +126,7 @@ export function Price({
           <div className="rounded-[32px] bg-paper-white p-5 shadow-[0_0_0_1px_var(--hm-line),0_30px_60px_-40px_rgb(0_0_0/0.35)] sm:p-7">
             {memberFee != null && (
               <LayoutGroup id="hm-plan">
-                <div className="flex rounded-full bg-[#f3f5f0] p-1" role="radiogroup" aria-label="How you pay">
+                <div className="flex rounded-full bg-[#f3f5f0] p-1 max-md:hidden" role="radiogroup" aria-label="How you pay">
                   {(
                     [
                       [false, "Trial basket"],
@@ -145,13 +149,15 @@ export function Price({
               </LayoutGroup>
             )}
 
-            <div className="mt-5 lg:hidden">
+            {/* Tablets: the goal is the card's first input. Phones leave it out:
+                it was picked in the recipes, and it carries down here. */}
+            <div className="mt-5 max-md:hidden lg:hidden">
               <Label>Goal</Label>
               {/* Scrolls edge to edge of the card: the negative margins match its padding. */}
               <GoalPills goal={goal} onGoal={onGoal} className="-mx-5 mt-2 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-7 sm:px-7" />
             </div>
 
-            <div className="mt-5">
+            <div className="mt-5 max-md:mt-0">
               <Label>Household</Label>
               <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
                 <Stepper label="Adults" value={adults} min={1} max={8} onChange={setAdults} />
@@ -162,7 +168,10 @@ export function Price({
             {/* The number is the point of the card: on its own line on phones, its caption beneath. */}
             <div className="mt-7 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
               <RollingNumber value={total} format={formatNaira} className="text-[clamp(2.4rem,5vw,3rem)] leading-none font-semibold tracking-[-0.045em] tabular-nums" />
-              <span className="text-[14px] text-[var(--hm-ink-2)]">a week, for the food</span>
+              <span className="text-[14px] text-[var(--hm-ink-2)]">
+                a week, for <span className="md:hidden">{picks.length} kinds of fruit and veg</span>
+                <span className="max-md:hidden">the food</span>
+              </span>
             </div>
             {memberFee != null && memberSaving > 0 && (
               <p className="mt-2 text-[14px] text-[var(--hm-ink-2)]">
@@ -173,15 +182,19 @@ export function Price({
                 ) : (
                   <>
                     <b className="font-semibold text-[var(--hm-basket-ink)]">{formatNaira(memberProduce)}</b> at member prices.{" "}
-                    <button type="button" onClick={() => setMember(true)} className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon">
+                    <button type="button" onClick={() => setMember(true)} className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 hover:decoration-carbon max-md:hidden">
                       See how
                     </button>
+                    <Link href="/subscribe" className="font-semibold text-carbon underline decoration-carbon/25 underline-offset-4 md:hidden">
+                      Membership
+                    </Link>
                   </>
                 )}
               </p>
             )}
 
-            <div className="mt-5 text-[15px]">
+            {/* The breakdown and the items are the detail behind the number; phones keep to the number. */}
+            <div className="mt-5 text-[15px] max-md:hidden">
               <div className="flex justify-between border-t border-[var(--hm-line)] py-3">
                 <span>Produce, {picks.length} items</span>
                 <RollingNumber value={produce} format={formatNaira} className="tabular-nums" />
@@ -202,7 +215,7 @@ export function Price({
               </AnimatePresence>
             </div>
 
-            <div className="hm-chips mt-2 flex flex-wrap gap-1.5" aria-label="What would be in it">
+            <div className="hm-chips mt-2 flex flex-wrap gap-1.5 max-md:hidden" aria-label="What would be in it">
               {/* Phones show six and count the rest (.hm-chips in home-menu.css). */}
               {picks.length > 6 && <span className="hm-more order-last inline-flex h-8 items-center px-1 text-[13px] font-medium text-[var(--hm-ink-3)] md:hidden">+{picks.length - 6} more</span>}
               <AnimatePresence initial={false} mode="popLayout">

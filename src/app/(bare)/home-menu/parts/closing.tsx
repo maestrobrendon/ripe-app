@@ -15,6 +15,9 @@ import { Eyebrow } from "./shared";
 /* FAQ                                                                        */
 /* -------------------------------------------------------------------------- */
 
+/** Phones start with the questions most people ask; the rest are a tap away. */
+const PHONE_FAQS = 5;
+
 export function Faq({
   zones,
   comingSoon,
@@ -28,6 +31,7 @@ export function Faq({
   const verb = useSupportVerb();
   // All closed to start: a list of questions reads at a glance, on a phone above all.
   const [open, setOpen] = useState<number | null>(null);
+  const [all, setAll] = useState(false);
   const names = zones.map((z) => z.name);
   const days = [...new Set(zones.flatMap((z) => z.days))];
   const dayList = days.length > 1 ? `${days.slice(0, -1).join(", ")} and ${days[days.length - 1]}` : days[0] ?? "";
@@ -139,7 +143,7 @@ export function Faq({
           {items.map((f, i) => {
             const on = open === i;
             return (
-              <div key={f.q} className="rounded-[22px] bg-[#f3f5f0] transition-colors">
+              <div key={f.q} className={`rounded-[22px] bg-[#f3f5f0] transition-colors ${!all && i >= PHONE_FAQS ? "max-md:hidden" : ""}`}>
                 <button type="button" aria-expanded={on} onClick={() => setOpen(on ? null : i)} className="flex w-full items-center justify-between gap-5 px-5 py-5 text-left text-[16px] font-semibold tracking-[-0.015em] sm:px-6">
                   {f.q}
                   <motion.span animate={{ rotate: on ? 45 : 0 }} transition={spring.snappy} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-paper-white text-lg leading-none" aria-hidden>
@@ -156,6 +160,11 @@ export function Faq({
               </div>
             );
           })}
+          {!all && (
+            <button type="button" onClick={() => setAll(true)} className="mt-2 h-12 w-full rounded-full text-[15px] font-semibold underline decoration-carbon/25 underline-offset-4 md:hidden">
+              {items.length - PHONE_FAQS} more questions
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -164,11 +164,16 @@ function TrialWidget() {
 
 const FACTS = ["Your day, every week", "Change it until the night before", "Pay when it arrives"];
 
-/** The four points, in the order they play. `short` labels the bars on phones. */
-const DETAILS: { title: string; short: string; color: string; body: string; widget: (day: string) => ReactNode }[] = [
+/**
+ * The four points, in the order they play. On phones each is told in a few
+ * words: `short` labels its bar, `headline` and `line` are the whole point.
+ */
+const DETAILS: { title: string; short: string; headline: string; line: string; color: string; body: string; widget: (day: string) => ReactNode }[] = [
   {
     title: "A reminder before every delivery",
     short: "Reminder",
+    headline: "We remind you first.",
+    line: "Confirm it, or change anything until the evening before.",
     color: "text-[#0f7a48]",
     body: "Your basket stays as you left it. A few days before your day we remind you to confirm it, and you can change anything until the evening before.",
     widget: () => <EditWidget />,
@@ -176,6 +181,8 @@ const DETAILS: { title: string; short: string; color: string; body: string; widg
   {
     title: "Skip a week when you're away",
     short: "Skip",
+    headline: "Away? Skip a week.",
+    line: "Nothing comes, and nothing is charged.",
     color: "text-electric-blue",
     body: "Travelling, or still working through last week's? Skip it and nothing comes. Nothing is ever charged automatically.",
     widget: (day) => <SkipWidget day={day} />,
@@ -183,6 +190,8 @@ const DETAILS: { title: string; short: string; color: string; body: string; widg
   {
     title: "Checked by hand before it leaves",
     short: "Checked",
+    headline: "Checked by hand.",
+    line: "Anything bruised is swapped before it leaves.",
     color: "text-ember",
     body: "Every order is looked over before it goes out. Anything bruised gets swapped, not shipped.",
     widget: () => <CheckWidget />,
@@ -190,6 +199,8 @@ const DETAILS: { title: string; short: string; color: string; body: string; widg
   {
     title: "Your first basket is a trial",
     short: "Trial",
+    headline: "Your first one is a trial.",
+    line: "Market prices, no membership, and you pay when it arrives.",
     color: "text-voltage-violet",
     body: "Try one delivery at market prices, no membership needed. Join to have your baskets every week, at member prices.",
     widget: () => <TrialWidget />,
@@ -242,8 +253,9 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
             <Eyebrow className="text-[#0f7a48]">Fresh to your door</Eyebrow>
             <h2 className="hm-h2">What arrives.</h2>
             <p className="hm-lede mt-4 max-w-[26rem]">Picked ripe, checked by hand, at your door on your day.</p>
-            {/* The three facts a first visit needs; the cards beside go deeper. */}
-            <ul className="mt-6 flex flex-col gap-2.5 text-[16px] font-medium">
+            {/* The three facts a first visit needs; the cards beside go deeper.
+                Phones skip them: the four points below tell the same, one at a time. */}
+            <ul className="mt-6 flex flex-col gap-2.5 text-[16px] font-medium max-md:hidden">
               {FACTS.map((f) => (
                 <li key={f} className="flex items-center gap-2.5">
                   <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-mint-pop">
@@ -316,8 +328,8 @@ export function Details({ deliveryDay }: { deliveryDay: string }) {
                   className="w-full"
                 >
                   <div className="hm-panel grid h-[220px] place-items-center overflow-hidden p-5">{current.widget(deliveryDay)}</div>
-                  <h3 className={`mt-6 text-[15px] font-semibold ${current.color}`}>{current.title}</h3>
-                  <p className="mt-2 text-[19px] leading-snug font-medium tracking-[-0.02em] text-carbon">{current.body}</p>
+                  <h3 className="mt-7 text-[28px] leading-[1.08] font-semibold tracking-[-0.035em]">{current.headline}</h3>
+                  <p className="mt-2.5 text-[17px] leading-snug text-[var(--hm-ink-2)]">{current.line}</p>
                 </motion.div>
               </AnimatePresence>
             </div>

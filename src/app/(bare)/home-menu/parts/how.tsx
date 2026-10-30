@@ -30,7 +30,8 @@ function useStage(steps: number, key: string, gap = 900) {
   return { ref, stage: reduced ? steps : stage };
 }
 
-function Step({ n, title, body, children }: { n: number; title: string; body: string; children: ReactNode }) {
+/** `short` is the step's line on phones. */
+function Step({ n, title, body, short, children }: { n: number; title: string; body: string; short: string; children: ReactNode }) {
   return (
     // min-w-0: a grid item is otherwise as wide as its longest line (a
     // recipe name, the delivery row), which pushed the panels off a phone.
@@ -40,7 +41,10 @@ function Step({ n, title, body, children }: { n: number; title: string; body: st
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-carbon text-[13px] font-bold text-paper-white">{n}</span>
         <div>
           <h3 className="text-[18px] leading-snug font-semibold tracking-[-0.02em]">{title}</h3>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-[var(--hm-ink-2)]">{body}</p>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-[var(--hm-ink-2)]">
+            <span className="md:hidden">{short}</span>
+            <span className="max-md:hidden">{body}</span>
+          </p>
         </div>
       </div>
     </div>
@@ -229,13 +233,13 @@ export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal;
 
         {/* Three across from tablets up; on phones, a rail you swipe through (see .hm-rail). */}
         <div className="hm-rail mt-10 md:mt-12 md:grid md:grid-cols-3 md:gap-5">
-          <Step n={1} title="Tell us your goal" body="Eat lighter, feed the family, train harder. Say it the way you'd say it to a friend.">
+          <Step n={1} title="Tell us your goal" body="Eat lighter, feed the family, train harder. Say it the way you'd say it to a friend." short="Eat lighter, feed the family, train harder.">
             <KachiChat goal={goal} />
           </Step>
-          <Step n={2} title="Get a week you'll actually cook" body="Recipes and the produce to make them, picked for your household. Swap any of them.">
+          <Step n={2} title="Get a week you'll actually cook" body="Recipes and the produce to make them, picked for your household. Swap any of them." short="Recipes and the produce for them, for your household.">
             <WeekPlan goal={goal} />
           </Step>
-          <Step n={3} title="Confirm it, and it arrives" body="We remind you before each delivery. Pay when it comes.">
+          <Step n={3} title="Confirm it, and it arrives" body="We remind you before each delivery. Pay when it comes." short="We remind you first. Pay when it comes.">
             <Delivery goal={goal} deliveryDay={deliveryDay} products={products} />
           </Step>
         </div>
@@ -246,7 +250,8 @@ export function How({ goal, deliveryDay, products, signedIn }: { goal: MenuGoal;
           <p className="flex max-w-[34rem] items-start gap-3 text-left text-[16px] leading-relaxed text-[var(--hm-ink-2)]">
             <KachiMark className="mt-0.5 h-7 w-7 shrink-0" />
             <span>
-              <b className="font-semibold text-carbon">Kachi</b>, your planner inside Basket, keeps the week going: &ldquo;What can I make with what&apos;s left?&rdquo;
+              <b className="font-semibold text-carbon">Kachi</b>, your planner, keeps the week going<span className="md:hidden">.</span>
+              <span className="max-md:hidden">: &ldquo;What can I make with what&apos;s left?&rdquo;</span>
             </span>
           </p>
           <MagneticLink href={signedIn ? "/assistant" : `/start?goal=${goal}`} variant="soft" arrow>
