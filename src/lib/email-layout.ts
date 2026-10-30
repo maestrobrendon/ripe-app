@@ -23,6 +23,8 @@ export type EmailContent = {
   tag?: { label: string; tone?: EmailTone };
   /** Label and value pairs, for receipts and order details. */
   rows?: [label: string, value: string][];
+  /** A one-time code, shown large to read and type. */
+  code?: string;
   /** Someone's own words (a gift note), set apart. */
   quote?: string;
   button?: { href: string; label: string };
@@ -79,6 +81,10 @@ export function renderEmail(c: EmailContent): { html: string; text: string } {
         .join("")}</table>`
     : "";
 
+  const code = c.code
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px"><tr><td align="center" style="background:#dceeff;border:1px solid #000000;border-radius:18px;padding:20px 12px;font-family:${DISPLAY_FONT};font-size:38px;font-weight:900;line-height:1;letter-spacing:0.18em;color:#000000">${esc(c.code)}</td></tr></table>`
+    : "";
+
   const quote = c.quote
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px"><tr><td style="background:#e9ccff;border:1px solid #000000;border-radius:18px;padding:16px 18px;font-family:${BODY_FONT};font-size:16px;line-height:1.5;color:#000000;font-style:italic">&ldquo;${esc(c.quote)}&rdquo;</td></tr></table>`
     : "";
@@ -126,6 +132,7 @@ export function renderEmail(c: EmailContent): { html: string; text: string } {
         ${tag}
         <h1 class="heading" style="margin:0 0 16px;font-family:${DISPLAY_FONT};font-size:28px;font-weight:900;line-height:1.15;letter-spacing:-0.01em;color:#000000">${esc(c.heading)}</h1>
         ${c.paragraphs.map((p) => paragraph(p)).join("")}
+        ${code}
         ${quote}
         ${rows}
         ${button}
@@ -145,6 +152,7 @@ export function renderEmail(c: EmailContent): { html: string; text: string } {
   const text = [
     c.heading,
     ...c.paragraphs,
+    ...(c.code ? [`Your code: ${c.code}`] : []),
     ...(c.quote ? [`"${c.quote}"`] : []),
     ...(c.rows?.length ? [c.rows.map(([l, v]) => `${l}: ${v}`).join("\n")] : []),
     ...(c.button ? [`${c.button.label}: ${c.button.href}`] : []),

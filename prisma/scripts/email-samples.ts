@@ -34,13 +34,14 @@ const SAMPLES: Record<string, { subject: string; content: EmailContent }> = {
     },
   },
   "verify-email": {
-    subject: "Confirm your email for BasketNG",
+    subject: "482913 is your BasketNG code",
     content: {
       tag: { label: "One quick step", tone: "blue" },
-      heading: "Ada, confirm your email",
-      paragraphs: ["Tap below so we know this is you, and your receipts and basket reminders reach you."],
-      button: { href: `${origin}/verify-email`, label: "Confirm my email" },
-      finePrint: ["The link works for 48 hours.", "If you didn't sign up for BasketNG, ignore this email."],
+      heading: "Ada, here's your code",
+      paragraphs: ["Type it into BasketNG to confirm this is your email, so your receipts and basket reminders reach you."],
+      code: "482913",
+      button: { href: `${origin}/verify-email`, label: "Or confirm with one tap" },
+      finePrint: ["The code works for 30 minutes, the button for 48 hours.", "If you didn't sign up for BasketNG, ignore this email. Never share this code with anyone."],
     },
   },
   gift: {
