@@ -29,3 +29,8 @@ Generated for BasketNG (Recraft, 30 Oct 2026; gpt-image-2.5 Sunburst or Recraft 
 - nigerian-salad-bowl.jpg, vegetable-egg-sauce.jpg, crunchy-groundnut-cabbage-slaw.jpg, chunky-vegetable-stew-ata-dindin-style.jpg,
   ugu-and-tatashe-greens-stew.jpg, nigerian-fruit-salad-with-condensed-milk.jpg, chilli-lime-fruit-cup-yaji-edition.jpg,
   nigerian-mixed-vegetable-sauce.jpg (Recraft v4.1)
+
+Library photos (31 Oct 2026). Generated for BasketNG with ChatGPT image generation (the
+founder's account), one new chat per image, prompts written from each recipe's own
+ingredients and serving step, cropped to 4:3 at 1200x900:
+- every other <slug>.jpg in this folder named after a library recipe and not listed above.

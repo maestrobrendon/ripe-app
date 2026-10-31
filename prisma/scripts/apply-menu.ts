@@ -122,6 +122,21 @@ async function main() {
     else familiar++;
   }
   console.log(`Library order: ${familiar} familiar first, ${foreign} foreign-looking after.`);
+
+  // Every other recipe whose photo is in public/images/menu gets it, so the library
+  // and the admin show real photos. Status and menu placement don't change here.
+  const unphotographed = await prisma.recipe.findMany({
+    where: { slug: { notIn: [...pickSlugs] }, OR: [{ image: null }, { image: { startsWith: "/images/menu/" } }] },
+    select: { slug: true, title: true, image: true },
+  });
+  let photographed = 0;
+  for (const r of unphotographed) {
+    const image = photo(r.slug);
+    if (!image || image === r.image) continue;
+    await prisma.recipe.update({ where: { slug: r.slug }, data: { image, imageAlt: r.title } });
+    photographed++;
+  }
+  console.log(`Photos attached to other recipes: ${photographed}`);
   await prisma.$disconnect();
 }
 
