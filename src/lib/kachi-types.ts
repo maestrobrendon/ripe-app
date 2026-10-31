@@ -1,6 +1,6 @@
 // Pure types and helpers, safe to import from client components. The
 // Prisma-backed side of Kachi lives in src/lib/kachi.ts (server-only).
-import type { OrderStatus } from "@/generated/prisma/enums";
+import type { DeliveryDay, OrderStatus } from "@/generated/prisma/enums";
 
 /** Where Kachi is allowed to act. "chat" means nothing can change. */
 export type KachiMode = { kind: "chat" } | { kind: "basket"; basketId: string } | { kind: "cart" };
@@ -24,6 +24,18 @@ export type KachiOrder = { id: string; status: OrderStatus; deliveryDate: string
 /** Something Kachi remembers about the customer. Kinds match KachiMemoryKind in the schema. */
 export type KachiMemoryNote = { id: string; kind: "ALLERGY" | "DISLIKE" | "LIKE" | "HOUSEHOLD" | "ROUTINE" | "OTHER"; text: string };
 
+/**
+ * Something Kachi changed about a basket or an order, beyond its items. Each
+ * carries what's needed to undo it (a report can't be undone; it's a message
+ * to the team).
+ */
+export type KachiAccountChange =
+  | { kind: "skip"; basketId: string; dateIso: string; skipped: boolean }
+  | { kind: "day"; basketId: string; from: DeliveryDay; to: DeliveryDay }
+  | { kind: "repeat"; basketId: string; on: boolean }
+  | { kind: "rename"; basketId: string; from: string | null; to: string | null }
+  | { kind: "report"; orderId: string; label: string };
+
 /** A recipe from the library, with how much of it Basket can supply. */
 export type KachiRecipe = { slug: string; title: string; summary: string; fromBasket: number };
 
@@ -33,7 +45,8 @@ export type KachiCard =
   | { type: "ask"; request: string }
   | { type: "order"; order: KachiOrder }
   | { type: "recipes"; recipes: KachiRecipe[] }
-  | { type: "memory"; action: "remembered" | "forgot"; memory: KachiMemoryNote };
+  | { type: "memory"; action: "remembered" | "forgot"; memory: KachiMemoryNote }
+  | { type: "account"; change: KachiAccountChange };
 
 export type KachiReply = {
   reply: string;

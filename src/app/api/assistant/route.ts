@@ -17,7 +17,6 @@ import {
   toolAddItemToBasket,
   toolRemoveItemFromBasket,
   toolAdjustItemQuantity,
-  toolGetOrderStatus,
   type ToolResult,
 } from "@/lib/assistant-tools";
 import {
@@ -37,6 +36,10 @@ import {
 } from "@/lib/kachi";
 import { OFFERED } from "@/lib/product";
 import { addMemory, knownAboutCustomer, MEMORY_KINDS, MEMORY_TEXT_MAX, removeMemory } from "@/lib/kachi-memory";
+import { accountContext, accountTools, orderStatusForKachi } from "@/lib/kachi-account";
+import { customerStatusLabel } from "@/lib/order-status";
+import { awaitingPayment } from "@/lib/order-copy";
+import { DELIVERY_WINDOW, longDate } from "@/lib/delivery-labels";
 import type { KachiCard, KachiScope } from "@/lib/kachi-types";
 
 
@@ -145,13 +148,15 @@ export async function POST(request: Request) {
     const { text, recipes } = extractRecipes(raw, library.bySlug);
     const cards: KachiCard[] = [...extra];
     if (recipes.length) cards.push({ type: "recipes", recipes });
-    if (orderCard) cards.push(orderCard);
+    // "Skip my next delivery" isn't asking where an order is.
+    if (orderCard && !extra.some((c) => c.type === "account")) cards.push(orderCard);
     return { text, cards };
   };
 
   // One Kachi: food help, and changes to the order the customer is filling
   // (the same delivery the shop and recipes add to). Every tool is pinned to it.
-  const { scope, when } = await deliveryScope(user);
+  const scoped = await deliveryScope(user);
+  const { scope, when } = scoped;
 
   const before = await snapshot(scope);
   const products = await prisma.product.findMany({
@@ -237,11 +242,29 @@ export async function POST(request: Request) {
     }),
   };
 
+  // Skip, day, pause, rename and problem reports, each shown as a card (with Undo where it can be undone).
+  const accountCards: KachiCard[] = [];
   const readOnly = {
     get_order_status: tool({
-      description: "Look up the status of one of this customer's own past orders.",
+      description: "Look up one of this customer's own orders: its status, delivery date, whether it's paid, and the rider when it's on its way.",
       inputSchema: z.object({ order_id: z.string() }),
-      execute: async (input) => toolGetOrderStatus(user, input),
+      execute: async ({ order_id }) => {
+        const found = await orderStatusForKachi(user.id, order_id);
+        if (!found) return { ok: false, error: "No order with that id on this account." };
+        const { order, rider } = found;
+        return {
+          ok: true,
+          data: {
+            // What the customer sees on their order page; use these words with them.
+            status: customerStatusLabel(order.status, awaitingPayment(order)),
+            deliveryDate: longDate(order.deliveryDate),
+            window: DELIVERY_WINDOW,
+            deliveredAt: order.deliveredAt?.toISOString() ?? null,
+            paid: Boolean(order.paidAt),
+            rider: rider ? { name: rider.name, phone: rider.phone } : null,
+          },
+        };
+      },
     }),
   };
 
@@ -278,6 +301,7 @@ export async function POST(request: Request) {
     }),
     propose_items,
     ...memoryTools,
+    ...accountTools(user, scoped, accountCards),
     ...readOnly,
   };
 
@@ -294,7 +318,7 @@ export async function POST(request: Request) {
     const changes = await diffSnapshots(before, await snapshot(scope));
     const cards: KachiCard[] = [];
     if (changes.length) cards.push({ type: "act", scope: publicScope, changes });
-    cards.push(...memoryCards);
+    cards.push(...memoryCards, ...accountCards);
     if (proposals.length) {
       const items = await buildListItems(user, scope, proposals);
       if (items.length) cards.push({ type: "list", scope: publicScope, items });
@@ -316,6 +340,7 @@ export async function POST(request: Request) {
           contentsLines: await contentsContext(before),
           recipeLines: library.lines,
           known,
+          account: accountContext(user, scoped),
         }),
         messages,
         tools,
@@ -334,7 +359,9 @@ export async function POST(request: Request) {
         return clean;
       },
     );
-    const calls = result.steps?.flatMap((s) => s.toolCalls ?? []).map((c) => ({ tool: c.toolName, input: c.input }));
+    // Each call with what it returned, so later turns replay what she really did (lib/assistant-threads.ts).
+    const results = new Map((result.steps ?? []).flatMap((s) => s.toolResults ?? []).map((r) => [r.toolCallId, r.output]));
+    const calls = result.steps?.flatMap((s) => s.toolCalls ?? []).map((c) => ({ tool: c.toolName, input: c.input, output: results.get(c.toolCallId) ?? null }));
     const changeCards = await collectCards();
     // The tappable replies Kachi offers come off the end of the text.
     const { text: said, suggestions } = parseNext(result.text);
@@ -357,6 +384,6 @@ const CHANGE_TOOLS = new Set([
 function confirmation(cards: KachiCard[]) {
   if (cards.some((c) => c.type === "list")) return "Here's what I'd add. Nothing goes in until you say so.";
   if (cards.some((c) => c.type === "act")) return "Done. Changed your mind? Undo it below.";
-  if (cards.some((c) => c.type === "memory")) return "Noted.";
+  if (cards.some((c) => c.type === "memory" || c.type === "account")) return "Done.";
   return "That one didn't go through. Say it another way and I'll try again?";
 }

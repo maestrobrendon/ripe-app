@@ -17,6 +17,7 @@ import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
 import { kachiInstructions } from "@/lib/kachi-model";
 import { MEMORY_RULES } from "@/lib/kachi-memory";
+import { ACCOUNT_RULES } from "@/lib/kachi-account";
 
 /**
  * A scope from an earlier card (Undo, Add all), trusted only if that delivery
@@ -34,13 +35,17 @@ export async function resolveScope(user: CurrentUser, mode: KachiMode): Promise<
  * Where Kachi works: the delivery the customer is filling (the same one the
  * shop and recipes add to), and when it comes.
  */
-export async function deliveryScope(user: CurrentUser): Promise<{ scope: KachiScope & { kind: "basket" }; when: string | null }> {
+export async function deliveryScope(user: CurrentUser) {
   const delivery = await getOrCreateActiveDelivery(user);
   const zone = await zoneForUser(user.id);
   const cycle = await getDeliveryCycle(delivery, zone);
   return {
-    scope: { kind: "basket", basketId: delivery.id, name: orderPhrase(delivery) },
+    scope: { kind: "basket" as const, basketId: delivery.id, name: orderPhrase(delivery) },
     when: cycle.date && cycle.cutoff ? `${longDate(cycle.date)}; they can change it until ${cutoffLabel(cycle.cutoff)}` : null,
+    // For the account tools (lib/kachi-account.ts): the basket itself, its area and its next date.
+    delivery,
+    zone,
+    cycle,
   };
 }
 
@@ -299,6 +304,8 @@ export function actingSystemPrompt(c: {
   recipeLines: string;
   /** knownAboutCustomer(): what they wrote in Account and what Kachi remembers. */
   known: string;
+  /** accountContext(): the basket's day, repeats, next date and their area's days. */
+  account: string;
 }) {
   const where = c.scope.name;
   return kachiInstructions(
@@ -314,6 +321,8 @@ Rules for changes:
 - If a product they ask for is not in the catalogue, say so and offer the closest match.
 
 ${MEMORY_RULES}
+
+${ACCOUNT_RULES}
 
 ${RECIPE_RULES}
 
@@ -332,6 +341,8 @@ ${c.known}
 ${c.page ? `
 They are looking at this page right now: ${c.page}. If their question is vague ("this", "it"), it is probably about that.
 ` : ""}
+${c.account}
+
 What is in ${where} right now (id :: name, quantity x unit):
 ${c.contentsLines}
 

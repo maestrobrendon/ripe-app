@@ -14,7 +14,7 @@ import { CUSTOMER_STEPS, customerStatusLabel, customerStep } from "@/lib/order-s
 import { haptic, press, spring } from "@/lib/motion/tokens";
 import { clock, since, track } from "@/lib/analytics";
 import type { KachiCard, KachiReply, KachiScope } from "@/lib/kachi-types";
-import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges, undoKachiMemory } from "./thread-actions";
+import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges, undoKachiMemory, undoKachiAccount } from "./thread-actions";
 
 type CardState = KachiCard & { undone?: boolean; done?: string; busy?: boolean; stale?: boolean };
 type Msg = {
@@ -178,7 +178,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
       data = { reply: "I couldn't reach the server. Check your connection and try again.", retry: true };
     }
     const cards = (data.cards ?? []) as CardState[];
-    const changed = cards.some((c) => c.type === "act");
+    const changed = cards.some((c) => c.type === "act" || (c.type === "account" && c.change.kind !== "report"));
     track("kachi_replied", { where: "assistant", ms: since(askedAt), ok: !data.retry, cards: cards.map((c) => c.type), changedBasket: changed });
     setMessages((ms) =>
       ms.map((m) =>
@@ -243,6 +243,14 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     const { ok, error } = await undoKachiMemory(card.action, card.memory);
     patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
     if (!ok) flash(error ?? "Couldn't undo that.");
+  };
+
+  const undoAccount = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "account" }>) => {
+    patchCard(msgId, cardIdx, { busy: true });
+    const { ok, error } = await undoKachiAccount(card.change);
+    patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
+    if (ok) afterChange();
+    else flash(error ?? "Couldn't undo that.");
   };
 
   const copy = (text: string) => {
@@ -497,7 +505,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
                       key={ci}
                       card={c}
                       scopeName={scopeName}
-                      onUndo={() => (c.type === "act" ? undo(m.id, ci, c) : c.type === "memory" ? undoMemory(m.id, ci, c) : undefined)}
+                      onUndo={() => (c.type === "act" ? undo(m.id, ci, c) : c.type === "memory" ? undoMemory(m.id, ci, c) : c.type === "account" ? undoAccount(m.id, ci, c) : undefined)}
                       onApprove={() => c.type === "list" && approve(m.id, ci, c)}
                       onSkip={() => patchCard(m.id, ci, { done: "Skipped. Nothing was added." })}
                       onSend={(text) => send(text)}
@@ -782,6 +790,68 @@ function KachiCardView({
             )}
           </span>
           {!card.undone && !card.stale && (
+            <button disabled={card.busy} onClick={onUndo} className="p-1.5 text-sm font-semibold text-carbon underline-offset-2 hover:underline disabled:opacity-50">
+              Undo
+            </button>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (card.type === "account") {
+    const c = card.change;
+    const day = (d: string) => d.charAt(0) + d.slice(1).toLowerCase();
+    const text: React.ReactNode =
+      c.kind === "skip" ? (
+        <>
+          {c.skipped ? "Skipped" : "Brought back"} <b className="font-semibold">{new Date(c.dateIso).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" })}</b>
+          {c.skipped ? ". Nothing comes that week." : "."}
+        </>
+      ) : c.kind === "day" ? (
+        <>
+          Your basket now comes on <b className="font-semibold">{day(c.to)}</b>, not {day(c.from)}.
+        </>
+      ) : c.kind === "repeat" ? (
+        c.on ? (
+          <>
+            Your basket <b className="font-semibold">comes every week</b> again.
+          </>
+        ) : (
+          <>
+            Your basket is <b className="font-semibold">paused</b>. It keeps its produce until you start it again.
+          </>
+        )
+      ) : c.kind === "rename" ? (
+        c.to ? (
+          <>
+            Your basket is now called <b className="font-semibold">{c.to}</b>.
+          </>
+        ) : (
+          <>Your basket&apos;s name is cleared.</>
+        )
+      ) : (
+        <>
+          Reported: <b className="font-semibold">{c.label}</b>. The team will get back to you.
+        </>
+      );
+    const report = c.kind === "report";
+    return (
+      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
+        <div className={`flex items-center gap-3 px-3.5 py-3 transition-opacity ${card.undone ? "opacity-50" : ""}`}>
+          <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${card.undone ? "bg-soft-mist text-muted" : report ? "bg-sky-wash text-carbon" : "bg-mint-pop/30 text-carbon"}`}>
+            <Icon name={report ? "send" : c.kind === "skip" || c.kind === "day" ? "calendar" : "checkPlain"} size={16} weight="bold" />
+          </span>
+          <span className="flex-1 text-[15px] leading-snug">
+            {card.undone && "Undone. "}
+            {text}
+            {report && (
+              <Link href={`/orders/${c.orderId}`} className="mt-0.5 block text-[13px] text-muted underline-offset-2 hover:underline">
+                See the order
+              </Link>
+            )}
+          </span>
+          {!report && !card.undone && !card.stale && (
             <button disabled={card.busy} onClick={onUndo} className="p-1.5 text-sm font-semibold text-carbon underline-offset-2 hover:underline disabled:opacity-50">
               Undo
             </button>

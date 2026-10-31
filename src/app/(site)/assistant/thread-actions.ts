@@ -5,7 +5,8 @@ import { requireUser } from "@/lib/session";
 import { listThreadsForUser, getOwnedThread, deleteThread, appendMessage } from "@/lib/assistant-threads";
 import { toolAddItemsToBasket, toolAdjustItemQuantity } from "@/lib/assistant-tools";
 import { resolveScope, snapshot, diffSnapshots } from "@/lib/kachi";
-import type { KachiCard, KachiChange, KachiListItem, KachiMemoryNote, KachiMode, KachiScope } from "@/lib/kachi-types";
+import type { KachiAccountChange, KachiCard, KachiChange, KachiListItem, KachiMemoryNote, KachiMode, KachiScope } from "@/lib/kachi-types";
+import { renameDelivery, setDeliveryDay, setRepeating, skipDate } from "@/app/(site)/basket/actions";
 import { addMemory, removeMemory } from "@/lib/kachi-memory";
 
 function modeFor(scope: KachiScope): KachiMode {
@@ -100,4 +101,25 @@ export async function undoKachiMemory(action: "remembered" | "forgot", memory: K
   }
   const r = await addMemory(user.id, memory.kind, memory.text);
   return r.ok ? { ok: true } : { ok: false, error: r.error };
+}
+
+/**
+ * Undo on an account card: puts the basket back the way it was, through the
+ * same actions as Home's buttons (which check it's this customer's basket).
+ * A problem report is a message to the team, so it has no Undo.
+ */
+export async function undoKachiAccount(change: KachiAccountChange): Promise<{ ok: boolean; error?: string }> {
+  await requireUser();
+  switch (change.kind) {
+    case "skip":
+      return skipDate(change.basketId, change.dateIso, !change.skipped);
+    case "day":
+      return setDeliveryDay(change.basketId, change.from);
+    case "repeat":
+      return setRepeating(change.basketId, !change.on);
+    case "rename":
+      return renameDelivery(change.basketId, change.from ?? "");
+    case "report":
+      return { ok: false, error: "A report goes straight to the team. Message us if you'd like to take it back." };
+  }
 }
