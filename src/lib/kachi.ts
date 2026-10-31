@@ -18,6 +18,7 @@ import { getMenu } from "@/lib/menu";
 import { kachiInstructions } from "@/lib/kachi-model";
 import { MEMORY_RULES } from "@/lib/kachi-memory";
 import { ACCOUNT_RULES } from "@/lib/kachi-account";
+import { PHOTO_RULES } from "@/lib/kachi-photos";
 
 /**
  * A scope from an earlier card (Undo, Add all), trusted only if that delivery
@@ -323,6 +324,8 @@ Rules for changes:
 ${MEMORY_RULES}
 
 ${ACCOUNT_RULES}
+
+${PHOTO_RULES}
 
 ${RECIPE_RULES}
 

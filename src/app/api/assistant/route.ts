@@ -35,6 +35,8 @@ import {
   ORDER_INTENT,
 } from "@/lib/kachi";
 import { OFFERED } from "@/lib/product";
+import { readPhoto } from "@/lib/kachi-photos";
+import type { ModelMessage } from "ai";
 import { addMemory, knownAboutCustomer, MEMORY_KINDS, MEMORY_TEXT_MAX, removeMemory } from "@/lib/kachi-memory";
 import { accountContext, accountTools, orderStatusForKachi } from "@/lib/kachi-account";
 import { customerStatusLabel } from "@/lib/order-status";
@@ -74,6 +76,8 @@ export async function POST(request: Request) {
     replay?: unknown;
     page?: unknown;
     stream?: unknown;
+    image?: unknown;
+    recentPhoto?: unknown;
   };
   try {
     body = await request.json();
@@ -81,8 +85,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  const message = typeof body.message === "string" ? body.message.trim().slice(0, 2000) : "";
+  // A photo with this message goes to the model with it, and nowhere else (lib/kachi-photos.ts).
+  const photo = readPhoto(body.image);
+  // The last one they sent, kept by the chat for a few minutes, in case it belongs with a problem report.
+  const reportPhoto = photo ?? readPhoto(body.recentPhoto);
+  const message = (typeof body.message === "string" ? body.message.trim().slice(0, 2000) : "") || (photo ? "What do you make of this?" : "");
   if (!message) return NextResponse.json({ error: "Bad request" }, { status: 400 });
+  // What's kept in the chat: the words, and a note that a photo came with them (the photo isn't kept).
+  const stored = photo ? `${message}\n(sent a photo)` : message;
 
   const requestedThreadId = typeof body.threadId === "string" ? body.threadId : null;
   const source =
@@ -118,14 +128,15 @@ export async function POST(request: Request) {
   const threadId = thread.id;
   const title = thread.title;
 
-  if (!replay) await appendMessage(threadId, "USER", message);
+  if (!replay) await appendMessage(threadId, "USER", stored);
 
   // On a replay the message is already the last thing in the history.
   const last = history.at(-1);
-  const messages =
-    replay && last?.role === "user" && last.content === message
-      ? history
-      : [...history, { role: "user" as const, content: message }];
+  const earlier = replay && last?.role === "user" && last.content === stored ? history.slice(0, -1) : history;
+  const turn: ModelMessage = photo
+    ? { role: "user", content: [{ type: "image", image: photo.data, mediaType: photo.mediaType }, { type: "text", text: message }] }
+    : { role: "user", content: message };
+  const messages: ModelMessage[] = [...earlier, turn];
 
   const firstName = user.name.trim().split(/\s+/)[0] || "there";
   const profile = aboutCustomer(user);
@@ -304,7 +315,7 @@ export async function POST(request: Request) {
     }),
     propose_items,
     ...memoryTools,
-    ...accountTools(user, scoped, accountCards),
+    ...accountTools(user, scoped, accountCards, reportPhoto),
     ...readOnly,
   };
 

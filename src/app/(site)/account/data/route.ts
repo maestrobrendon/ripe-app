@@ -16,7 +16,7 @@ export async function GET() {
     prisma.order.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
-      select: { id: true, status: true, deliveryDate: true, address: true, zoneName: true, landmark: true, deliveryNote: true, subtotal: true, deliveryFee: true, creditApplied: true, total: true, paymentMethod: true, paidAt: true, createdAt: true, items: { select: { quantity: true, unitPrice: true, product: { select: { name: true } } } }, issues: { select: { kind: true, items: true, note: true, status: true, resolution: true, createdAt: true } } },
+      select: { id: true, status: true, deliveryDate: true, address: true, zoneName: true, landmark: true, deliveryNote: true, subtotal: true, deliveryFee: true, creditApplied: true, total: true, paymentMethod: true, paidAt: true, createdAt: true, items: { select: { quantity: true, unitPrice: true, product: { select: { name: true } } } }, issues: { select: { kind: true, items: true, note: true, photos: true, status: true, resolution: true, createdAt: true } } },
     }),
     prisma.creditRecord.findMany({ where: { userId: user.id }, select: { kind: true, amount: true, reason: true, createdAt: true } }),
     prisma.notificationLog.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 500, select: { channel: true, kind: true, body: true, status: true, createdAt: true } }),

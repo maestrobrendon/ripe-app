@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { haptic, press, spring } from "@/lib/motion/tokens";
 import { KachiCardView, RichText, type CardState } from "@/components/kachi/kachi-cards";
 import { newMsgId, scopeName, useKachiConversation } from "@/components/kachi/use-kachi-conversation";
+import { ComposerTools, PhotoPreview } from "@/components/kachi/composer-tools";
 import { listMyThreads, loadMyThread, deleteMyThread } from "./thread-actions";
 
 type ThreadSummary = { id: string; title: string; updatedAt: Date; messageCount: number };
@@ -106,9 +107,14 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     if (el && messages.length > 0) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  // A photo waiting to go with the next message.
+  const [photo, setPhoto] = useState<string | null>(null);
   const send = (raw: string) => {
-    if (messages.length === 0 && raw.trim()) setTitle(titleFrom(raw));
-    if (kachi.send(raw)) setInput("");
+    if (messages.length === 0 && (raw.trim() || photo)) setTitle(titleFrom(raw.trim() || "A photo"));
+    if (kachi.send(raw, photo ?? undefined)) {
+      setInput("");
+      setPhoto(null);
+    }
   };
 
   const copy = (text: string) => {
@@ -298,11 +304,15 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={spring.snappy}
-                  className="mb-4.5 flex justify-end"
+                  className="mb-4.5 flex flex-col items-end gap-1.5"
                 >
-                  <p className="max-w-[82%] rounded-[20px_20px_6px_20px] bg-carbon px-4 py-3 text-base leading-snug text-white">
-                    {m.text}
-                  </p>
+                  {m.photo && (
+                    // eslint-disable-next-line @next/next/no-img-element -- a local data: URL, nothing for next/image to optimise
+                    <img src={m.photo} alt="Your photo" className="max-h-56 max-w-[70%] rounded-[20px_20px_6px_20px] object-cover" />
+                  )}
+                  {m.text && (
+                    <p className="max-w-[82%] rounded-[20px_20px_6px_20px] bg-carbon px-4 py-3 text-base leading-snug text-white">{m.text}</p>
+                  )}
                 </motion.div>
               ) : (
                 <motion.div
@@ -406,14 +416,16 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
             </span>
           </Link>
 
+          {photo && <PhotoPreview src={photo} onRemove={() => setPhoto(null)} />}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               send(input);
             }}
             autoComplete="off"
-            className="flex min-h-13 items-center gap-2 rounded-full bg-soft-mist py-1 pr-1 pl-4.5 shadow-[inset_0_0_0_1.5px_transparent] transition-shadow focus-within:bg-paper-white focus-within:shadow-[inset_0_0_0_1.5px_var(--color-carbon)]"
+            className="flex min-h-13 items-center gap-1 rounded-full bg-soft-mist py-1 pr-1 pl-1.5 shadow-[inset_0_0_0_1.5px_transparent] transition-shadow focus-within:bg-paper-white focus-within:shadow-[inset_0_0_0_1.5px_var(--color-carbon)]"
           >
+            <ComposerTools disabled={busy} onPhoto={setPhoto} onTranscript={(t) => setInput((i) => (i.trim() ? `${i.trim()} ${t}` : t))} onError={flash} />
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -424,7 +436,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
             <motion.button
               type="submit"
               aria-label="Send"
-              disabled={busy || !input.trim()}
+              disabled={busy || (!input.trim() && !photo)}
               whileTap={{ scale: press.scale }}
               className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-mint-pop text-carbon transition-colors disabled:bg-carbon/10 disabled:text-carbon/35"
             >

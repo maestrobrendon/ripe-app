@@ -235,7 +235,7 @@ export function MarkPaid({ orderId, version }: { orderId: string; version: numbe
   );
 }
 
-type Issue = { id: string; kind: string; label: string; items: string[]; note: string | null; status: "OPEN" | "RESOLVED"; resolution: string | null; when: string };
+type Issue = { id: string; kind: string; label: string; items: string[]; note: string | null; photos: string[]; status: "OPEN" | "RESOLVED"; resolution: string | null; when: string };
 
 /** What the customer reported, and putting it right: a few words on what was done, and credit if it's due. */
 export function IssuesPanel({ issues, canCredit }: { issues: Issue[]; canCredit: boolean }) {
@@ -261,6 +261,17 @@ function IssueRow({ issue: i, canCredit }: { issue: Issue; canCredit: boolean })
       </p>
       {i.items.length > 0 && <p className="text-carbon/70">{i.items.join(", ")}</p>}
       {i.note && <p className="mt-1 whitespace-pre-line">&ldquo;{i.note}&rdquo;</p>}
+      {i.photos.length > 0 && (
+        // The customer's photos, private on Cloudinary: these signed links are the only way in.
+        <div className="mt-2 flex flex-wrap gap-2">
+          {i.photos.map((src, n) => (
+            <a key={src} href={src} target="_blank" rel="noreferrer" aria-label={`Open photo ${n + 1}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed private links, not for the image optimiser */}
+              <img src={src} alt={`Photo ${n + 1} from the customer`} className="h-20 w-20 rounded-lg object-cover ring-1 ring-black/10" />
+            </a>
+          ))}
+        </div>
+      )}
       {i.status === "RESOLVED" ? (
         <p className="mt-2 text-carbon/65">Sorted: {i.resolution}</p>
       ) : (

@@ -24,7 +24,12 @@ export type ConversationMsg = {
   replies?: string[];
   /** The message to send again when this reply was a failure. */
   retry?: string;
+  /** A photo sent with this message (shown in the chat; not kept once the tab closes). */
+  photo?: string;
 };
+
+/** How long a photo stays "recent": it goes with any problem Kachi reports in that time. */
+const RECENT_PHOTO_MS = 10 * 60_000;
 
 export const AFTER_CHANGE_REPLIES = ["What can I make with it?", "What else goes well?"];
 
@@ -109,11 +114,18 @@ export function useKachiConversation(opts: {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The last photo they sent, for a problem report a turn or two later.
+  const recentPhoto = useRef<{ dataUrl: string; at: number } | null>(null);
 
   useEffect(() => {
     if (!opts.storageKey) return;
     try {
-      sessionStorage.setItem(opts.storageKey, JSON.stringify({ messages: messages.filter((m) => !m.typing).slice(-30), threadId } satisfies Saved));
+      // Photos are big and private, so they're left out of what the tab keeps.
+      const kept = messages
+        .filter((m) => !m.typing)
+        .slice(-30)
+        .map(({ photo, ...m }) => (photo ? { ...m, text: `${m.text}\n(photo)`.trim() } : m));
+      sessionStorage.setItem(opts.storageKey, JSON.stringify({ messages: kept, threadId } satisfies Saved));
     } catch {}
   }, [messages, threadId, opts.storageKey]);
 
@@ -131,7 +143,7 @@ export function useKachiConversation(opts: {
     router.refresh();
   };
 
-  const callKachi = async (text: string, o: { replay?: boolean; replaceId?: string } = {}) => {
+  const callKachi = async (text: string, o: { replay?: boolean; replaceId?: string; photo?: string } = {}) => {
     const typingId = o.replaceId ?? newMsgId();
     setBusy(true);
     const typing: ConversationMsg = { id: typingId, role: "kachi", text: "", cards: [], typing: true };
@@ -143,7 +155,15 @@ export function useKachiConversation(opts: {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, threadId, replay: o.replay ?? false, page: opts.page?.() ?? undefined, stream: true }),
+        body: JSON.stringify({
+          message: text,
+          threadId,
+          replay: o.replay ?? false,
+          page: opts.page?.() ?? undefined,
+          stream: true,
+          image: o.photo,
+          recentPhoto: !o.photo && recentPhoto.current && Date.now() - recentPhoto.current.at < RECENT_PHOTO_MS ? recentPhoto.current.dataUrl : undefined,
+        }),
       });
       // Her words appear as she writes them; a refusal before she starts (busy, signed out) comes back as plain JSON.
       if (res.body && (res.headers.get("content-type") ?? "").includes("ndjson")) {
@@ -178,19 +198,23 @@ export function useKachiConversation(opts: {
     setBusy(false);
   };
 
-  /** Sends a message; false if there was nothing to send or a reply is still coming. */
-  const send = (raw: string) => {
+  /** Sends a message (and a photo, if one is attached); false if there was nothing to send or a reply is still coming. */
+  const send = (raw: string, photo?: string) => {
     const text = raw.trim();
-    if (!text || busy) return false;
-    setMessages((ms) => [...ms, { id: newMsgId(), role: "me", text, cards: [] }]);
-    void callKachi(text);
+    if ((!text && !photo) || busy) return false;
+    if (photo) recentPhoto.current = { dataUrl: photo, at: Date.now() };
+    setMessages((ms) => [...ms, { id: newMsgId(), role: "me", text, cards: [], photo }]);
+    void callKachi(text, { photo });
     return true;
   };
 
   // The failed reply turns back into "typing"; the message is already stored, so it's a replay.
   const retry = (msgId: string, text: string) => {
     if (busy) return;
-    void callKachi(text, { replay: true, replaceId: msgId });
+    // The photo that went with the failed message goes again.
+    const at = messages.findIndex((m) => m.id === msgId);
+    const photo = messages.slice(0, at).reverse().find((m) => m.role === "me")?.photo;
+    void callKachi(text, { replay: true, replaceId: msgId, photo });
   };
 
   const approve = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "list" }>) => {

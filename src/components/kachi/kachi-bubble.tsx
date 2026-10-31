@@ -11,6 +11,7 @@ import type { GuestKachiReply } from "@/app/api/kachi/route";
 import { KACHI_HIDDEN, kachiContext } from "./kachi-context";
 import { KachiCardView, RichText } from "./kachi-cards";
 import { scopeName, useKachiConversation } from "./use-kachi-conversation";
+import { ComposerTools, PhotoPreview } from "./composer-tools";
 import { clock, since, track } from "@/lib/analytics";
 
 /**
@@ -148,6 +149,8 @@ function BubbleFrame({
   setDraft,
   onSend,
   placeholder,
+  tools,
+  attachment,
   children,
 }: {
   frame: Frame;
@@ -166,6 +169,10 @@ function BubbleFrame({
   setDraft: (v: string) => void;
   onSend: () => void;
   placeholder: string;
+  /** Buttons beside the message box (photo, voice), signed in only. */
+  tools?: React.ReactNode;
+  /** What's waiting to go with the next message (a photo); it can be sent without words. */
+  attachment?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { reduce, isDesktop, open, close, atFooter, launcherRef, inputRef } = frame;
@@ -268,7 +275,9 @@ function BubbleFrame({
                 }}
                 className="border-t border-black/[0.07] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
               >
-                <div className="flex items-end gap-2 rounded-[22px] bg-soft-mist p-1.5 pl-4">
+                {attachment}
+                <div className={`flex items-end gap-1 rounded-[22px] bg-soft-mist p-1.5 ${tools ? "pl-1" : "pl-4"}`}>
+                  {tools}
                   <label htmlFor="kachi-input" className="sr-only">
                     Message Kachi
                   </label>
@@ -290,7 +299,7 @@ function BubbleFrame({
                   />
                   <button
                     type="submit"
-                    disabled={!draft.trim() || thinking}
+                    disabled={(!draft.trim() && !attachment) || thinking}
                     aria-label="Send"
                     className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-carbon text-paper-white transition-opacity disabled:opacity-30"
                   >
@@ -555,12 +564,16 @@ function MemberBubble() {
   const kachi = useKachiConversation({ where: "bubble", page: pageContext, storageKey: MEMBER_STORE });
   const { messages, threadId, toast, send, retry, approve, undo, skipList, reset } = kachi;
   const [draft, setDraft] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
   const ctx = kachiContext(pathname, true, pageTitle.toLowerCase());
 
   if (hidden) return null;
 
-  const say = (text: string) => {
-    if (send(text)) setDraft("");
+  const say = (text: string, withPhoto = false) => {
+    if (send(text, withPhoto ? (photo ?? undefined) : undefined)) {
+      setDraft("");
+      if (withPhoto) setPhoto(null);
+    }
   };
   const lastKachi = messages.map((m) => m.role).lastIndexOf("kachi");
   // On phones the app's menu runs along the bottom, so she sits just above it.
@@ -577,8 +590,18 @@ function MemberBubble() {
       scrollKey={messages}
       draft={draft}
       setDraft={setDraft}
-      onSend={() => say(draft)}
+      onSend={() => say(draft, true)}
       placeholder="Ask, or tell me what to change…"
+      tools={
+        <ComposerTools
+          size="sm"
+          disabled={messages.some((m) => m.typing)}
+          onPhoto={setPhoto}
+          onTranscript={(t) => setDraft(draft.trim() ? `${draft.trim()} ${t}` : t)}
+          onError={kachi.flash}
+        />
+      }
+      attachment={photo ? <PhotoPreview src={photo} onRemove={() => setPhoto(null)} /> : undefined}
       headerActions={
         <>
           {threadId && (
@@ -615,7 +638,13 @@ function MemberBubble() {
         .map((m, mi, shown) => (
           <div key={m.id} className="space-y-2">
             {m.role === "me" ? (
-              <Bubble role="me">{m.text}</Bubble>
+              <>
+                {m.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element -- a local data: URL, nothing for next/image to optimise
+                  <img src={m.photo} alt="Your photo" className="ml-auto max-h-48 max-w-[70%] rounded-[18px] rounded-br-md object-cover" />
+                )}
+                {m.text && <Bubble role="me">{m.text}</Bubble>}
+              </>
             ) : (
               <div className="max-w-[92%] rounded-[18px] rounded-bl-md bg-soft-mist px-4 py-2.5">
                 <RichText text={m.text} className="text-[15px] leading-snug" />

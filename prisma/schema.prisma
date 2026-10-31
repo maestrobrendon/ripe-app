@@ -1250,6 +1250,8 @@ model OrderIssue {
   // Product names the customer ticked.
   items      String[]
   note       String?
+  // Signed links to private photos of the problem (Cloudinary, authenticated), sent with the report.
+  photos     String[]    @default([])
   status     IssueStatus @default(OPEN)
   resolution String?
   resolvedAt DateTime?

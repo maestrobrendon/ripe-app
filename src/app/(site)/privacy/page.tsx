@@ -73,6 +73,12 @@ const SECTIONS: LegalSection[] = [
             change or delete them in your account under &ldquo;What Kachi knows&rdquo;.
           </li>
           <li>
+            <strong>Photos and voice notes you send Kachi:</strong> a photo goes to Kachi with that message
+            and isn&rsquo;t kept, unless it goes with a problem you report about an order: then it&rsquo;s
+            stored privately with the report, so our team can see what went wrong. A voice note is turned
+            into words for you to check before sending, and the recording isn&rsquo;t kept.
+          </li>
+          <li>
             <strong>Messages to us:</strong> anything you send us by email or WhatsApp, and your email if
             you join the waitlist for an area we don&rsquo;t serve yet.
           </li>
@@ -185,7 +191,11 @@ const SECTIONS: LegalSection[] = [
             <strong>Kachi:</strong> Anthropic, whose Claude models power Kachi, and Google, whose Gemini
             models stand in when Claude is unavailable. When you chat with her, your messages and the
             context she needs to reply (such as your goal, preferences, what she remembers about you and
-            your basket) are sent to them for processing.
+            your basket) are sent to them for processing. Google also turns your voice notes into words.
+          </li>
+          <li>
+            <strong>Photos with problem reports:</strong> Cloudinary, which stores them privately; only a
+            signed link our team uses can open them.
           </li>
           <li>
             <strong>Analytics:</strong> PostHog, in the United States, which records how the site is used

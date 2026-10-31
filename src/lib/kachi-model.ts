@@ -181,6 +181,41 @@ export async function generateStreaming(
   throw lastErr;
 }
 
+/**
+ * A voice note, written down. Claude doesn't take audio, so this is Gemini
+ * (Flash-Lite, free tier), word for word in whatever mix of English and
+ * Pidgin, Yoruba, Igbo or Hausa was spoken. The customer sees the words
+ * before they're sent to Kachi.
+ */
+export async function transcribe(audio: Uint8Array, mediaType: string, vocabulary: string[] = []): Promise<string> {
+  let lastErr: unknown;
+  for (const modelId of ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]) {
+    try {
+      const r = await generateText({
+        model: google(modelId),
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(ATTEMPT_MS),
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "file", data: audio, mediaType },
+              {
+                type: "text",
+                text: `Write down exactly what is said in this voice note, in the words and language used (English, Nigerian Pidgin, Yoruba, Igbo or Hausa, or a mix). Don't translate, summarise or answer it. Reply with the words only. If nothing is said, reply with nothing.${vocabulary.length ? ` Words they may use, spelled as we sell them: ${vocabulary.join(", ")}.` : ""}`,
+              },
+            ],
+          },
+        ],
+      });
+      return r.text.trim();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
 /** Gemini puts the wait in the error body, as "retryDelay": "23s". */
 function retryDelayMs(err: unknown) {
   const seen = new Set<unknown>();

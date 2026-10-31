@@ -11,6 +11,7 @@ import { ISSUE_KINDS, type IssueKind } from "@/lib/order-copy";
 import { renameDelivery, setDeliveryDay, setRepeating, skipDate } from "@/app/(site)/basket/actions";
 import { reportIssue } from "@/app/(site)/orders/actions";
 import type { deliveryScope } from "@/lib/kachi";
+import { uploadIssuePhoto, type Photo } from "@/lib/kachi-photos";
 import { getDeliveryCycle } from "@/lib/delivery";
 
 /*
@@ -51,7 +52,7 @@ const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
 const ISSUE_IDS = ISSUE_KINDS.map((k) => k.id) as [IssueKind, ...IssueKind[]];
 
 /** The tools, pinned to the scoped basket. Each successful change is pushed onto `cards`. */
-export function accountTools(user: CurrentUser, s: Scope, cards: KachiCard[]) {
+export function accountTools(user: CurrentUser, s: Scope, cards: KachiCard[], photo: Photo | null = null) {
   const basketId = s.delivery.id;
   const push = (change: KachiAccountChange) => cards.push({ type: "account", change });
   // After a change, the next date and its deadline can move: tell her the new ones, not the ones she started with.
@@ -117,10 +118,12 @@ export function accountTools(user: CurrentUser, s: Scope, cards: KachiCard[]) {
         note: z.string().max(1000).describe("What happened, in a sentence or two, in the customer's words."),
       }),
       execute: async ({ order_id, kind, items, note }) => {
-        const r = await reportIssue({ orderId: order_id, kind, items, note });
+        // A photo they sent in the last few minutes goes with the report, kept privately.
+        const link = photo ? await uploadIssuePhoto(photo, order_id) : null;
+        const r = await reportIssue({ orderId: order_id, kind, items, note, photos: link ? [link] : [] });
         if (!r.ok) return r;
         push({ kind: "report", orderId: order_id, label: ISSUE_KINDS.find((k) => k.id === kind)?.label ?? "A problem" });
-        return { ok: true, data: { reported: true } };
+        return { ok: true, data: { reported: true, photoAttached: Boolean(link) } };
       },
     }),
   };

@@ -241,6 +241,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 label: ISSUE_KINDS.find((k) => k.id === i.kind)?.label ?? i.kind,
                 items: i.items,
                 note: i.note,
+                photos: i.photos,
                 status: i.status,
                 resolution: i.resolution,
                 when: when(i.createdAt),
