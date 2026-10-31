@@ -21,6 +21,9 @@ export type KachiListItem = {
 
 export type KachiOrder = { id: string; status: OrderStatus; deliveryDate: string };
 
+/** Something Kachi remembers about the customer. Kinds match KachiMemoryKind in the schema. */
+export type KachiMemoryNote = { id: string; kind: "ALLERGY" | "DISLIKE" | "LIKE" | "HOUSEHOLD" | "ROUTINE" | "OTHER"; text: string };
+
 /** A recipe from the library, with how much of it Basket can supply. */
 export type KachiRecipe = { slug: string; title: string; summary: string; fromBasket: number };
 
@@ -29,7 +32,8 @@ export type KachiCard =
   | { type: "list"; scope: KachiScope; items: KachiListItem[] }
   | { type: "ask"; request: string }
   | { type: "order"; order: KachiOrder }
-  | { type: "recipes"; recipes: KachiRecipe[] };
+  | { type: "recipes"; recipes: KachiRecipe[] }
+  | { type: "memory"; action: "remembered" | "forgot"; memory: KachiMemoryNote };
 
 export type KachiReply = {
   reply: string;

@@ -14,7 +14,7 @@ import { CUSTOMER_STEPS, customerStatusLabel, customerStep } from "@/lib/order-s
 import { haptic, press, spring } from "@/lib/motion/tokens";
 import { clock, since, track } from "@/lib/analytics";
 import type { KachiCard, KachiReply, KachiScope } from "@/lib/kachi-types";
-import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges } from "./thread-actions";
+import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges, undoKachiMemory } from "./thread-actions";
 
 type CardState = KachiCard & { undone?: boolean; done?: string; busy?: boolean; stale?: boolean };
 type Msg = {
@@ -236,6 +236,13 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
     if (ok) afterChange();
     else flash(error ?? "Couldn't undo that.");
+  };
+
+  const undoMemory = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "memory" }>) => {
+    patchCard(msgId, cardIdx, { busy: true });
+    const { ok, error } = await undoKachiMemory(card.action, card.memory);
+    patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
+    if (!ok) flash(error ?? "Couldn't undo that.");
   };
 
   const copy = (text: string) => {
@@ -490,7 +497,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
                       key={ci}
                       card={c}
                       scopeName={scopeName}
-                      onUndo={() => c.type === "act" && undo(m.id, ci, c)}
+                      onUndo={() => (c.type === "act" ? undo(m.id, ci, c) : c.type === "memory" ? undoMemory(m.id, ci, c) : undefined)}
                       onApprove={() => c.type === "list" && approve(m.id, ci, c)}
                       onSkip={() => patchCard(m.id, ci, { done: "Skipped. Nothing was added." })}
                       onSend={(text) => send(text)}
@@ -747,6 +754,37 @@ function KachiCardView({
                 Not now
               </motion.button>
             </>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (card.type === "memory") {
+    const remembered = card.action === "remembered";
+    return (
+      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
+        <div className={`flex items-center gap-3 px-3.5 py-3 transition-opacity ${card.undone ? "opacity-50" : ""}`}>
+          <span
+            className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${
+              card.undone ? "bg-soft-mist text-muted" : card.memory.kind === "ALLERGY" ? "bg-ember/15 text-ember" : "bg-lavender/40 text-carbon"
+            }`}
+          >
+            <Icon name={card.memory.kind === "ALLERGY" ? "warning" : "spark"} size={16} weight="bold" />
+          </span>
+          <span className="flex-1 text-[15px] leading-snug">
+            {card.undone ? "Undone. " : remembered ? "I'll remember: " : "Forgotten: "}
+            <b className="font-semibold">{card.memory.text}</b>
+            {!card.undone && (
+              <Link href="/account/kachi" className="mt-0.5 block text-[13px] text-muted underline-offset-2 hover:underline">
+                See what I know
+              </Link>
+            )}
+          </span>
+          {!card.undone && !card.stale && (
+            <button disabled={card.busy} onClick={onUndo} className="p-1.5 text-sm font-semibold text-carbon underline-offset-2 hover:underline disabled:opacity-50">
+              Undo
+            </button>
           )}
         </div>
       </motion.div>

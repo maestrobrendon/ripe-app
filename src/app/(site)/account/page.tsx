@@ -67,7 +67,7 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/account");
 
-  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code, baskets, right, savedRecipes, pushDevices] = await Promise.all([
+  const [lastOrder, liveOrder, orderCount, pending, lastRequest, defaultAddress, addressCount, credit, invited, rewarded, settings, code, baskets, right, savedRecipes, pushDevices, kachiMemories] = await Promise.all([
     prisma.order.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true } }),
     prisma.order.findFirst({ where: { userId: user.id, status: { in: OPEN_STATUSES } }, orderBy: { deliveryDate: "asc" }, select: { status: true, deliveryDate: true, paidAt: true, paymentMethod: true } }),
     prisma.order.count({ where: { userId: user.id } }),
@@ -84,6 +84,7 @@ export default async function AccountPage() {
     confirmRight(user),
     prisma.savedRecipe.count({ where: { userId: user.id } }),
     prisma.pushSubscription.count({ where: { userId: user.id } }),
+    prisma.kachiMemory.count({ where: { userId: user.id } }),
   ]);
 
   const tier = user.subscriptionTier;
@@ -149,6 +150,7 @@ export default async function AccountPage() {
       trial={tier ? null : right.ok ? "available" : "used"}
       invite={{ code, reward: REFERRAL_REWARD, invited, rewarded, credit }}
       kachiReview={Boolean(user.kachiReviewConsentAt)}
+      kachiMemories={kachiMemories}
       deletionRequested={user.deletionRequestedAt?.toISOString() ?? null}
       help={{ href: supportHref(settings.support, helpText, "Help with my account"), verb: supportVerb(settings.support) }}
     />

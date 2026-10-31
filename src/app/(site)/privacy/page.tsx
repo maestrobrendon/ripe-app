@@ -68,6 +68,11 @@ const SECTIONS: LegalSection[] = [
             turn it off at any time.
           </li>
           <li>
+            <strong>What Kachi remembers:</strong> short notes she keeps when you tell her something that
+            stays true, such as a food allergy, a food you don&rsquo;t eat or who you cook for. You can see,
+            change or delete them in your account under &ldquo;What Kachi knows&rdquo;.
+          </li>
+          <li>
             <strong>Messages to us:</strong> anything you send us by email or WhatsApp, and your email if
             you join the waitlist for an area we don&rsquo;t serve yet.
           </li>
@@ -177,9 +182,10 @@ const SECTIONS: LegalSection[] = [
             <strong>Email:</strong> Resend, which sends account and order emails such as password resets.
           </li>
           <li>
-            <strong>Kachi:</strong> Google, whose Gemini AI models power Kachi. When you chat with her, your
-            messages and the context she needs to reply (such as your goal, preferences and basket) are
-            sent to Google for processing.
+            <strong>Kachi:</strong> Anthropic, whose Claude models power Kachi, and Google, whose Gemini
+            models stand in when Claude is unavailable. When you chat with her, your messages and the
+            context she needs to reply (such as your goal, preferences, what she remembers about you and
+            your basket) are sent to them for processing.
           </li>
           <li>
             <strong>Analytics:</strong> PostHog, in the United States, which records how the site is used
@@ -251,8 +257,8 @@ const SECTIONS: LegalSection[] = [
           <strong>Account and preference data:</strong> for as long as your account is open.
         </li>
         <li>
-          <strong>Kachi conversations, meal plans and saved recipes:</strong> until you delete them or
-          close your account.
+          <strong>Kachi conversations, what Kachi remembers, meal plans and saved recipes:</strong> until
+          you delete them or close your account.
         </li>
         <li>
           <strong>Order and payment records:</strong> for six years after the order, to meet tax and
@@ -349,5 +355,5 @@ const SECTIONS: LegalSection[] = [
 ];
 
 export default function PrivacyPage() {
-  return <LegalPage title="Privacy policy" lastUpdated="29 October 2026" summary={SUMMARY} sections={SECTIONS} />;
+  return <LegalPage title="Privacy policy" lastUpdated="31 October 2026" summary={SUMMARY} sections={SECTIONS} />;
 }

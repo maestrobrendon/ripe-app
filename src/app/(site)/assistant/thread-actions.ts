@@ -5,7 +5,8 @@ import { requireUser } from "@/lib/session";
 import { listThreadsForUser, getOwnedThread, deleteThread, appendMessage } from "@/lib/assistant-threads";
 import { toolAddItemsToBasket, toolAdjustItemQuantity } from "@/lib/assistant-tools";
 import { resolveScope, snapshot, diffSnapshots } from "@/lib/kachi";
-import type { KachiCard, KachiChange, KachiListItem, KachiMode, KachiScope } from "@/lib/kachi-types";
+import type { KachiCard, KachiChange, KachiListItem, KachiMemoryNote, KachiMode, KachiScope } from "@/lib/kachi-types";
+import { addMemory, removeMemory } from "@/lib/kachi-memory";
 
 function modeFor(scope: KachiScope): KachiMode {
   return scope.kind === "basket" ? { kind: "basket", basketId: scope.basketId } : { kind: "cart" };
@@ -85,4 +86,18 @@ export async function undoKachiChanges(scope: KachiScope, changes: KachiChange[]
   }
   revalidatePath("/basket");
   return { ok: true };
+}
+
+/**
+ * Undo on a memory card: forgets what Kachi just remembered, or brings back
+ * what she just forgot. Only ever the signed-in customer's own memories.
+ */
+export async function undoKachiMemory(action: "remembered" | "forgot", memory: KachiMemoryNote): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireUser();
+  if (action === "remembered") {
+    await removeMemory(user.id, memory.id);
+    return { ok: true };
+  }
+  const r = await addMemory(user.id, memory.kind, memory.text);
+  return r.ok ? { ok: true } : { ok: false, error: r.error };
 }

@@ -16,6 +16,7 @@ import {
 import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
 import { kachiInstructions } from "@/lib/kachi-model";
+import { MEMORY_RULES } from "@/lib/kachi-memory";
 
 /**
  * A scope from an earlier card (Undo, Add all), trusted only if that delivery
@@ -296,6 +297,8 @@ export function actingSystemPrompt(c: {
   orders: Orders;
   contentsLines: string;
   recipeLines: string;
+  /** knownAboutCustomer(): what they wrote in Account and what Kachi remembers. */
+  known: string;
 }) {
   const where = c.scope.name;
   return kachiInstructions(
@@ -310,6 +313,8 @@ Rules for changes:
 - "Remove the X" means remove all of it. "Remove one X" means lower the quantity by one.
 - If a product they ask for is not in the catalogue, say so and offer the closest match.
 
+${MEMORY_RULES}
+
 ${RECIPE_RULES}
 
 ${NEXT_RULE}
@@ -323,6 +328,7 @@ ${c.catalogueLines}`,
 
 About ${c.firstName}:
 ${c.profile}
+${c.known}
 ${c.page ? `
 They are looking at this page right now: ${c.page}. If their question is vague ("this", "it"), it is probably about that.
 ` : ""}

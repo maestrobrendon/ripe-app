@@ -10,7 +10,7 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in to download your data." }, { status: 401 });
 
-  const [addresses, deliveries, orders, credit, notifications, chats] = await Promise.all([
+  const [addresses, deliveries, orders, credit, notifications, memories, chats] = await Promise.all([
     prisma.address.findMany({ where: { userId: user.id }, select: { label: true, line1: true, estate: true, landmark: true, instructions: true, altPhone: true, isDefault: true, zone: { select: { name: true } }, createdAt: true } }),
     prisma.basket.findMany({ where: { userId: user.id }, select: { name: true, deliveryDay: true, isStanding: true, createdAt: true, items: { select: { quantity: true, product: { select: { name: true } } } } } }),
     prisma.order.findMany({
@@ -20,6 +20,7 @@ export async function GET() {
     }),
     prisma.creditRecord.findMany({ where: { userId: user.id }, select: { kind: true, amount: true, reason: true, createdAt: true } }),
     prisma.notificationLog.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 500, select: { channel: true, kind: true, body: true, status: true, createdAt: true } }),
+    prisma.kachiMemory.findMany({ where: { userId: user.id }, select: { kind: true, text: true, createdAt: true } }),
     prisma.assistantThread.findMany({ where: { userId: user.id }, select: { title: true, createdAt: true, messages: { orderBy: { createdAt: "asc" }, select: { role: true, content: true, createdAt: true } } } }),
   ]);
 
@@ -44,6 +45,7 @@ export async function GET() {
     credit,
     messagesWeSent: notifications,
     kachiChats: chats,
+    kachiRemembers: memories,
   };
 
   return new NextResponse(JSON.stringify(data, null, 2), {

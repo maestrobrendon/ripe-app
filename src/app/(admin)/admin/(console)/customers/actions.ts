@@ -190,6 +190,7 @@ export async function eraseCustomer(input: { userId: string; confirm: string }):
       prisma.ownMeal.deleteMany({ where: { userId: uid } }),
       prisma.producePlan.deleteMany({ where: { userId: uid } }),
       prisma.assistantThread.deleteMany({ where: { userId: uid } }),
+      prisma.kachiMemory.deleteMany({ where: { userId: uid } }),
       prisma.shoppingWindow.deleteMany({ where: { userId: uid } }),
       prisma.cartItem.deleteMany({ where: { cart: { userId: uid } } }),
       prisma.cart.deleteMany({ where: { userId: uid } }),

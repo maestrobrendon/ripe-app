@@ -261,6 +261,7 @@ model User {
   ownMeals                  OwnMeal[]
   producePlans              ProducePlan[]
   assistantThreads          AssistantThread[]
+  kachiMemories             KachiMemory[]
   addresses                 Address[]
   orderIssues               OrderIssue[]
   notifications             NotificationLog[]
@@ -583,6 +584,31 @@ enum AssistantThreadSource {
   CART_SHEET
   MEAL_PLANNER
   PRODUCE_PLANNER
+}
+
+enum KachiMemoryKind {
+  ALLERGY
+  DISLIKE
+  LIKE
+  HOUSEHOLD
+  ROUTINE
+  OTHER
+}
+
+// Something lasting a customer told Kachi ("no okra", "son allergic to
+// groundnut"), kept so she can use it in every chat. Written by her
+// remember tool; the customer sees, edits and deletes these in Account.
+model KachiMemory {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      KachiMemoryKind
+  // Short and in plain words, as the customer would read it back.
+  text      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([userId])
 }
 
 model AssistantThread {

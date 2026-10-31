@@ -62,6 +62,8 @@ type Props = {
   pushDevices: number;
   invite: { code: string | null; reward: number; invited: number; rewarded: number; credit: number };
   kachiReview: boolean;
+  /** How many notes Kachi keeps about them (Account > What Kachi knows). */
+  kachiMemories: number;
   deletionRequested: string | null;
   help: { href: string; verb: string };
 };
@@ -290,6 +292,13 @@ export function AccountView(props: Props) {
         </Group>
 
         <Group title="Privacy and data">
+          <Row
+            icon="spark"
+            tint="mist"
+            title="What Kachi knows"
+            sub={props.kachiMemories ? `${props.kachiMemories} ${props.kachiMemories === 1 ? "note" : "notes"} she keeps for you` : "Nothing yet. See or delete what she remembers."}
+            href="/account/kachi"
+          />
           <Toggle
             icon="shield"
             tint="mist"

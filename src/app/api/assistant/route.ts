@@ -36,6 +36,7 @@ import {
   ORDER_INTENT,
 } from "@/lib/kachi";
 import { OFFERED } from "@/lib/product";
+import { addMemory, knownAboutCustomer, MEMORY_KINDS, MEMORY_TEXT_MAX, removeMemory } from "@/lib/kachi-memory";
 import type { KachiCard, KachiScope } from "@/lib/kachi-types";
 
 
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
 
   const firstName = user.name.trim().split(/\s+/)[0] || "there";
   const profile = aboutCustomer(user);
-  const [orders, library] = await Promise.all([recentOrders(user.id), recipeLibrary()]);
+  const [orders, library, known] = await Promise.all([recentOrders(user.id), recipeLibrary(), knownAboutCustomer(user)]);
   const orderCard: KachiCard | null =
     ORDER_INTENT.test(message) && orders[0] ? { type: "order", order: toKachiOrder(orders[0]) } : null;
 
@@ -208,6 +209,34 @@ export async function POST(request: Request) {
       };
     },
   });
+  // What she remembered or forgot this turn, each shown as a card with Undo.
+  const memoryCards: KachiCard[] = [];
+  const memoryTools = {
+    remember: tool({
+      description: "Remember something lasting the customer told you about their food or household, for every future chat. One short note per call.",
+      inputSchema: z.object({
+        kind: z.enum(MEMORY_KINDS),
+        note: z.string().max(MEMORY_TEXT_MAX),
+      }),
+      execute: async ({ kind, note }) => {
+        const r = await addMemory(user.id, kind, note);
+        if (!r.ok) return r;
+        if (!r.existing) memoryCards.push({ type: "memory", action: "remembered", memory: r.memory });
+        return { ok: true, data: { id: r.memory.id, alreadyRemembered: r.existing } };
+      },
+    }),
+    forget: tool({
+      description: "Forget one thing you remember about the customer, by its id.",
+      inputSchema: z.object({ memory_id: z.string() }),
+      execute: async ({ memory_id }) => {
+        const gone = await removeMemory(user.id, memory_id);
+        if (!gone) return { ok: false, error: "There's no memory with that id." };
+        memoryCards.push({ type: "memory", action: "forgot", memory: gone });
+        return { ok: true, data: { forgot: gone.text } };
+      },
+    }),
+  };
+
   const readOnly = {
     get_order_status: tool({
       description: "Look up the status of one of this customer's own past orders.",
@@ -248,6 +277,7 @@ export async function POST(request: Request) {
       },
     }),
     propose_items,
+    ...memoryTools,
     ...readOnly,
   };
 
@@ -264,6 +294,7 @@ export async function POST(request: Request) {
     const changes = await diffSnapshots(before, await snapshot(scope));
     const cards: KachiCard[] = [];
     if (changes.length) cards.push({ type: "act", scope: publicScope, changes });
+    cards.push(...memoryCards);
     if (proposals.length) {
       const items = await buildListItems(user, scope, proposals);
       if (items.length) cards.push({ type: "list", scope: publicScope, items });
@@ -284,6 +315,7 @@ export async function POST(request: Request) {
           orders,
           contentsLines: await contentsContext(before),
           recipeLines: library.lines,
+          known,
         }),
         messages,
         tools,
@@ -325,5 +357,6 @@ const CHANGE_TOOLS = new Set([
 function confirmation(cards: KachiCard[]) {
   if (cards.some((c) => c.type === "list")) return "Here's what I'd add. Nothing goes in until you say so.";
   if (cards.some((c) => c.type === "act")) return "Done. Changed your mind? Undo it below.";
+  if (cards.some((c) => c.type === "memory")) return "Noted.";
   return "That one didn't go through. Say it another way and I'll try again?";
 }
