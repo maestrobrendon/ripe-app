@@ -7,22 +7,32 @@ import { google } from "@ai-sdk/google";
  * the guest bubble (api/kachi). Moved here unchanged from api/assistant.
  */
 
-// Verified at ai.google.dev on 2026-09-27 as the current fast/cheap model
-// that's free-tier eligible and supports function calling. Model names on
-// the free tier shift; override with ASSISTANT_MODEL_ID rather than editing
-// this file when Google moves on again.
-const MODEL_ID = process.env.ASSISTANT_MODEL_ID || "gemini-3.8-flash";
+// Flash-Lite, not Flash. Measured on 2026-10-31 from this key: the free
+// tier queues the bigger Flash models behind paying traffic, so a one-line
+// question took 2 to 4.5 minutes on gemini-3.8-flash and 3.7-flash, while
+// 3.5-flash-lite answered Kachi's full prompt, tools included, in 1 to 3
+// seconds. Override with ASSISTANT_MODEL_ID rather than editing this file.
+const MODEL_ID = process.env.ASSISTANT_MODEL_ID || "gemini-3.5-flash-lite";
 // Free-tier quotas are counted per model, so when one runs dry for the day
 // the next one usually still has room. Comma-separated, tried in order.
-const FALLBACK_MODEL_IDS = (process.env.ASSISTANT_FALLBACK_MODEL_IDS ?? "gemini-3.7-flash,gemini-3.5-flash-lite")
+const FALLBACK_MODEL_IDS = (process.env.ASSISTANT_FALLBACK_MODEL_IDS ?? "gemini-3.1-flash-lite")
   .split(",")
   .map((m) => m.trim())
   .filter((m) => m && m !== MODEL_ID);
 
+/** How long one model gets before the turn moves on to the next. Nobody waits minutes for a reply. */
+const ATTEMPT_MS = 15_000;
+
+/** An attempt that ran out of time (ATTEMPT_MS). */
+function isTimeout(err: unknown) {
+  const detail = err instanceof Error ? `${err.name} ${err.message}` : String(err);
+  return /timeout|aborted/i.test(detail);
+}
+
 /** The provider is overloaded ("high demand", 503): another model usually isn't. */
 function isOverloaded(err: unknown) {
   const detail = err instanceof Error ? err.message : String(err);
-  return /high demand|overloaded|unavailable|503/i.test(detail);
+  return /high demand|overloaded|unavailable|503/i.test(detail) || isTimeout(err);
 }
 
 /**
@@ -53,6 +63,7 @@ export async function generate(
       ...opts,
       model: google(modelId),
       maxRetries: 1,
+      abortSignal: AbortSignal.timeout(ATTEMPT_MS),
     } as Parameters<typeof generateText>[0]);
   let lastErr: unknown;
   const models = [MODEL_ID, ...FALLBACK_MODEL_IDS];
@@ -64,7 +75,7 @@ export async function generate(
     } catch (err) {
       if (!isRateLimited(err) || !(await canRetry())) throw err;
       lastErr = err;
-      // Overloaded: no wait to sit out, just try the next model.
+      // Overloaded or too slow: no wait to sit out, just try the next model.
       if (isOverloaded(err)) continue;
       const wait = retryDelayMs(err);
       console.warn(JSON.stringify({ scope: "kachi-rate-limit", model: modelId, waitMs: wait }));
