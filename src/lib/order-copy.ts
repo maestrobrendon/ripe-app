@@ -76,11 +76,43 @@ export function orderHeadline(o: OrderForCopy): { title: string; body: string } 
   }
 }
 
+export type OrderTone = "good" | "wait" | "alert" | "quiet";
+
+/** The one or two words a status reads as at a glance, and how it should feel. */
+export function orderBadge(o: OrderForCopy): { label: string; tone: OrderTone } {
+  if (o.awaitingPayment && o.status === "RECEIVED" && isPast(o.deliveryDateIso)) return { label: "Not paid in time", tone: "alert" };
+  if (OPEN.includes(o.status) && isPast(o.deliveryDateIso)) return { label: "Running late", tone: "alert" };
+  if (o.awaitingPayment && o.status === "RECEIVED") return { label: "Waiting for payment", tone: "wait" };
+  switch (o.status) {
+    case "RECEIVED":
+    case "CONFIRMED":
+      return { label: "Confirmed", tone: "good" };
+    case "PICKING":
+    case "PACKED":
+      return { label: "Being packed", tone: "good" };
+    case "OUT_FOR_DELIVERY":
+      return { label: "On its way", tone: "good" };
+    case "FAILED_DELIVERY":
+      return { label: "Delivery missed", tone: "alert" };
+    case "DELIVERED":
+      return { label: "Delivered", tone: "quiet" };
+    case "CANCELLED":
+      return { label: "Cancelled", tone: "quiet" };
+    case "REFUNDED":
+      return { label: "Refunded", tone: "quiet" };
+  }
+}
+
 /** What an order's payment looks like to the customer. */
 export function paymentLine(o: { paidAt: Date | string | null; paymentMethod: string; total: number; status: OrderStatus }, naira: (n: number) => string): string {
   // Orders from before payments were real carry a "(test mode)" label.
   o = { ...o, paymentMethod: o.paymentMethod.replace(/\s*\(test mode\)/i, "") };
-  if (o.paidAt) return `Paid · ${o.paymentMethod}`;
+  if (o.paidAt) {
+    // "Paid online (card ending 4081)" already says it's paid: just the how.
+    const how = o.paymentMethod.match(/^paid \w+ \((.+)\)$/i);
+    if (how) return `Paid · ${how[1]}`;
+    return /^paid/i.test(o.paymentMethod) ? o.paymentMethod : `Paid · ${o.paymentMethod}`;
+  }
   if (o.status === "CANCELLED" || o.status === "REFUNDED") return o.paymentMethod;
   if (o.status === "DELIVERED") return `${naira(o.total)} to pay · ${o.paymentMethod}`;
   if (/transfer/i.test(o.paymentMethod)) return `Bank transfer · waiting for ${naira(o.total)}`;

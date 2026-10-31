@@ -244,6 +244,7 @@ function toLiveOrders(rows: Awaited<ReturnType<typeof liveOrdersFor>>, fallbackC
       status: o.status,
       statusLabel: customerStatusLabel(o.status, awaitingPayment(o)),
       deliveryDateIso: o.deliveryDate.toISOString(),
+      isToday: o.deliveryDate.toISOString().slice(0, 10) === new Date(now + 3_600_000).toISOString().slice(0, 10),
       cutoffIso: cutoff.toISOString(),
       canCancel: o.status === "RECEIVED" && now < cutoff.getTime(),
       total: o.total,
