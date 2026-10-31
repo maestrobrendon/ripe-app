@@ -262,6 +262,7 @@ model User {
   producePlans              ProducePlan[]
   assistantThreads          AssistantThread[]
   kachiMemories             KachiMemory[]
+  kachiDrafts               KachiDraft[]
   addresses                 Address[]
   orderIssues               OrderIssue[]
   notifications             NotificationLog[]
@@ -611,6 +612,37 @@ model KachiMemory {
   @@index([userId])
 }
 
+enum KachiDraftStatus {
+  PENDING
+  ACCEPTED
+  DISMISSED
+  EXPIRED
+}
+
+// Kachi's suggested changes to a repeating basket for one delivery date,
+// made with the "your basket is ready" reminder. Nothing changes until the
+// customer taps Use these changes on Home; paying is always theirs.
+model KachiDraft {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  basketId     String
+  basket       Basket           @relation(fields: [basketId], references: [id], onDelete: Cascade)
+  deliveryDate DateTime
+  status       KachiDraftStatus @default(PENDING)
+  // Her message, a sentence or two, in her voice.
+  note         String
+  // [{ productId, before, after, why }], checked against the catalogue when made.
+  changes      Json
+  // A recipe from the library that fits the suggested basket, if she picked one.
+  recipeSlug   String?
+  createdAt    DateTime         @default(now())
+  decidedAt    DateTime?
+
+  @@unique([basketId, deliveryDate])
+  @@index([userId, status])
+}
+
 model AssistantThread {
   id         String                @id @default(cuid())
   userId     String
@@ -709,6 +741,7 @@ model Basket {
   items             BasketItem[]
   windows           ShoppingWindow[]
   orders            Order[]
+  kachiDrafts       KachiDraft[]
   updatedAt         DateTime           @updatedAt
   createdAt         DateTime           @default(now())
 

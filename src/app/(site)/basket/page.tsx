@@ -5,7 +5,7 @@ import { getOrCreateActiveDelivery, isMember } from "@/lib/order-container";
 import { basketLimitFor } from "@/lib/basket";
 import { getDeliveryCycle, liveOrdersFor, zoneForUser } from "@/lib/delivery";
 import { cutoffFor, lagosDate, nextDeliveryDate } from "@/lib/delivery-dates";
-import { basketLabels, deliveryName, orderRef } from "@/lib/delivery-labels";
+import { basketLabels, dayName, deliveryName, orderRef } from "@/lib/delivery-labels";
 import { basketCycle, confirmRight } from "@/lib/basket-rules";
 import { customerStatusLabel } from "@/lib/order-status";
 import { awaitingPayment } from "@/lib/order-copy";
@@ -21,6 +21,8 @@ import { LiveOrders, type LiveOrder } from "./live-orders";
 import { OrderLines } from "./order-lines";
 import { SuggestionsCard, type Suggestion } from "./suggestions-card";
 import { CookThisWeek, type CookRecipe } from "./cook-this-week";
+import { KachiDraftCard, type HomeDraft } from "./kachi-draft-card";
+import { draftChanges, homeDraft } from "@/lib/kachi-draft";
 import { OrderSummary } from "./order-summary";
 
 
@@ -88,6 +90,38 @@ export default async function HomePage() {
 
   const names = new Map(deliveries.map((d) => [d.id, labelOf(d)]));
   const live = toLiveOrders(liveRows, zone?.cutoffHour ?? 18, (basketId) => (basketId && basketId !== delivery.id ? (names.get(basketId) ?? null) : null));
+
+  /* ------------------------- Kachi's weekly suggestion ------------------------- */
+
+  // Only while this delivery can still change and isn't confirmed yet.
+  const confirmed = liveRows.some((o) => o.basketId === delivery.id && cycle.date && o.deliveryDate.getTime() === cycle.date.getTime());
+  const draftRow = cycle.date && cycle.cutoff && !confirmed ? await homeDraft(user.id, delivery.id, cycle.date, cycle.cutoff) : null;
+  let draft: HomeDraft | null = null;
+  if (draftRow) {
+    const changes = draftChanges(draftRow.changes);
+    const [products, recipe] = await Promise.all([
+      prisma.product.findMany({ where: { id: { in: changes.map((c) => c.productId) } }, select: { id: true, name: true, imageEmoji: true, cloudinaryPublicId: true, memberPrice: true, standardPrice: true } }),
+      draftRow.recipeSlug ? prisma.recipe.findUnique({ where: { slug: draftRow.recipeSlug }, select: { slug: true, title: true } }) : Promise.resolve(null),
+    ]);
+    const byId = new Map(products.map((p) => [p.id, p]));
+    const lines = changes.flatMap((c) => {
+      const p = byId.get(c.productId);
+      return p ? [{ productId: p.id, name: p.name, emoji: p.imageEmoji, publicId: p.cloudinaryPublicId, before: c.before, after: c.after, why: c.why }] : [];
+    });
+    const price = (id: string) => {
+      const p = byId.get(id)!;
+      return member ? p.memberPrice : p.standardPrice;
+    };
+    draft = {
+      id: draftRow.id,
+      status: draftRow.status === "ACCEPTED" ? "ACCEPTED" : "PENDING",
+      note: draftRow.note,
+      day: dayName(cycle.day),
+      lines,
+      difference: lines.reduce((t, l) => t + (l.after - l.before) * price(l.productId), 0),
+      recipe,
+    };
+  }
 
   /* --------------------------- what to add next --------------------------- */
 
@@ -186,6 +220,8 @@ export default async function HomePage() {
       />
 
       {live.length > 0 && <LiveOrders deliveryId={delivery.id} orders={live} />}
+
+      {draft && <KachiDraftCard key={`${draft.id}:${draft.status}`} draft={draft} />}
 
       <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
         <div className="min-w-0">

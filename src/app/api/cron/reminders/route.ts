@@ -8,6 +8,7 @@ import { isBuyable } from "@/lib/product";
 import { priceFor } from "@/lib/order-container";
 import { formatNaira } from "@/lib/format";
 import { appOrigin } from "@/lib/site";
+import { draftChanges, ensureDraft } from "@/lib/kachi-draft";
 
 /*
  * The weekly basket reminders, run every morning by Vercel Cron (vercel.json,
@@ -18,10 +19,19 @@ import { appOrigin } from "@/lib/site";
  * - three days before the delivery: "your basket is ready, confirm it";
  * - on the day it closes, if still not confirmed: "it closes tonight".
  *
+ * With the first one, Kachi prepares a suggestion for that delivery (what's
+ * sold out swapped, what's good this week added; lib/kachi-draft.ts). If
+ * she suggests changes, the reminder carries her note and opens Home, where
+ * the customer can use them or keep their basket. Nothing changes unless
+ * they tap.
+ *
  * Each goes out once per basket per date on WhatsApp, email and the app
  * (lib/notify.ts; WhatsApp and app messages are logged until their providers
  * are connected). A week that isn't confirmed by its cutoff doesn't go out.
  */
+
+// Kachi's suggestions take a few seconds each.
+export const maxDuration = 300;
 
 const DAY = 86_400_000;
 const LIVE = { notIn: ["CANCELLED", "REFUNDED"] as ("CANCELLED" | "REFUNDED")[] };
@@ -65,10 +75,20 @@ export async function GET(request: Request) {
     const name = basketName(b);
     const day = `${dayName(cycle.day)} ${longDate(cycle.date).split(" ").slice(1).join(" ")}`;
     const items = lines.slice(0, 4).map((i) => i.product.name).join(", ") + (lines.length > 4 ? ` and ${lines.length - 4} more` : "");
-    const link = `${appOrigin()}/checkout?b=${b.id}`;
-
-    const text =
+    // A failed suggestion never holds up the reminder.
+    const draft =
       kind === "ready"
+        ? await ensureDraft(b, cycle.date).catch((err) => {
+            console.error(JSON.stringify({ scope: "kachi-draft", basketId: b.id, error: String(err).slice(0, 300) }));
+            return null;
+          })
+        : null;
+    const suggested = draft?.status === "PENDING" && draftChanges(draft.changes).length > 0 ? draft : null;
+    const link = suggested ? `${appOrigin()}/basket/open?b=${b.id}` : `${appOrigin()}/checkout?b=${b.id}`;
+
+    const text = suggested
+      ? `Hi ${first}, ${name} is ready for ${day}. Kachi says: "${suggested.note}" See her suggestion, then confirm and pay by ${cutoffLabel(cycle.cutoff)}: ${link}`
+      : kind === "ready"
         ? `Hi ${first}, ${name} is ready for ${day}: ${items}, about ${formatNaira(total)}. Confirm and pay by ${cutoffLabel(cycle.cutoff)}. Change or skip it if you need to: ${link}`
         : `Hi ${first}, ${name} for ${day} closes at ${cutoffLabel(cycle.cutoff).split(" ")[1]} today and isn't confirmed yet. Confirm it now to get it: ${link}`;
     const subject = kind === "ready" ? `${name} is ready for ${day}` : `${name} closes today`;
@@ -82,11 +102,15 @@ export async function GET(request: Request) {
         subject,
         // The link becomes the button, so the paragraph ends before it.
         text: `${text.replace(/: https?:\/\/\S+$/, ".")}\n\nNothing is ever charged automatically. A week you don't confirm simply doesn't go out.`,
-        button: { href: link, label: kind === "ready" ? "Confirm and pay" : "Confirm it now" },
+        button: { href: link, label: suggested ? "See Kachi's suggestion" : kind === "ready" ? "Confirm and pay" : "Confirm it now" },
         tag: { label: kind === "ready" ? "Your basket" : "Closes today", tone: kind === "ready" ? "mint" : "sun" },
       },
       whatsapp: { to: b.user.phone, text: `Basket: ${text}` },
-      push: { title: subject, body: kind === "ready" ? `Confirm and pay by ${cutoffLabel(cycle.cutoff)}.` : "Tap to confirm it now.", url: `/checkout?b=${b.id}` },
+      push: {
+        title: subject,
+        body: suggested ? suggested.note : kind === "ready" ? `Confirm and pay by ${cutoffLabel(cycle.cutoff)}.` : "Tap to confirm it now.",
+        url: suggested ? `/basket/open?b=${b.id}` : `/checkout?b=${b.id}`,
+      },
     }).catch(() => {});
     if (kind === "ready") ready++;
     else lastCall++;

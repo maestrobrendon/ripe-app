@@ -25,6 +25,7 @@ import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
 import { BUYABLE } from "@/lib/product";
 import { audit } from "@/lib/admin/audit";
+import { acceptDraft, dismissDraft, undoDraft } from "@/lib/kachi-draft";
 import type { DeliveryDay } from "@/generated/prisma/enums";
 
 /*
@@ -265,4 +266,31 @@ export async function ensureDelivery() {
   if (!user) return null;
   const d = await getOrCreateActiveDelivery(user);
   return d.id;
+}
+
+/* ------------------------- Kachi's weekly suggestion ------------------------- */
+
+/** Use these changes: her suggested quantities go into the basket. Paying is still theirs. */
+export async function applyKachiDraft(draftId: string): Promise<Result & { skipped?: string[] }> {
+  const user = await getCurrentUser();
+  if (!user) return fail("Sign in again to change your basket.");
+  const r = await acceptDraft(user.id, draftId);
+  if (!r.ok) return r;
+  revalidatePath("/basket");
+  return { ok: true, skipped: r.skipped };
+}
+
+export async function undoKachiDraft(draftId: string): Promise<Result> {
+  const user = await getCurrentUser();
+  if (!user) return fail("Sign in again to change your basket.");
+  const r = await undoDraft(user.id, draftId);
+  return r.ok ? done() : r;
+}
+
+/** Keep my basket: the suggestion goes away and nothing changes. */
+export async function dismissKachiDraft(draftId: string): Promise<Result> {
+  const user = await getCurrentUser();
+  if (!user) return fail("Sign in again.");
+  const r = await dismissDraft(user.id, draftId);
+  return r.ok ? done() : r;
 }
