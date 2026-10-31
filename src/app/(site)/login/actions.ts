@@ -12,8 +12,9 @@ import { mergeGuestCartIntoBasket } from "@/lib/order-container";
 const TEN_MINUTES = 10 * 60 * 1000;
 
 export async function signIn(formData: FormData) {
-  const contact = String(formData.get("contact") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  // Capped: no real email or phone is longer, and a megabyte "password" would only slow the hash down.
+  const contact = String(formData.get("contact") ?? "").trim().slice(0, 254);
+  const password = String(formData.get("password") ?? "").slice(0, 256);
   const safeNext = safeNextPath(String(formData.get("next") ?? ""), "");
   // Kept through a failed attempt: where to go after, and whether they came from checkout.
   const nextParam = (safeNext ? `&next=${encodeURIComponent(safeNext)}` : "") + (formData.get("from") === "checkout" ? "&from=checkout" : "");
