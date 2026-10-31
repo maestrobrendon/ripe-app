@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { generate, isRateLimited } from "@/lib/kachi-model";
+import { generate, generateStreaming, isRateLimited } from "@/lib/kachi-model";
 import {
   createThread,
   getOwnedThread,
@@ -40,7 +40,7 @@ import { accountContext, accountTools, orderStatusForKachi } from "@/lib/kachi-a
 import { customerStatusLabel } from "@/lib/order-status";
 import { awaitingPayment } from "@/lib/order-copy";
 import { DELIVERY_WINDOW, longDate } from "@/lib/delivery-labels";
-import type { KachiCard, KachiScope } from "@/lib/kachi-types";
+import type { KachiCard, KachiReply, KachiScope } from "@/lib/kachi-types";
 
 
 const VALID_SOURCES: AssistantThreadSource[] = [
@@ -73,6 +73,7 @@ export async function POST(request: Request) {
     contextRef?: unknown;
     replay?: unknown;
     page?: unknown;
+    stream?: unknown;
   };
   try {
     body = await request.json();
@@ -94,6 +95,8 @@ export async function POST(request: Request) {
   const replay = body.replay === true;
   // Where the customer is, sent by the floating Kachi: "Chicken shawarma bowl recipe (/recipes/chicken-shawarma-bowl)".
   const page = typeof body.page === "string" ? body.page.slice(0, 200) : null;
+  // Sent as it's written (NDJSON: {"t":"d","v":words}… then {"t":"done",…the reply}), or all at once.
+  const wantsStream = body.stream === true;
 
   let thread = requestedThreadId ? await getOwnedThread(user.id, requestedThreadId) : null;
   const history = thread ? await recentMessagesForModel(thread.id, 20) : [];
@@ -135,7 +138,7 @@ export async function POST(request: Request) {
     if (status < 400 || cards.length) {
       await appendMessage(threadId, "ASSISTANT", reply, cards.length || calls ? { cards, calls } : undefined);
     }
-    return NextResponse.json({ reply, threadId, title, cards, suggestions, retry: status >= 400 || undefined }, { status });
+    return { payload: { reply, threadId, title, cards, suggestions, retry: status >= 400 || undefined } as KachiReply, status };
   };
   const failure = (err: unknown, cards: KachiCard[], where: string) => {
     if (isRateLimited(err))
@@ -326,9 +329,10 @@ export async function POST(request: Request) {
     return cards;
   };
 
-  try {
-    const result = await generate(
-      {
+  // One turn of the conversation: with onText, her words go out as they're written.
+  const runTurn = async (onText?: (delta: string) => void) => {
+    try {
+      const turn = {
         system: actingSystemPrompt({
           firstName,
           profile,
@@ -347,30 +351,46 @@ export async function POST(request: Request) {
         // A step that only made changes needs no follow-up call to say so:
         // the action card says it, which halves the calls on most edits.
         stopWhen: [stepCountIs(5), changedOnly],
-      },
+      };
       // Proposals are only collected, so re-running is safe until something
       // real changed; a re-run starts the turn's bookkeeping over.
-      async () => {
+      const canRetry = async () => {
         const clean = (await diffSnapshots(before, await snapshot(scope))).length === 0;
         if (clean) {
           adds = 0;
           proposals.length = 0;
         }
         return clean;
-      },
-    );
-    // Each call with what it returned, so later turns replay what she really did (lib/assistant-threads.ts).
-    const results = new Map((result.steps ?? []).flatMap((s) => s.toolResults ?? []).map((r) => [r.toolCallId, r.output]));
-    const calls = result.steps?.flatMap((s) => s.toolCalls ?? []).map((c) => ({ tool: c.toolName, input: c.input, output: results.get(c.toolCallId) ?? null }));
-    const changeCards = await collectCards();
-    // The tappable replies Kachi offers come off the end of the text.
-    const { text: said, suggestions } = parseNext(result.text);
-    const { text, cards } = shape(said, changeCards);
-    return finish(text || confirmation(changeCards), cards, calls?.length ? calls : undefined, 200, suggestions);
-  } catch (err) {
-    // Anything already changed before the failure still gets its card and Undo.
-    return failure(err, await collectCards(), "kachi-acting");
+      };
+      const result = onText ? await generateStreaming(turn as Parameters<typeof generateStreaming>[0], onText, canRetry) : await generate(turn, canRetry);
+      // Each call with what it returned, so later turns replay what she really did (lib/assistant-threads.ts).
+      const results = new Map((result.steps ?? []).flatMap((s) => s.toolResults ?? []).map((r) => [r.toolCallId, r.output]));
+      const calls = result.steps?.flatMap((s) => s.toolCalls ?? []).map((c) => ({ tool: c.toolName, input: c.input, output: results.get(c.toolCallId) ?? null }));
+      const changeCards = await collectCards();
+      // The tappable replies Kachi offers come off the end of the text.
+      const { text: said, suggestions } = parseNext(result.text);
+      const { text, cards } = shape(said, changeCards);
+      return finish(text || confirmation(changeCards), cards, calls?.length ? calls : undefined, 200, suggestions);
+    } catch (err) {
+      // Anything already changed before the failure still gets its card and Undo.
+      return failure(err, await collectCards(), "kachi-acting");
+    }
+  };
+
+  if (!wantsStream) {
+    const { payload, status } = await runTurn();
+    return NextResponse.json(payload, { status });
   }
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (o: object) => controller.enqueue(encoder.encode(`${JSON.stringify(o)}\n`));
+      const { payload, status } = await runTurn((delta) => send({ t: "d", v: delta }));
+      send({ t: "done", status, ...payload });
+      controller.close();
+    },
+  });
+  return new Response(stream, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
 const CHANGE_TOOLS = new Set([

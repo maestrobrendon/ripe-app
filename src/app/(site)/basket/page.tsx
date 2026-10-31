@@ -19,7 +19,9 @@ import { DeliverySwitcher } from "./delivery-switcher";
 import { DeliveryCard, type AreaState, type BasketStatus } from "./delivery-card";
 import { LiveOrders, type LiveOrder } from "./live-orders";
 import { OrderLines } from "./order-lines";
+import { Suspense } from "react";
 import { SuggestionsCard, type Suggestion } from "./suggestions-card";
+import { KachiLine } from "./kachi-line";
 import { CookThisWeek, type CookRecipe } from "./cook-this-week";
 import { KachiDraftCard, type HomeDraft } from "./kachi-draft-card";
 import { draftChanges, homeDraft } from "@/lib/kachi-draft";
@@ -248,7 +250,18 @@ export default async function HomePage() {
                 />
               )
             ) : section === suggestAt ? (
-              suggestions.length > 0 && <SuggestionsCard key="suggest" title="Kachi suggests" suggestions={suggestions} />
+              suggestions.length > 0 && (
+                <SuggestionsCard
+                  key="suggest"
+                  title="Kachi suggests"
+                  suggestions={suggestions}
+                  line={
+                    <Suspense fallback={null}>
+                      <KachiLine userId={user.id} picks={suggestions.map((s) => ({ name: s.product.name, reason: s.reason }))} />
+                    </Suspense>
+                  }
+                />
+              )
             ) : null,
           )}
         </div>

@@ -25,7 +25,7 @@ function unitWord(unit: string) {
  * × puts a line away for now; + adds it to the basket. The rows arrive one
  * after another, after the hero above has settled.
  */
-export function SuggestionsCard({ title, suggestions }: { title: string; suggestions: Suggestion[] }) {
+export function SuggestionsCard({ title, suggestions, line }: { title: string; suggestions: Suggestion[]; /** Kachi's one line about these picks, streamed in when it's ready. */ line?: React.ReactNode }) {
   const cart = useCart();
   const reduced = useReducedMotion();
   const [hidden, setHidden] = useState<string[]>([]);
@@ -47,6 +47,7 @@ export function SuggestionsCard({ title, suggestions }: { title: string; suggest
           See more
         </Link>
       </div>
+      {line}
       <ul className="mt-1.5">
         <AnimatePresence initial={false}>
           {rows.map((s, i) => {

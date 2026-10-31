@@ -1,5 +1,5 @@
 import "server-only";
-import { generateText, type SystemModelMessage } from "ai";
+import { generateText, streamText, type SystemModelMessage } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 
@@ -128,6 +128,54 @@ export async function generate(
         if (!isRateLimited(again) || !(await canRetry())) throw again;
         lastErr = again;
       }
+    }
+  }
+  throw lastErr;
+}
+
+/**
+ * generate(), but the reply's words arrive through onText as they're written,
+ * so the chat can show them at once. A model gets ATTEMPT_MS to start; if it
+ * fails before writing anything (and canRetry allows), the next model takes
+ * over, as with generate(). Once words have gone out there's no switching.
+ */
+export async function generateStreaming(
+  opts: Omit<Parameters<typeof streamText>[0], "model">,
+  onText: (delta: string) => void,
+  canRetry: () => boolean | Promise<boolean> = () => true,
+) {
+  const models = [MODEL_ID, ...FALLBACK_MODEL_IDS].filter((m) => !isClaude(m) || process.env.ANTHROPIC_API_KEY);
+  const ready = models.filter((m) => (exhaustedUntil.get(m) ?? 0) <= Date.now());
+  let lastErr: unknown;
+  for (const modelId of ready.length ? ready : models) {
+    let wrote = false;
+    const started = new AbortController();
+    const timer = setTimeout(() => started.abort(new Error("timeout waiting for the first words")), ATTEMPT_MS);
+    try {
+      const r = streamText({
+        ...opts,
+        model: isClaude(modelId) ? anthropic(modelId) : google(modelId),
+        providerOptions: PROVIDER_OPTIONS,
+        maxOutputTokens: opts.maxOutputTokens ?? 16_000,
+        maxRetries: 1,
+        abortSignal: started.signal,
+      } as Parameters<typeof streamText>[0]);
+      for await (const part of r.fullStream) {
+        // Any sign of life (words, or a tool being called) means this model is answering.
+        if (part.type === "text-delta" || part.type === "tool-call") clearTimeout(timer);
+        if (part.type === "text-delta" && part.text) {
+          wrote = true;
+          onText(part.text);
+        } else if (part.type === "error") throw part.error;
+      }
+      return { text: await r.text, steps: await r.steps };
+    } catch (err) {
+      lastErr = err;
+      if (wrote || !(await canRetry())) throw err;
+      if (!isClaude(modelId) && !isRateLimited(err)) throw err;
+      console.warn(JSON.stringify({ scope: "kachi-fallback", model: modelId, streaming: true, error: String(err).slice(0, 300) }));
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw lastErr;

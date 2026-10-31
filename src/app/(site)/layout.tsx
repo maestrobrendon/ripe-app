@@ -87,9 +87,9 @@ export default async function SiteRootLayout({ children }: { children: React.Rea
                 {!user && <MarketingFooter />}
                 {!user && <CartDrawer />}
                 <PrimaryMobileNav signedIn={Boolean(user)} />
-                {/* Members already have Kachi in the app (her tab, "Get ideas",
-                    the planners); the floating one is for visitors. */}
-                {!user && <KachiBubble />}
+                {/* Kachi in the corner of every page: the visitors' guide, or
+                    for signed-in customers the real Kachi, who can change things. */}
+                <KachiBubble signedIn={Boolean(user)} />
                 {/* Kachi's offer to install Basket as an app, and app notifications. */}
                 {user && <AppSetup />}
             </CartProvider>

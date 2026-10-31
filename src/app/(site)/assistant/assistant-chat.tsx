@@ -2,31 +2,17 @@
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { useCart } from "@/components/cart-provider";
 import { KachiMark } from "@/components/kachi-mark";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Icon } from "@/components/ui/icon";
-import { ProductImage } from "@/components/product-image";
-import { formatNaira } from "@/lib/format";
-import { CUSTOMER_STEPS, customerStatusLabel, customerStep } from "@/lib/order-status";
-import { haptic, press, spring } from "@/lib/motion/tokens";
-import { clock, since, track } from "@/lib/analytics";
-import type { KachiCard, KachiReply, KachiScope } from "@/lib/kachi-types";
-import { listMyThreads, loadMyThread, deleteMyThread, approveKachiList, undoKachiChanges, undoKachiMemory, undoKachiAccount } from "./thread-actions";
 
-type CardState = KachiCard & { undone?: boolean; done?: string; busy?: boolean; stale?: boolean };
-type Msg = {
-  id: string;
-  role: "me" | "kachi";
-  text: string;
-  cards: CardState[];
-  typing?: boolean;
-  replies?: string[];
-  /** The message to send again when this reply was a failure. */
-  retry?: string;
-};
+import { haptic, press, spring } from "@/lib/motion/tokens";
+import { KachiCardView, RichText, type CardState } from "@/components/kachi/kachi-cards";
+import { newMsgId, scopeName, useKachiConversation } from "@/components/kachi/use-kachi-conversation";
+import { listMyThreads, loadMyThread, deleteMyThread } from "./thread-actions";
+
 type ThreadSummary = { id: string; title: string; updatedAt: Date; messageCount: number };
 
 /** Things to ask, in two rows that scroll. */
@@ -79,25 +65,11 @@ function FeatureCard({ tint, icon, title, body, delay, onClick }: { tint: string
   );
 }
 
-const AFTER_CHANGE_REPLIES = ["What can I make with it?", "What else goes well?"];
 
-let seq = 0;
-const newId = () => `m${Date.now()}-${seq++}`;
 
 function titleFrom(text: string) {
   const clean = text.trim().replace(/\s+/g, " ");
   return clean.length > 34 ? `${clean.slice(0, 32)}…` : clean;
-}
-
-/** **bold** and line breaks from Kachi's plain-text replies, nothing else. */
-function RichText({ text }: { text: string }) {
-  return (
-    <p className="whitespace-pre-line text-base leading-relaxed">
-      {text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-        part.startsWith("**") && part.endsWith("**") ? <b key={i}>{part.slice(2, -2)}</b> : <Fragment key={i}>{part}</Fragment>,
-      )}
-    </p>
-  );
 }
 
 function groupThreads(threads: ThreadSummary[]) {
@@ -117,23 +89,16 @@ function groupThreads(threads: ThreadSummary[]) {
 }
 
 export function KachiChat({ firstName, deliveryLabel }: { firstName: string; deliveryLabel: string }) {
-  const router = useRouter();
   const params = useSearchParams();
-  const cart = useCart();
 
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const kachi = useKachiConversation({ where: "assistant" });
+  const { messages, setMessages, threadId, setThreadId, busy, toast, flash, retry, approve, undo, skipList } = kachi;
   const [title, setTitle] = useState("Kachi");
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const loadedFromQuery = useRef(false);
-
-  const scopeName = (s: KachiScope) => (s.kind === "cart" ? "your cart" : s.name);
 
   useEffect(() => {
     const el = threadRef.current;
@@ -141,116 +106,9 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
     if (el && messages.length > 0) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  const flash = (text: string) => {
-    setToast(text);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 1600);
-  };
-
-  const patchCard = (msgId: string, cardIdx: number, patch: Partial<CardState>) =>
-    setMessages((ms) =>
-      ms.map((m) =>
-        m.id === msgId ? { ...m, cards: m.cards.map((c, i) => (i === cardIdx ? ({ ...c, ...patch } as CardState) : c)) } : m,
-      ),
-    );
-
-  const afterChange = () => {
-    void cart.refresh();
-    router.refresh();
-  };
-
-  const callKachi = async (text: string, opts: { replay?: boolean; replaceId?: string } = {}) => {
-    const typingId = opts.replaceId ?? newId();
-    setBusy(true);
-    const typing: Msg = { id: typingId, role: "kachi", text: "", cards: [], typing: true };
-    setMessages((ms) => (opts.replaceId ? ms.map((m) => (m.id === typingId ? typing : m)) : [...ms, typing]));
-    let data: KachiReply;
-    const askedAt = clock();
-    if (!opts.replay) track("kachi_message_sent", { where: "assistant", length: text.length, firstInChat: messages.length === 0 });
-    try {
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, threadId, replay: opts.replay ?? false }),
-      });
-      data = await res.json().catch(() => ({ reply: "I couldn't get that done just now. Try again in a moment.", retry: true }));
-    } catch {
-      data = { reply: "I couldn't reach the server. Check your connection and try again.", retry: true };
-    }
-    const cards = (data.cards ?? []) as CardState[];
-    const changed = cards.some((c) => c.type === "act" || (c.type === "account" && c.change.kind !== "report"));
-    track("kachi_replied", { where: "assistant", ms: since(askedAt), ok: !data.retry, cards: cards.map((c) => c.type), changedBasket: changed });
-    setMessages((ms) =>
-      ms.map((m) =>
-        m.id === typingId
-          ? {
-              id: typingId,
-              role: "kachi",
-              text: data.reply || data.error || "Sorry, I lost my train of thought. Try again?",
-              cards,
-              replies: data.suggestions?.length ? data.suggestions : changed ? AFTER_CHANGE_REPLIES : undefined,
-              retry: data.retry ? text : undefined,
-            }
-          : m,
-      ),
-    );
-    if (data.threadId) setThreadId(data.threadId);
-    if (changed) afterChange();
-    setBusy(false);
-  };
-
   const send = (raw: string) => {
-    const text = raw.trim();
-    if (!text || busy) return;
-    if (messages.length === 0) setTitle(titleFrom(text));
-    setMessages((ms) => [...ms, { id: newId(), role: "me", text, cards: [] }]);
-    setInput("");
-    void callKachi(text);
-  };
-
-  // The failed reply turns back into "typing"; the message is already stored, so it's a replay.
-  const retry = (msgId: string, text: string) => {
-    if (busy) return;
-    void callKachi(text, { replay: true, replaceId: msgId });
-  };
-
-  const approve = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "list" }>) => {
-    patchCard(msgId, cardIdx, { busy: true });
-    const { card: actCard, error } = await approveKachiList(threadId, card.scope, card.items);
-    if (!actCard) {
-      patchCard(msgId, cardIdx, { busy: false });
-      flash(error ?? "Couldn't add those. Try again.");
-      return;
-    }
-    patchCard(msgId, cardIdx, { busy: false, done: `Added to ${scopeName(card.scope)}` });
-    setMessages((ms) => [
-      ...ms,
-      { id: newId(), role: "kachi", text: "All in. Good choices.", cards: [actCard as CardState], replies: AFTER_CHANGE_REPLIES },
-    ]);
-    afterChange();
-  };
-
-  const undo = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "act" }>) => {
-    patchCard(msgId, cardIdx, { busy: true });
-    const { ok, error } = await undoKachiChanges(card.scope, card.changes);
-    patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
-    if (ok) afterChange();
-    else flash(error ?? "Couldn't undo that.");
-  };
-
-  const undoMemory = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "memory" }>) => {
-    patchCard(msgId, cardIdx, { busy: true });
-    const { ok, error } = await undoKachiMemory(card.action, card.memory);
-    patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
-    if (!ok) flash(error ?? "Couldn't undo that.");
-  };
-
-  const undoAccount = async (msgId: string, cardIdx: number, card: Extract<CardState, { type: "account" }>) => {
-    patchCard(msgId, cardIdx, { busy: true });
-    const { ok, error } = await undoKachiAccount(card.change);
-    patchCard(msgId, cardIdx, ok ? { busy: false, undone: true } : { busy: false });
-    if (ok) afterChange();
-    else flash(error ?? "Couldn't undo that.");
+    if (messages.length === 0 && raw.trim()) setTitle(titleFrom(raw));
+    if (kachi.send(raw)) setInput("");
   };
 
   const copy = (text: string) => {
@@ -281,7 +139,7 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
       setTitle(t.title);
       setMessages(
         t.messages.map((m) => ({
-          id: newId(),
+          id: newMsgId(),
           role: m.role === "user" ? "me" : "kachi",
           text: m.content,
           // Cards from an earlier session are a record, not live controls.
@@ -505,9 +363,9 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
                       key={ci}
                       card={c}
                       scopeName={scopeName}
-                      onUndo={() => (c.type === "act" ? undo(m.id, ci, c) : c.type === "memory" ? undoMemory(m.id, ci, c) : c.type === "account" ? undoAccount(m.id, ci, c) : undefined)}
+                      onUndo={() => undo(m.id, ci, c)}
                       onApprove={() => c.type === "list" && approve(m.id, ci, c)}
-                      onSkip={() => patchCard(m.id, ci, { done: "Skipped. Nothing was added." })}
+                      onSkip={() => skipList(m.id, ci)}
                       onSend={(text) => send(text)}
                     />
                   ))}
@@ -621,276 +479,5 @@ export function KachiChat({ firstName, deliveryLabel }: { firstName: string; del
         )}
       </BottomSheet>
     </div>
-  );
-}
-
-function KachiCardView({
-  card,
-  scopeName,
-  onUndo,
-  onApprove,
-  onSkip,
-  onSend,
-}: {
-  card: CardState;
-  scopeName: (s: KachiScope) => string;
-  onUndo: () => void;
-  onApprove: () => void;
-  onSkip: () => void;
-  onSend: (text: string) => void;
-}) {
-  const shell = "mt-2.5 overflow-hidden rounded-2xl border border-hairline";
-
-  if (card.type === "recipes") {
-    return (
-      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
-        {card.recipes.map((r, idx) => (
-          <div key={r.slug} className={`px-3.5 py-3 ${idx ? "border-t border-hairline" : ""}`}>
-            <Link href={`/recipes/${r.slug}`} className="group flex items-start gap-3">
-              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-soft-mist">
-                <Icon name="recipes" size={20} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <b className="block text-[15px] font-semibold leading-snug group-hover:underline">{r.title}</b>
-                <small className="mt-0.5 line-clamp-2 block text-[13px] leading-snug text-muted">{r.summary}</small>
-              </span>
-              <Icon name="caretRight" size={16} className="mt-3 flex-none text-muted" />
-            </Link>
-            {!card.stale && r.fromBasket > 0 && (
-              <button
-                onClick={() => onSend(`Add the ingredients for ${r.title}`)}
-                className="ml-13 mt-2 inline-flex h-8.5 items-center gap-1.5 rounded-full bg-soft-mist px-3 text-[13px] font-semibold active:bg-border"
-              >
-                <Icon name="plus" size={14} weight="bold" />
-                Add the {r.fromBasket} ingredients
-              </button>
-            )}
-          </div>
-        ))}
-      </motion.div>
-    );
-  }
-
-  if (card.type === "act") {
-    const where = scopeName(card.scope);
-    const n = card.changes.length;
-    const one = card.changes[0];
-    let text: React.ReactNode;
-    if (n === 1 && one.after > one.before) {
-      text = <>Added <b className="font-semibold">{one.after - one.before} {one.name.toLowerCase()}</b> to {where}.</>;
-    } else if (n === 1 && one.after === 0) {
-      text = <>Removed <b className="font-semibold">{one.name.toLowerCase()}</b> from {where}.</>;
-    } else if (n === 1) {
-      text = <>Changed <b className="font-semibold">{one.name.toLowerCase()}</b> to {one.after} in {where}.</>;
-    } else if (card.changes.every((c) => c.after > c.before)) {
-      text = <>Added <b className="font-semibold">{n} things</b> to {where}.</>;
-    } else if (card.changes.every((c) => c.after === 0)) {
-      text = <>Removed <b className="font-semibold">{n} things</b> from {where}.</>;
-    } else {
-      text = <>Changed <b className="font-semibold">{n} things</b> in {where}.</>;
-    }
-    return (
-      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
-        <div className={`flex items-center gap-3 px-3.5 py-3 transition-opacity ${card.undone ? "opacity-50" : ""}`}>
-          <span
-            className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${
-              card.undone ? "bg-soft-mist text-muted" : "bg-mint-pop/30 text-carbon"
-            }`}
-          >
-            <Icon name="checkPlain" size={16} weight="bold" />
-          </span>
-          <span className="flex-1 text-[15px] leading-snug">
-            {card.undone && "Undone. "}
-            {text}
-          </span>
-          {!card.undone && !card.stale && (
-            <button disabled={card.busy} onClick={onUndo} className="p-1.5 text-sm font-semibold text-carbon underline-offset-2 hover:underline disabled:opacity-50">
-              Undo
-            </button>
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (card.type === "list") {
-    const total = card.items.reduce((t, i) => t + i.unitPrice * i.quantity, 0);
-    return (
-      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
-        {card.items.map((i, idx) => (
-          <div key={i.productId} className={`flex items-center gap-3 px-3.5 py-2.5 ${idx ? "border-t border-hairline" : ""}`}>
-            <ProductImage
-              publicId={i.cloudinaryPublicId}
-              alt={i.name}
-              emoji={i.imageEmoji}
-              className="h-10 w-10 flex-none"
-              rounded="rounded-[10px]"
-              flavour="bg-soft-mist"
-              emojiClassName="text-[22px]"
-              sizes="40px"
-            />
-            <span className="min-w-0 flex-1">
-              <b className="block truncate text-[15px] font-semibold">{i.name}</b>
-              <small className="text-[13px] text-muted">
-                {i.quantity} x {i.unit}
-              </small>
-            </span>
-            <span className="text-sm font-semibold">{formatNaira(i.unitPrice * i.quantity)}</span>
-          </div>
-        ))}
-        <div className="flex gap-2 bg-soft-mist px-3.5 py-3">
-          {card.done ? (
-            <span className="py-3 text-sm font-semibold text-carbon">{card.done}</span>
-          ) : card.stale ? (
-            <span className="py-3 text-sm text-muted">Suggested list</span>
-          ) : (
-            <>
-              <motion.button
-                whileTap={{ scale: press.scale }}
-                disabled={card.busy}
-                onClick={onApprove}
-                className="h-11 flex-1 rounded-full bg-carbon text-[15px] font-semibold text-white disabled:opacity-50"
-              >
-                Add all, {formatNaira(total)}
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: press.scale }}
-                disabled={card.busy}
-                onClick={onSkip}
-                className="h-11 flex-1 rounded-full bg-surface text-[15px] font-semibold disabled:opacity-50"
-              >
-                Not now
-              </motion.button>
-            </>
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (card.type === "memory") {
-    const remembered = card.action === "remembered";
-    return (
-      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
-        <div className={`flex items-center gap-3 px-3.5 py-3 transition-opacity ${card.undone ? "opacity-50" : ""}`}>
-          <span
-            className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${
-              card.undone ? "bg-soft-mist text-muted" : card.memory.kind === "ALLERGY" ? "bg-ember/15 text-ember" : "bg-lavender/40 text-carbon"
-            }`}
-          >
-            <Icon name={card.memory.kind === "ALLERGY" ? "warning" : "spark"} size={16} weight="bold" />
-          </span>
-          <span className="flex-1 text-[15px] leading-snug">
-            {card.undone ? "Undone. " : remembered ? "I'll remember: " : "Forgotten: "}
-            <b className="font-semibold">{card.memory.text}</b>
-            {!card.undone && (
-              <Link href="/account/kachi" className="mt-0.5 block text-[13px] text-muted underline-offset-2 hover:underline">
-                See what I know
-              </Link>
-            )}
-          </span>
-          {!card.undone && !card.stale && (
-            <button disabled={card.busy} onClick={onUndo} className="p-1.5 text-sm font-semibold text-carbon underline-offset-2 hover:underline disabled:opacity-50">
-              Undo
-            </button>
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (card.type === "account") {
-    const c = card.change;
-    const day = (d: string) => d.charAt(0) + d.slice(1).toLowerCase();
-    const text: React.ReactNode =
-      c.kind === "skip" ? (
-        <>
-          {c.skipped ? "Skipped" : "Brought back"} <b className="font-semibold">{new Date(c.dateIso).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" })}</b>
-          {c.skipped ? ". Nothing comes that week." : "."}
-        </>
-      ) : c.kind === "day" ? (
-        <>
-          Your basket now comes on <b className="font-semibold">{day(c.to)}</b>, not {day(c.from)}.
-        </>
-      ) : c.kind === "repeat" ? (
-        c.on ? (
-          <>
-            Your basket <b className="font-semibold">comes every week</b> again.
-          </>
-        ) : (
-          <>
-            Your basket is <b className="font-semibold">paused</b>. It keeps its produce until you start it again.
-          </>
-        )
-      ) : c.kind === "rename" ? (
-        c.to ? (
-          <>
-            Your basket is now called <b className="font-semibold">{c.to}</b>.
-          </>
-        ) : (
-          <>Your basket&apos;s name is cleared.</>
-        )
-      ) : (
-        <>
-          Reported: <b className="font-semibold">{c.label}</b>. The team will get back to you.
-        </>
-      );
-    const report = c.kind === "report";
-    return (
-      <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
-        <div className={`flex items-center gap-3 px-3.5 py-3 transition-opacity ${card.undone ? "opacity-50" : ""}`}>
-          <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${card.undone ? "bg-soft-mist text-muted" : report ? "bg-sky-wash text-carbon" : "bg-mint-pop/30 text-carbon"}`}>
-            <Icon name={report ? "send" : c.kind === "skip" || c.kind === "day" ? "calendar" : "checkPlain"} size={16} weight="bold" />
-          </span>
-          <span className="flex-1 text-[15px] leading-snug">
-            {card.undone && "Undone. "}
-            {text}
-            {report && (
-              <Link href={`/orders/${c.orderId}`} className="mt-0.5 block text-[13px] text-muted underline-offset-2 hover:underline">
-                See the order
-              </Link>
-            )}
-          </span>
-          {!report && !card.undone && !card.stale && (
-            <button disabled={card.busy} onClick={onUndo} className="p-1.5 text-sm font-semibold text-carbon underline-offset-2 hover:underline disabled:opacity-50">
-              Undo
-            </button>
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Only in chats from before Kachi had one mode: a record, not a control.
-  if (card.type === "ask") return null;
-
-  const step = customerStep(card.order.status) ?? -1;
-  const day = new Date(card.order.deliveryDate).toLocaleDateString("en-GB", { weekday: "long" });
-  return (
-    <motion.div layout className={shell} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy}>
-      <div className="p-3.5">
-        <h4 className="text-[15px] font-semibold">
-          {card.order.status === "DELIVERED" ? `Delivered ${day}` : step < 0 || card.order.status === "FAILED_DELIVERY" ? customerStatusLabel(card.order.status) : `Arriving ${day}`}
-        </h4>
-        <small className="text-[13px] text-muted">Order #{card.order.id.slice(-8).toUpperCase()}</small>
-        <div className="mt-3 flex gap-1.5">
-          {CUSTOMER_STEPS.map((s, i) => (
-            <motion.i
-              key={s}
-              className={`block h-1.5 flex-1 rounded-full ${i <= step ? "bg-carbon" : "bg-soft-mist"}`}
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              style={{ originX: 0 }}
-              transition={{ ...spring.smooth, delay: i * 0.06 }}
-            />
-          ))}
-        </div>
-        <div className="mt-1.5 flex justify-between text-xs text-muted">
-          {CUSTOMER_STEPS.map((l) => (
-            <span key={l}>{l}</span>
-          ))}
-        </div>
-      </div>
-    </motion.div>
   );
 }
