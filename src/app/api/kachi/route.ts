@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { formatNaira, DELIVERY_DAY_LABEL } from "@/lib/format";
 import { OFFERED } from "@/lib/product";
-import { generate, isRateLimited } from "@/lib/kachi-model";
+import { generate, isRateLimited, kachiInstructions } from "@/lib/kachi-model";
 import { VOICE, RECIPE_RULES, NEXT_RULE, parseNext, recipeLibrary, extractRecipes } from "@/lib/kachi";
 import type { KachiRecipe } from "@/lib/kachi-types";
 
@@ -103,16 +103,19 @@ export async function POST(request: Request) {
 
   try {
     const result = await generate({
-      system: `${VOICE}
+      system: kachiInstructions(
+        `${VOICE}
 
 ${GUEST_RULES}
-${page ? `\nThey are looking at this page right now: ${page}. If their question is vague ("this", "it"), it is probably about that.\n` : ""}
+
 ${RECIPE_RULES}
 
 Recipe library:
 ${library.lines}
 
 ${facts}`,
+        page ? `They are looking at this page right now: ${page}. If their question is vague ("this", "it"), it is probably about that.` : "",
+      ),
       messages,
     });
     const { text: withoutNext, suggestions } = parseNext(result.text);

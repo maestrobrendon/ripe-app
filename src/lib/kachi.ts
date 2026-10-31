@@ -15,6 +15,7 @@ import {
 } from "@/lib/kachi-types";
 import { MENU_GOALS } from "@/lib/menu-types";
 import { getMenu } from "@/lib/menu";
+import { kachiInstructions } from "@/lib/kachi-model";
 
 /**
  * A scope from an earlier card (Undo, Add all), trusted only if that delivery
@@ -280,7 +281,11 @@ function ordersContext(orders: Orders) {
     .join("\n");
 }
 
-/** Kachi's one mode: food help, with tools pinned to the order the customer is filling. */
+/**
+ * Kachi's one mode: food help, with tools pinned to the order the customer is
+ * filling. In two parts: what's the same for every customer comes first, so
+ * Claude can cache it, and what's about this customer comes after.
+ */
 export function actingSystemPrompt(c: {
   firstName: string;
   profile: string;
@@ -293,15 +298,11 @@ export function actingSystemPrompt(c: {
   recipeLines: string;
 }) {
   const where = c.scope.name;
-  return `${VOICE}
+  return kachiInstructions(
+    `${VOICE}
 
-You are helping ${c.firstName} with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal, and their orders. You can also read and change ${where}${c.when ? ` (it comes ${c.when})` : ""}, and nothing else. Use the tools to make real changes; never say something was changed unless a tool did it. You never place, confirm or pay for an order: the customer confirms it themselves on Home and pays when they confirm (online or by transfer; there is no paying at the door). Only change the order when they ask for something to be added, removed or changed.
+You help one customer with food: what to cook, what to buy, what goes well together, how to store produce, what to eat for a goal, and their orders. You can also read and change the one order named below, and nothing else. Use the tools to make real changes; never say something was changed unless a tool did it. You never place, confirm or pay for an order: the customer confirms it themselves on Home and pays when they confirm (online or by transfer; there is no paying at the door). Only change the order when they ask for something to be added, removed or changed.
 
-About ${c.firstName}:
-${c.profile}
-${c.page ? `
-They are looking at this page right now: ${c.page}. If their question is vague ("this", "it"), it is probably about that.
-` : ""}
 Rules for changes:
 - To add ONE product, call the add tool once.
 - To add SEVERAL products (a shopping list, "fill my order for a gym week", or the ingredients for a recipe), call propose_items once with the whole list, sized for the household. Do not add them yourself. The customer approves the list with a button.
@@ -313,15 +314,22 @@ ${RECIPE_RULES}
 
 ${NEXT_RULE}
 
-What is in ${where} right now (id :: name, quantity x unit):
-${c.contentsLines}
-
-Recent orders (id :: status, delivery date):
-${ordersContext(c.orders)}
-
 Recipe library:
 ${c.recipeLines}
 
 Product catalogue (id :: name (unit, min order, step)):
-${c.catalogueLines}`;
+${c.catalogueLines}`,
+    `You are helping ${c.firstName}. The order you can change is ${where}${c.when ? ` (it comes ${c.when})` : ""}.
+
+About ${c.firstName}:
+${c.profile}
+${c.page ? `
+They are looking at this page right now: ${c.page}. If their question is vague ("this", "it"), it is probably about that.
+` : ""}
+What is in ${where} right now (id :: name, quantity x unit):
+${c.contentsLines}
+
+Recent orders (id :: status, delivery date):
+${ordersContext(c.orders)}`,
+  );
 }

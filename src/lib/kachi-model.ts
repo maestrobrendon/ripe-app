@@ -1,27 +1,55 @@
 import "server-only";
-import { generateText } from "ai";
+import { generateText, type SystemModelMessage } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 
 /*
  * The model behind Kachi, shared by the signed-in agent (api/assistant) and
- * the guest bubble (api/kachi). Moved here unchanged from api/assistant.
+ * the guest bubble (api/kachi).
+ *
+ * Claude Haiku 5.5 first: measured on 2026-10-31 on Kachi's real prompt and
+ * tools, it answered in 2 to 5 seconds and costs about $1.50 per 1,000
+ * messages. Gemini Flash-Lite (free tier) stands behind it, so Kachi keeps
+ * answering if Claude is down, busy or out of credit. Free Gemini Flash (not
+ * Lite) is no use: the free tier queues it behind paying traffic, and a
+ * one-line question took 2 to 4.5 minutes.
+ *
+ * Override with ASSISTANT_MODEL_ID / ASSISTANT_FALLBACK_MODEL_IDS rather than
+ * editing this file. A "claude-" id goes to Anthropic, anything else to Google.
  */
-
-// Flash-Lite, not Flash. Measured on 2026-10-31 from this key: the free
-// tier queues the bigger Flash models behind paying traffic, so a one-line
-// question took 2 to 4.5 minutes on gemini-3.8-flash and 3.7-flash, while
-// 3.5-flash-lite answered Kachi's full prompt, tools included, in 1 to 3
-// seconds. Override with ASSISTANT_MODEL_ID rather than editing this file.
-const MODEL_ID = process.env.ASSISTANT_MODEL_ID || "gemini-3.5-flash-lite";
+const MODEL_ID = process.env.ASSISTANT_MODEL_ID || "claude-haiku-5-5";
 // Free-tier quotas are counted per model, so when one runs dry for the day
 // the next one usually still has room. Comma-separated, tried in order.
-const FALLBACK_MODEL_IDS = (process.env.ASSISTANT_FALLBACK_MODEL_IDS ?? "gemini-3.1-flash-lite")
+const FALLBACK_MODEL_IDS = (process.env.ASSISTANT_FALLBACK_MODEL_IDS ?? "gemini-3.5-flash-lite,gemini-3.1-flash-lite")
   .split(",")
   .map((m) => m.trim())
   .filter((m) => m && m !== MODEL_ID);
 
+const isClaude = (modelId: string) => modelId.startsWith("claude-");
+
 /** How long one model gets before the turn moves on to the next. Nobody waits minutes for a reply. */
 const ATTEMPT_MS = 15_000;
+
+/*
+ * Claude's settings. Short answers and basket changes need little thought,
+ * so effort is low; thinking stays on (adaptive), which keeps its tool calls
+ * reliable. Gemini ignores these.
+ */
+const PROVIDER_OPTIONS = { anthropic: { effort: "low" } };
+
+/**
+ * Kachi's instructions in two parts. `shared` is the same for every customer
+ * (voice, rules, recipes, catalogue) and is cached by Claude, so after the
+ * first message it costs a tenth as much and is read faster. `personal` is
+ * about this customer and comes after it, so it never breaks the cache.
+ */
+export function kachiInstructions(shared: string, personal: string): SystemModelMessage[] {
+  const parts: SystemModelMessage[] = [
+    { role: "system", content: shared, providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } } },
+  ];
+  if (personal.trim()) parts.push({ role: "system", content: personal });
+  return parts;
+}
 
 /** An attempt that ran out of time (ATTEMPT_MS). */
 function isTimeout(err: unknown) {
@@ -29,10 +57,10 @@ function isTimeout(err: unknown) {
   return /timeout|aborted/i.test(detail);
 }
 
-/** The provider is overloaded ("high demand", 503): another model usually isn't. */
+/** The provider is overloaded ("high demand", 503, Claude's 529): another model usually isn't. */
 function isOverloaded(err: unknown) {
   const detail = err instanceof Error ? err.message : String(err);
-  return /high demand|overloaded|unavailable|503/i.test(detail) || isTimeout(err);
+  return /high demand|overloaded|unavailable|503|529/i.test(detail) || isTimeout(err);
 }
 
 /**
@@ -44,16 +72,17 @@ export function isRateLimited(err: unknown) {
   return /429|rate.?limit|quota|resource.?exhausted/i.test(detail) || isOverloaded(err);
 }
 
-/**
- * generateText that rides out Gemini's free-tier limits. Its 429 says how
- * long to wait: a short wait (the per-minute limit) is waited out once on
- * the same model; a long one (the daily quota) moves to the next model.
- * A retry re-runs the whole turn, so `canRetry` says no once a tool has
- * changed something, rather than risk making the change twice.
- */
 /** Per server instance: when each model's daily quota should be back. */
 const exhaustedUntil = new Map<string, number>();
 
+/**
+ * generateText across the models, in order. A short wait (a per-minute
+ * limit) is waited out once on the same model; a long one (a daily quota)
+ * moves to the next. Any failure from Claude (busy, a key problem, credit
+ * run out) moves to Gemini. A retry re-runs the whole turn, so `canRetry`
+ * says no once a tool has changed something, rather than risk making the
+ * change twice.
+ */
 export async function generate(
   opts: Omit<Parameters<typeof generateText>[0], "model">,
   canRetry: () => boolean | Promise<boolean> = () => true,
@@ -61,20 +90,29 @@ export async function generate(
   const run = (modelId: string) =>
     generateText({
       ...opts,
-      model: google(modelId),
+      model: isClaude(modelId) ? anthropic(modelId) : google(modelId),
+      providerOptions: PROVIDER_OPTIONS,
+      // Set, because the SDK predates Haiku 5.5 and would guess. Replies are short; this is only a ceiling.
+      maxOutputTokens: opts.maxOutputTokens ?? 16_000,
       maxRetries: 1,
       abortSignal: AbortSignal.timeout(ATTEMPT_MS),
     } as Parameters<typeof generateText>[0]);
   let lastErr: unknown;
-  const models = [MODEL_ID, ...FALLBACK_MODEL_IDS];
+  // Claude only when there's a key for it.
+  const models = [MODEL_ID, ...FALLBACK_MODEL_IDS].filter((m) => !isClaude(m) || process.env.ANTHROPIC_API_KEY);
   // Skip models known to be out of quota, unless that would leave none.
   const ready = models.filter((m) => (exhaustedUntil.get(m) ?? 0) <= Date.now());
   for (const modelId of ready.length ? ready : models) {
     try {
       return await run(modelId);
     } catch (err) {
-      if (!isRateLimited(err) || !(await canRetry())) throw err;
+      const claudeFailed = isClaude(modelId);
+      if ((!claudeFailed && !isRateLimited(err)) || !(await canRetry())) throw err;
       lastErr = err;
+      if (claudeFailed) {
+        console.warn(JSON.stringify({ scope: "kachi-fallback", model: modelId, error: String(err).slice(0, 300) }));
+        continue;
+      }
       // Overloaded or too slow: no wait to sit out, just try the next model.
       if (isOverloaded(err)) continue;
       const wait = retryDelayMs(err);
