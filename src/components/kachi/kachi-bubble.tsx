@@ -130,10 +130,25 @@ function useFrame() {
   }, [open, close, isDesktop]);
 
   const pageContext = () => `${pageTitle || document.title} (${pathname})`;
-  return { pathname, reduce, hidden, isDesktop, open, setOpen, close, atFooter, launcherRef, inputRef, pageTitle, pageContext };
+  return { pathname, reduce, hidden, isDesktop, open, setOpen, close, atFooter, launcherRef, inputRef, pageTitle, pageContext, barShown: usePinnedBar() };
 }
 
 type Frame = ReturnType<typeof useFrame>;
+
+/** Whether a page has a bar pinned to the bottom (Home's "Confirm basket", a recipe's ingredients). */
+const hasPinnedBar = () => Boolean(document.querySelector("[data-pinned-bar]"));
+function usePinnedBar() {
+  return useSyncExternalStore(
+    (onChange) => {
+      // Those bars come and go with the page's state, so watch for them.
+      const mo = new MutationObserver(onChange);
+      mo.observe(document.body, { childList: true, subtree: true });
+      return () => mo.disconnect();
+    },
+    hasPinnedBar,
+    () => false,
+  );
+}
 
 function BubbleFrame({
   frame,
@@ -151,6 +166,7 @@ function BubbleFrame({
   placeholder,
   tools,
   attachment,
+  yieldToBars = false,
   children,
 }: {
   frame: Frame;
@@ -173,9 +189,14 @@ function BubbleFrame({
   tools?: React.ReactNode;
   /** What's waiting to go with the next message (a photo); it can be sent without words. */
   attachment?: React.ReactNode;
+  /** Step aside for a page's pinned bar on phones (signed in: the bar sits just above the menu, where she would). */
+  yieldToBars?: boolean;
   children: React.ReactNode;
 }) {
-  const { reduce, isDesktop, open, close, atFooter, launcherRef, inputRef } = frame;
+  const { reduce, isDesktop, open, close, atFooter, launcherRef, inputRef, barShown } = frame;
+  // On a phone, a page's own pinned bar (Confirm basket, Get the ingredients) holds the bottom of
+  // the screen: Kachi's button steps aside rather than sit on it. "Ask Kachi" stays in the header.
+  const stepAside = (atFooter || (yieldToBars && barShown && !isDesktop)) && !open;
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (open) endRef.current?.scrollIntoView({ block: "end", behavior: reduce ? "auto" : "smooth" });
@@ -184,8 +205,8 @@ function BubbleFrame({
   return (
     <>
       <div
-        className={`fixed right-4 z-(--z-dock) flex flex-col items-end gap-3 transition-[opacity,translate] duration-300 lg:right-6 lg:bottom-6 ${lift} ${atFooter && !open ? "pointer-events-none translate-y-4 opacity-0" : ""}`}
-        inert={atFooter && !open}
+        className={`fixed right-4 z-(--z-dock) flex flex-col items-end gap-3 transition-[opacity,translate] duration-300 lg:right-6 lg:bottom-6 ${lift} ${stepAside ? "pointer-events-none translate-y-4 opacity-0" : ""}`}
+        inert={stepAside}
       >
         <AnimatePresence>{nudge}</AnimatePresence>
 
@@ -602,6 +623,7 @@ function MemberBubble() {
         />
       }
       attachment={photo ? <PhotoPreview src={photo} onRemove={() => setPhoto(null)} /> : undefined}
+      yieldToBars
       headerActions={
         <>
           {threadId && (

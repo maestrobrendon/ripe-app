@@ -120,6 +120,8 @@ export function RecipeCta(props: CtaProps) {
       </aside>
 
       <div
+        // Kachi's floating button steps aside while a pinned bar like this is on screen (kachi-bubble.tsx).
+        data-pinned-bar
         className="fixed inset-x-0 z-(--z-sticky) px-3 lg:hidden"
         style={{ bottom: signedIn ? "calc(var(--dock-height) + var(--dock-inset) + 0.5rem)" : "max(12px, env(safe-area-inset-bottom))" }}
       >

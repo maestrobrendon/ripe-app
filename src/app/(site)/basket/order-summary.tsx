@@ -119,6 +119,8 @@ export function OrderSummary({
       {t.count > 0 && !heroOnScreen && (
         <motion.div
           data-order-bar
+          // Kachi's floating button steps aside while a pinned bar like this is on screen (kachi-bubble.tsx).
+          data-pinned-bar
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
