@@ -11,7 +11,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
@@ -54,8 +54,24 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
     else if (diff < -DELTA) setHidden(false);
   });
 
+  // The tab just tapped, before its page has arrived: the pill moves on the
+  // tap, not when the server has finished, which is what made it feel slow.
+  // Cleared once the address changes (the page has taken over).
+  const [tapped, setTapped] = useState<string | null>(null);
+  const [tappedOn, setTappedOn] = useState(pathname);
+  if (tappedOn !== pathname) {
+    setTappedOn(pathname);
+    setTapped(null);
+  }
+  // If that page never arrives (offline, an error), the pill goes back to where you are.
+  useEffect(() => {
+    if (!tapped) return;
+    const t = window.setTimeout(() => setTapped(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [tapped]);
+
   const isActive = (item: DockItem) =>
-    item.match ? item.match(pathname) : pathname === item.href || pathname.startsWith(item.href + "/");
+    tapped ? item.href === tapped : item.match ? item.match(pathname) : pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
     <motion.nav
@@ -86,7 +102,12 @@ export function FloatingDock({ items, ariaLabel = "Account" }: { items: DockItem
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                onClick={() => !active && haptic(8)}
+                onClick={(e) => {
+                  // A new tab, or Cmd/Ctrl-click to open it elsewhere (then nothing here changes).
+                  if (active || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                  haptic(8);
+                  setTapped(item.href);
+                }}
                 data-flight-target={item.flightTarget ? "cart" : undefined}
                 className={cn(
                   "group relative flex h-full min-h-12 outline-none transition-colors",
